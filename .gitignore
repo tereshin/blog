@@ -1,8 +1,14 @@
-# Nestjs specific
-/dist
-/node_modules
-/build
-/tmp
+.DS_Store
+
+# Build output
+node_modules
+dist
+build
+tmp
+.next
+.turbo
+coverage
+*.tsbuildinfo
 
 # Logs
 logs
