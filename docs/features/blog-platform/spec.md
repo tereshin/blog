@@ -17,9 +17,9 @@ Readers and writers need one public place to publish topical writing, follow aut
 
 There is no public product in production yet. The product brief's first-release list is the scope lock for design. Waiting would leave publishing, feeds, conversation, and moderation as competing guesses.
 
-The committed approach is one public reading and writing surface plus a separate admin panel. A Guest reads. A User writes and participates. A Moderator and an Administrator act only from the admin panel, and signing in on the public surface does not open that panel. A Moderator or an Administrator must confirm a second factor before using staff tools. Someone who already has an Article open sees a new Like count, a new Comment, or a hide without reloading. An open Direct message conversation shows a new message without reloading. A newly published Article shows up in the Fresh feed and in followers' My feed when those feeds are opened. Interface language and Content language stay separate. Theme is light, dark, or system, and system is the default.
+The committed approach is one public reading and writing surface plus a separate admin panel. A Guest reads. A User writes and participates. A Moderator and an Administrator act only from the admin panel, and signing in on the public surface does not open that panel. A Moderator or an Administrator must confirm a second factor before using staff tools. The admin panel offers the same three Interface languages and the same Theme choices as the public site. A Guest or a User who already has an Article open sees a new Like count, a new Comment count, a new or hidden Comment, or a hide of that Article or Comment without reloading. The View count follows the 30-minute rule and is outside that live update. An open Direct message conversation shows a new message without reloading, and only the Users in that conversation see it. A newly published Article shows up in the Fresh feed and in followers' My feed when those feeds are opened. My feed lists every currently published Article from the followed Users and Categories, newest first, each Article once. Interface language and Content language stay separate. A User may limit which Content languages appear in feeds; a cleared limit shows every Content language, and a Guest has no such limit. Theme is light, dark, or system, and system is the default.
 
-Traceability: the first-release list and the later-release list in `docs/TASK.md`; platform boundaries in `docs/architecture-map.md` that this spec does not reopen; layout notes in `docs/DESIGN.md`, which are outside acceptance. The easy-depth assumptions ledger (items 1–11) was accepted in full: first release in, later release out, Moderator Block in, User-to-User mute out, four roles, Article states draft / published / hidden / soft-removed, three feeds, private Bookmarks, live counts, three Themes, three Interface languages, in-product Notifications only. Critic amendments accepted on 2026-09-27: Moderator and Administrator goals are separate; an Administrator may also hide, Block, and handle a Complaint; soft-remove has its own acceptance; live updates are limited to an open Article and an open Direct message conversation.
+Traceability: the first-release list and the later-release list in `docs/TASK.md`; platform boundaries in `docs/architecture-map.md` that this spec does not reopen; layout notes in `docs/DESIGN.md`, which are outside acceptance. The easy-depth assumptions ledger (items 1–11) was accepted in full: first release in, later release out, Moderator Block in, User-to-User mute out, four roles, Article states draft / published / hidden / soft-removed, three feeds, private Bookmarks, live counts, three Themes, three Interface languages, in-product Notifications only. Critic amendments accepted on 2026-09-27: Moderator and Administrator goals are separate; an Administrator may also hide, Block, and handle a Complaint; soft-remove has its own acceptance; live updates are limited to an open Article and an open Direct message conversation. Clarify resolutions accepted on 2026-09-27: a blocked User keeps edit, own soft-remove, and Complaint; live Article updates reach a Guest and a User; readers other than the author see a hidden or soft-removed Article as unavailable, and the author still sees the text and the state; a Complaint closes by hide or by dismissal, both with a reason; platform statistics are six figures for an Administrator only; a person holds one role and the last Administrator stays. The clarify easy-depth assumptions 1–14 were accepted in full.
 
 ## 2. Goals
 
@@ -37,6 +37,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 - Serbian Cyrillic is out, because Serbian is Latin only in this release.
 - Public-site column widths, sticky side regions, and the phone navigation bar are out of these acceptance criteria, because they belong to the screen stage (`docs/DESIGN.md`).
 - Automatic translation of Articles is out, because Content language is the author's language and feeds do not rewrite it.
+- An allowlist of embedded content is out of this release. Administrator settings here are the Popular feed weights and the rate limits already stated.
 
 ## 4. User stories
 
@@ -61,7 +62,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 ### US-04: Create a profile
 
 **As a** User
-**I want** a unique username and a public profile
+**I want** a unique Username and a public profile
 **So that** other people can find me and follow me
 
 ### US-05: Publish an article
@@ -121,7 +122,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 ### US-14: Watch activity live
 
 **As a** User
-**I want** counts, new Comments, hiding, and incoming Direct messages to change while I am looking
+**I want** the Like count, the Comment count, new or hidden Comments, a hide, and incoming Direct messages to change while I am looking
 **So that** I do not reload to see what just happened
 
 ### US-15: Receive a notice
@@ -151,7 +152,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 ### US-19: Read the audit trail
 
 **As an** Administrator
-**I want** every hide, Block, role change, and staff soft-remove recorded with a reason, and I want to read the whole trail
+**I want** every hide, Block, role change, staff soft-remove, and Complaint dismissal recorded with a reason, every Category change recorded, and I want to read the whole trail
 **So that** staff actions can be reviewed later
 
 ### US-20: Withdraw an article
@@ -172,13 +173,13 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 **Given** a Guest or a User has already added a View to an Article in the last 30 minutes
 **When** that same viewer keeps the Article open or opens it again inside those 30 minutes
-**Then** the system does not add another View
+**Then** the system does not add another View. A Guest is the same viewer when the same browser session returns. A User is the same viewer when that User returns. A different browser session is a different Guest viewer
 
 ### AC-03 (US-02) — happy path
 
 **Given** several published Articles of different ages and engagement
 **When** a Guest opens the Fresh feed and the Popular feed
-**Then** the Fresh feed lists published Articles newest first, the Popular feed lists them by the current score of Views, Likes, Comments, Bookmarks, and age, and My feed is not offered
+**Then** the Fresh feed lists published Articles newest first, the Popular feed lists them by the current score of Views, Likes, Comments, Bookmarks, and age, Articles of every Content language appear, and My feed is not offered
 
 ### AC-04 (US-03) — happy path
 
@@ -188,19 +189,19 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 ### AC-05 (US-04) — happy path
 
-**Given** a person who has just signed in and has no username yet
-**When** they choose a username that nobody else has and save a public profile
-**Then** the system records that User, and a Guest can open the profile
+**Given** a person who has just signed in and has no Username yet
+**When** they choose a Username that nobody else has and save a public profile
+**Then** the system records that User, and a Guest can open the profile and see the Username
 
 ### AC-06 (US-04) — error
 
-**Given** a User is choosing a username that another User already has
+**Given** a User is choosing a Username that another User already has
 **When** they try to save it
-**Then** the system blocks the save and tells them that the username is already taken
+**Then** the system blocks the save and tells them that the Username is already taken
 
 ### AC-07 (US-05) — happy path
 
-**Given** a User who already has a username, an open draft, a second preview of that draft, and one Category
+**Given** a User who already has a Username, an open draft, a second preview of that draft, and one Category
 **When** the User types, attaches an image, sets the Content language, and publishes
 **Then** the draft is kept while they type, the second preview shows the same edits, and the published Article shows that text, that image, that Category, and that Content language to a Guest
 
@@ -218,15 +219,15 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 ### AC-10 (US-05) — domain invariant
 
-**Given** a signed-in person who has not chosen a username
+**Given** a signed-in person who has not chosen a Username
 **When** they try to publish an Article
-**Then** the system blocks publication and tells them that a username is required first
+**Then** the system blocks publication and tells them that a Username is required first
 
 ### AC-11 (US-06) — happy path
 
 **Given** a User who owns a published Article
 **When** the User changes the text and saves
-**Then** readers see the new text, and the previous version remains recorded
+**Then** readers see the new text, the previous version remains recorded, and neither readers nor the author browse earlier versions in this release
 
 ### AC-12 (US-06) — authorization
 
@@ -244,7 +245,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 **Given** a User who follows one author and one Category, and published Articles from that author, from that Category, and from neither
 **When** the User opens My feed
-**Then** the feed shows the followed author's Articles and the followed Category's Articles, newest first, and does not show the unrelated Articles, and it respects that User's Content language limit when one is set
+**Then** the feed shows every currently published Article from the followed author and from the followed Category, newest first, each Article once, it does not show the unrelated Articles, and it shows only that User's chosen Content languages when a limit is set
 
 ### AC-15 (US-09) — happy path
 
@@ -308,9 +309,9 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 ### AC-25 (US-14) — happy path
 
-**Given** a User is looking at a published Article, and another User is in a Direct message conversation with them
-**When** someone Likes the Article, Comments on it, a Moderator hides that Comment, or a Direct message arrives
-**Then** the Like count, the new or hidden Comment, and the Direct message change on the open view without a reload
+**Given** a Guest or a User is looking at a published Article, and a User is in a Direct message conversation
+**When** someone Likes the Article, Comments on it, a Moderator or an Administrator hides that Article or that Comment, or a Direct message arrives
+**Then** the Like count, the Comment count, and the new, hidden, or unavailable Article or Comment change on the open view without a reload for that Guest and that User, the Direct message changes without a reload only for the Users in that conversation, and the View count does not have to change on that open view
 
 ### AC-26 (US-15) — happy path
 
@@ -322,7 +323,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 **Given** a Moderator, a Complaint, and a published Article or Comment that readers currently have open
 **When** the Moderator hides that Article or Comment and gives a reason
-**Then** Guests and Users no longer see it in feeds or on the open page, and the action is on the audit trail with that reason
+**Then** a Guest or a User who is not the author no longer sees the text or the Comments in feeds or on the page, and sees that the piece is unavailable without being told that staff hid it. The author still sees the text and sees that readers cannot. Staff see the full text only in the admin panel. The action is on the audit trail with that reason. Each open Complaint about that Article or Comment leaves the open list
 
 ### AC-28 (US-16) — authorization
 
@@ -338,15 +339,15 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 ### AC-30 (US-16) — authorization
 
-**Given** a Moderator who has not confirmed a second factor
+**Given** a Moderator or an Administrator who has not confirmed a second factor
 **When** they try to use staff tools
-**Then** the system does not let them hide, Block, or change a Category
+**Then** the system does not let them hide, Block, change a Category, assign a role, dismiss a Complaint, or soft-remove
 
 ### AC-31 (US-17) — happy path
 
 **Given** a Moderator and a User who is not staff
 **When** the Moderator Blocks that User with a reason, and later lifts the Block
-**Then** while blocked the User is told the account is blocked and cannot publish, Comment, Follow, Like, Bookmark, or send a Direct message, and after the lift those actions are possible again
+**Then** while blocked the User is told the account is blocked and cannot publish, Comment, Follow, Like, Bookmark, or send a Direct message. The User can still read, edit their own Article, soft-remove their own Article, and file a Complaint. After the lift, publish, Comment, Follow, Like, Bookmark, and Direct messages are possible again
 
 ### AC-32 (US-17) — cross-context
 
@@ -376,7 +377,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 **Given** hide, Block, role-change, and staff soft-remove actions from more than one staff member
 **When** an Administrator opens the audit trail
-**Then** the Administrator sees every such action, each with its reason, and the trail cannot be rewritten or erased by staff
+**Then** the Administrator sees every hide, Block, role change, staff soft-remove, and Complaint dismissal, each with its reason, and every Category change, and the trail cannot be rewritten or erased by staff
 
 ### AC-37 (US-19) — authorization
 
@@ -388,7 +389,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 **Given** a User who owns a published Article
 **When** the User soft-removes it
-**Then** a Guest no longer sees it in the feeds or on its page, the record remains, and the Article is not treated as hidden by a Moderator
+**Then** a Guest or a User who is not the author no longer sees it in the feeds or on its page, sees that it is unavailable, with no text and no Comments, and is not told that the author withdrew it. The author sees the text and sees that they withdrew it. The record remains. The Article is not treated as hidden by a Moderator. Staff see the full text only in the admin panel
 
 ### AC-39 (US-18) — happy path
 
@@ -408,6 +409,90 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 **When** a different User, or a Moderator, tries to soft-remove it
 **Then** the system refuses, and the Moderator can still hide it with a reason
 
+### AC-42 (US-04) — happy path
+
+**Given** a User who already has a Username
+**When** they save a Display name, a Biography, or an Avatar
+**Then** a Guest who opens the profile sees each field that was saved, and a field that was not saved is absent
+
+### AC-43 (US-05) — domain invariant
+
+**Given** a User's draft with a title, exactly one Category, a Content language, and text, and with no image
+**When** the User publishes
+**Then** the system publishes the Article, and a Guest sees the text with no image
+
+### AC-44 (US-05) — error
+
+**Given** a User's draft with a title and exactly one Category and with no text
+**When** the User tries to publish
+**Then** the system blocks publication and tells the User that the text must be present
+
+### AC-45 (US-05) — authorization
+
+**Given** a User's draft
+**When** a Guest or a different User tries to open it
+**Then** they see that it is unavailable, they do not see the text, and they are not told that it is a draft. The author can still open the draft
+
+### AC-46 (US-08) — cross-context
+
+**Given** a User
+**When** they set a Content language limit to one or more of English, Serbian Latin, and Russian, or they clear that limit
+**Then** the Fresh feed, the Popular feed, and My feed show only the chosen Content languages, and a cleared limit shows every Content language
+
+### AC-47 (US-16) — happy path
+
+**Given** a Moderator and a published Article in one Category
+**When** the Moderator moves it to one other Category and gives no reason
+**Then** readers see the Article in the new Category, the action is on the audit trail, and the move stands without a reason
+
+### AC-48 (US-18) — happy path
+
+**Given** an open Complaint about a published Article or a Comment
+**When** a Moderator or an Administrator dismisses it and gives a reason
+**Then** the Article or Comment stays visible to readers, the Complaint leaves the open list, and the action is on the audit trail with that reason
+
+### AC-49 (US-18) — error
+
+**Given** an open Complaint
+**When** a Moderator or an Administrator tries to dismiss it with no reason
+**Then** the system blocks the dismissal, tells them that a reason must be present, and the Complaint stays open
+
+### AC-50 (US-18) — happy path
+
+**Given** an Administrator, at least one other Administrator, and a User
+**When** the Administrator sets that User to Moderator or to Administrator, or sets a Moderator or another Administrator back to User
+**Then** that person holds exactly one of User, Moderator, or Administrator, and the role they held before is gone
+
+### AC-51 (US-18) — domain invariant
+
+**Given** an Administrator who is the only Administrator
+**When** they try to set themselves back to User or to Moderator
+**Then** the system blocks the change and tells them that one Administrator must remain
+
+### AC-52 (US-18) — domain invariant
+
+**Given** no Administrator exists yet
+**When** a person tries to grant themselves Administrator from the admin panel
+**Then** the system does not create that first Administrator from the panel
+
+### AC-53 (US-18) — happy path
+
+**Given** an Administrator in the admin panel
+**When** they open platform statistics
+**Then** they see how many distinct Users signed in today, how many distinct Users signed in over the last 30 days, how many Users are new, how many Articles were published, how many Comments were written, how many Complaints are still open, and whether the public site is answering
+
+### AC-54 (US-18) — authorization
+
+**Given** a Moderator in the admin panel
+**When** they try to open platform statistics
+**Then** the panel shows them no platform statistics
+
+### AC-55 (US-16) — happy path
+
+**Given** a Moderator or an Administrator in the admin panel
+**When** they choose a Theme among light, dark, and system, and an Interface language among English, Serbian Latin, and Russian
+**Then** the admin panel uses that Theme and that Interface language, and a missing translation falls back to English
+
 ## 6. Non-functional requirements
 
 | Aspect | Target | Measurement |
@@ -415,7 +500,7 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 | Latency p95 of a write (publish, Comment, Like, Direct message) | ≤ 300 ms | server timing of those writes |
 | Latency p95 of a cached feed or Article read | ≤ 100 ms | server timing of cached reads |
 | Latency p95 of an uncached feed or Article read | ≤ 300 ms | server timing of reads that miss the cache |
-| Latency p95 until an open viewer sees a new Like, Comment, or hide | ≤ 500 ms | time from the action being recorded to the open view changing |
+| Latency p95 until an open Guest or User sees a new Like count, a Comment count change, a new or hidden Comment, or a hide | ≤ 500 ms | time from the action being recorded to the open Article view changing. This is the performance target. The release watch for the same path is the 1 second KPI in §7 |
 | Latency p95 of draft preview | ≤ 300 ms | time from a keystroke being kept to the author's second preview showing it |
 | Published Article page largest content paint | ≤ 2.5 s | field measurement of the published Article page |
 | Feed page size | 20 Articles | count returned for one page of a feed |
@@ -427,8 +512,8 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 ## 6.1 Security / privacy
 
 - **Data classification:** public for published Articles, Comments, and public profiles; confidential for Direct messages, Bookmark lists, and account secrets; internal for the audit trail. Published writing is meant to be read; private conversation and private marks are not; the trail is for staff review.
-- **Personal data touched:** username, display name, biography, avatar, Direct message text, Bookmark list, Complaint text, and the staff actor on each audit entry. Direct message text and Bookmark lists are confidential. The rest of the profile is public once the User saves it as public.
-- **AuthZ/AuthN impact:** a Guest may read published material only. A User may write, Follow, Like, Comment, Bookmark, message, file a Complaint, change only their own Article, and soft-remove only their own Article. A Moderator may hide, Block, handle Complaints, and change an Article's Category, only from the admin panel, and only after a second factor. An Administrator may hide, Block, handle Complaints, soft-remove an Article, and manage Categories, roles, weights, and settings, only from the admin panel, and only after a second factor. Signing in on the public surface does not open the admin panel. A blocked User may read and may not perform User actions until the Block is lifted.
+- **Personal data touched:** Username, Display name, Biography, Avatar, Direct message text, Bookmark list, Complaint text, and the staff actor on each audit entry. Direct message text and Bookmark lists are confidential. The rest of the profile is public once the User saves it as public.
+- **AuthZ/AuthN impact:** a Guest may read published material only. A User may write, Follow, Like, Comment, Bookmark, message, file a Complaint, change only their own Article, and soft-remove only their own Article. A Moderator may hide, Block, handle Complaints, and change an Article's Category, only from the admin panel, and only after a second factor. An Administrator may hide, Block, handle Complaints, soft-remove an Article, and manage Categories, roles, weights, and settings, only from the admin panel, and only after a second factor. Settings in this release are the Popular feed weights and the rate limits stated below. An Administrator may set another person to Moderator or to Administrator and may return a Moderator or another Administrator to User, and may not remove the last Administrator. The first Administrator already exists before the panel and is not created from it. Signing in on the public surface does not open the admin panel. A blocked User may read, may edit their own Article, may soft-remove their own Article, may file a Complaint, and may not publish, Comment, Follow, Like, Bookmark, or send a Direct message until the Block is lifted. A person holds one role at a time: User, Moderator, or Administrator.
 - **Abuse cases:**
   - A Guest or another User asks for someone else's Bookmark list or Direct messages: the system hides them.
   - A User tries to change or soft-remove another User's Article: the system refuses.
@@ -439,12 +524,13 @@ Traceability: the first-release list and the later-release list in `docs/TASK.md
 
 ## 7. Metrics / KPIs
 
-- **First-release journey** — baseline: 0 checkpoints passed, target: every checkpoint passes once on a production-like check before release (sign in, username, Follow a Category, publish with an image, appear on the Fresh feed and on a follower's My feed, a View counted, a Like seen by an open reader, a Comment seen by an open reader, a Bookmark saved, a Follow of the author, a Direct message with a read mark, a Moderator hide from a Complaint seen by an open reader and written to the audit trail, the author soft-removes an Article and a Guest no longer sees it, Interface language switched to Serbian Latin and then Russian, Theme switched to dark without a light flash on the next load).
-- **Live Like visibility** — baseline: 0 (nothing shipped), target: p95 under 1 second from a Like being recorded to an open reader seeing the new count, over the first 30 days after release.
-- **Hidden-content residue** — baseline: 0, target: 0 cases per week in which a Guest still sees an Article or Comment more than 1 second after a Moderator hid it, for the first 90 days after release.
+- **First-release journey** — baseline: 0 checkpoints passed, target: every checkpoint passes once on a production-like check before release (sign in, Username, Follow a Category, publish with an image, appear on the Fresh feed and on a follower's My feed, a View counted, a Like seen by an open reader, a Comment seen by an open reader, a Bookmark saved, a Follow of the author, a Direct message with a read mark, a Moderator hide from a Complaint seen by an open reader and written to the audit trail, the author soft-removes an Article and a Guest no longer sees it, Interface language switched to Serbian Latin and then Russian, Theme switched to dark without a light flash on the next load).
+- **Live Like visibility** — baseline: 0 (nothing shipped), target: p95 under 1 second from a Like being recorded to an open reader seeing the new count, over the first 30 days after release. This 1 second figure is the release watch. The performance target for the same path is 500 ms in §6.
+- **Hidden-content residue** — baseline: 0, target: 0 cases per week in which a Guest still sees an Article or Comment more than 1 second after a Moderator hid it, for the first 90 days after release. This 1 second figure is the release watch. The performance target for the same path is 500 ms in §6.
 - **Interface-language completeness** — baseline: 0, target: 100% of interface strings present in English, Serbian Latin, and Russian at release.
 
 ## 8. Open questions
 
 - [ ] How many seconds must an Article stay visible before one View is counted? Default now: 3 seconds. — owner: PM, due: before sdd:design
 - [ ] What are the starting weights of the Popular feed score before an Administrator changes them? Default now: Views, Likes, Comments, and Bookmarks weigh equally, and age lowers the score. — owner: PM, due: before sdd:tasks
+- [ ] How many reads per minute may one anonymous visitor make before reads are slowed? Default now: 60. — owner: Security Lead, due: before sdd:design
