@@ -1,0 +1,68 @@
+{
+  "slug": "_scaffold",
+  "tasks": [
+    {
+      "id": "S1",
+      "title": "Create the pnpm and Turborepo workspace, the API gateway, and the web shell",
+      "layer": "scaffold",
+      "deps": [],
+      "acs": [],
+      "dod": "pnpm turbo build succeeds for an empty API gateway (NestJS on Fastify, GET /health/live) and an empty Next.js app",
+      "files_hint": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "turbo.json",
+        "packages/tsconfig",
+        "packages/eslint-config",
+        "apps/api-gateway",
+        "apps/web"
+      ]
+    },
+    {
+      "id": "S2",
+      "title": "Wire Vitest and a boot smoke test",
+      "layer": "scaffold",
+      "deps": ["S1"],
+      "acs": [],
+      "dod": "pnpm turbo test is green, and the smoke test asserts the API gateway boots and GET /health/live returns success",
+      "files_hint": [
+        "vitest.workspace.ts",
+        "apps/api-gateway"
+      ]
+    },
+    {
+      "id": "S3",
+      "title": "Set up drizzle-kit and a reversible initial migration",
+      "layer": "scaffold",
+      "deps": ["S1"],
+      "acs": [],
+      "dod": "drizzle-kit applies and reverts the initial migration against the local PostgreSQL 18 service",
+      "files_hint": [
+        "packages/database",
+        "docker-compose.yml"
+      ]
+    },
+    {
+      "id": "S4",
+      "title": "Add the CI workflow for lint, typecheck, test, and build",
+      "layer": "scaffold",
+      "deps": ["S2"],
+      "acs": [],
+      "dod": "The GitHub Actions workflow runs pnpm turbo lint, pnpm turbo typecheck, pnpm turbo test, and pnpm turbo build",
+      "files_hint": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": "S5",
+      "title": "Write CLAUDE.md from the foundation conventions",
+      "layer": "scaffold",
+      "deps": ["S1"],
+      "acs": [],
+      "dod": "CLAUDE.md states the stack, schema-per-service rule, Drizzle and UUIDv7, the error code envelope, and the HeroUI token rule from docs/architecture-map.md",
+      "files_hint": [
+        "CLAUDE.md"
+      ]
+    }
+  ]
+}
