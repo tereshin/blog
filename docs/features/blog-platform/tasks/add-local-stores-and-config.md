@@ -9,7 +9,7 @@ files_hint: ["docker-compose.yml", "packages/config"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T12 — Add Redis, RabbitMQ, MinIO, and typed config

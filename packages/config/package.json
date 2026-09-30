@@ -1,0 +1,21 @@
+{
+  "name": "@blog/config",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@blog/eslint-config": "workspace:*",
+    "@blog/tsconfig": "workspace:*",
+    "@types/node": "^24.10.0",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^5.0.2"
+  }
+}
