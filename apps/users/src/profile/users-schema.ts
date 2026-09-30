@@ -1,4 +1,4 @@
-import { date, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { date, jsonb, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const users_schema = pgSchema('users');
 
@@ -26,3 +26,16 @@ export const user_sign_ins = users_schema.table(
   },
   (table) => [primaryKey({ columns: [table.user_id, table.signed_on] })],
 );
+
+export const admin_audit_log = users_schema.table('admin_audit_log', {
+  id: uuid('id').primaryKey(),
+  actor_id: uuid('actor_id').notNull(),
+  action: text('action').notNull(),
+  entity_type: text('entity_type').notNull(),
+  entity_id: uuid('entity_id').notNull(),
+  reason: text('reason'),
+  before_state: jsonb('before_state'),
+  after_state: jsonb('after_state'),
+  request_id: text('request_id'),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+});

@@ -9,7 +9,7 @@ files_hint: ["apps/users"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T15 — Assign one role and keep the last Administrator

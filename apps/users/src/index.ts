@@ -1,3 +1,7 @@
+export { DrizzleRoleStore } from './role/drizzle-role-store';
+export { RoleModule } from './role/role.module';
+export { RoleService } from './role/role-service';
+export { UsersModule } from './users.module';
 export { DrizzleProfileStore } from './profile/drizzle-profile-store';
 export { MemoryProfileStore } from './profile/memory-profile-store';
 export { ProfileError } from './profile/profile-error';
