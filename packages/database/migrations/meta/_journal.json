@@ -50,6 +50,13 @@
       "when": 1790800005000,
       "tag": "0006_create_engagement",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790800006000,
+      "tag": "0007_create_social",
+      "breakpoints": true
     }
   ]
 }

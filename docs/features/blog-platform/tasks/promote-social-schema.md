@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/07_create_social.up.sql", "
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T7 — Promote the social schema migration
