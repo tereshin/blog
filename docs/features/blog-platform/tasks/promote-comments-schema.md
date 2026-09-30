@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/05_create_comments.up.sql",
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T5 — Promote the comments schema migration
