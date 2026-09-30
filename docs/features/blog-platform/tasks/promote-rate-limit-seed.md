@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/11_seed_rate_limits.up.sql"
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T11 — Promote the rate-limit seed migration
