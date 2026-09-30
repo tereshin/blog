@@ -2,7 +2,7 @@
 status: Accepted
 owner: "Architect"
 reviewers: []
-updated_at: "2026-09-27"
+updated_at: "2026-09-30"
 feature_size: "XL"
 ticket: ""
 ---
@@ -10,7 +10,7 @@ ticket: ""
 # 0008 — Upload article images with presigned URLs
 
 - **Status:** Accepted
-- **Date:** 2026-09-27
+- **Date:** 2026-09-30
 - **Deciders:** Architect and the repository owner (easy-depth ledger accepted)
 
 ## Context
@@ -31,7 +31,7 @@ An Article may carry an image. The bytes do not belong in Postgres. The publish 
 
 ## Decision outcome
 
-**Chosen:** Option 1. Publish stays a JSON write. The byte transfer does not sit inside the 300 ms publish budget. Option 2 pulls every image through an application process.
+**Chosen:** Option 1. The browser asks the gateway for the URL, the media service issues it, and the browser sends the bytes to object storage. Publish stays a JSON write. The byte transfer does not sit inside the 300 ms publish budget. Option 2 pulls every image through an application process.
 
 ## Consequences
 

@@ -2,7 +2,7 @@
 status: Draft
 owner: Architect
 reviewers: ["Tech Lead", "Security Lead"]
-updated_at: "2026-09-27"
+updated_at: "2026-09-30"
 feature_size: XL
 target_surfaces: [backend-service, web-frontend, worker]
 ---
@@ -259,8 +259,10 @@ sequenceDiagram
     participant Feed as Feed Service
 
     User->>Web: types the draft and attaches an image
-    Web->>Media: asks for an upload URL
-    Media-->>Web: returns the upload URL
+    Web->>Gateway: asks for an upload URL
+    Gateway->>Media: asks for an upload URL
+    Media-->>Gateway: returns the upload URL
+    Gateway-->>Web: returns the upload URL
     Web->>Objects: stores the image bytes
     User->>Web: publishes
     Web->>Gateway: sends the Article
@@ -293,9 +295,9 @@ sequenceDiagram
     Admin->>Gateway: asks to hide
     Gateway->>Content: hides the Article
     Content->>Content: records the hide and the outbox row
+    Content-->>Gateway: hidden
     Gateway->>Users: appends the audit row
     Users-->>Gateway: appended
-    Content-->>Gateway: hidden
     Gateway-->>Admin: hidden
     Admin-->>Moderator: confirms the hide
     Workers->>Rabbit: publishes the outbox event
