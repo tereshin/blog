@@ -1,7 +1,7 @@
 # The config interview — six questions, three calls, 21 of 25 keys
 
 > **Reference-only.** Read by [`../SKILL.md`](../SKILL.md) steps 3 and 5. Every question here is
-> phrased per [`../../_shared/ask-style.md`](../../_shared/ask-style.md): Ukrainian, action-form
+> phrased per [`../../_shared/ask-style.md`](../../_shared/ask-style.md): Russian, action-form
 > labels, every technical term glossed inline, the trade-off spelled out in the description.
 > Hosts without a native `AskUserQuestion` ask the same questions as **numbered plain text, one at
 > a time, stop and wait** — same shape, same glosses, nothing skipped.
