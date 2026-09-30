@@ -9,7 +9,7 @@ files_hint: ["apps/social"]
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "S"
-status: "todo"
+status: "done"
 ---
 
 # T26 — Follow and unfollow Users and Categories
@@ -79,9 +79,9 @@ This task records the remaining Follow and drops the one the User stopped.
 
 ## Checklist
 
-- [ ] Add `apps/social`. Insert or delete the Follow pair
-- [ ] Insert `social.user.followed` only on a new User Follow, in the same transaction
-- [ ] Confirm the target User or Category exists over HTTP. Do not join those schemas
+- [x] Add `apps/social`. Insert or delete the Follow pair
+- [x] Insert `social.user.followed` only on a new User Follow, in the same transaction
+- [x] Confirm the target User or Category exists over HTTP. Do not join those schemas
 
 ## Edge cases
 
@@ -92,6 +92,6 @@ This task records the remaining Follow and drops the one the User stopped.
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-13
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-13
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
