@@ -20,7 +20,7 @@ export type ArticleRecord = {
   status: 'draft' | 'published' | 'hidden' | 'soft_removed';
   removed_by: 'author' | 'staff' | null;
   published_at: string | null;
-  images: [];
+  images: { media_id: string; position: number }[];
 };
 
 export type ArticleRevision = {

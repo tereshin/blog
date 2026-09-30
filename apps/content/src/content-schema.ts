@@ -1,4 +1,4 @@
-import { integer, jsonb, pgSchema, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const content_schema = pgSchema('content');
 
@@ -18,6 +18,16 @@ export const articles = content_schema.table('articles', {
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });
+
+export const article_images = content_schema.table(
+  'article_images',
+  {
+    article_id: uuid('article_id').notNull(),
+    media_id: uuid('media_id').notNull(),
+    position: integer('position').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.article_id, table.media_id] })],
+);
 
 export const article_revisions = content_schema.table('article_revisions', {
   id: uuid('id').primaryKey(),

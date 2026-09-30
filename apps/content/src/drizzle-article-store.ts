@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import type { ArticleRecord, ArticleRevision, ArticleStore, EditorJson, OutboxEvent } from './article-store';
-import { article_revisions, articles, outbox_events } from './content-schema';
+import { article_images, article_revisions, articles, outbox_events } from './content-schema';
 
 function toRecord(row: typeof articles.$inferSelect): ArticleRecord {
   return {
@@ -69,6 +69,21 @@ export class DrizzleArticleStore implements ArticleStore {
         updated_at: new Date().toISOString(),
       })
       .where(eq(articles.id, article.id));
+    await this.replaceImages(article);
+  }
+
+  private async replaceImages(article: ArticleRecord): Promise<void> {
+    await this.db.delete(article_images).where(eq(article_images.article_id, article.id));
+    if (article.images.length === 0) {
+      return;
+    }
+    await this.db.insert(article_images).values(
+      article.images.map((image) => ({
+        article_id: article.id,
+        media_id: image.media_id,
+        position: image.position,
+      })),
+    );
   }
 
   async commit(article: ArticleRecord, event: OutboxEvent): Promise<void> {

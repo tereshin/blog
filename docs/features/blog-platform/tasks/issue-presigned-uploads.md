@@ -9,7 +9,7 @@ files_hint: ["apps/media", "apps/content/src/images"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T21 — Issue presigned image uploads
