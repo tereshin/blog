@@ -9,7 +9,7 @@ files_hint: ["apps/content"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T18 — Save Article drafts with a version check and sanitized HTML

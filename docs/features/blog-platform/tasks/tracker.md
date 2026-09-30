@@ -22,7 +22,7 @@
 | T15 | Assign one role and keep the last Administrator | app | Backend Lead | M | T14 | done |
 | T16 | Block an account and append the staff audit trail | app | Backend Lead | M | T15 | done |
 | T17 | Serve Categories and their three translations | app | Backend Lead | M | T2, T13, T15 | done |
-| T18 | Save Article drafts with a version check and sanitized HTML | app | Backend Lead | M | T3, T14, T17 | todo |
+| T18 | Save Article drafts with a version check and sanitized HTML | app | Backend Lead | M | T3, T14, T17 | done |
 | T19 | Publish an Article and let the author withdraw it | app | Backend Lead | M | T18, T16 | todo |
 | T20 | Keep the previous Article version on a published save | app | Backend Lead | S | T18 | todo |
 | T21 | Issue presigned image uploads | app | Backend Lead | M | T4, T13, T18 | todo |
