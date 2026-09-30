@@ -23,6 +23,16 @@ export type ArticleRecord = {
   images: [];
 };
 
+export type ArticleRevision = {
+  id: string;
+  article_id: string;
+  version: number;
+  title: string | null;
+  editor_json: EditorJson;
+  rendered_html: string;
+  created_by: string;
+};
+
 export type OutboxEvent = {
   id: string;
   event_type: string;
@@ -37,4 +47,5 @@ export interface ArticleStore {
   findById(article_id: string): Promise<ArticleRecord | null>;
   update(article: ArticleRecord): Promise<void>;
   commit(article: ArticleRecord, event: OutboxEvent): Promise<void>;
+  revise(article: ArticleRecord, revision: ArticleRevision, event: OutboxEvent): Promise<void>;
 }

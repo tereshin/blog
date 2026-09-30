@@ -8,6 +8,14 @@ import { PublishService } from './publish-service';
 
 export const ARTICLE_STORE = Symbol('ARTICLE_STORE');
 
+export const content_routes = [
+  'POST /api/v1/articles',
+  'PATCH /api/v1/me/articles/:article_id',
+  'GET /api/v1/me/articles/:article_id',
+  'POST /api/v1/articles/:article_id/publish',
+  'POST /api/v1/articles/:article_id/withdraw',
+] as const;
+
 @Module({
   controllers: [DraftController, PublishController],
   providers: [

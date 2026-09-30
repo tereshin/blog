@@ -9,7 +9,7 @@ files_hint: ["apps/content"]
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T20 — Keep the previous Article version on a published save

@@ -59,6 +59,29 @@ export class DraftService {
       language: input.language === undefined ? article.language : input.language,
       category_id: input.category_id === undefined ? article.category_id : input.category_id,
     };
+    if (article.status === 'published') {
+      await this.store.revise(
+        saved,
+        {
+          id: uuidV7(this.now().getTime()),
+          article_id: article.id,
+          version: article.version,
+          title: article.title,
+          editor_json: article.editor_json,
+          rendered_html: article.rendered_html,
+          created_by: input.author_id,
+        },
+        {
+          id: uuidV7(this.now().getTime()),
+          event_type: 'content.article.revised',
+          aggregate_id: article.id,
+          payload: { article_id: article.id, version: saved.version },
+          producer: 'content',
+          event_version: 1,
+        },
+      );
+      return saved;
+    }
     await this.store.update(saved);
     return saved;
   }

@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import type { ArticleRecord, ArticleStore, EditorJson, OutboxEvent } from './article-store';
-import { articles, outbox_events } from './content-schema';
+import type { ArticleRecord, ArticleRevision, ArticleStore, EditorJson, OutboxEvent } from './article-store';
+import { article_revisions, articles, outbox_events } from './content-schema';
 
 function toRecord(row: typeof articles.$inferSelect): ArticleRecord {
   return {
@@ -86,6 +86,38 @@ export class DrizzleArticleStore implements ArticleStore {
           status: article.status,
           removed_by: article.removed_by,
           published_at: article.published_at,
+          updated_at: new Date().toISOString(),
+        })
+        .where(eq(articles.id, article.id));
+      await tx.insert(outbox_events).values({
+        id: event.id,
+        event_type: event.event_type,
+        aggregate_id: event.aggregate_id,
+        payload: event.payload,
+        producer: event.producer,
+        event_version: event.event_version,
+      });
+    });
+  }
+
+  async revise(article: ArticleRecord, revision: ArticleRevision, event: OutboxEvent): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.insert(article_revisions).values({
+        id: revision.id,
+        article_id: revision.article_id,
+        version: revision.version,
+        title: revision.title,
+        editor_json: revision.editor_json,
+        rendered_html: revision.rendered_html,
+        created_by: revision.created_by,
+      });
+      await tx
+        .update(articles)
+        .set({
+          title: article.title,
+          editor_json: article.editor_json,
+          rendered_html: article.rendered_html,
+          version: article.version,
           updated_at: new Date().toISOString(),
         })
         .where(eq(articles.id, article.id));

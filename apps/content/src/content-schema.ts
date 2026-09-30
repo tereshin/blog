@@ -19,6 +19,17 @@ export const articles = content_schema.table('articles', {
   updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });
 
+export const article_revisions = content_schema.table('article_revisions', {
+  id: uuid('id').primaryKey(),
+  article_id: uuid('article_id').notNull(),
+  version: integer('version').notNull(),
+  title: text('title'),
+  editor_json: jsonb('editor_json').notNull(),
+  rendered_html: text('rendered_html').notNull(),
+  created_by: uuid('created_by').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+});
+
 export const outbox_events = content_schema.table('outbox_events', {
   id: uuid('id').primaryKey(),
   event_type: text('event_type').notNull(),
