@@ -1,0 +1,1013 @@
+{
+  "slug": "blog-platform",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Promote the users schema migration",
+      "layer": "migration",
+      "deps": [],
+      "acs": [],
+      "dod": "`db:migrate` applies `01_create_users.up.sql` and `db:rollback` runs `01_create_users.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/01_create_users.up.sql",
+        "docs/features/blog-platform/migrations/01_create_users.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-users-schema.md"
+    },
+    {
+      "id": "T2",
+      "title": "Promote the categories schema migration",
+      "layer": "migration",
+      "deps": [
+        "T1"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `02_create_categories.up.sql` and `db:rollback` runs `02_create_categories.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/02_create_categories.up.sql",
+        "docs/features/blog-platform/migrations/02_create_categories.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-categories-schema.md"
+    },
+    {
+      "id": "T3",
+      "title": "Promote the content schema migration",
+      "layer": "migration",
+      "deps": [
+        "T2"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `03_create_content.up.sql` and `db:rollback` runs `03_create_content.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/03_create_content.up.sql",
+        "docs/features/blog-platform/migrations/03_create_content.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-content-schema.md"
+    },
+    {
+      "id": "T4",
+      "title": "Promote the media schema migration",
+      "layer": "migration",
+      "deps": [
+        "T3"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `04_create_media.up.sql` and `db:rollback` runs `04_create_media.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/04_create_media.up.sql",
+        "docs/features/blog-platform/migrations/04_create_media.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-media-schema.md"
+    },
+    {
+      "id": "T5",
+      "title": "Promote the comments schema migration",
+      "layer": "migration",
+      "deps": [
+        "T4"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `05_create_comments.up.sql` and `db:rollback` runs `05_create_comments.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/05_create_comments.up.sql",
+        "docs/features/blog-platform/migrations/05_create_comments.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-comments-schema.md"
+    },
+    {
+      "id": "T6",
+      "title": "Promote the engagement schema migration",
+      "layer": "migration",
+      "deps": [
+        "T5"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `06_create_engagement.up.sql` and `db:rollback` runs `06_create_engagement.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/06_create_engagement.up.sql",
+        "docs/features/blog-platform/migrations/06_create_engagement.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-engagement-schema.md"
+    },
+    {
+      "id": "T7",
+      "title": "Promote the social schema migration",
+      "layer": "migration",
+      "deps": [
+        "T6"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `07_create_social.up.sql` and `db:rollback` runs `07_create_social.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/07_create_social.up.sql",
+        "docs/features/blog-platform/migrations/07_create_social.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-social-schema.md"
+    },
+    {
+      "id": "T8",
+      "title": "Promote the messages schema migration",
+      "layer": "migration",
+      "deps": [
+        "T7"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `08_create_messages.up.sql` and `db:rollback` runs `08_create_messages.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/08_create_messages.up.sql",
+        "docs/features/blog-platform/migrations/08_create_messages.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-messages-schema.md"
+    },
+    {
+      "id": "T9",
+      "title": "Promote the notifications schema migration",
+      "layer": "migration",
+      "deps": [
+        "T8"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `09_create_notifications.up.sql` and `db:rollback` runs `09_create_notifications.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/09_create_notifications.up.sql",
+        "docs/features/blog-platform/migrations/09_create_notifications.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-notifications-schema.md"
+    },
+    {
+      "id": "T10",
+      "title": "Promote the feed schema migration",
+      "layer": "migration",
+      "deps": [
+        "T9"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `10_create_feed.up.sql` and `db:rollback` runs `10_create_feed.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/10_create_feed.up.sql",
+        "docs/features/blog-platform/migrations/10_create_feed.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-feed-schema.md"
+    },
+    {
+      "id": "T11",
+      "title": "Promote the rate-limit seed migration",
+      "layer": "migration",
+      "deps": [
+        "T10"
+      ],
+      "acs": [],
+      "dod": "`db:migrate` applies `11_seed_rate_limits.up.sql` and `db:rollback` runs `11_seed_rate_limits.down.sql` and deletes that journal row",
+      "files_hint": [
+        "docs/features/blog-platform/migrations/11_seed_rate_limits.up.sql",
+        "docs/features/blog-platform/migrations/11_seed_rate_limits.down.sql"
+      ],
+      "file": "docs/features/blog-platform/tasks/promote-rate-limit-seed.md"
+    },
+    {
+      "id": "T12",
+      "title": "Add Redis, RabbitMQ, MinIO, and typed config",
+      "layer": "wiring",
+      "deps": [],
+      "acs": [],
+      "dod": "Vitest asserts `packages/config` rejects a missing `DATABASE_URL` and a missing `REDIS_URL`",
+      "files_hint": [
+        "docker-compose.yml",
+        "packages/config"
+      ],
+      "file": "docs/features/blog-platform/tasks/add-local-stores-and-config.md"
+    },
+    {
+      "id": "T13",
+      "title": "Add Firebase verification, Redis, RabbitMQ, and the event envelope",
+      "layer": "wiring",
+      "deps": [
+        "T12"
+      ],
+      "acs": [],
+      "dod": "Vitest covers token rejection, the envelope required fields, and a logger line that includes the request id",
+      "files_hint": [
+        "packages/firebase",
+        "packages/redis",
+        "packages/rabbitmq",
+        "packages/contracts",
+        "packages/logger"
+      ],
+      "file": "docs/features/blog-platform/tasks/add-shared-edge-packages.md"
+    },
+    {
+      "id": "T14",
+      "title": "Record a User profile and a unique Username",
+      "layer": "app",
+      "deps": [
+        "T1",
+        "T13"
+      ],
+      "acs": [
+        "AC-05",
+        "AC-06",
+        "AC-42",
+        "AC-46"
+      ],
+      "dod": "Vitest covers AC-05, AC-06, AC-42, and AC-46: a unique Username is stored, a duplicate returns `USERNAME_TAKEN`, an unsaved field is omitted, and a cleared limit is NULL",
+      "files_hint": [
+        "apps/users"
+      ],
+      "file": "docs/features/blog-platform/tasks/record-user-profile.md"
+    },
+    {
+      "id": "T15",
+      "title": "Assign one role and keep the last Administrator",
+      "layer": "app",
+      "deps": [
+        "T14"
+      ],
+      "acs": [
+        "AC-35",
+        "AC-50",
+        "AC-51",
+        "AC-52"
+      ],
+      "dod": "Vitest covers AC-50, AC-51, AC-52, and the reason branch of AC-35",
+      "files_hint": [
+        "apps/users"
+      ],
+      "file": "docs/features/blog-platform/tasks/assign-roles.md"
+    },
+    {
+      "id": "T16",
+      "title": "Block an account and append the staff audit trail",
+      "layer": "app",
+      "deps": [
+        "T15"
+      ],
+      "acs": [
+        "AC-31",
+        "AC-32",
+        "AC-36",
+        "AC-37",
+        "AC-40"
+      ],
+      "dod": "Vitest covers AC-31, AC-36, and AC-37, and asserts a Block writes no Article status change for AC-32 and AC-40",
+      "files_hint": [
+        "apps/users"
+      ],
+      "file": "docs/features/blog-platform/tasks/block-accounts-and-audit.md"
+    },
+    {
+      "id": "T17",
+      "title": "Serve Categories and their three translations",
+      "layer": "app",
+      "deps": [
+        "T2",
+        "T13",
+        "T15"
+      ],
+      "acs": [
+        "AC-33",
+        "AC-34"
+      ],
+      "dod": "Vitest covers the Category half of AC-33 and the Category refusal in AC-34",
+      "files_hint": [
+        "apps/categories"
+      ],
+      "file": "docs/features/blog-platform/tasks/serve-categories.md"
+    },
+    {
+      "id": "T18",
+      "title": "Save Article drafts with a version check and sanitized HTML",
+      "layer": "app",
+      "deps": [
+        "T3",
+        "T14",
+        "T17"
+      ],
+      "acs": [
+        "AC-07",
+        "AC-12",
+        "AC-45"
+      ],
+      "dod": "Vitest covers AC-12 and AC-45, and the draft-kept half of AC-07 including a rejected embed block",
+      "files_hint": [
+        "apps/content"
+      ],
+      "file": "docs/features/blog-platform/tasks/save-article-drafts.md"
+    },
+    {
+      "id": "T19",
+      "title": "Publish an Article and let the author withdraw it",
+      "layer": "app",
+      "deps": [
+        "T18",
+        "T16"
+      ],
+      "acs": [
+        "AC-08",
+        "AC-09",
+        "AC-10",
+        "AC-32",
+        "AC-38",
+        "AC-41",
+        "AC-43",
+        "AC-44"
+      ],
+      "dod": "Vitest covers AC-08, AC-09, AC-10, AC-43, AC-44, AC-38, AC-41, and the publish refusal in AC-32",
+      "files_hint": [
+        "apps/content"
+      ],
+      "file": "docs/features/blog-platform/tasks/publish-and-withdraw-article.md"
+    },
+    {
+      "id": "T20",
+      "title": "Keep the previous Article version on a published save",
+      "layer": "app",
+      "deps": [
+        "T18"
+      ],
+      "acs": [
+        "AC-11"
+      ],
+      "dod": "Vitest covers AC-11: the live text changes, the previous version row exists, and no history endpoint is registered",
+      "files_hint": [
+        "apps/content"
+      ],
+      "file": "docs/features/blog-platform/tasks/keep-article-revisions.md"
+    },
+    {
+      "id": "T21",
+      "title": "Issue presigned image uploads",
+      "layer": "app",
+      "deps": [
+        "T4",
+        "T13",
+        "T18"
+      ],
+      "acs": [
+        "AC-07"
+      ],
+      "dod": "Vitest covers a presigned URL that does not include image bytes, and an attach that links a ready object for AC-07",
+      "files_hint": [
+        "apps/media",
+        "apps/content/src/images"
+      ],
+      "file": "docs/features/blog-platform/tasks/issue-presigned-uploads.md"
+    },
+    {
+      "id": "T22",
+      "title": "Comment, reply, and mention on a visible Article",
+      "layer": "app",
+      "deps": [
+        "T5",
+        "T13",
+        "T19"
+      ],
+      "acs": [
+        "AC-17",
+        "AC-18"
+      ],
+      "dod": "Vitest covers AC-17 and AC-18",
+      "files_hint": [
+        "apps/comments"
+      ],
+      "file": "docs/features/blog-platform/tasks/comment-and-mention.md"
+    },
+    {
+      "id": "T23",
+      "title": "Record a Complaint about an Article",
+      "layer": "app",
+      "deps": [
+        "T19"
+      ],
+      "acs": [
+        "AC-23",
+        "AC-24"
+      ],
+      "dod": "Vitest covers the Article half of AC-23 and AC-24",
+      "files_hint": [
+        "apps/content"
+      ],
+      "file": "docs/features/blog-platform/tasks/file-article-complaint.md"
+    },
+    {
+      "id": "T24",
+      "title": "Record a Complaint about a Comment",
+      "layer": "app",
+      "deps": [
+        "T22"
+      ],
+      "acs": [
+        "AC-23",
+        "AC-24"
+      ],
+      "dod": "Vitest covers the Comment half of AC-23 and AC-24",
+      "files_hint": [
+        "apps/comments"
+      ],
+      "file": "docs/features/blog-platform/tasks/file-comment-complaint.md"
+    },
+    {
+      "id": "T25",
+      "title": "Like an Article, Bookmark it, and count one View",
+      "layer": "app",
+      "deps": [
+        "T6",
+        "T13",
+        "T19"
+      ],
+      "acs": [
+        "AC-02",
+        "AC-15",
+        "AC-17",
+        "AC-19",
+        "AC-20"
+      ],
+      "dod": "Vitest covers AC-15, AC-19, AC-20, AC-02, and the Comment-like half of AC-17",
+      "files_hint": [
+        "apps/engagement"
+      ],
+      "file": "docs/features/blog-platform/tasks/like-bookmark-and-view.md"
+    },
+    {
+      "id": "T26",
+      "title": "Follow and unfollow Users and Categories",
+      "layer": "app",
+      "deps": [
+        "T7",
+        "T14",
+        "T17"
+      ],
+      "acs": [
+        "AC-13"
+      ],
+      "dod": "Vitest covers AC-13",
+      "files_hint": [
+        "apps/social"
+      ],
+      "file": "docs/features/blog-platform/tasks/follow-users-and-categories.md"
+    },
+    {
+      "id": "T27",
+      "title": "Serve Fresh, Popular, and My feed",
+      "layer": "app",
+      "deps": [
+        "T10",
+        "T13",
+        "T19",
+        "T25",
+        "T26",
+        "T14"
+      ],
+      "acs": [
+        "AC-03",
+        "AC-14",
+        "AC-32",
+        "AC-33",
+        "AC-46"
+      ],
+      "dod": "Vitest covers AC-03, AC-14, AC-46, the weights half of AC-33, and AC-32 visibility",
+      "files_hint": [
+        "apps/feed"
+      ],
+      "file": "docs/features/blog-platform/tasks/serve-feeds.md"
+    },
+    {
+      "id": "T28",
+      "title": "Exchange Direct messages between two Users",
+      "layer": "app",
+      "deps": [
+        "T8",
+        "T14",
+        "T16"
+      ],
+      "acs": [
+        "AC-21",
+        "AC-22"
+      ],
+      "dod": "Vitest covers AC-21 and AC-22",
+      "files_hint": [
+        "apps/messaging"
+      ],
+      "file": "docs/features/blog-platform/tasks/exchange-direct-messages.md"
+    },
+    {
+      "id": "T29",
+      "title": "Deliver in-product Notifications",
+      "layer": "app",
+      "deps": [
+        "T9",
+        "T13",
+        "T22",
+        "T26",
+        "T28"
+      ],
+      "acs": [
+        "AC-26"
+      ],
+      "dod": "Vitest covers AC-26, including a duplicate event that does not insert a second row",
+      "files_hint": [
+        "apps/notification"
+      ],
+      "file": "docs/features/blog-platform/tasks/deliver-notifications.md"
+    },
+    {
+      "id": "T30",
+      "title": "Hide an Article, move its Category, and staff-remove it",
+      "layer": "app",
+      "deps": [
+        "T16",
+        "T19",
+        "T23"
+      ],
+      "acs": [
+        "AC-27",
+        "AC-29",
+        "AC-35",
+        "AC-39",
+        "AC-40",
+        "AC-41",
+        "AC-47"
+      ],
+      "dod": "Vitest covers AC-27 for an Article, AC-29, AC-39, AC-47, and the staff half of AC-40 and AC-41",
+      "files_hint": [
+        "apps/content"
+      ],
+      "file": "docs/features/blog-platform/tasks/hide-and-move-articles.md"
+    },
+    {
+      "id": "T31",
+      "title": "Hide a Comment and close its Complaints",
+      "layer": "app",
+      "deps": [
+        "T16",
+        "T22",
+        "T24"
+      ],
+      "acs": [
+        "AC-27",
+        "AC-29"
+      ],
+      "dod": "Vitest covers the Comment half of AC-27 and AC-29",
+      "files_hint": [
+        "apps/comments"
+      ],
+      "file": "docs/features/blog-platform/tasks/hide-comments.md"
+    },
+    {
+      "id": "T32",
+      "title": "List open Complaints and dismiss one",
+      "layer": "ports",
+      "deps": [
+        "T13",
+        "T16",
+        "T23",
+        "T24"
+      ],
+      "acs": [
+        "AC-48",
+        "AC-49"
+      ],
+      "dod": "Vitest covers AC-48 and AC-49",
+      "files_hint": [
+        "apps/api-gateway/src/complaints",
+        "apps/api-gateway/src/app.module.ts"
+      ],
+      "file": "docs/features/blog-platform/tasks/list-and-dismiss-complaints.md"
+    },
+    {
+      "id": "T33",
+      "title": "Compose the public Article read and refuse a Guest write",
+      "layer": "ports",
+      "deps": [
+        "T13",
+        "T14",
+        "T19",
+        "T22",
+        "T25",
+        "T36"
+      ],
+      "acs": [
+        "AC-01",
+        "AC-16"
+      ],
+      "dod": "Vitest covers AC-01 for the composed payload and AC-16 for a Guest write",
+      "files_hint": [
+        "apps/api-gateway/src/public",
+        "apps/api-gateway/src/app.module.ts"
+      ],
+      "file": "docs/features/blog-platform/tasks/compose-public-article-read.md"
+    },
+    {
+      "id": "T34",
+      "title": "Require the staff second factor on admin routes",
+      "layer": "ports",
+      "deps": [
+        "T15",
+        "T16",
+        "T33"
+      ],
+      "acs": [
+        "AC-28",
+        "AC-30"
+      ],
+      "dod": "Vitest covers AC-28 and AC-30",
+      "files_hint": [
+        "apps/api-gateway/src/staff",
+        "apps/api-gateway/src/app.module.ts"
+      ],
+      "file": "docs/features/blog-platform/tasks/guard-staff-routes.md"
+    },
+    {
+      "id": "T35",
+      "title": "Report platform statistics to an Administrator",
+      "layer": "ports",
+      "deps": [
+        "T14",
+        "T19",
+        "T22",
+        "T23",
+        "T24",
+        "T34"
+      ],
+      "acs": [
+        "AC-53",
+        "AC-54"
+      ],
+      "dod": "Vitest covers AC-53 and AC-54",
+      "files_hint": [
+        "apps/api-gateway/src/statistics",
+        "apps/api-gateway/src/app.module.ts"
+      ],
+      "file": "docs/features/blog-platform/tasks/report-platform-statistics.md"
+    },
+    {
+      "id": "T36",
+      "title": "Count rate limits with a sliding window",
+      "layer": "app",
+      "deps": [
+        "T11",
+        "T13",
+        "T16"
+      ],
+      "acs": [],
+      "dod": "Vitest covers a window that blocks the 61st anonymous read and allows the action after the window slides",
+      "files_hint": [
+        "apps/users/src/rate-limits",
+        "apps/api-gateway/src/rate-limit",
+        "apps/api-gateway/src/app.module.ts"
+      ],
+      "file": "docs/features/blog-platform/tasks/count-sliding-window-limits.md"
+    },
+    {
+      "id": "T37",
+      "title": "Relay each schema outbox from its own worker",
+      "layer": "infra",
+      "deps": [
+        "T13",
+        "T19",
+        "T22",
+        "T25",
+        "T26",
+        "T28",
+        "T30",
+        "T31"
+      ],
+      "acs": [],
+      "dod": "Vitest covers a relay that publishes one schema's oldest row and does not select another schema",
+      "files_hint": [
+        "apps/content/src/outbox-worker",
+        "apps/comments/src/outbox-worker",
+        "apps/engagement/src/outbox-worker",
+        "apps/social/src/outbox-worker",
+        "apps/messaging/src/outbox-worker"
+      ],
+      "file": "docs/features/blog-platform/tasks/relay-outbox-workers.md"
+    },
+    {
+      "id": "T38",
+      "title": "Flush view increments from Redis",
+      "layer": "infra",
+      "deps": [
+        "T25",
+        "T13"
+      ],
+      "acs": [
+        "AC-02"
+      ],
+      "dod": "Vitest covers AC-02 after a flush: one viewer produced one durable increment",
+      "files_hint": [
+        "apps/engagement/src/view-flush"
+      ],
+      "file": "docs/features/blog-platform/tasks/flush-view-increments.md"
+    },
+    {
+      "id": "T39",
+      "title": "Push live Article and Direct message updates",
+      "layer": "app",
+      "deps": [
+        "T37",
+        "T28",
+        "T30",
+        "T31"
+      ],
+      "acs": [
+        "AC-25"
+      ],
+      "dod": "Vitest covers AC-25: the Article room gets a Like, a Comment, and a hide, the conversation room gets a message, and a View emits nothing",
+      "files_hint": [
+        "apps/realtime"
+      ],
+      "file": "docs/features/blog-platform/tasks/push-live-updates.md"
+    },
+    {
+      "id": "T40",
+      "title": "Share HeroUI tokens, Theme, and Interface language",
+      "layer": "ui",
+      "deps": [],
+      "acs": [
+        "AC-04",
+        "AC-55"
+      ],
+      "dod": "Component tests cover AC-04 on the public shell: the three Themes, the three Interface languages, persistence, and English fallback",
+      "files_hint": [
+        "packages/ui",
+        "packages/i18n",
+        "apps/web/src/app"
+      ],
+      "file": "docs/features/blog-platform/tasks/share-theme-and-interface-language.md"
+    },
+    {
+      "id": "T41",
+      "title": "Render the Fresh feed, the Popular feed, and a Category",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T27",
+        "T17",
+        "T26"
+      ],
+      "acs": [
+        "AC-03",
+        "AC-13",
+        "AC-46"
+      ],
+      "dod": "Component tests cover SCR-01, SCR-02, and SCR-07 `default`, `loading`, `empty` or `not-found`, and `error`, and AC-03's Guest chrome",
+      "files_hint": [
+        "apps/web/src/features/feeds",
+        "packages/i18n/messages/feeds"
+      ],
+      "file": "docs/features/blog-platform/tasks/render-public-feeds.md"
+    },
+    {
+      "id": "T42",
+      "title": "Render a published Article with Comments and live counts",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T33",
+        "T39",
+        "T22",
+        "T25"
+      ],
+      "acs": [
+        "AC-01",
+        "AC-15",
+        "AC-17",
+        "AC-18",
+        "AC-25",
+        "AC-43"
+      ],
+      "dod": "Component tests cover SCR-03 `default`, `unavailable`, `author`, `live`, `comment-blocked`, and `flat-reply`",
+      "files_hint": [
+        "apps/web/src/features/article",
+        "packages/i18n/messages/article"
+      ],
+      "file": "docs/features/blog-platform/tasks/render-article.md"
+    },
+    {
+      "id": "T43",
+      "title": "Sign in and edit a public profile",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T14",
+        "T33",
+        "T26"
+      ],
+      "acs": [
+        "AC-05",
+        "AC-06",
+        "AC-13",
+        "AC-16",
+        "AC-42"
+      ],
+      "dod": "Component tests cover SCR-04 `default` and `error`, SCR-05 `default` and `not-found`, and SCR-06 `username-taken`",
+      "files_hint": [
+        "apps/web/src/features/profile",
+        "packages/i18n/messages/profile"
+      ],
+      "file": "docs/features/blog-platform/tasks/sign-in-and-profile.md"
+    },
+    {
+      "id": "T44",
+      "title": "Edit and publish a draft on one screen",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T18",
+        "T19",
+        "T20",
+        "T21"
+      ],
+      "acs": [
+        "AC-07",
+        "AC-08",
+        "AC-09",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-44",
+        "AC-45"
+      ],
+      "dod": "Component tests cover SCR-08 `default`, `category-required`, `title-required`, `text-required`, `block-rejected`, and `version-conflict`",
+      "files_hint": [
+        "apps/web/src/features/editor",
+        "packages/i18n/messages/editor"
+      ],
+      "file": "docs/features/blog-platform/tasks/edit-article.md"
+    },
+    {
+      "id": "T45",
+      "title": "Show My feed and private Bookmarks",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T27",
+        "T25"
+      ],
+      "acs": [
+        "AC-14",
+        "AC-19",
+        "AC-20"
+      ],
+      "dod": "Component tests cover SCR-09 and SCR-10 `default` and `empty`",
+      "files_hint": [
+        "apps/web/src/features/library",
+        "packages/i18n/messages/library"
+      ],
+      "file": "docs/features/blog-platform/tasks/render-my-feed-and-bookmarks.md"
+    },
+    {
+      "id": "T46",
+      "title": "Show conversations and a live thread",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T28",
+        "T39"
+      ],
+      "acs": [
+        "AC-21",
+        "AC-22",
+        "AC-25"
+      ],
+      "dod": "Component tests cover SCR-11 `empty`, SCR-12 `default`, `message-invalid`, and `live`",
+      "files_hint": [
+        "apps/web/src/features/messages",
+        "packages/i18n/messages/messages"
+      ],
+      "file": "docs/features/blog-platform/tasks/render-conversations.md"
+    },
+    {
+      "id": "T47",
+      "title": "Show Notifications and file a Complaint",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T29",
+        "T23",
+        "T24"
+      ],
+      "acs": [
+        "AC-23",
+        "AC-24",
+        "AC-26"
+      ],
+      "dod": "Component tests cover SCR-13 `default` and `empty`, and SCR-14 `reason-required`",
+      "files_hint": [
+        "apps/web/src/features/notices",
+        "packages/i18n/messages/notices"
+      ],
+      "file": "docs/features/blog-platform/tasks/render-notices-and-complaints.md"
+    },
+    {
+      "id": "T48",
+      "title": "Open the admin panel only after a second factor",
+      "layer": "ui",
+      "deps": [
+        "T40",
+        "T34"
+      ],
+      "acs": [
+        "AC-28",
+        "AC-30",
+        "AC-55"
+      ],
+      "dod": "Component tests cover SCR-15 `default`, `refused`, and `closed`, and AC-55 Theme plus English fallback",
+      "files_hint": [
+        "apps/admin",
+        "packages/i18n/messages/admin"
+      ],
+      "file": "docs/features/blog-platform/tasks/open-admin-panel.md"
+    },
+    {
+      "id": "T49",
+      "title": "Review Complaints and the staff Article",
+      "layer": "ui",
+      "deps": [
+        "T48",
+        "T30",
+        "T31",
+        "T32"
+      ],
+      "acs": [
+        "AC-27",
+        "AC-38",
+        "AC-39",
+        "AC-47",
+        "AC-48",
+        "AC-49"
+      ],
+      "dod": "Component tests cover SCR-16 `empty`, SCR-17 `reason-required`, and SCR-18 `default`, `category-moved`, and `admin-only`",
+      "files_hint": [
+        "apps/admin/src/features/moderation",
+        "packages/i18n/messages/moderation"
+      ],
+      "file": "docs/features/blog-platform/tasks/review-complaints.md"
+    },
+    {
+      "id": "T50",
+      "title": "Block and unblock an account from the admin panel",
+      "layer": "ui",
+      "deps": [
+        "T48",
+        "T16"
+      ],
+      "acs": [
+        "AC-31"
+      ],
+      "dod": "Component tests cover SCR-19 `reason-required`, `blocked`, and `lifted`",
+      "files_hint": [
+        "apps/admin/src/features/block",
+        "packages/i18n/messages/block"
+      ],
+      "file": "docs/features/blog-platform/tasks/block-account-screen.md"
+    },
+    {
+      "id": "T51",
+      "title": "Manage Categories, roles, and Popular weights",
+      "layer": "ui",
+      "deps": [
+        "T48",
+        "T17",
+        "T15",
+        "T27"
+      ],
+      "acs": [
+        "AC-33",
+        "AC-34",
+        "AC-35",
+        "AC-50",
+        "AC-51",
+        "AC-52"
+      ],
+      "dod": "Component tests cover SCR-20 `translations-required` and `admin-only`, SCR-21 `last-administrator`, and SCR-22 `admin-only`",
+      "files_hint": [
+        "apps/admin/src/features/catalog",
+        "packages/i18n/messages/catalog"
+      ],
+      "file": "docs/features/blog-platform/tasks/manage-catalog.md"
+    },
+    {
+      "id": "T52",
+      "title": "Show platform statistics and the audit trail",
+      "layer": "ui",
+      "deps": [
+        "T48",
+        "T35",
+        "T16"
+      ],
+      "acs": [
+        "AC-36",
+        "AC-37",
+        "AC-53",
+        "AC-54"
+      ],
+      "dod": "Component tests cover SCR-23 `default` and `no-figures`, and SCR-24 `default`, `own`, and `empty`",
+      "files_hint": [
+        "apps/admin/src/features/oversight",
+        "packages/i18n/messages/oversight"
+      ],
+      "file": "docs/features/blog-platform/tasks/show-statistics-and-audit.md"
+    }
+  ]
+}
