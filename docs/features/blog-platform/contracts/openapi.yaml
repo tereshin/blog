@@ -1,0 +1,3310 @@
+openapi: 3.1.0
+
+info:
+  title: Blog platform API
+  version: 0.1.0
+  description: |
+    Readers and writers need one public place to publish topical writing, follow authors
+    and topics, and respond, while staff need a separate place to hide abuse. This document
+    is the HTTP contract of the API gateway, the only public HTTP entry. A Guest reads. A
+    User writes and participates. A Moderator and an Administrator act only on the admin
+    paths, and only after a second factor. Signing in on the public site does not open
+    those paths.
+
+    Live updates for an open Article or an open Direct message conversation are not HTTP.
+    They are the realtime pushes in `contracts/events.md`. Theme and Interface language are
+    stored in the browser and have no operation here.
+
+    Errors use the repository envelope `{ "error": { "code", "params" } }`. The body has no
+    user-facing sentence. The client translates `code`. This deviates from the default
+    `{code, message, details}` envelope by the architecture map, SAD §8, and ADR 0010.
+    The worked example is `ARTICLE_VERSION_CONFLICT` with `params.serverVersion`.
+
+servers:
+  - url: https://api.example.com
+    description: Production placeholder. The spec names no production host.
+  - url: http://localhost:3001
+    description: Local gateway. SAD §5 default PORT.
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Articles
+    description: Drafts, publication, revision, and the composed public read.
+  - name: Feeds
+    description: Fresh, Popular, and My feed. A page is 20 Articles.
+  - name: Categories
+    description: Public topics and Administrator creation.
+  - name: Profiles
+    description: The signed-in User and the public profile.
+  - name: Engagement
+    description: Likes, Bookmarks, and Views.
+  - name: Comments
+    description: Comments, replies, mentions, and Comment Likes.
+  - name: Messages
+    description: Direct messages between two Users.
+  - name: Notifications
+    description: In-product notices. No email and no phone alert.
+  - name: Media
+    description: Presigned Article image upload.
+  - name: Admin
+    description: Staff tools. Second factor plus a role read from the users service.
+
+paths:
+  /api/v1/articles/{slug}:
+    get:
+      tags: [Articles]
+      operationId: getArticleBySlug
+      summary: Read an Article by its public slug
+      description: |
+        US-01, AC-01, AC-27, AC-38, AC-45. Returns one composed Article (ADR 0003): text,
+        image locations, Comments, and the Like, Comment, and View counts. A slug exists
+        only after publish. A hidden or soft-removed Article stays on that slug. A reader
+        who is not the author receives `ArticleUnavailable` and is not told which state it
+        is. The author receives `ArticleAuthorState` with the text and the state. Staff
+        full text is `getAdminArticle`, not this path. A bearer token, when present, marks
+        `liked_by_viewer` and `bookmarked_by_viewer`. Anonymous reads count toward
+        `anonymous_read`.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: Composed Article. The shape depends on status and viewer.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleRead" }
+              examples:
+                published:
+                  summary: A reader opens a published Article
+                  value:
+                    view: published
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    slug: test-article
+                    title: Test Article
+                    language: en
+                    category_id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                    author:
+                      id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                      username: test-user
+                    rendered_html: "<p>Test Article</p>"
+                    images: []
+                    like_count: 1
+                    comment_count: 1
+                    view_count: 3
+                    comments:
+                      items: []
+                      has_next: false
+                      has_prev: false
+                      next_cursor: null
+                unavailable:
+                  summary: A non-author opens a hidden or withdrawn Article
+                  value:
+                    view: unavailable
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+        "404":
+          description: No Article has this slug. A draft has no slug, so this is also the draft-by-slug result. The code does not say the word draft.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/articles/id/{article_id}:
+    get:
+      tags: [Articles]
+      operationId: getArticleById
+      summary: Read an Article by id
+      description: |
+        US-01, AC-45. Same composition as `getArticleBySlug`, and the only public address
+        of a draft, because a draft has no slug. A Guest or a different User receives
+        `ArticleUnavailable` with no text and is not told that it is a draft. The author
+        receives `ArticleAuthorState`.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: Composed Article, or the unavailable shape.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleRead" }
+              examples:
+                unavailable:
+                  summary: Someone other than the author opens a draft
+                  value:
+                    view: unavailable
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author:
+                  summary: The author opens a hidden Article
+                  value:
+                    view: author
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    status: hidden
+                    readers_can_see: false
+                    title: Test Article
+                    rendered_html: "<p>Test Article</p>"
+                    language: en
+                    version: 4
+        "404":
+          description: No Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/articles/{article_id}/views:
+    post:
+      tags: [Engagement]
+      operationId: recordArticleView
+      summary: Record one View after the Article stayed visible
+      description: |
+        US-01, AC-02. The client calls this after the Article has stayed visible for 3
+        seconds (SAD §8). The same viewer does not add another View for 30 minutes. A
+        signed-in User is that viewer. A Guest sends `X-Viewer-Key`, the browser session.
+        A different session is a different Guest. Both branches are success. The stored
+        count is folded later by the view worker and is not a domain event (ADR 0012).
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/ViewerKey"
+      responses:
+        "200":
+          description: Whether this call added a View.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ViewResult" }
+              examples:
+                recorded:
+                  summary: No View for this viewer inside 30 minutes
+                  value: { recorded: true }
+                already_counted:
+                  summary: The same viewer already counted
+                  value: { recorded: false }
+        "404":
+          description: No Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/feeds/fresh:
+    get:
+      tags: [Feeds]
+      operationId: listFreshFeed
+      summary: List the Fresh feed
+      description: |
+        US-02, AC-03, AC-46. Published Articles, newest first. One page is 20. A Guest,
+        and a User with a cleared Content language limit, sees every Content language. A
+        signed-in User with a limit sees only those languages. My feed is a different path.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          description: One Fresh page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedPage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    slug: test-article
+                    title: Test Article
+                    language: en
+                    published_at: "2026-09-30T12:00:00Z"
+                    author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                    category_id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/feeds/popular:
+    get:
+      tags: [Feeds]
+      operationId: listPopularFeed
+      summary: List the Popular feed
+      description: |
+        US-02, AC-03, AC-46. Published Articles by the current score of Views, Likes,
+        Comments, Bookmarks, and age (`feed.popular_weights`). The same Content language
+        rule as the Fresh feed. One page is 20.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          description: One Popular page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedPage" }
+              example:
+                items: []
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/feeds/mine:
+    get:
+      tags: [Feeds]
+      operationId: listMyFeed
+      summary: List My feed
+      description: |
+        US-08, AC-14, AC-46. Every currently published Article from followed Users and
+        followed Categories, newest first, each Article once. Only the signed-in User has
+        this list. A Guest is not offered it (401). A Content language limit filters this
+        feed too. One page is 20.
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/FeedLimit"
+      responses:
+        "200":
+          description: One My feed page.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedPage" }
+              example:
+                items: []
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/categories:
+    get:
+      tags: [Categories]
+      operationId: listCategories
+      summary: List Categories
+      description: |
+        US-05, US-18. The editor needs the catalog to file an Article under exactly one
+        Category. Each Category includes its three translations. A missing translation is
+        served as English by the category service.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of Categories.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CategoryPage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                    slug: test-topic
+                    translations:
+                      - { locale: en, name: Test Topic }
+                      - { locale: sr-Latn, name: Test Topic }
+                      - { locale: ru, name: Test Topic }
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/categories/{slug}:
+    get:
+      tags: [Categories]
+      operationId: getCategory
+      summary: Read one Category
+      description: US-07. The Category screen a User follows from.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: The Category and its translations.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                slug: test-topic
+                translations:
+                  - { locale: en, name: Test Topic }
+                  - { locale: sr-Latn, name: Test Topic }
+                  - { locale: ru, name: Test Topic }
+        "404":
+          description: No Category has this slug.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CATEGORY_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/users/{username}:
+    get:
+      tags: [Profiles]
+      operationId: getPublicProfile
+      summary: Read a public profile
+      description: |
+        US-04, AC-05, AC-42. A Guest sees the Username and each of Display name, Biography,
+        and Avatar that was saved. A field that was never saved is absent, not null.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Exact Username, including case.
+          schema: { type: string }
+          example: test-user
+      responses:
+        "200":
+          description: Public profile.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicProfile" }
+              examples:
+                username_only:
+                  summary: Only the Username has been saved
+                  value:
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                    username: test-user
+                with_optional_fields:
+                  summary: Display name was saved
+                  value:
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                    username: test-user
+                    display_name: Test User
+        "404":
+          description: No User has this Username.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: USER_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/me:
+    get:
+      tags: [Profiles]
+      operationId: getMe
+      summary: Read the signed-in profile
+      description: |
+        US-04, AC-05, AC-31. Looks up the caller by the Firebase UID. Before the first
+        Username save, `id` and `username` are absent and profile setup is still open.
+        `blocked` is true while a Block with no lift exists.
+      responses:
+        "200":
+          description: The caller, or an empty profile when no Username is stored yet.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+              examples:
+                setup:
+                  summary: Signed in, no Username yet
+                  value: { blocked: false, content_languages: null }
+                saved:
+                  summary: Username saved
+                  value:
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                    username: test-user
+                    blocked: false
+                    content_languages: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+    put:
+      tags: [Profiles]
+      operationId: updateMe
+      summary: Save the Username and public profile fields
+      description: |
+        US-04, AC-05, AC-06, AC-42. The first save records the User, the Username, and the
+        sign-in identity. A taken Username is not saved. Later calls record only the fields
+        that were sent. Omitted Display name, Biography, and Avatar stay as they are.
+        Uniqueness of Username is exact, including case.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MeUpdate" }
+            examples:
+              username:
+                summary: First Username
+                value: { username: test-user }
+              profile:
+                summary: A later Display name
+                value: { username: test-user, display_name: Test User }
+      responses:
+        "200":
+          description: The saved profile.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                username: test-user
+                display_name: Test User
+                blocked: false
+                content_languages: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "409":
+          description: That Username is already taken.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: USERNAME_TAKEN }
+        "422":
+          description: A Username is required on this save.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: USERNAME_REQUIRED }
+
+  /api/v1/me/content-languages:
+    put:
+      tags: [Profiles]
+      operationId: updateContentLanguages
+      summary: Set or clear the Content language limit
+      description: |
+        US-08, AC-46. One or more of English, Serbian Latin, and Russian filters the Fresh
+        feed, the Popular feed, and My feed. Null clears the limit and shows every Content
+        language. A Guest has no such limit and cannot call this path.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContentLanguageLimit" }
+            examples:
+              one_language:
+                summary: Only English
+                value: { content_languages: [en] }
+              cleared:
+                summary: Every Content language
+                value: { content_languages: null }
+      responses:
+        "200":
+          description: The stored limit. Null means every Content language.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContentLanguageLimit" }
+              example: { content_languages: [en] }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "422":
+          description: A language outside English, Serbian Latin, and Russian, or an empty list. Send null to clear.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CONTENT_LANGUAGE_INVALID }
+
+  /api/v1/articles:
+    post:
+      tags: [Articles]
+      operationId: createArticle
+      summary: Open a draft
+      description: |
+        US-05, AC-07. Keeps a draft for this author. The second preview is this same draft
+        on the editor screen (ADR 0005), using `rendered_html` from the response. A blocked
+        User may still open a draft. Publishing is a different path.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleCreate" }
+            example:
+              title: Test Article
+              language: en
+              editor_json: { blocks: [] }
+      responses:
+        "201":
+          description: The draft, version 1.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                title: Test Article
+                language: en
+                editor_json: { blocks: [] }
+                rendered_html: ""
+                version: 1
+                status: draft
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "422":
+          description: The body contains an embed block or a raw HTML block (ADR 0007).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_BLOCK_REJECTED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/me/articles/{article_id}:
+    get:
+      tags: [Articles]
+      operationId: getMyArticle
+      summary: Open an Article for editing
+      description: |
+        US-05, AC-45, US-06, AC-12. The owner receives the current text, including
+        `editor_json` and `version`. A different User is refused and does not receive the
+        text. Earlier versions are not listed.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: The owner's current Article.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                slug: test-article
+                title: Test Article
+                language: en
+                category_id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                editor_json: { blocks: [{ type: paragraph, data: { text: Test Article } }] }
+                rendered_html: "<p>Test Article</p>"
+                version: 4
+                status: published
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/ArticleNotOwned"
+        "404":
+          description: No Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+    patch:
+      tags: [Articles]
+      operationId: updateMyArticle
+      summary: Keep a draft or revise a published Article
+      description: |
+        US-05, AC-07, US-06, AC-11, AC-12, ADR 0010. The client sends the `version` it last
+        saw. A mismatch returns `ARTICLE_VERSION_CONFLICT` and does not write. A matching
+        save updates the Article, keeps the previous version, and returns only the current
+        text. A blocked User may still edit. There is no list of earlier versions.
+        Idempotency-Key is required because article edits are retried (ADR 0010) and a text
+        revision writes an outbox row. The sequences do not state a TTL for that key.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleUpdate" }
+            example:
+              version: 4
+              title: Test Article
+              editor_json: { blocks: [{ type: paragraph, data: { text: Test Article } }] }
+      responses:
+        "200":
+          description: The current Article. Earlier versions are not included.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                title: Test Article
+                editor_json: { blocks: [{ type: paragraph, data: { text: Test Article } }] }
+                rendered_html: "<p>Test Article</p>"
+                version: 5
+                status: published
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/ArticleNotOwned"
+        "409":
+          $ref: "#/components/responses/ArticleVersionConflict"
+        "422":
+          description: Embed or raw HTML block rejected.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_BLOCK_REJECTED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/me/articles/{article_id}/publish:
+    post:
+      tags: [Articles]
+      operationId: publishMyArticle
+      summary: Publish a draft that is valid
+      description: |
+        US-05, AC-07, AC-08, AC-09, AC-10, AC-43, AC-44. Publishes the stored draft. The
+        body is empty because the draft was already kept. Publication requires a Username,
+        a title, text, a Content language, and exactly one Category. An image is optional.
+        The request accepts one `category_id` on the draft, so a second Category cannot be
+        sent. The response returns when the Article and the outbox row commit (ADR 0011).
+        A blocked User cannot publish.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: The published Article.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                slug: test-article
+                title: Test Article
+                language: en
+                category_id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                rendered_html: "<p>Test Article</p>"
+                editor_json: { blocks: [{ type: paragraph, data: { text: Test Article } }] }
+                version: 2
+                status: published
+                published_at: "2026-09-30T12:00:00Z"
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: |
+            `ARTICLE_NOT_OWNED` when the caller is not the author.
+            `ACCOUNT_BLOCKED` when the caller is blocked.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                not_owner:
+                  value:
+                    error: { code: ARTICLE_NOT_OWNED }
+                blocked:
+                  value:
+                    error: { code: ACCOUNT_BLOCKED }
+        "422":
+          description: |
+            `USERNAME_REQUIRED`, `ARTICLE_CATEGORY_REQUIRED`, `ARTICLE_TITLE_REQUIRED`,
+            `ARTICLE_TEXT_REQUIRED`, or `ARTICLE_LANGUAGE_REQUIRED`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_TITLE_REQUIRED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/me/articles/{article_id}/images:
+    post:
+      tags: [Articles]
+      operationId: attachArticleImage
+      summary: Attach an uploaded image to an Article
+      description: |
+        US-05, AC-07, AC-43. Links a media object to the Article after the browser has
+        stored the bytes. An Article with no image still publishes. The caller must own
+        the         Article. A blocked User may still attach an image while editing.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleImageAttach" }
+            example:
+              media_id: "018f3c2a-7b10-7c3e-8f21-0000000000e1"
+              position: 0
+      responses:
+        "201":
+          description: The image link.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleImage" }
+              example:
+                media_id: "018f3c2a-7b10-7c3e-8f21-0000000000e1"
+                position: 0
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/ArticleNotOwned"
+        "404":
+          description: No Article, or no media object of this caller.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: MEDIA_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/me/articles/{article_id}/withdraw:
+    post:
+      tags: [Articles]
+      operationId: withdrawMyArticle
+      summary: Soft-remove an Article the caller owns
+      description: |
+        US-20, AC-38, AC-41. The owner withdraws the Article. The record remains.
+        `removed_by` is `author`, which is not a Moderator hide. A different User is
+        refused. A Moderator is refused here and can still hide the Article with a reason.
+        A blocked User may still withdraw their own Article. Readers then see
+        `ArticleUnavailable`.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: The withdrawn Article, as the author sees it.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                title: Test Article
+                status: soft_removed
+                removed_by: author
+                version: 6
+                rendered_html: "<p>Test Article</p>"
+                editor_json: { blocks: [] }
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: The caller is not the owner. A Moderator uses hide, not this path.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_OWNED }
+        "404":
+          description: No Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+
+  /api/v1/media/uploads:
+    post:
+      tags: [Media]
+      operationId: createMediaUpload
+      summary: Ask for an Article image upload URL
+      description: |
+        US-05, Critical flow 1, ADR 0008. Returns a time-limited URL. The browser sends
+        the bytes to object storage. This API does not accept the file body. The media
+        row starts as `pending`. Image attachments are limited to 20 per hour.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaUploadCreate" }
+            example:
+              content_type: image/png
+              byte_size: 1024
+      responses:
+        "201":
+          description: The upload ticket.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaUpload" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000e1"
+                upload_url: https://objects.example.test/upload/test
+                status: pending
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/users/{user_id}/follow:
+    put:
+      tags: [Profiles]
+      operationId: followUser
+      summary: Follow a User
+      description: |
+        US-07, AC-13. Records one Follow. A repeat of the same Follow stays one row.
+        Writes an outbox row so the followed User can get a notice. A Guest must sign in.
+        A blocked User cannot follow.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: The caller follows that User.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowState" }
+              example: { following: true }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No User has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: USER_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    delete:
+      tags: [Profiles]
+      operationId: unfollowUser
+      summary: Stop following a User
+      description: |
+        US-07, AC-13. Drops that one Follow. Other Follows stay. An unfollow does not
+        write a notice.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: The caller no longer follows that User.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowState" }
+              example: { following: false }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/categories/{category_id}/follow:
+    put:
+      tags: [Categories]
+      operationId: followCategory
+      summary: Follow a Category
+      description: |
+        US-07, AC-13. Records one Category Follow. This write does not emit a notice.
+        A Guest must sign in. A blocked User cannot follow.
+      parameters:
+        - $ref: "#/components/parameters/CategoryId"
+      responses:
+        "200":
+          description: The caller follows that Category.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowState" }
+              example: { following: true }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No Category has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CATEGORY_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    delete:
+      tags: [Categories]
+      operationId: unfollowCategory
+      summary: Stop following a Category
+      description: US-07, AC-13. Drops that one Category Follow.
+      parameters:
+        - $ref: "#/components/parameters/CategoryId"
+      responses:
+        "200":
+          description: The caller no longer follows that Category.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowState" }
+              example: { following: false }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/articles/{article_id}/like:
+    post:
+      tags: [Engagement]
+      operationId: toggleArticleLike
+      summary: Like an Article, or take that Like back
+      description: |
+        US-09, AC-15, AC-16. The same call records one Like and raises the count, or, when
+        this User already Likes the Article, removes that Like and lowers the count. A
+        Guest is asked to sign in. A blocked User cannot Like. The write emits an outbox
+        row. The open Article hears the new count on the realtime channel, not from this
+        response.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: The caller's Like and the current count.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleLikeState" }
+              examples:
+                liked:
+                  summary: First Like
+                  value: { liked: true, like_count: 1 }
+                removed:
+                  summary: The same User Likes again
+                  value: { liked: false, like_count: 0 }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No published Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/articles/{article_id}/comments:
+    get:
+      tags: [Comments]
+      operationId: listArticleComments
+      summary: List Comments on an Article
+      description: |
+        US-01, AC-01, AC-17. Further pages after the first page included on the composed
+        Article. A reply deeper than the third level is included and carries its real
+        depth so the client can show it flat. A hidden Comment is `unavailable` for a
+        reader who is not its author.
+      security:
+        - {}
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of Comments.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentPage" }
+              example:
+                items:
+                  - view: visible
+                    id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                    article_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                    root_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                    depth: 1
+                    body: Test comment
+                    like_count: 0
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "404":
+          description: No Article has this id, or the caller may not see it.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    post:
+      tags: [Comments]
+      operationId: createArticleComment
+      summary: Comment on a published Article
+      description: |
+        US-10, AC-17, AC-18. Allowed only when the Article is published and readers can
+        still see it. A draft, a hidden Article, or a soft-removed Article is refused.
+        The body is plain text and must contain text. Depth is 1. A Guest must sign in.
+        A blocked User cannot Comment.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommentCreate" }
+            example:
+              body: Test comment
+              mentioned_user_ids: []
+      responses:
+        "201":
+          description: The Comment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentVisible" }
+              example:
+                view: visible
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                article_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                root_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                depth: 1
+                body: Test comment
+                like_count: 0
+                mentioned_user_ids: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "409":
+          description: Comments are only allowed on a published Article that readers can still see.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_ARTICLE_NOT_VISIBLE }
+        "422":
+          description: The Comment has no text.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_BODY_REQUIRED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/comments/{comment_id}/replies:
+    post:
+      tags: [Comments]
+      operationId: createCommentReply
+      summary: Reply to a Comment and mention Users
+      description: |
+        US-10, AC-17. The reply is kept under that Comment. Depth past 3 is stored and
+        shown flat. `mentioned_user_ids` are the mention rows. The mentioned User can
+        receive a notice. The same visibility rule as a top-level Comment.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CommentCreate" }
+            example:
+              body: Test reply
+              mentioned_user_ids:
+                - "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+      responses:
+        "201":
+          description: The reply.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentVisible" }
+              example:
+                view: visible
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000d2"
+                article_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                parent_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                root_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                depth: 2
+                body: Test reply
+                like_count: 0
+                mentioned_user_ids:
+                  - "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No Comment has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_NOT_FOUND }
+        "409":
+          description: The Article is not a published Article that readers can still see.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_ARTICLE_NOT_VISIBLE }
+        "422":
+          description: The reply has no text.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_BODY_REQUIRED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/comments/{comment_id}/like:
+    post:
+      tags: [Comments]
+      operationId: toggleCommentLike
+      summary: Like a Comment, or take that Like back
+      description: |
+        US-10, AC-17. Records one Like on the Comment. A second call from the same User
+        removes it, matching the Article Like and the primary key of `comment_likes`.
+        AC-17 shows the add. The remove is the data-model access pattern. A Guest must
+        sign in. A blocked User cannot Like. A Comment Like does not write an outbox row.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      responses:
+        "200":
+          description: The caller's Like and the current count.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentLikeState" }
+              examples:
+                liked:
+                  value: { liked: true, like_count: 1 }
+                removed:
+                  value: { liked: false, like_count: 0 }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No Comment has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/articles/{article_id}/bookmark:
+    put:
+      tags: [Engagement]
+      operationId: addBookmark
+      summary: Bookmark a published Article
+      description: |
+        US-11, AC-19. Records one private Bookmark. A second put stays one row. A Guest
+        must sign in. A blocked User cannot Bookmark. A Bookmark does not emit an outbox
+        row.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: The Article is on the caller's list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BookmarkState" }
+              example: { bookmarked: true }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No published Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    delete:
+      tags: [Engagement]
+      operationId: removeBookmark
+      summary: Remove a Bookmark
+      description: US-11, AC-19. Drops that User's Bookmark. The Article leaves their private list.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: The Bookmark is gone.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BookmarkState" }
+              example: { bookmarked: false }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+
+  /api/v1/me/bookmarks:
+    get:
+      tags: [Engagement]
+      operationId: listMyBookmarks
+      summary: List the caller's Bookmarks
+      description: |
+        US-11, AC-19, AC-20. Only this User's rows, newest first. The path is the caller,
+        so a Guest is asked to sign in and a different User cannot address this list.
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: The private list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BookmarkPage" }
+              example:
+                items:
+                  - article_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    created_at: "2026-09-30T12:00:00Z"
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+
+  /api/v1/conversations:
+    get:
+      tags: [Messages]
+      operationId: listConversations
+      summary: List the caller's Direct message conversations
+      description: |
+        US-12, AC-21. Conversations of this User, each with the other User and the unread
+        count. Someone outside a conversation does not see it.
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of conversations.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationPage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000f1"
+                    peer_user_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                    unread_count: 1
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+    post:
+      tags: [Messages]
+      operationId: createConversation
+      summary: Send a Direct message to one User
+      description: |
+        US-12, AC-21, AC-22. Finds or creates the conversation of these two Users and
+        stores the message. The two User ids are ordered by the service into the pair
+        key. An empty body is refused and nothing is stored. A blocked User cannot send.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConversationCreate" }
+            example:
+              recipient_user_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+              body: Test message
+      responses:
+        "201":
+          description: The stored message.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectMessage" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000f2"
+                conversation_id: "018f3c2a-7b10-7c3e-8f21-0000000000f1"
+                sender_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                body: Test message
+                created_at: "2026-09-30T12:00:00Z"
+                read_at: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No User has the recipient id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: USER_NOT_FOUND }
+        "422":
+          description: The message must contain text.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: MESSAGE_BODY_REQUIRED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/conversations/{conversation_id}/messages:
+    get:
+      tags: [Messages]
+      operationId: listConversationMessages
+      summary: Read a conversation
+      description: |
+        US-12, AC-21. Messages in this conversation. The sender sees `read_at` once the
+        recipient has read them. A caller who is not one of the two Users receives 404,
+        the same as a missing conversation, so the list stays hidden.
+      parameters:
+        - $ref: "#/components/parameters/ConversationId"
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of messages.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectMessagePage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000f2"
+                    conversation_id: "018f3c2a-7b10-7c3e-8f21-0000000000f1"
+                    sender_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                    body: Test message
+                    created_at: "2026-09-30T12:00:00Z"
+                    read_at: "2026-09-30T12:05:00Z"
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "404":
+          description: No such conversation for this caller.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CONVERSATION_NOT_FOUND }
+    post:
+      tags: [Messages]
+      operationId: createDirectMessage
+      summary: Send a message in an existing conversation
+      description: |
+        US-12, AC-21, AC-22. Stores one message with text. An empty body is refused.
+        The write emits an outbox row. Only the two Users in the conversation see the
+        live push.
+      parameters:
+        - $ref: "#/components/parameters/ConversationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectMessageCreate" }
+            example: { body: Test message }
+      responses:
+        "201":
+          description: The stored message.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectMessage" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000f2"
+                conversation_id: "018f3c2a-7b10-7c3e-8f21-0000000000f1"
+                sender_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                body: Test message
+                created_at: "2026-09-30T12:00:00Z"
+                read_at: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/AccountBlocked"
+        "404":
+          description: No such conversation for this caller.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CONVERSATION_NOT_FOUND }
+        "422":
+          description: The message must contain text.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: MESSAGE_BODY_REQUIRED }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/v1/conversations/{conversation_id}/read:
+    post:
+      tags: [Messages]
+      operationId: markConversationRead
+      summary: Mark the recipient's messages read
+      description: |
+        US-12, AC-21. Sets `read_at` on messages the other User sent. The read mark does
+        not emit an outbox row. The sender sees it on the next read of the conversation.
+      parameters:
+        - $ref: "#/components/parameters/ConversationId"
+      responses:
+        "200":
+          description: The time stored on the messages that were unread.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConversationRead" }
+              example: { read_at: "2026-09-30T12:05:00Z" }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "404":
+          description: No such conversation for this caller.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CONVERSATION_NOT_FOUND }
+
+  /api/v1/articles/{article_id}/complaints:
+    post:
+      tags: [Articles]
+      operationId: createArticleComplaint
+      summary: File a Complaint about an Article
+      description: |
+        US-13, AC-23, AC-24. A reason is required. A Complaint with no reason is not
+        stored. A blocked User may still file a Complaint. Staff read it on the admin list.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComplaintCreate" }
+            example: { reason: Test reason }
+      responses:
+        "201":
+          description: The open Complaint.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComplaintCreated" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a9"
+                target_type: article
+                target_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                status: open
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "404":
+          description: No Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+        "422":
+          description: A reason must be present.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMPLAINT_REASON_REQUIRED }
+
+  /api/v1/comments/{comment_id}/complaints:
+    post:
+      tags: [Comments]
+      operationId: createCommentComplaint
+      summary: File a Complaint about a Comment
+      description: US-13, AC-23, AC-24. Same reason rule as an Article Complaint. Stored on the Comment.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComplaintCreate" }
+            example: { reason: Test reason }
+      responses:
+        "201":
+          description: The open Complaint.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComplaintCreated" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a9"
+                target_type: comment
+                target_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                status: open
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "404":
+          description: No Comment has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_NOT_FOUND }
+        "422":
+          description: A reason must be present.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMPLAINT_REASON_REQUIRED }
+
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      operationId: listNotifications
+      summary: List in-product Notifications
+      description: |
+        US-15, AC-26. Notices for this User about a reply, a mention, a new follower, or
+        a new Direct message. The text is not stored. The client localizes `type`. This
+        release sends no email and no phone alert. Opening the notice is a client route
+        to the Article, the public profile, or the conversation.
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of notices.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationPage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000aa"
+                    type: follow
+                    actor_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                    entity_type: user
+                    entity_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                    created_at: "2026-09-30T12:00:00Z"
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+
+  /api/v1/admin/me:
+    get:
+      tags: [Admin]
+      operationId: getAdminMe
+      summary: Read the staff role for the admin panel
+      description: |
+        US-16, AC-28, AC-30. Requires a Firebase token whose second factor is confirmed,
+        then reads the role from the users service. A person who is not a Moderator or an
+        Administrator is refused and is not left inside the panel. Role is not taken from
+        a token claim.
+      responses:
+        "200":
+          description: The staff member and their one role.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminMe" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-000000000001"
+                role: administrator
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: |
+            `STAFF_MFA_REQUIRED` when the second factor is not confirmed.
+            `STAFF_FORBIDDEN` when the role is User.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                mfa:
+                  value:
+                    error: { code: STAFF_MFA_REQUIRED }
+                not_staff:
+                  value:
+                    error: { code: STAFF_FORBIDDEN }
+
+  /api/v1/admin/articles/{article_id}:
+    get:
+      tags: [Admin]
+      operationId: getAdminArticle
+      summary: Read the full Article in the admin panel
+      description: |
+        US-16, AC-27, AC-38. Staff see the full text only here. The public read stays
+        redacted.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      responses:
+        "200":
+          description: The full Article.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                title: Test Article
+                status: hidden
+                rendered_html: "<p>Test Article</p>"
+                editor_json: { blocks: [] }
+                version: 4
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "404":
+          description: No Article has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ARTICLE_NOT_FOUND }
+
+  /api/v1/admin/articles/{article_id}/hide:
+    post:
+      tags: [Admin]
+      operationId: hideArticle
+      summary: Hide an Article
+      description: |
+        US-16, AC-27, AC-29, AC-40. A Moderator or an Administrator hides the Article and
+        gives a reason. Open Complaints about it leave the open list. The audit row is
+        appended with that reason. A missing reason does not hide anything. Readers who
+        are not the author then see the Article as unavailable and are not told that staff
+        hid it.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Reason" }
+            example: { reason: Test reason }
+      responses:
+        "200":
+          description: The Article is hidden.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                status: hidden
+                title: Test Article
+                rendered_html: "<p>Test Article</p>"
+                editor_json: { blocks: [] }
+                version: 5
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "422":
+          $ref: "#/components/responses/ReasonRequired"
+
+  /api/v1/admin/comments/{comment_id}:
+    get:
+      tags: [Admin]
+      operationId: getAdminComment
+      summary: Read the full Comment in the admin panel
+      description: US-16, AC-27. Staff see the full Comment text only here.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+      responses:
+        "200":
+          description: The full Comment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentVisible" }
+              example:
+                view: visible
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                article_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                root_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                depth: 1
+                body: Test comment
+                status: hidden
+                like_count: 0
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "404":
+          description: No Comment has this id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMMENT_NOT_FOUND }
+
+  /api/v1/admin/comments/{comment_id}/hide:
+    post:
+      tags: [Admin]
+      operationId: hideComment
+      summary: Hide a Comment
+      description: |
+        US-16, AC-27, AC-29. Same outcomes as hiding an Article: a reason, an audit row,
+        open Complaints leave the list, readers who are not the author see it as
+        unavailable, and the author still sees the text.
+      parameters:
+        - $ref: "#/components/parameters/CommentId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Reason" }
+            example: { reason: Test reason }
+      responses:
+        "200":
+          description: The Comment is hidden.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentVisible" }
+              example:
+                view: visible
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                article_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                author_id: "018f3c2a-7b10-7c3e-8f21-0000000000b1"
+                root_id: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+                depth: 1
+                body: Test comment
+                status: hidden
+                like_count: 0
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "422":
+          $ref: "#/components/responses/ReasonRequired"
+
+  /api/v1/admin/articles/{article_id}/category:
+    patch:
+      tags: [Admin]
+      operationId: moveArticleCategory
+      summary: Move an Article to another Category
+      description: |
+        US-16, AC-47. A Moderator or an Administrator sets exactly one other Category.
+        A reason is optional. The move is on the audit trail either way. Readers see the
+        new Category.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryMove" }
+            example:
+              category_id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+      responses:
+        "200":
+          description: The Article is in the new Category.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                category_id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                status: published
+                title: Test Article
+                rendered_html: "<p>Test Article</p>"
+                editor_json: { blocks: [] }
+                version: 4
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "404":
+          description: No Article, or no Category.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CATEGORY_NOT_FOUND }
+
+  /api/v1/admin/articles/{article_id}/soft-remove:
+    post:
+      tags: [Admin]
+      operationId: staffSoftRemoveArticle
+      summary: Soft-remove an Article as staff
+      description: |
+        US-18, AC-35, AC-39. An Administrator soft-removes the Article and gives a reason.
+        The record remains. `removed_by` is `staff`. A missing reason does not remove it.
+        A Moderator cannot use this path (AC-41) and can still hide the Article.
+      parameters:
+        - $ref: "#/components/parameters/ArticleId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Reason" }
+            example: { reason: Test reason }
+      responses:
+        "200":
+          description: The Article is soft-removed by staff.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleDraft" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                status: soft_removed
+                removed_by: staff
+                title: Test Article
+                rendered_html: "<p>Test Article</p>"
+                editor_json: { blocks: [] }
+                version: 6
+                images: []
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: |
+            `STAFF_MFA_REQUIRED`, `STAFF_FORBIDDEN`, or `ADMIN_ONLY` when the caller is a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+        "422":
+          $ref: "#/components/responses/ReasonRequired"
+
+  /api/v1/admin/users/{user_id}/block:
+    post:
+      tags: [Admin]
+      operationId: blockUser
+      summary: Block a User
+      description: |
+        US-17, AC-29, AC-31, AC-32, AC-40. A Moderator or an Administrator Blocks a User
+        who is not staff, with a reason. While blocked, that User cannot publish, Comment,
+        Follow, Like, Bookmark, or send a Direct message. Already published Articles stay
+        visible. A missing reason does not Block anyone.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Reason" }
+            example: { reason: Test reason }
+      responses:
+        "201":
+          description: The active Block.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Block" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000b9"
+                user_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                actor_id: "018f3c2a-7b10-7c3e-8f21-000000000001"
+                reason: Test reason
+                lifted_at: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "422":
+          $ref: "#/components/responses/ReasonRequired"
+
+  /api/v1/admin/users/{user_id}/unblock:
+    post:
+      tags: [Admin]
+      operationId: unblockUser
+      summary: Lift a Block
+      description: |
+        US-17, AC-31. Lifts the active Block. A reason is not required. After the lift,
+        publish, Comment, Follow, Like, Bookmark, and Direct messages are possible again.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: The lifted Block.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Block" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000b9"
+                user_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                actor_id: "018f3c2a-7b10-7c3e-8f21-000000000001"
+                reason: Test reason
+                lifted_at: "2026-09-30T13:00:00Z"
+                lifted_by: "018f3c2a-7b10-7c3e-8f21-000000000001"
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "404":
+          description: That User has no active Block.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: BLOCK_NOT_FOUND }
+
+  /api/v1/admin/complaints:
+    get:
+      tags: [Admin]
+      operationId: listOpenComplaints
+      summary: List open Complaints
+      description: |
+        US-13, AC-23. The gateway merges open Article Complaints and open Comment
+        Complaints. `target_type` says which one the id belongs to. A hide or a dismissal
+        removes the row from this list.
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of open Complaints.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComplaintPage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000a9"
+                    target_type: article
+                    target_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    reporter_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                    reason: Test reason
+                    status: open
+                    created_at: "2026-09-30T12:00:00Z"
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+
+  /api/v1/admin/complaints/{complaint_id}/dismiss:
+    post:
+      tags: [Admin]
+      operationId: dismissComplaint
+      summary: Dismiss a Complaint
+      description: |
+        US-18, AC-48, AC-49. A Moderator or an Administrator dismisses one Complaint and
+        gives a reason. The Article or Comment stays visible. The Complaint leaves the
+        open list and the action is on the audit trail. A missing reason leaves it open.
+        `target_type` selects the Article list or the Comment list, because those ids live
+        in different services.
+      parameters:
+        - $ref: "#/components/parameters/ComplaintId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComplaintDismiss" }
+            example:
+              target_type: article
+              reason: Test reason
+      responses:
+        "200":
+          description: The Complaint is dismissed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComplaintAdmin" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000a9"
+                target_type: article
+                target_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                reporter_id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                reason: Test reason
+                status: dismissed
+                resolution_reason: Test reason
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+        "404":
+          description: No open Complaint has this id for that target type.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: COMPLAINT_NOT_FOUND }
+        "422":
+          $ref: "#/components/responses/ReasonRequired"
+
+  /api/v1/admin/categories:
+    post:
+      tags: [Admin]
+      operationId: createCategory
+      summary: Create a Category with three names
+      description: |
+        US-18, AC-33, AC-34. An Administrator creates a Category with English, Serbian
+        Latin, and Russian names. The service assigns the slug. The create is on the
+        audit trail. A Moderator is refused.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryCreate" }
+            example:
+              translations:
+                - { locale: en, name: Test Topic }
+                - { locale: sr-Latn, name: Test Topic }
+                - { locale: ru, name: Test Topic }
+      responses:
+        "201":
+          description: The Category is available for new Articles.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+                slug: test-topic
+                translations:
+                  - { locale: en, name: Test Topic }
+                  - { locale: sr-Latn, name: Test Topic }
+                  - { locale: ru, name: Test Topic }
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Second factor missing, not staff, or the caller is a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+        "422":
+          description: The three locales are not all present, or a name is missing.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: CATEGORY_TRANSLATIONS_REQUIRED }
+
+  /api/v1/admin/users/{user_id}/role:
+    put:
+      tags: [Admin]
+      operationId: assignRole
+      summary: Assign one role
+      description: |
+        US-18, AC-33, AC-34, AC-35, AC-50, AC-51, AC-52. An Administrator sets a person to
+        exactly one of User, Moderator, or Administrator, with a reason. The previous role
+        is gone. The panel does not create the first Administrator. The only Administrator
+        cannot be demoted. A missing reason does not change the role. A Moderator is refused.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoleAssignment" }
+            example:
+              role: moderator
+              reason: Test reason
+      responses:
+        "200":
+          description: The person holds that one role.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminMe" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+                role: moderator
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: |
+            `ADMIN_ONLY` for a Moderator. `FIRST_ADMINISTRATOR_FORBIDDEN` when no
+            Administrator exists yet and the panel is asked to grant one.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                moderator:
+                  value:
+                    error: { code: ADMIN_ONLY }
+                first:
+                  value:
+                    error: { code: FIRST_ADMINISTRATOR_FORBIDDEN }
+        "409":
+          description: One Administrator must remain.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: LAST_ADMINISTRATOR }
+        "422":
+          $ref: "#/components/responses/ReasonRequired"
+
+  /api/v1/admin/popular-weights:
+    get:
+      tags: [Admin]
+      operationId: getPopularWeights
+      summary: Read the Popular feed weights
+      description: |
+        US-18, AC-33. The single weights row. An Administrator reads it before changing
+        it. A Moderator is refused.
+      responses:
+        "200":
+          description: The current weights.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PopularWeights" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-000000000002"
+                views_weight: 1
+                likes_weight: 1
+                comments_weight: 1
+                bookmarks_weight: 1
+                age_decay: 1
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Second factor missing, not staff, or the caller is a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+    put:
+      tags: [Admin]
+      operationId: updatePopularWeights
+      summary: Change the Popular feed weights
+      description: |
+        US-18, AC-33, AC-34. An Administrator replaces the weights. The Popular feed then
+        uses them. A Moderator is refused. Starting weights stay the equal-weight seed
+        until this call (spec §8, still open).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PopularWeightsUpdate" }
+            example:
+              views_weight: 1
+              likes_weight: 2
+              comments_weight: 1
+              bookmarks_weight: 1
+              age_decay: 1
+      responses:
+        "200":
+          description: The saved weights.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PopularWeights" }
+              example:
+                id: "018f3c2a-7b10-7c3e-8f21-000000000002"
+                views_weight: 1
+                likes_weight: 2
+                comments_weight: 1
+                bookmarks_weight: 1
+                age_decay: 1
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Second factor missing, not staff, or the caller is a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+
+  /api/v1/admin/statistics:
+    get:
+      tags: [Admin]
+      operationId: getPlatformStatistics
+      summary: Read platform statistics
+      description: |
+        US-18, AC-53, AC-54. An Administrator sees six figures and whether the public site
+        is answering. A Moderator receives `ADMIN_ONLY` and the panel shows no figures.
+        `new_users` counts User rows. The spec does not state the window that makes a User
+        new. Whether the site is answering is the public site health check, not a table.
+      responses:
+        "200":
+          description: The figures.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlatformStatistics" }
+              example:
+                users_signed_in_today: 1
+                users_signed_in_last_30_days: 2
+                new_users: 3
+                articles_published: 4
+                comments_written: 5
+                open_complaints: 0
+                public_site_answering: true
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: |
+            `STAFF_MFA_REQUIRED`, `STAFF_FORBIDDEN`, or `ADMIN_ONLY` for a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+
+  /api/v1/admin/audit:
+    get:
+      tags: [Admin]
+      operationId: listAuditTrail
+      summary: Read the audit trail
+      description: |
+        US-19, AC-36, AC-37. An Administrator sees every hide, Block, role change, staff
+        soft-remove, Complaint dismissal, and Category change. A Moderator sees only their
+        own rows. The API has no update and no delete on this path. The trail is append-only.
+      parameters:
+        - $ref: "#/components/parameters/After"
+        - $ref: "#/components/parameters/Before"
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: One page of the trail the caller is allowed to see.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditPage" }
+              example:
+                items:
+                  - id: "018f3c2a-7b10-7c3e-8f21-0000000000ab"
+                    actor_id: "018f3c2a-7b10-7c3e-8f21-000000000001"
+                    action: article.hide
+                    entity_type: article
+                    entity_id: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+                    reason: Test reason
+                    created_at: "2026-09-30T12:00:00Z"
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          $ref: "#/components/responses/StaffDenied"
+
+  /api/v1/admin/rate-limits:
+    get:
+      tags: [Admin]
+      operationId: listRateLimits
+      summary: Read rate-limit settings
+      description: |
+        Spec §6.1 and ADR 0009. An Administrator reads the limits the gateway enforces.
+        There is no acceptance criterion and no sequence for this read. See the sync report.
+      responses:
+        "200":
+          description: The seeded actions and their numbers.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RateLimitPage" }
+              example:
+                items:
+                  - action: comment
+                    max_count: 20
+                    window_seconds: 60
+                has_next: false
+                has_prev: false
+                next_cursor: null
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Second factor missing, not staff, or the caller is a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+
+  /api/v1/admin/rate-limits/{action}:
+    patch:
+      tags: [Admin]
+      operationId: updateRateLimit
+      summary: Change one rate limit
+      description: |
+        Spec §6.1 and ADR 0009. An Administrator changes `max_count` and `window_seconds`
+        for one seeded action. The action key does not change. A Moderator is refused.
+        There is no acceptance criterion and no sequence for this write. See the sync report.
+      parameters:
+        - name: action
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/RateLimitAction" }
+          example: comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RateLimitUpdate" }
+            example:
+              max_count: 20
+              window_seconds: 60
+      responses:
+        "200":
+          description: The saved limit.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RateLimitSetting" }
+              example:
+                action: comment
+                max_count: 20
+                window_seconds: 60
+        "401":
+          $ref: "#/components/responses/AuthRequired"
+        "403":
+          description: Second factor missing, not staff, or the caller is a Moderator.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: ADMIN_ONLY }
+        "404":
+          description: That action is not a seeded limit.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example:
+                error: { code: RATE_LIMIT_NOT_FOUND }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Firebase ID token verified at the gateway. Admin paths also require the second-factor
+        claim. The role is read from the users service on every admin request.
+
+  parameters:
+    ArticleId:
+      name: article_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: "018f3c2a-7b10-7c3e-8f21-0000000000a1"
+    CommentId:
+      name: comment_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: "018f3c2a-7b10-7c3e-8f21-0000000000d1"
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: "018f3c2a-7b10-7c3e-8f21-0000000000b2"
+    CategoryId:
+      name: category_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: "018f3c2a-7b10-7c3e-8f21-0000000000c1"
+    ConversationId:
+      name: conversation_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: "018f3c2a-7b10-7c3e-8f21-0000000000f1"
+    ComplaintId:
+      name: complaint_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      example: "018f3c2a-7b10-7c3e-8f21-0000000000a9"
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+      example: test-article
+    After:
+      name: after
+      in: query
+      description: Opaque cursor. The page starts after this item. Feed order is not id order, so the cursor is not a bare uuid.
+      schema: { type: string }
+    Before:
+      name: before
+      in: query
+      description: Opaque cursor. The page ends before this item.
+      schema: { type: string }
+    PageLimit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    FeedLimit:
+      name: limit
+      in: query
+      description: A feed page is 20 Articles (spec §6). The maximum is 20, which is stricter than the default list maximum.
+      schema: { type: integer, minimum: 1, maximum: 20, default: 20 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Client-generated key. A retry returns the first result. Required where the write
+        emits an outbox row or where article saves are retried (ADR 0010, ADR 0011).
+        sad.md §6 does not state a TTL.
+      schema: { type: string, format: uuid }
+    ViewerKey:
+      name: X-Viewer-Key
+      in: header
+      required: false
+      description: |
+        Browser session id for a Guest View. A signed-in caller is identified by the token
+        and this header is ignored. Required for a Guest, because a different session is a
+        different viewer (AC-02, ADR 0012).
+      schema: { type: string }
+
+  responses:
+    AuthRequired:
+      description: The caller is not signed in. The action is not recorded.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: { code: AUTH_REQUIRED }
+    AccountBlocked:
+      description: The account is blocked. Publish, Comment, Follow, Like, Bookmark, and Direct messages stay refused until the Block is lifted.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: { code: ACCOUNT_BLOCKED }
+    ArticleNotOwned:
+      description: The caller does not own this Article.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: { code: ARTICLE_NOT_OWNED }
+    ArticleVersionConflict:
+      description: The sent version is not the stored version. The stored row is unchanged (ADR 0010).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              code: ARTICLE_VERSION_CONFLICT
+              params: { serverVersion: 12 }
+    ReasonRequired:
+      description: A reason must be present. The action is not recorded.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error: { code: REASON_REQUIRED }
+    StaffDenied:
+      description: |
+        `STAFF_MFA_REQUIRED` when the second factor is not confirmed.
+        `STAFF_FORBIDDEN` when the role is not Moderator or Administrator.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            mfa:
+              value:
+                error: { code: STAFF_MFA_REQUIRED }
+            not_staff:
+              value:
+                error: { code: STAFF_FORBIDDEN }
+    RateLimited:
+      description: |
+        The sliding window for this action is full (ADR 0009). `params.action` is the
+        `rate_limit_settings` key. Anonymous reads use `anonymous_read`.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            error:
+              code: RATE_LIMITED
+              params: { action: anonymous_read }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      additionalProperties: false
+      description: |
+        Repository error envelope. No user-facing sentence. Codes are SCREAMING_SNAKE,
+        matching `ARTICLE_VERSION_CONFLICT` (ADR 0010). There is no error registry in the
+        repo yet. Other codes are this contract's proposal.
+      properties:
+        error:
+          type: object
+          required: [code]
+          additionalProperties: false
+          properties:
+            code:
+              type: string
+              pattern: "^[A-Z][A-Z0-9_]*$"
+              description: Machine-readable code. The client translates it.
+            params:
+              type: object
+              additionalProperties: true
+              description: |
+                Optional structured context. `ARTICLE_VERSION_CONFLICT` sends
+                `serverVersion`, the integer currently stored. That key is camelCase
+                because it is the repository's worked example.
+
+    Locale:
+      type: string
+      enum: [en, sr-Latn, ru]
+      description: Interface and Category translation locale. Content language uses the same three values.
+
+    ContentLanguage:
+      type: string
+      enum: [en, sr-Latn, ru]
+
+    Role:
+      type: string
+      enum: [user, moderator, administrator]
+
+    ArticleStatus:
+      type: string
+      enum: [draft, published, hidden, soft_removed]
+
+    RemovedBy:
+      type: string
+      enum: [author, staff]
+
+    RateLimitAction:
+      type: string
+      enum: [comment, like, follow, direct_message, article_edit, image_attachment, anonymous_read]
+
+    PublicAuthor:
+      type: object
+      required: [id, username]
+      additionalProperties: false
+      description: Author fields composed into a public Article (ADR 0003 names the users service in that read).
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        display_name:
+          type: string
+          description: Absent until the User saves it.
+        avatar_url:
+          type: string
+          description: Absent until the User saves it.
+
+    PublicProfile:
+      type: object
+      required: [id, username]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        display_name:
+          type: string
+          description: Absent when never saved.
+        biography:
+          type: string
+          description: Absent when never saved.
+        avatar_url:
+          type: string
+          description: Absent when never saved. Stored text, not the Article upload path.
+
+    Me:
+      type: object
+      required: [blocked]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Absent until the Username save records the User.
+        username:
+          type: string
+          description: Absent until the User saves one.
+        display_name: { type: string }
+        biography: { type: string }
+        avatar_url: { type: string }
+        content_languages:
+          type: [array, "null"]
+          items: { $ref: "#/components/schemas/ContentLanguage" }
+          description: Null means every Content language.
+        blocked:
+          type: boolean
+          description: True while this User has a Block with lifted_at null.
+
+    MeUpdate:
+      type: object
+      required: [username]
+      additionalProperties: false
+      properties:
+        username:
+          type: string
+          description: Exact unique Username, including case.
+        display_name: { type: string }
+        biography: { type: string }
+        avatar_url: { type: string }
+
+    ContentLanguageLimit:
+      type: object
+      required: [content_languages]
+      additionalProperties: false
+      properties:
+        content_languages:
+          type: [array, "null"]
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/ContentLanguage" }
+          description: Null clears the limit. An empty array is invalid.
+
+    CategoryTranslation:
+      type: object
+      required: [locale, name]
+      additionalProperties: false
+      properties:
+        locale: { $ref: "#/components/schemas/Locale" }
+        name: { type: string, minLength: 1 }
+        description:
+          type: [string, "null"]
+
+    Category:
+      type: object
+      required: [id, slug, translations]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        slug:
+          type: string
+          description: One slug for all three languages. The service assigns it on create.
+        translations:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryTranslation" }
+
+    CategoryPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    CategoryCreate:
+      type: object
+      required: [translations]
+      additionalProperties: false
+      properties:
+        translations:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: English, Serbian Latin, and Russian, each once.
+          items: { $ref: "#/components/schemas/CategoryTranslation" }
+
+    CategoryMove:
+      type: object
+      required: [category_id]
+      additionalProperties: false
+      properties:
+        category_id: { type: string, format: uuid }
+        reason:
+          type: string
+          minLength: 1
+          description: Optional. A Category change may omit it.
+
+    ArticleImage:
+      type: object
+      required: [media_id, position]
+      additionalProperties: false
+      description: Image location. No public URL column exists. See the sync report.
+      properties:
+        media_id: { type: string, format: uuid }
+        position: { type: integer }
+
+    ArticleImageAttach:
+      type: object
+      required: [media_id, position]
+      additionalProperties: false
+      properties:
+        media_id: { type: string, format: uuid }
+        position: { type: integer, minimum: 0 }
+
+    ArticleDraft:
+      type: object
+      required: [id, author_id, editor_json, rendered_html, version, status, images]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        author_id: { type: string, format: uuid }
+        category_id: { type: [string, "null"], format: uuid }
+        slug: { type: [string, "null"], description: Null on a draft. }
+        language: { type: [string, "null"], enum: [en, sr-Latn, ru, null] }
+        title: { type: [string, "null"] }
+        editor_json:
+          type: object
+          additionalProperties: true
+          description: Editor.js JSON. Embed and raw HTML blocks are rejected on write.
+        rendered_html: { type: string }
+        version: { type: integer, minimum: 1 }
+        status: { $ref: "#/components/schemas/ArticleStatus" }
+        removed_by: { type: [string, "null"], enum: [author, staff, null] }
+        published_at: { type: [string, "null"], format: date-time }
+        images:
+          type: array
+          items: { $ref: "#/components/schemas/ArticleImage" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ArticleCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        title: { type: [string, "null"] }
+        language: { oneOf: [{ $ref: "#/components/schemas/ContentLanguage" }, { type: "null" }] }
+        category_id: { type: [string, "null"], format: uuid }
+        editor_json:
+          type: object
+          additionalProperties: true
+
+    ArticleUpdate:
+      type: object
+      required: [version]
+      additionalProperties: false
+      properties:
+        version: { type: integer, minimum: 1 }
+        title: { type: [string, "null"] }
+        language: { oneOf: [{ $ref: "#/components/schemas/ContentLanguage" }, { type: "null" }] }
+        category_id: { type: [string, "null"], format: uuid }
+        editor_json:
+          type: object
+          additionalProperties: true
+
+    ArticlePublished:
+      type: object
+      required: [view, id, slug, title, rendered_html, language, author, images, like_count, comment_count, view_count, comments]
+      additionalProperties: false
+      properties:
+        view: { type: string, enum: [published] }
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        title: { type: string }
+        language: { $ref: "#/components/schemas/ContentLanguage" }
+        category_id: { type: string, format: uuid }
+        author: { $ref: "#/components/schemas/PublicAuthor" }
+        rendered_html: { type: string }
+        images:
+          type: array
+          items: { $ref: "#/components/schemas/ArticleImage" }
+        like_count: { type: integer, minimum: 0 }
+        comment_count:
+          type: integer
+          minimum: 0
+          description: Composed from Comment totals. Not a column on article_stats.
+        view_count: { type: integer, minimum: 0 }
+        liked_by_viewer:
+          type: boolean
+          description: Present when the caller is signed in. Omitted for a Guest.
+        bookmarked_by_viewer:
+          type: boolean
+          description: Present when the caller is signed in. Omitted for a Guest.
+        comments: { $ref: "#/components/schemas/CommentPage" }
+
+    ArticleUnavailable:
+      type: object
+      required: [view, id]
+      additionalProperties: false
+      description: |
+        A draft, a hidden Article, or a soft-removed Article for a reader who is not the
+        author. No text, no Comments, and no status. The reader is not told which one it is.
+      properties:
+        view: { type: string, enum: [unavailable] }
+        id: { type: string, format: uuid }
+
+    ArticleAuthorState:
+      type: object
+      required: [view, id, status, readers_can_see, title, rendered_html, version]
+      additionalProperties: false
+      description: The author still sees the text and the state when readers cannot.
+      properties:
+        view: { type: string, enum: [author] }
+        id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/ArticleStatus" }
+        removed_by: { type: [string, "null"], enum: [author, staff, null] }
+        readers_can_see: { type: boolean }
+        title: { type: [string, "null"] }
+        rendered_html: { type: string }
+        language: { oneOf: [{ $ref: "#/components/schemas/ContentLanguage" }, { type: "null" }] }
+        images:
+          type: array
+          items: { $ref: "#/components/schemas/ArticleImage" }
+        version: { type: integer, minimum: 1 }
+
+    ArticleRead:
+      oneOf:
+        - $ref: "#/components/schemas/ArticlePublished"
+        - $ref: "#/components/schemas/ArticleUnavailable"
+        - $ref: "#/components/schemas/ArticleAuthorState"
+      discriminator:
+        propertyName: view
+        mapping:
+          published: "#/components/schemas/ArticlePublished"
+          unavailable: "#/components/schemas/ArticleUnavailable"
+          author: "#/components/schemas/ArticleAuthorState"
+
+    FeedArticle:
+      type: object
+      required: [id, slug, title, language, published_at, author_id, category_id]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        title: { type: string }
+        language: { $ref: "#/components/schemas/ContentLanguage" }
+        published_at: { type: string, format: date-time }
+        author_id: { type: string, format: uuid }
+        category_id: { type: string, format: uuid }
+
+    FeedPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/FeedArticle" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"], description: Opaque. Not a uuid, because Fresh orders by published_at and Popular orders by score. }
+
+    ViewResult:
+      type: object
+      required: [recorded]
+      additionalProperties: false
+      properties:
+        recorded:
+          type: boolean
+          description: False when this viewer already counted inside 30 minutes.
+
+    ArticleLikeState:
+      type: object
+      required: [liked, like_count]
+      additionalProperties: false
+      properties:
+        liked: { type: boolean }
+        like_count: { type: integer, minimum: 0 }
+
+    CommentLikeState:
+      type: object
+      required: [liked, like_count]
+      additionalProperties: false
+      properties:
+        liked: { type: boolean }
+        like_count: { type: integer, minimum: 0 }
+
+    CommentVisible:
+      type: object
+      required: [view, id, article_id, author_id, root_id, depth, body, like_count]
+      additionalProperties: false
+      properties:
+        view: { type: string, enum: [visible] }
+        id: { type: string, format: uuid }
+        article_id: { type: string, format: uuid }
+        author_id: { type: string, format: uuid }
+        parent_id: { type: [string, "null"], format: uuid }
+        root_id: { type: string, format: uuid }
+        depth: { type: integer, minimum: 1 }
+        body: { type: string }
+        like_count: { type: integer, minimum: 0 }
+        liked_by_viewer: { type: boolean }
+        mentioned_user_ids:
+          type: array
+          items: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [visible, hidden]
+          description: Present for the author and for staff. Omitted for other readers.
+        created_at: { type: string, format: date-time }
+
+    CommentUnavailable:
+      type: object
+      required: [view, id]
+      additionalProperties: false
+      description: A hidden Comment for a reader who is not the author. No body, and not told that staff hid it.
+      properties:
+        view: { type: string, enum: [unavailable] }
+        id: { type: string, format: uuid }
+
+    CommentRead:
+      oneOf:
+        - $ref: "#/components/schemas/CommentVisible"
+        - $ref: "#/components/schemas/CommentUnavailable"
+
+    CommentPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CommentRead" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    CommentCreate:
+      type: object
+      required: [body]
+      additionalProperties: false
+      properties:
+        body: { type: string, minLength: 1 }
+        mentioned_user_ids:
+          type: array
+          items: { type: string, format: uuid }
+
+    BookmarkState:
+      type: object
+      required: [bookmarked]
+      additionalProperties: false
+      properties:
+        bookmarked: { type: boolean }
+
+    Bookmark:
+      type: object
+      required: [article_id, created_at]
+      additionalProperties: false
+      properties:
+        article_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+
+    BookmarkPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Bookmark" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    FollowState:
+      type: object
+      required: [following]
+      additionalProperties: false
+      properties:
+        following: { type: boolean }
+
+    MediaUploadCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        content_type: { type: string }
+        byte_size: { type: integer, minimum: 0 }
+
+    MediaUpload:
+      type: object
+      required: [id, upload_url, status]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        upload_url:
+          type: string
+          format: uri
+          description: Time-limited URL from ADR 0008. Not a database column. The browser sends the bytes here.
+        status: { type: string, enum: [pending, ready] }
+
+    ConversationSummary:
+      type: object
+      required: [id, peer_user_id, unread_count]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        peer_user_id: { type: string, format: uuid }
+        unread_count:
+          type: integer
+          minimum: 0
+          description: Messages in this conversation with read_at null for the caller.
+
+    ConversationPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ConversationSummary" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    ConversationCreate:
+      type: object
+      required: [recipient_user_id, body]
+      additionalProperties: false
+      properties:
+        recipient_user_id: { type: string, format: uuid }
+        body: { type: string, minLength: 1 }
+
+    DirectMessageCreate:
+      type: object
+      required: [body]
+      additionalProperties: false
+      properties:
+        body: { type: string, minLength: 1 }
+
+    DirectMessage:
+      type: object
+      required: [id, conversation_id, sender_id, body, created_at]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        conversation_id: { type: string, format: uuid }
+        sender_id: { type: string, format: uuid }
+        body: { type: string }
+        created_at: { type: string, format: date-time }
+        read_at: { type: [string, "null"], format: date-time }
+
+    DirectMessagePage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/DirectMessage" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    ConversationRead:
+      type: object
+      required: [read_at]
+      additionalProperties: false
+      properties:
+        read_at: { type: string, format: date-time }
+
+    ComplaintCreate:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: { type: string, minLength: 1 }
+
+    ComplaintCreated:
+      type: object
+      required: [id, target_type, target_id, status]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        target_type: { type: string, enum: [article, comment] }
+        target_id: { type: string, format: uuid }
+        status: { type: string, enum: [open] }
+
+    ComplaintAdmin:
+      type: object
+      required: [id, target_type, target_id, reporter_id, reason, status, created_at]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        target_type:
+          type: string
+          enum: [article, comment]
+          description: Which service owns the row. The gateway merges the two open lists.
+        target_id: { type: string, format: uuid }
+        reporter_id: { type: string, format: uuid }
+        reason: { type: string }
+        status: { type: string, enum: [open, closed_hidden, dismissed] }
+        resolution_reason: { type: [string, "null"] }
+        resolved_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    ComplaintPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ComplaintAdmin" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    ComplaintDismiss:
+      type: object
+      required: [target_type, reason]
+      additionalProperties: false
+      properties:
+        target_type: { type: string, enum: [article, comment] }
+        reason: { type: string, minLength: 1 }
+
+    Notification:
+      type: object
+      required: [id, type, actor_id, entity_type, entity_id, created_at]
+      additionalProperties: false
+      description: |
+        No text column. The client localizes `type`. For a reply or a mention, `entity_type`
+        is `comment` while the sequence opens the Article. The contract returns the stored
+        columns. See the sync report.
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [reply, mention, follow, direct_message] }
+        actor_id: { type: string, format: uuid }
+        entity_type: { type: string, enum: [comment, user, conversation] }
+        entity_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+
+    NotificationPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Notification" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    AdminMe:
+      type: object
+      required: [id, role]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        role: { $ref: "#/components/schemas/Role" }
+
+    Reason:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason: { type: string, minLength: 1 }
+
+    RoleAssignment:
+      type: object
+      required: [role, reason]
+      additionalProperties: false
+      properties:
+        role: { $ref: "#/components/schemas/Role" }
+        reason: { type: string, minLength: 1 }
+
+    Block:
+      type: object
+      required: [id, user_id, actor_id, reason]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        actor_id: { type: string, format: uuid }
+        reason: { type: string }
+        created_at: { type: string, format: date-time }
+        lifted_at: { type: [string, "null"], format: date-time }
+        lifted_by: { type: [string, "null"], format: uuid }
+
+    PopularWeights:
+      type: object
+      required: [id, views_weight, likes_weight, comments_weight, bookmarks_weight, age_decay]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        views_weight: { type: number }
+        likes_weight: { type: number }
+        comments_weight: { type: number }
+        bookmarks_weight: { type: number }
+        age_decay: { type: number, description: Subtracted per hour of age. }
+        updated_at: { type: string, format: date-time }
+
+    PopularWeightsUpdate:
+      type: object
+      required: [views_weight, likes_weight, comments_weight, bookmarks_weight, age_decay]
+      additionalProperties: false
+      properties:
+        views_weight: { type: number }
+        likes_weight: { type: number }
+        comments_weight: { type: number }
+        bookmarks_weight: { type: number }
+        age_decay: { type: number }
+
+    PlatformStatistics:
+      type: object
+      required: [users_signed_in_today, users_signed_in_last_30_days, new_users, articles_published, comments_written, open_complaints, public_site_answering]
+      additionalProperties: false
+      properties:
+        users_signed_in_today: { type: integer, minimum: 0 }
+        users_signed_in_last_30_days: { type: integer, minimum: 0 }
+        new_users:
+          type: integer
+          minimum: 0
+          description: Count of User rows. The spec does not state a window.
+        articles_published: { type: integer, minimum: 0 }
+        comments_written: { type: integer, minimum: 0 }
+        open_complaints: { type: integer, minimum: 0 }
+        public_site_answering: { type: boolean }
+
+    AuditEntry:
+      type: object
+      required: [id, actor_id, action, entity_type, entity_id, created_at]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        actor_id: { type: string, format: uuid }
+        action:
+          type: string
+          enum: [article.hide, comment.hide, user.block, user.unblock, user.role.change, article.soft_remove, article.category.change, category.create, complaint.dismiss]
+        entity_type: { type: string, enum: [article, comment, user, category, complaint] }
+        entity_id: { type: string, format: uuid }
+        reason: { type: [string, "null"] }
+        before_state: { type: [object, "null"], additionalProperties: true }
+        after_state: { type: [object, "null"], additionalProperties: true }
+        request_id: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+
+    AuditPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEntry" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    RateLimitSetting:
+      type: object
+      required: [action, max_count, window_seconds]
+      additionalProperties: false
+      properties:
+        action: { $ref: "#/components/schemas/RateLimitAction" }
+        max_count: { type: integer, minimum: 1 }
+        window_seconds: { type: integer, minimum: 1 }
+        updated_at: { type: string, format: date-time }
+
+    RateLimitPage:
+      type: object
+      required: [items, has_next, has_prev]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/RateLimitSetting" }
+        has_next: { type: boolean }
+        has_prev: { type: boolean }
+        next_cursor: { type: [string, "null"] }
+
+    RateLimitUpdate:
+      type: object
+      required: [max_count, window_seconds]
+      additionalProperties: false
+      properties:
+        max_count: { type: integer, minimum: 1 }
+        window_seconds: { type: integer, minimum: 1 }
