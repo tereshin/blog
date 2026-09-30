@@ -1,12 +1,12 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import type { ProfileStore, StoredUser } from './profile-store';
-import { user_sign_ins, users_table } from './users-schema';
+import { blocks, user_sign_ins, users_table } from './users-schema';
 
 type UserRow = typeof users_table.$inferSelect;
 
-function toStored(row: UserRow): StoredUser {
+function toStored(row: UserRow, blocked: boolean): StoredUser {
   return {
     id: row.id,
     firebase_uid: row.firebase_uid,
@@ -15,7 +15,7 @@ function toStored(row: UserRow): StoredUser {
     biography: row.biography,
     avatar_url: row.avatar_url,
     content_languages: row.content_languages,
-    blocked: false,
+    blocked,
   };
 }
 
@@ -34,7 +34,7 @@ export class DrizzleProfileStore implements ProfileStore {
       .where(eq(users_table.firebase_uid, firebase_uid))
       .limit(1);
     const row = rows[0];
-    return row ? toStored(row) : null;
+    return row ? toStored(row, await this.hasActiveBlock(row.id)) : null;
   }
 
   async findByUsername(username: string): Promise<StoredUser | null> {
@@ -44,7 +44,16 @@ export class DrizzleProfileStore implements ProfileStore {
       .where(eq(users_table.username, username))
       .limit(1);
     const row = rows[0];
-    return row ? toStored(row) : null;
+    return row ? toStored(row, await this.hasActiveBlock(row.id)) : null;
+  }
+
+  private async hasActiveBlock(user_id: string): Promise<boolean> {
+    const rows = await this.db
+      .select({ id: blocks.id })
+      .from(blocks)
+      .where(and(eq(blocks.user_id, user_id), isNull(blocks.lifted_at)))
+      .limit(1);
+    return rows.length > 0;
   }
 
   async usernameTaken(username: string, except_user_id: string | null): Promise<boolean> {

@@ -20,7 +20,7 @@
 | T13 | Add Firebase verification, Redis, RabbitMQ, and the event envelope | wiring | Backend Lead | M | T12 | done |
 | T14 | Record a User profile and a unique Username | app | Backend Lead | M | T1, T13 | done |
 | T15 | Assign one role and keep the last Administrator | app | Backend Lead | M | T14 | done |
-| T16 | Block an account and append the staff audit trail | app | Backend Lead | M | T15 | todo |
+| T16 | Block an account and append the staff audit trail | app | Backend Lead | M | T15 | done |
 | T17 | Serve Categories and their three translations | app | Backend Lead | M | T2, T13, T15 | todo |
 | T18 | Save Article drafts with a version check and sanitized HTML | app | Backend Lead | M | T3, T14, T17 | todo |
 | T19 | Publish an Article and let the author withdraw it | app | Backend Lead | M | T18, T16 | todo |

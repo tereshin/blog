@@ -27,6 +27,16 @@ export const user_sign_ins = users_schema.table(
   (table) => [primaryKey({ columns: [table.user_id, table.signed_on] })],
 );
 
+export const blocks = users_schema.table('blocks', {
+  id: uuid('id').primaryKey(),
+  user_id: uuid('user_id').notNull(),
+  actor_id: uuid('actor_id').notNull(),
+  reason: text('reason').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+  lifted_at: timestamp('lifted_at', { withTimezone: true, mode: 'string' }),
+  lifted_by: uuid('lifted_by'),
+});
+
 export const admin_audit_log = users_schema.table('admin_audit_log', {
   id: uuid('id').primaryKey(),
   actor_id: uuid('actor_id').notNull(),

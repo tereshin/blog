@@ -1,3 +1,5 @@
+export { BlockModule } from './block/block.module';
+export { BlockService } from './block/block-service';
 export { DrizzleRoleStore } from './role/drizzle-role-store';
 export { RoleModule } from './role/role.module';
 export { RoleService } from './role/role-service';

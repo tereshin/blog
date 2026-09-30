@@ -9,7 +9,7 @@ files_hint: ["apps/users"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T16 — Block an account and append the staff audit trail
