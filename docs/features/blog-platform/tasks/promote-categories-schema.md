@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/02_create_categories.up.sql
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T2 — Promote the categories schema migration
