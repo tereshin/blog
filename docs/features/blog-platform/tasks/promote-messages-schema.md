@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/08_create_messages.up.sql",
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T8 — Promote the messages schema migration

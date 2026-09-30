@@ -12,7 +12,7 @@
 | T5 | Promote the comments schema migration | migration | Backend Lead | S | T4 | done |
 | T6 | Promote the engagement schema migration | migration | Backend Lead | S | T5 | done |
 | T7 | Promote the social schema migration | migration | Backend Lead | S | T6 | done |
-| T8 | Promote the messages schema migration | migration | Backend Lead | S | T7 | todo |
+| T8 | Promote the messages schema migration | migration | Backend Lead | S | T7 | done |
 | T9 | Promote the notifications schema migration | migration | Backend Lead | S | T8 | todo |
 | T10 | Promote the feed schema migration | migration | Backend Lead | S | T9 | todo |
 | T11 | Promote the rate-limit seed migration | migration | Backend Lead | S | T10 | todo |

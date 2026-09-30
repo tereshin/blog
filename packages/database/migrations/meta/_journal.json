@@ -57,6 +57,13 @@
       "when": 1790800006000,
       "tag": "0007_create_social",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790800007000,
+      "tag": "0008_create_messages",
+      "breakpoints": true
     }
   ]
 }
