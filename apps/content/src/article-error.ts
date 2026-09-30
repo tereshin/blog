@@ -10,6 +10,7 @@ const status_by_code = {
   USERNAME_REQUIRED: 422,
   ACCOUNT_BLOCKED: 403,
   MEDIA_NOT_FOUND: 404,
+  COMPLAINT_REASON_REQUIRED: 422,
 } as const;
 
 export type ArticleErrorCode = keyof typeof status_by_code;

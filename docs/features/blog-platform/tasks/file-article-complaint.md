@@ -9,7 +9,7 @@ files_hint: ["apps/content"]
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "S"
-status: "todo"
+status: "done"
 ---
 
 # T23 — Record a Complaint about an Article
@@ -79,9 +79,9 @@ This task stores an Article Complaint when a reason is present.
 
 ## Checklist
 
-- [ ] Insert an open Article Complaint with a required reason
-- [ ] Refuse a missing reason with `COMPLAINT_REASON_REQUIRED`
-- [ ] Do not hide the Article from this command
+- [x] Insert an open Article Complaint with a required reason
+- [x] Refuse a missing reason with `COMPLAINT_REASON_REQUIRED`
+- [x] Do not hide the Article from this command
 
 ## Edge cases
 
@@ -92,6 +92,6 @@ This task stores an Article Complaint when a reason is present.
 
 ## Definition of Done
 
-- [ ] Vitest covers the Article half of AC-23 and AC-24
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers the Article half of AC-23 and AC-24
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

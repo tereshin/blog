@@ -40,6 +40,17 @@ export const article_revisions = content_schema.table('article_revisions', {
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });
 
+export const article_complaints = content_schema.table('article_complaints', {
+  id: uuid('id').primaryKey(),
+  article_id: uuid('article_id').notNull(),
+  reporter_id: uuid('reporter_id').notNull(),
+  reason: text('reason').notNull(),
+  status: text('status').notNull(),
+  resolution_reason: text('resolution_reason'),
+  resolved_at: timestamp('resolved_at', { withTimezone: true, mode: 'string' }),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+});
+
 export const outbox_events = content_schema.table('outbox_events', {
   id: uuid('id').primaryKey(),
   event_type: text('event_type').notNull(),

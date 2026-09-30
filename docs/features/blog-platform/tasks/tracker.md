@@ -27,7 +27,7 @@
 | T20 | Keep the previous Article version on a published save | app | Backend Lead | S | T18 | done |
 | T21 | Issue presigned image uploads | app | Backend Lead | M | T4, T13, T18 | done |
 | T22 | Comment, reply, and mention on a visible Article | app | Backend Lead | M | T5, T13, T19 | done |
-| T23 | Record a Complaint about an Article | app | Backend Lead | S | T19 | todo |
+| T23 | Record a Complaint about an Article | app | Backend Lead | S | T19 | done |
 | T24 | Record a Complaint about a Comment | app | Backend Lead | S | T22 | todo |
 | T25 | Like an Article, Bookmark it, and count one View | app | Backend Lead | M | T6, T13, T19 | todo |
 | T26 | Follow and unfollow Users and Categories | app | Backend Lead | S | T7, T14, T17 | todo |
