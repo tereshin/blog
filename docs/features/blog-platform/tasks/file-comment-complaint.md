@@ -9,7 +9,7 @@ files_hint: ["apps/comments"]
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "S"
-status: "todo"
+status: "done"
 ---
 
 # T24 — Record a Complaint about a Comment
@@ -77,8 +77,8 @@ This task stores a Comment Complaint when a reason is present.
 
 ## Checklist
 
-- [ ] Insert an open Comment Complaint with a required reason
-- [ ] Refuse a missing reason and an unknown Comment
+- [x] Insert an open Comment Complaint with a required reason
+- [x] Refuse a missing reason and an unknown Comment
 
 ## Edge cases
 
@@ -89,6 +89,6 @@ This task stores a Comment Complaint when a reason is present.
 
 ## Definition of Done
 
-- [ ] Vitest covers the Comment half of AC-23 and AC-24
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers the Comment half of AC-23 and AC-24
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

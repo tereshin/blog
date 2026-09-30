@@ -24,6 +24,17 @@ export const comment_mentions = comments_schema.table(
   (table) => [primaryKey({ columns: [table.comment_id, table.mentioned_user_id] })],
 );
 
+export const comment_complaints = comments_schema.table('comment_complaints', {
+  id: uuid('id').primaryKey(),
+  comment_id: uuid('comment_id').notNull(),
+  reporter_id: uuid('reporter_id').notNull(),
+  reason: text('reason').notNull(),
+  status: text('status').notNull(),
+  resolution_reason: text('resolution_reason'),
+  resolved_at: timestamp('resolved_at', { withTimezone: true, mode: 'string' }),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+});
+
 export const outbox_events = comments_schema.table('outbox_events', {
   id: uuid('id').primaryKey(),
   event_type: text('event_type').notNull(),
