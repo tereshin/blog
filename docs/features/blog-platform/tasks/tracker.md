@@ -10,7 +10,7 @@
 | T3 | Promote the content schema migration | migration | Backend Lead | S | T2 | done |
 | T4 | Promote the media schema migration | migration | Backend Lead | S | T3 | done |
 | T5 | Promote the comments schema migration | migration | Backend Lead | S | T4 | done |
-| T6 | Promote the engagement schema migration | migration | Backend Lead | S | T5 | todo |
+| T6 | Promote the engagement schema migration | migration | Backend Lead | S | T5 | done |
 | T7 | Promote the social schema migration | migration | Backend Lead | S | T6 | todo |
 | T8 | Promote the messages schema migration | migration | Backend Lead | S | T7 | todo |
 | T9 | Promote the notifications schema migration | migration | Backend Lead | S | T8 | todo |
