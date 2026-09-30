@@ -9,7 +9,7 @@ files_hint: ["apps/comments"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T22 — Comment, reply, and mention on a visible Article
@@ -98,10 +98,10 @@ This task stores a Comment, a reply, and a mention, and blocks a Comment on an A
 
 ## Checklist
 
-- [ ] Add `apps/comments`. Ask the content service whether the Article is published and visible. Do not join schema `content`
-- [ ] Store the reply under the parent. Keep depth above 3 and flag it flat
-- [ ] Store mentions and insert `comments.comment.created` in the same transaction
-- [ ] Refuse an empty body
+- [x] Add `apps/comments`. Ask the content service whether the Article is published and visible. Do not join schema `content`
+- [x] Store the reply under the parent. Keep depth above 3 and flag it flat
+- [x] Store mentions and insert `comments.comment.created` in the same transaction
+- [x] Refuse an empty body
 
 ## Edge cases
 
@@ -113,6 +113,6 @@ This task stores a Comment, a reply, and a mention, and blocks a Comment on an A
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-17 and AC-18
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-17 and AC-18
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
