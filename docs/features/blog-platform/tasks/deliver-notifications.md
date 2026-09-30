@@ -9,7 +9,7 @@ files_hint: ["apps/notification"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T29 — Deliver in-product Notifications
@@ -83,9 +83,9 @@ This task writes one in-product notice for a reply, a mention, a new follower, o
 
 ## Checklist
 
-- [ ] Add `apps/notification`. Consume the three events and insert one row per recipient
-- [ ] Ignore a duplicate `source_event_id` for that User
-- [ ] Do not send email or a phone alert
+- [x] Add `apps/notification`. Consume the three events and insert one row per recipient
+- [x] Ignore a duplicate `source_event_id` for that User
+- [x] Do not send email or a phone alert
 
 ## Edge cases
 
@@ -96,6 +96,6 @@ This task writes one in-product notice for a reply, a mention, a new follower, o
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-26, including a duplicate event that does not insert a second row
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-26, including a duplicate event that does not insert a second row
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

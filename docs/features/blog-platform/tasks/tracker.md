@@ -33,7 +33,7 @@
 | T26 | Follow and unfollow Users and Categories | app | Backend Lead | S | T7, T14, T17 | done |
 | T27 | Serve Fresh, Popular, and My feed | app | Backend Lead | M | T10, T13, T19, T25, T26, T14 | done |
 | T28 | Exchange Direct messages between two Users | app | Backend Lead | M | T8, T14, T16 | done |
-| T29 | Deliver in-product Notifications | app | Backend Lead | M | T9, T13, T22, T26, T28 | todo |
+| T29 | Deliver in-product Notifications | app | Backend Lead | M | T9, T13, T22, T26, T28 | done |
 | T30 | Hide an Article, move its Category, and staff-remove it | app | Backend Lead | M | T16, T19, T23 | todo |
 | T31 | Hide a Comment and close its Complaints | app | Backend Lead | M | T16, T22, T24 | todo |
 | T32 | List open Complaints and dismiss one | ports | Backend Lead | M | T13, T16, T23, T24 | todo |
