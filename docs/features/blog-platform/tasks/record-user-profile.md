@@ -9,7 +9,7 @@ files_hint: ["apps/users"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T14 — Record a User profile and a unique Username
