@@ -9,7 +9,7 @@ files_hint: ["apps/categories"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T17 — Serve Categories and their three translations
