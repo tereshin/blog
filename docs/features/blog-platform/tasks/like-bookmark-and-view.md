@@ -9,7 +9,7 @@ files_hint: ["apps/engagement"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T25 — Like an Article, Bookmark it, and count one View
@@ -128,10 +128,10 @@ This task toggles an Article Like, stores a private Bookmark, likes a Comment, a
 
 ## Checklist
 
-- [ ] Add `apps/engagement`. Toggle the Article Like and adjust `like_count` in one transaction with `engagement.article.liked` or `engagement.article.unliked`
-- [ ] Toggle a Comment Like the same way
-- [ ] Add and remove a Bookmark for the caller only. Do not emit an outbox row for a Bookmark
-- [ ] Set the Redis dedupe key for 30 minutes. A second View from that viewer does not increment. Leave the Postgres flush to T38
+- [x] Add `apps/engagement`. Toggle the Article Like and adjust `like_count` in one transaction with `engagement.article.liked` or `engagement.article.unliked`
+- [x] Toggle a Comment Like the same way
+- [x] Add and remove a Bookmark for the caller only. Do not emit an outbox row for a Bookmark
+- [x] Set the Redis dedupe key for 30 minutes. A second View from that viewer does not increment. Leave the Postgres flush to T38
 
 ## Edge cases
 
@@ -144,6 +144,6 @@ This task toggles an Article Like, stores a private Bookmark, likes a Comment, a
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-15, AC-19, AC-20, AC-02, and the Comment-like half of AC-17
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-15, AC-19, AC-20, AC-02, and the Comment-like half of AC-17
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

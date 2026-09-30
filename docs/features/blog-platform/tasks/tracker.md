@@ -29,7 +29,7 @@
 | T22 | Comment, reply, and mention on a visible Article | app | Backend Lead | M | T5, T13, T19 | done |
 | T23 | Record a Complaint about an Article | app | Backend Lead | S | T19 | done |
 | T24 | Record a Complaint about a Comment | app | Backend Lead | S | T22 | done |
-| T25 | Like an Article, Bookmark it, and count one View | app | Backend Lead | M | T6, T13, T19 | todo |
+| T25 | Like an Article, Bookmark it, and count one View | app | Backend Lead | M | T6, T13, T19 | done |
 | T26 | Follow and unfollow Users and Categories | app | Backend Lead | S | T7, T14, T17 | todo |
 | T27 | Serve Fresh, Popular, and My feed | app | Backend Lead | M | T10, T13, T19, T25, T26, T14 | todo |
 | T28 | Exchange Direct messages between two Users | app | Backend Lead | M | T8, T14, T16 | todo |
