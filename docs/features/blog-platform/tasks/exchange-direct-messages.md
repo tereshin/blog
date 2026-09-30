@@ -9,7 +9,7 @@ files_hint: ["apps/messaging"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T28 — Exchange Direct messages between two Users
@@ -97,10 +97,10 @@ This task stores a Direct message, the unread count, and the read mark.
 
 ## Checklist
 
-- [ ] Add `apps/messaging`. Find or create the pair conversation
-- [ ] Reject an empty body. Reject a blocked sender via the users service
-- [ ] Insert the message and `messages.direct_message.sent` together. Set `read_at` without an outbox row
-- [ ] Return the conversation only to its two members
+- [x] Add `apps/messaging`. Find or create the pair conversation
+- [x] Reject an empty body. Reject a blocked sender via the users service
+- [x] Insert the message and `messages.direct_message.sent` together. Set `read_at` without an outbox row
+- [x] Return the conversation only to its two members
 
 ## Edge cases
 
@@ -112,6 +112,6 @@ This task stores a Direct message, the unread count, and the read mark.
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-21 and AC-22
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-21 and AC-22
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

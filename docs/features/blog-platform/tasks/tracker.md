@@ -32,7 +32,7 @@
 | T25 | Like an Article, Bookmark it, and count one View | app | Backend Lead | M | T6, T13, T19 | done |
 | T26 | Follow and unfollow Users and Categories | app | Backend Lead | S | T7, T14, T17 | done |
 | T27 | Serve Fresh, Popular, and My feed | app | Backend Lead | M | T10, T13, T19, T25, T26, T14 | done |
-| T28 | Exchange Direct messages between two Users | app | Backend Lead | M | T8, T14, T16 | todo |
+| T28 | Exchange Direct messages between two Users | app | Backend Lead | M | T8, T14, T16 | done |
 | T29 | Deliver in-product Notifications | app | Backend Lead | M | T9, T13, T22, T26, T28 | todo |
 | T30 | Hide an Article, move its Category, and staff-remove it | app | Backend Lead | M | T16, T19, T23 | todo |
 | T31 | Hide a Comment and close its Complaints | app | Backend Lead | M | T16, T22, T24 | todo |
