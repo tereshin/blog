@@ -29,6 +29,13 @@
       "when": 1790800002000,
       "tag": "0003_create_content",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790800003000,
+      "tag": "0004_create_media",
+      "breakpoints": true
     }
   ]
 }

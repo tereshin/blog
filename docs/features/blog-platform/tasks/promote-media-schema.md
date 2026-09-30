@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/04_create_media.up.sql", "d
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T4 — Promote the media schema migration
