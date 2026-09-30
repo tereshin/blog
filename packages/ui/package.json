@@ -1,27 +1,30 @@
 {
-  "name": "@blog/web",
+  "name": "@blog/ui",
   "version": "0.0.0",
   "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/theme.css"
+  },
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
     "lint": "eslint .",
     "test": "vitest run",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@blog/i18n": "workspace:*",
-    "@blog/ui": "workspace:*",
     "@heroui/react": "^3.2.6",
     "@heroui/styles": "^3.2.6",
-    "@tailwindcss/postcss": "^4.3.3",
-    "next": "^16.3.6",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "tailwindcss": "^4.3.3"
+    "next-themes": "^0.4.6"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@blog/eslint-config": "workspace:*",
+    "@blog/i18n": "workspace:*",
     "@blog/tsconfig": "workspace:*",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -30,6 +33,8 @@
     "@types/react-dom": "^19.2.0",
     "eslint": "catalog:",
     "jsdom": "^27.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "typescript": "catalog:",
     "vitest": "^5.0.2"
   }

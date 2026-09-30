@@ -1,6 +1,7 @@
 {
   "extends": "@blog/tsconfig/nextjs.json",
   "compilerOptions": {
+    "jsx": "react-jsx",
     "paths": {
       "@/*": ["./*"]
     }

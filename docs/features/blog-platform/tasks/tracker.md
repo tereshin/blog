@@ -44,7 +44,7 @@
 | T37 | Relay each schema outbox from its own worker | infra | Backend Lead | M | T13, T19, T22, T25, T26, T28, T30, T31 | todo |
 | T38 | Flush view increments from Redis | infra | Backend Lead | S | T25, T13 | todo |
 | T39 | Push live Article and Direct message updates | app | Backend Lead | M | T37, T28, T30, T31 | todo |
-| T40 | Share HeroUI tokens, Theme, and Interface language | ui | Frontend Lead | M | — | todo |
+| T40 | Share HeroUI tokens, Theme, and Interface language | ui | Frontend Lead | M | — | done |
 | T41 | Render the Fresh feed, the Popular feed, and a Category | ui | Frontend Lead | M | T40, T27, T17, T26 | todo |
 | T42 | Render a published Article with Comments and live counts | ui | Frontend Lead | M | T40, T33, T39, T22, T25 | todo |
 | T43 | Sign in and edit a public profile | ui | Frontend Lead | M | T40, T14, T33, T26 | todo |

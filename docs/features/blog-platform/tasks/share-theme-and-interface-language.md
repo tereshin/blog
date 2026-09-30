@@ -9,7 +9,7 @@ files_hint: ["packages/ui", "packages/i18n", "apps/web/src/app"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T40 — Share HeroUI tokens, Theme, and Interface language
