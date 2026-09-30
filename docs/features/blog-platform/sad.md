@@ -242,7 +242,204 @@ C4Container
 
 ## 6. Runtime view
 
-`sequences` covers every acceptance criterion. This section seeds the three paths the strategy depends on: publish, a staff hide reaching an open reader, and My feed.
+`sequences` covers every acceptance criterion. Diagrams follow the user stories. The three Critical flow diagrams were drawn with design and are unchanged.
+
+### Read a published article
+
+A Guest or a User opens a published Article (SCR-03) and sees the text, the images, the Comments, and the Like, Comment, and View counts. The same viewer does not add a second View inside 30 minutes. A later worker folds recorded increments into the stored View count.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+    participant B as <message-bus>
+
+    Note over U,UI: Precondition: a published Article has text, images, Comments, and counts. Screen SCR-03.
+    U->>UI: opens the published Article
+    UI->>S: asks for the Article
+    S->>D: reads the Article and its image locations
+    D-->>S: text and image locations
+    S->>D: reads the Comments
+    D-->>S: Comments
+    S->>D: reads the Like count, the Comment count, and the View count
+    D-->>S: counts
+    S-->>UI: one composed Article
+    UI-->>U: shows the text, the images, the Comments, and the three counts
+    opt the Article stayed visible for the dwell time
+        UI->>S: asks to record a View for this browser session or this User
+        S->>D: looks up a View for this viewer and Article inside 30 minutes
+        alt same viewer already counted
+            D-->>S: a View exists
+            S-->>UI: no new View
+        else no View yet, including a different Guest browser session
+            S->>D: records one View increment
+            Note over S,D: persists view increment for this viewer and Article
+            D-->>S: recorded
+            S-->>UI: one View recorded
+        end
+    end
+    Note over S,D: Trigger: a later worker folds View increments into the stored count
+    S->>S: check idempotency key (skip if this increment was already folded)
+    alt increment already folded
+        S->>S: skip this increment
+    else increment not yet folded
+        S->>D: adds the increment to the stored View count
+        Note over S,D: persists view count
+        D-->>S: stored
+        Note over S,D: retry with exponential backoff on failure
+        alt exhausted retries
+            S->>B: routes the failed flush to the dead letter
+            Note over S,B: dead-letter after retries are exhausted
+        end
+    end
+    Note over U,UI: Postcondition: the reader saw the published Article. The same viewer has no second View inside 30 minutes.
+```
+
+### Browse public feeds
+
+A Guest opens the Fresh feed (SCR-01) and the Popular feed (SCR-02). Fresh is newest first. Popular follows the current score. Both include every Content language. My feed is not offered. A cached page is returned as stored. A miss reads published Articles and stores the page.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: several published Articles differ in age and engagement. Screens SCR-01 and SCR-02.
+    U->>UI: opens the Fresh feed
+    UI->>S: asks for the Fresh page
+    S->>D: looks up the cached Fresh page
+    alt cached Fresh page exists
+        D-->>S: the cached page
+    else no cached Fresh page
+        S->>D: reads published Articles, newest first, every Content language
+        D-->>S: one page of 20 Articles
+        S->>D: stores the Fresh page
+        Note over S,D: persists cached Fresh page
+        D-->>S: stored
+    end
+    S-->>UI: the Fresh page
+    UI-->>U: shows published Articles newest first, in every Content language
+    U->>UI: opens the Popular feed
+    UI->>S: asks for the Popular page
+    S->>D: looks up the cached Popular page
+    alt cached Popular page exists
+        D-->>S: the cached page
+    else no cached Popular page
+        S->>D: reads published Articles by the current score of Views, Likes, Comments, Bookmarks, and age
+        D-->>S: one page of 20 Articles, every Content language
+        S->>D: stores the Popular page
+        Note over S,D: persists cached Popular page
+        D-->>S: stored
+    end
+    S-->>UI: the Popular page
+    UI-->>U: shows published Articles by that score, in every Content language
+    U->>UI: looks for My feed
+    UI-->>U: My feed is not offered
+    Note over U,UI: Postcondition: the Guest saw Fresh and Popular. My feed was not offered.
+```
+
+### Choose theme and interface language
+
+A Guest sets Theme and Interface language in place on the public site. A Moderator or an Administrator does the same in place on the admin panel. System is the Theme before any choice. The choice is kept in the browser and applied on a later visit. A missing Interface language string is shown in English.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+
+    Note over U,UI: Precondition: System is the Theme, and no Interface language has been chosen. The choice is in place, not a separate screen.
+    U->>UI: chooses light, dark, or system, and English, Serbian Latin, or Russian
+    UI->>UI: applies that Theme and that Interface language on the public site
+    Note over UI: persists theme and interface language in this browser
+    U->>UI: opens the public site on a later visit
+    UI->>UI: applies the stored Theme before the page is shown
+    UI-->>U: shows the public site with the stored choice
+    alt the chosen language has the string
+        UI-->>U: shows that string
+    else the string is missing
+        UI-->>U: shows the English string
+    end
+    U->>UI: chooses light, dark, or system, and English, Serbian Latin, or Russian on the admin panel
+    UI->>UI: applies that Theme and that Interface language on the admin panel
+    Note over UI: persists theme and interface language in this browser
+    alt the chosen language has the string
+        UI-->>U: shows that string on the admin panel
+    else the string is missing
+        UI-->>U: shows the English string on the admin panel
+    end
+    Note over U,UI: Postcondition: the public site and the admin panel use the chosen Theme and Interface language. A missing string is English.
+```
+
+### Create and update a public profile
+
+A person who has just signed in and has no Username chooses one and saves a public profile (SCR-04, then SCR-06, then SCR-05). A taken Username stays on profile setup. A Guest sees the Username. A later save of a Display name, a Biography, or an Avatar shows only the fields that were saved.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant X as <external-system>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,X: Precondition: this person has no Username yet. Screens SCR-04, SCR-06, and SCR-05.
+    U->>UI: signs in
+    UI->>X: asks to sign this person in
+    X-->>UI: a verified identity
+    UI->>S: asks for the profile of this identity
+    S->>D: looks up the User by the sign-in identity
+    D-->>S: no Username yet
+    S-->>UI: a Username is required
+    UI-->>U: opens profile setup
+    U->>UI: chooses a Username and saves
+    UI->>S: asks to save the Username
+    S->>D: looks up that Username
+    alt Username is already taken
+        D-->>S: another User has it
+        S-->>UI: the Username is already taken
+        UI-->>U: stays on profile setup and says the Username is taken
+    else Username is free
+        S->>D: records the User, the Username, and the sign-in identity
+        Note over S,D: persists user and username, looked up by the sign-in identity
+        D-->>S: recorded
+        S-->>UI: saved
+        UI-->>U: shows the public profile
+        U->>UI: opens that profile as a Guest
+        UI->>S: asks for the public profile
+        S->>D: reads the public profile
+        D-->>S: the Username
+        S-->>UI: the public profile
+        UI-->>U: shows the Username
+        Note over U,S: this User already has a Username
+        U->>UI: saves a Display name, a Biography, or an Avatar
+        UI->>S: asks to save the fields that were sent
+        S->>D: records each sent field
+        Note over S,D: persists display name, biography, or avatar
+        D-->>S: recorded
+        S-->>UI: saved
+        U->>UI: opens the public profile as a Guest
+        UI->>S: asks for the public profile
+        S->>D: reads the public profile
+        alt that field was saved
+            D-->>S: the saved field
+            S-->>UI: the field
+            UI-->>U: shows the saved field
+        else that field was not saved
+            D-->>S: the field is absent
+            S-->>UI: the profile without that field
+            UI-->>U: does not show the unsaved field
+        end
+    end
+    Note over U,UI: Postcondition: a free Username is recorded and visible to a Guest. A taken Username is not saved. An unsaved optional field is absent.
+```
 
 **Critical flow 1: Publish an Article.** The response returns when content commits the row and the outbox. Feed cache invalidation follows on the queue.
 
@@ -277,32 +474,161 @@ sequenceDiagram
     Feed->>Feed: drops the cached Fresh page
 ```
 
-**Critical flow 2: Hide an Article a reader has open.** The Guest is told the Article is unavailable and is not told that staff hid it. The author still sees the text. The audit append is a second call, so it can fail after the hide is recorded (§11).
+### Keep a draft and publish only when it is valid
+
+A User with a Username keeps a draft while typing on the editor (SCR-08). The second preview is that same draft on the same screen. Publish is refused without a Username, without exactly one Category, without a title, or without text. A valid Article is published with or without an image. Anyone but the author who opens the draft sees it as unavailable and is not told that it is a draft.
 
 ```mermaid
 sequenceDiagram
-    actor Moderator
-    participant Admin as Admin panel
-    participant Gateway as API Gateway
-    participant Content as Content Service
-    participant Users as User Service
-    participant Workers as Background workers
-    participant Rabbit as RabbitMQ
-    participant Realtime as Realtime Gateway
-    actor Guest
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
 
-    Moderator->>Admin: hides the Article and gives a reason
-    Admin->>Gateway: asks to hide
-    Gateway->>Content: hides the Article
-    Content->>Content: records the hide and the outbox row
-    Content-->>Gateway: hidden
-    Gateway->>Users: appends the audit row
-    Users-->>Gateway: appended
-    Gateway-->>Admin: hidden
-    Admin-->>Moderator: confirms the hide
-    Workers->>Rabbit: publishes the outbox event
-    Rabbit-->>Realtime: delivers article hidden
-    Realtime-->>Guest: shows the Article unavailable
+    Note over U,UI: Precondition: the User has a Username. Screen SCR-08. Image upload is Critical flow 1.
+    U->>UI: types and sets the Content language
+    UI->>S: asks to keep the draft
+    S->>D: records the draft
+    Note over S,D: persists draft for this author
+    D-->>S: kept
+    S-->>UI: kept
+    UI->>UI: renders the second preview from the same draft
+    UI-->>U: shows the same edits in the second preview
+    U->>UI: tries to publish
+    UI->>S: asks to publish the draft
+    alt no Username
+        S-->>UI: a Username is required first
+        UI-->>U: opens profile setup
+    else no Category or more than one Category
+        S-->>UI: an Article must belong to exactly one Category
+        UI-->>U: stays on the editor
+    else no title
+        S-->>UI: the title must be present
+        UI-->>U: stays on the editor
+    else no text
+        S-->>UI: the text must be present
+        UI-->>U: stays on the editor
+    else title, text, one Category, and no image
+        S->>D: records the published Article with no image
+        Note over S,D: persists published article and outbox row
+        D-->>S: published
+        S-->>UI: published
+        UI-->>U: shows the published Article
+        U->>UI: opens it as a Guest
+        UI->>S: asks for the published Article
+        S->>D: reads the published Article
+        D-->>S: text, Category, and Content language, with no image
+        S-->>UI: the Article
+        UI-->>U: shows the text, the Category, and the Content language, with no image
+    else title, text, one Category, and an image already attached
+        S->>D: records the published Article with that image
+        Note over S,D: persists published article and outbox row
+        D-->>S: published
+        S-->>UI: published
+        UI-->>U: shows the published Article
+        U->>UI: opens it as a Guest
+        UI->>S: asks for the published Article
+        S->>D: reads the published Article
+        D-->>S: text, image, Category, and Content language
+        S-->>UI: the Article
+        UI-->>U: shows that text, that image, that Category, and that Content language
+    end
+    Note over U,UI: Opening a draft is a separate path. Screen SCR-03 for anyone but the author, SCR-08 for the author.
+    alt a Guest or a different User opens the draft
+        U->>UI: opens the draft
+        UI->>S: asks for the draft
+        S->>D: reads the draft and its author
+        D-->>S: the draft
+        S-->>UI: unavailable, with no text
+        UI-->>U: shows it unavailable and does not say it is a draft
+    else the author opens the draft
+        U->>UI: opens the draft
+        UI->>S: asks for the draft
+        S->>D: reads the draft and its author
+        D-->>S: the author matches
+        S-->>UI: the draft
+        UI-->>U: opens the editor
+    end
+    Note over U,UI: Postcondition: only a draft with a title, text, and exactly one Category is published. Only the author sees the draft text.
+```
+
+### Revise a published article
+
+The owner changes the text of a published Article and saves (SCR-03, then SCR-08). Readers see the new text. The previous version stays recorded and is not returned as a list. A different User is refused.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a published Article has an owner. Screens SCR-03 and SCR-08.
+    U->>UI: tries to change the Article
+    UI->>S: asks to open the Article for editing
+    S->>D: reads the Article and its owner
+    alt a different User
+        D-->>S: the owner is someone else
+        S-->>UI: the change is refused
+        UI-->>U: does not open the editor
+    else the owner
+        D-->>S: this User owns it
+        S-->>UI: the current text
+        UI-->>U: opens the editor
+        U->>UI: changes the text and saves
+        UI->>S: asks to save the new text
+        S->>D: records the new text and keeps the previous version
+        Note over S,D: persists the new article text and the previous version
+        D-->>S: saved
+        S-->>UI: the current text only
+        UI-->>U: shows the new text and no list of earlier versions
+        U->>UI: opens the Article as a reader
+        UI->>S: asks for the Article
+        S->>D: reads the current text
+        D-->>S: the new text
+        S-->>UI: the current text only
+        UI-->>U: shows the new text and no earlier version
+    end
+    Note over U,UI: Postcondition: readers see the new text. The previous version remains and cannot be browsed.
+```
+
+### Follow and unfollow
+
+A User follows another User from that User's public profile (SCR-05) and follows a Category from the Category screen (SCR-07). Stopping one Follow drops only that one.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a User, another User, and a Category exist. Screens SCR-05 and SCR-07.
+    U->>UI: follows that User
+    UI->>S: asks to follow that User
+    S->>D: records the Follow of that User
+    Note over S,D: persists follow of a user
+    D-->>S: recorded
+    S-->>UI: following
+    UI-->>U: shows the Follow on the public profile
+    U->>UI: follows that Category
+    UI->>S: asks to follow that Category
+    S->>D: records the Follow of that Category
+    Note over S,D: persists follow of a category
+    D-->>S: recorded
+    S-->>UI: following
+    UI-->>U: shows both Follows
+    U->>UI: stops following one of them
+    UI->>S: asks to stop that Follow
+    S->>D: drops that Follow
+    Note over S,D: persists the remaining follow and drops the stopped one
+    D-->>S: dropped
+    S-->>UI: the remaining Follow
+    UI-->>U: shows only the Follow that remains
+    Note over U,UI: Postcondition: one Follow remains and the stopped Follow is gone.
 ```
 
 **Critical flow 3: Open My feed.** A cache hit does not recompute the page. A miss reads Follows and currently published Articles, newest first, each Article once.
@@ -333,7 +659,882 @@ sequenceDiagram
     Web-->>User: shows My feed
 ```
 
+### Limit feeds by content language
+
+A signed-in User sets or clears a Content language limit. Fresh, Popular, and My feed then follow that limit.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: the User is signed in. Screens SCR-01, SCR-02, and SCR-09.
+    U->>UI: sets a limit or clears it
+    UI->>S: asks to save the Content language limit
+    alt one or more of English, Serbian Latin, and Russian
+        S->>D: records the chosen Content languages
+        Note over S,D: persists content language limit for this user
+        D-->>S: recorded
+        S-->>UI: the limit
+        UI->>S: asks for Fresh, Popular, and My feed
+        S->>D: reads published Articles in the chosen Content languages
+        D-->>S: those Articles only
+        S-->>UI: the three feeds
+        UI-->>U: shows only the chosen Content languages on all three feeds
+    else the limit is cleared
+        S->>D: clears the Content language limit
+        Note over S,D: persists a cleared content language limit for this user
+        D-->>S: cleared
+        S-->>UI: no limit
+        UI->>S: asks for Fresh, Popular, and My feed
+        S->>D: reads published Articles in every Content language
+        D-->>S: those Articles
+        S-->>UI: the three feeds
+        UI-->>U: shows every Content language on all three feeds
+    end
+    Note over U,UI: Postcondition: a set limit filters all three feeds. A cleared limit shows every Content language.
+```
+
+### Like an article
+
+A signed-in User Likes a published Article, then Likes it again. The second Like removes the first.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: the User is viewing a published Article. Screen SCR-03.
+    U->>UI: Likes the Article
+    UI->>S: asks to Like the Article
+    S->>D: records one Like
+    Note over S,D: persists like for this user and article
+    D-->>S: recorded
+    S-->>UI: the count raised by one
+    UI-->>U: shows one Like and a count one higher
+    U->>UI: Likes the Article again
+    UI->>S: asks to Like the Article again
+    S->>D: removes that Like
+    Note over S,D: persists removal of that like
+    D-->>S: removed
+    S-->>UI: the count lowered by one
+    UI-->>U: shows the Like gone and a count one lower
+    Note over U,UI: Postcondition: the User has no Like on the Article, and the count matches.
+```
+
+### Cross-cutting: a guest tries to write
+
+A Guest who tries to Like, Comment, Follow, Bookmark, publish, or send a Direct message is asked to sign in. The action is not recorded.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: the person is a Guest. Screen SCR-03, or the screen of the attempted action, then SCR-04.
+    U->>UI: tries to Like, Comment, Follow, Bookmark, publish, or send a Direct message
+    UI->>S: asks to record the action
+    S->>D: finds no signed-in User
+    D-->>S: no User
+    S-->>UI: the action is not recorded
+    UI-->>U: asks the Guest to sign in
+    Note over U,UI: Postcondition: nothing was written. The Guest is on sign-in.
+```
+
+### Comment, reply, and mention
+
+On a published Article that readers can still see, a Comment, a reply, a mention, and a Like on the Comment are kept. A draft, a hidden Article, or a soft-removed Article refuses the Comment.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: two Users and an Article. Screen SCR-03.
+    U->>UI: tries to Comment
+    UI->>S: asks to Comment
+    S->>D: reads whether readers can still see the Article
+    alt the Article is a draft, hidden, or soft-removed
+        D-->>S: readers cannot see it
+        S-->>UI: Comments are only allowed on a published Article that readers can still see
+        UI-->>U: stays on the Article and shows that block
+    else the Article is published and readers can still see it
+        D-->>S: readers can see it
+        U->>UI: writes a Comment
+        UI->>S: asks to save the Comment
+        S->>D: records the Comment
+        Note over S,D: persists comment
+        D-->>S: recorded
+        S-->>UI: the Comment
+        U->>UI: replies and mentions the other User
+        UI->>S: asks to save the reply
+        S->>D: records the reply under that Comment, with the mention
+        Note over S,D: persists reply and mention
+        D-->>S: recorded
+        S-->>UI: the reply under that Comment
+        UI-->>U: shows the reply under that Comment
+        U->>UI: replies deeper than the third level
+        UI->>S: asks to save that reply
+        S->>D: records the deeper reply
+        Note over S,D: persists reply shown flat
+        D-->>S: recorded
+        S-->>UI: the reply, to be shown flat
+        UI-->>U: shows that reply flat
+        U->>UI: Likes the Comment
+        UI->>S: asks to Like the Comment
+        S->>D: records one Like on the Comment
+        Note over S,D: persists like on a comment
+        D-->>S: recorded
+        S-->>UI: the Comment Like
+        UI-->>U: shows the Like on the Comment
+    end
+    Note over U,UI: Postcondition: a visible published Article keeps the thread. Any other Article state keeps no new Comment.
+```
+
+### Bookmark an article
+
+A User Bookmarks a published Article and later removes it. Only that User can open the list.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: the User and a published Article. Screens SCR-03 and SCR-10.
+    U->>UI: Bookmarks the Article
+    UI->>S: asks to Bookmark the Article
+    S->>D: records the Bookmark
+    Note over S,D: persists bookmark for this user and article
+    D-->>S: recorded
+    S-->>UI: bookmarked
+    U->>UI: opens their Bookmark list
+    UI->>S: asks for this User's Bookmark list
+    S->>D: reads this User's Bookmarks
+    D-->>S: the Article is on the list
+    S-->>UI: the list
+    UI-->>U: shows the Article on the private list
+    U->>UI: removes the Bookmark
+    UI->>S: asks to remove the Bookmark
+    S->>D: drops the Bookmark
+    Note over S,D: persists removal of that bookmark
+    D-->>S: dropped
+    S-->>UI: removed
+    UI-->>U: the Article is gone from the list
+    alt a Guest or a different User opens that list
+        U->>UI: opens that Bookmark list
+        UI->>S: asks for the list
+        S->>D: reads the list owner
+        D-->>S: the opener is not the owner
+        S-->>UI: the list is not shown
+        UI-->>U: does not show the list
+    end
+    Note over U,UI: Postcondition: the owner no longer has the Bookmark. Nobody else can see the list.
+```
+
+### Send a direct message
+
+A User sends text to one other User who is away. An empty message is refused. After the recipient reads it, the sender sees that it was read.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: two Users, and the recipient is not present. Screens SCR-11 and SCR-12.
+    U->>UI: tries to send a Direct message
+    UI->>S: asks to send the message
+    alt the message has no text
+        S-->>UI: the message must contain text
+        UI-->>U: stays in the conversation and shows that block
+    else the message has text
+        S->>D: records the message
+        Note over S,D: persists direct message
+        D-->>S: kept
+        S-->>UI: sent
+        UI-->>U: shows the message in the conversation
+        U->>UI: opens the conversation list as the recipient
+        UI->>S: asks for the recipient's conversations
+        S->>D: reads the unread count
+        D-->>S: the message is unread
+        S-->>UI: the conversation with an unread count
+        UI-->>U: shows the unread count
+        U->>UI: reads the message
+        UI->>S: asks to mark the message read
+        S->>D: records that the recipient read it
+        Note over S,D: persists read mark on the direct message
+        D-->>S: read
+        S-->>UI: read
+        U->>UI: opens the conversation as the sender
+        UI->>S: asks for the conversation
+        S->>D: reads the read mark
+        D-->>S: the recipient has read it
+        S-->>UI: the read mark
+        UI-->>U: shows the sender that the message was read
+    end
+    Note over U,UI: Postcondition: a text message is kept and can show a read mark. An empty message is not kept.
+```
+
+### File a complaint
+
+A User reports an Article or a Comment. A reason is required. Staff can then see the Complaint.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a User and a published Article or a Comment. Screens SCR-14 and SCR-16.
+    U->>UI: files a Complaint
+    UI->>S: asks to file the Complaint
+    alt no reason
+        S-->>UI: a reason must be present
+        UI-->>U: stays on the Complaint step and shows that block
+    else a reason is present
+        S->>D: records the Complaint and the reason
+        Note over S,D: persists complaint
+        D-->>S: recorded
+        S-->>UI: filed
+        UI-->>U: returns to the Article
+        U->>UI: opens the open complaints as a Moderator or an Administrator
+        UI->>S: asks for open Complaints
+        S->>D: reads open Complaints
+        D-->>S: this Complaint
+        S-->>UI: the open list
+        UI-->>U: shows the Complaint in the admin panel
+    end
+    Note over U,UI: Postcondition: a Complaint with a reason is open for staff. A Complaint with no reason is not stored.
+```
+
+### Watch activity live
+
+A recorded Like, Comment, hide, or Direct message reaches an open screen without a reload. The View count is not pushed. A Direct message reaches only the two Users in that conversation. The handler skips an event it already processed, retries, and dead-letters when retries are exhausted.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant B as <message-bus>
+    participant D as <data-store>
+
+    Note over S,B: Trigger: a Like, a Comment, a hide, or a Direct message was recorded with an outbox row
+    S->>D: reads the outbox row
+    D-->>S: the event
+    S->>S: check idempotency key (skip if this event was already published)
+    alt event already published
+        S->>S: skip this event
+    else event not yet published
+        S->>B: publishes the event
+        Note over S,B: retry with exponential backoff on failure
+        alt exhausted retries
+            S->>B: routes the event to the dead letter
+            Note over S,B: dead-letter after retries are exhausted
+        else the bus accepts the event
+            B->>S: delivers the event
+            S->>S: check idempotency key (skip if this event was already pushed)
+            alt event already pushed
+                S->>S: skip the push
+            else not yet pushed
+                alt a Like count, a Comment count, a new or hidden Comment, or a hide
+                    S-->>UI: pushes the change for the open Article
+                    UI-->>U: updates the open Article without a reload
+                    Note over S,UI: the View count is not pushed
+                else a Direct message
+                    S-->>UI: pushes the message only to the two Users in the conversation
+                    UI-->>U: shows the message without a reload
+                    Note over UI: anyone outside the conversation sees nothing
+                else a View increment
+                    S->>S: does not push the View count
+                end
+            end
+        end
+    end
+    Note over U,UI: Postcondition: the open Article or the open conversation changed without a reload. The View count on that open view did not have to change.
+```
+
+### Receive a notice
+
+A reply, a mention, a new follower, or a new Direct message creates an in-product Notification. Opening it goes to the Article, the public profile, or the conversation. No email and no phone alert are sent.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant B as <message-bus>
+    participant D as <data-store>
+
+    Note over S,B: Trigger: a reply, a mention, a new follower, or a new Direct message was recorded
+    S->>S: check idempotency key (skip if this notice was already created)
+    alt notice already created
+        S->>S: skip this event
+    else notice not yet created
+        S->>D: records the in-product Notification
+        Note over S,D: persists notification for this user
+        D-->>S: recorded
+        Note over S,B: retry with exponential backoff on failure
+        alt exhausted retries
+            S->>B: routes the event to the dead letter
+            Note over S,B: dead-letter after retries are exhausted
+        else the notice is stored
+            S-->>UI: the Notification is available
+            UI-->>U: shows an in-product Notification and no email or phone alert
+            U->>UI: opens the Notification
+            alt the event is a reply or a mention
+                UI-->>U: opens the Article
+            else the event is a new follower
+                UI-->>U: opens the public profile
+            else the event is a new Direct message
+                UI-->>U: opens the conversation
+            end
+        end
+    end
+    Note over U,UI: Postcondition: the User has one in-product Notification for that event and no email or phone alert.
+```
+
+### Cross-cutting: staff gate
+
+Staff tools stay closed until a second factor is confirmed. A person who is not a Moderator or an Administrator is not left inside the admin panel.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant X as <external-system>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: someone opens the admin panel. Screen SCR-15.
+    U->>UI: tries to use a staff tool
+    UI->>X: asks whether a second factor is confirmed
+    alt the second factor is not confirmed
+        X-->>UI: not confirmed
+        UI-->>U: does not open hide, Block, Category change, role assignment, Complaint dismissal, or soft-remove
+    else the second factor is confirmed
+        X-->>UI: confirmed
+        UI->>S: asks for this person's role
+        S->>D: reads the role
+        alt the person is not a Moderator or an Administrator
+            D-->>S: not staff
+            S-->>UI: refused
+            UI-->>U: refuses and does not leave them inside the admin panel
+        else the person is a Moderator or an Administrator
+            D-->>S: staff
+            S-->>UI: the tools are open
+            UI-->>U: opens the staff tool they asked for
+        end
+    end
+    Note over U,UI: Postcondition: only staff with a confirmed second factor reach a staff tool.
+```
+
+**Critical flow 2: Hide an Article a reader has open.** The Guest is told the Article is unavailable and is not told that staff hid it. The author still sees the text. The audit append is a second call, so it can fail after the hide is recorded (§11).
+
+```mermaid
+sequenceDiagram
+    actor Moderator
+    participant Admin as Admin panel
+    participant Gateway as API Gateway
+    participant Content as Content Service
+    participant Users as User Service
+    participant Workers as Background workers
+    participant Rabbit as RabbitMQ
+    participant Realtime as Realtime Gateway
+    actor Guest
+
+    Moderator->>Admin: hides the Article and gives a reason
+    Admin->>Gateway: asks to hide
+    Gateway->>Content: hides the Article
+    Content->>Content: records the hide and the outbox row
+    Content-->>Gateway: hidden
+    Gateway->>Users: appends the audit row
+    Users-->>Gateway: appended
+    Gateway-->>Admin: hidden
+    Admin-->>Moderator: confirms the hide
+    Workers->>Rabbit: publishes the outbox event
+    Rabbit-->>Realtime: delivers article hidden
+    Realtime-->>Guest: shows the Article unavailable
+```
+
 The same realtime shape as flow 2 serves an open Direct message conversation, and only the two Users in it receive the push. A Like count and a Comment count use that shape too. The View count does not.
+
+### Hide a comment and close its complaints
+
+A Moderator or an Administrator hides a Comment and gives a reason. Readers who are not the author see it as unavailable and are not told that staff hid it. The author still sees the text. Open Complaints about that Comment leave the open list. The same outcomes apply when the hidden piece is an Article. The Article request path is Critical flow 2. A missing reason does not hide anything.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a Moderator or an Administrator, a Complaint, and a Comment readers have open. Screens SCR-17, SCR-03, SCR-18, SCR-24, and SCR-16.
+    U->>UI: hides the Comment
+    UI->>S: asks to hide the Comment
+    alt no reason
+        S-->>UI: a reason must be present
+        UI-->>U: stays on the Complaint and does not hide it
+    else a reason is present
+        S->>D: records the hide and the outbox row
+        Note over S,D: persists hidden comment and outbox row
+        D-->>S: hidden
+        S->>D: appends the audit row with that reason
+        Note over S,D: persists audit record
+        D-->>S: appended
+        S-->>UI: hidden
+        UI-->>U: confirms the hide
+        U->>UI: opens the Comment as a reader who is not the author
+        UI->>S: asks for the Comment
+        S->>D: reads the hide
+        D-->>S: hidden
+        S-->>UI: unavailable, and not why
+        UI-->>U: shows it unavailable and does not say that staff hid it
+        U->>UI: opens it as the author
+        UI->>S: asks for the Comment as the author
+        S->>D: reads the text and the hide
+        D-->>S: the text, hidden from readers
+        S-->>UI: the text, and that readers cannot see it
+        UI-->>U: shows the author the text
+        U->>UI: opens it as staff
+        UI->>S: asks for the staff view
+        S->>D: reads the full text
+        D-->>S: the full text
+        S-->>UI: the full text
+        UI-->>U: shows the full text only in the admin panel
+        S->>D: closes each open Complaint about that Comment
+        Note over S,D: persists complaints leaving the open list
+        D-->>S: closed
+        S-->>UI: those Complaints have left the open list
+        UI-->>U: the open list no longer shows them
+        Note over U,UI: an Article hide has these same reader, author, staff, and Complaint outcomes. Its request path is Critical flow 2.
+    end
+    Note over U,UI: Postcondition: a reasoned hide is recorded, audited, and closed out of the open list. A hide with no reason is not recorded.
+```
+
+### Move an article to another category
+
+A Moderator moves a published Article from one Category to one other Category. No reason is required. Readers see the new Category, and the move is on the audit trail.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a Moderator and a published Article in one Category. Screens SCR-18, SCR-03, and SCR-24.
+    U->>UI: moves the Article to one other Category and gives no reason
+    UI->>S: asks to move the Category
+    S->>D: records the new Category
+    Note over S,D: persists article category
+    D-->>S: moved
+    S->>D: appends the audit row for the Category change
+    Note over S,D: persists audit record for the category change
+    D-->>S: appended
+    S-->>UI: moved
+    UI-->>U: confirms the move
+    U->>UI: opens the Article as a reader
+    UI->>S: asks for the Article
+    S->>D: reads the Category
+    D-->>S: the new Category
+    S-->>UI: the Article in the new Category
+    UI-->>U: shows the Article in the new Category
+    Note over U,UI: Postcondition: the Article is in the new Category. The move is on the audit trail without a reason.
+```
+
+### Block an account and lift the block
+
+A Moderator or an Administrator Blocks a User who is not staff, then later lifts that Block. A missing reason does not Block anyone. Articles published before the Block stay visible.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: staff with a confirmed second factor, and a User who is not staff. Screen SCR-19.
+    U->>UI: Blocks that User
+    UI->>S: asks to Block the User
+    alt no reason
+        S-->>UI: a reason must be present
+        UI-->>U: stays on Block account and does not Block the User
+    else a reason is present
+        S->>D: records the Block
+        Note over S,D: persists block
+        D-->>S: blocked
+        S->>D: appends the audit row with that reason
+        Note over S,D: persists audit record
+        D-->>S: appended
+        S-->>UI: blocked
+        UI-->>U: confirms the Block
+        U->>UI: opens the public site as the blocked User
+        UI->>S: asks what the blocked User may do
+        S->>D: reads the Block
+        D-->>S: blocked
+        S-->>UI: the account is blocked
+        UI-->>U: tells the User the account is blocked
+        U->>UI: tries to publish, Comment, Follow, Like, Bookmark, or send a Direct message
+        UI->>S: asks to record that action
+        S-->>UI: refused while the Block lasts
+        UI-->>U: does not record the action
+        U->>UI: reads, edits their own Article, soft-removes their own Article, or files a Complaint
+        UI->>S: asks to do that
+        S-->>UI: allowed
+        UI-->>U: allows it
+        U->>UI: opens an Article published before the Block
+        UI->>S: asks for that Article
+        S->>D: reads the Article
+        D-->>S: still published
+        S-->>UI: the Article
+        UI-->>U: shows the Article
+        U->>UI: lifts the Block as staff
+        UI->>S: asks to lift the Block
+        S->>D: records the lift
+        Note over S,D: persists lifted block
+        D-->>S: lifted
+        S-->>UI: lifted
+        U->>UI: tries to publish, Comment, Follow, Like, Bookmark, or send a Direct message
+        UI->>S: asks to record that action
+        S-->>UI: allowed
+        UI-->>U: the action is possible again
+    end
+    Note over U,UI: Postcondition: a reasoned Block stops participation and can be lifted. Already published Articles stay visible.
+```
+
+### Create a category
+
+An Administrator creates a Category with English, Serbian Latin, and Russian names. It is available for new Articles.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: an Administrator with a confirmed second factor. Screen SCR-20.
+    U->>UI: creates a Category with English, Serbian Latin, and Russian names
+    UI->>S: asks to create the Category
+    S->>D: records the Category and the three names
+    Note over S,D: persists category and three translations
+    D-->>S: recorded
+    S->>D: appends the audit row for the Category change
+    Note over S,D: persists audit record for the category change
+    D-->>S: appended
+    S-->>UI: created
+    UI-->>U: shows the Category available for new Articles
+    Note over U,UI: Postcondition: the Category exists in all three names.
+```
+
+### Assign a role
+
+An Administrator gives a person exactly one role and a reason. The panel does not create the first Administrator. The only Administrator cannot demote themselves. A missing reason does not change the role.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: the admin panel is open. Screen SCR-21, or SCR-15 when no Administrator exists yet.
+    U->>UI: tries to set a role
+    UI->>S: asks to set the role
+    S->>D: reads Administrators and the reason
+    alt no Administrator exists yet
+        D-->>S: none
+        S-->>UI: the panel does not create the first Administrator
+        UI-->>U: stays on the gate and creates no role
+    else this change would remove the only Administrator
+        D-->>S: one Administrator
+        S-->>UI: one Administrator must remain
+        UI-->>U: stays on roles and does not change the role
+    else no reason
+        D-->>S: the reason is absent
+        S-->>UI: a reason must be present
+        UI-->>U: stays on roles and does not change the role
+    else a reason is present and another Administrator remains
+        S->>D: records exactly one role and drops the previous role
+        Note over S,D: persists the single role
+        D-->>S: recorded
+        S->>D: appends the audit row with that reason
+        Note over S,D: persists audit record
+        D-->>S: appended
+        S-->>UI: the new role
+        UI-->>U: shows that the person holds that one role and can act as it
+    end
+    Note over U,UI: Postcondition: a valid change leaves exactly one role. The first Administrator and the last Administrator are not removed from the panel.
+```
+
+### Change popular weights
+
+An Administrator changes the Popular feed weights. The Popular feed then uses those weights.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: an Administrator with a confirmed second factor. Screens SCR-22 and SCR-02.
+    U->>UI: changes the Popular feed weights
+    UI->>S: asks to save the weights
+    S->>D: records the weights
+    Note over S,D: persists popular feed weights
+    D-->>S: recorded
+    S-->>UI: saved
+    UI-->>U: confirms the weights
+    U->>UI: opens the Popular feed
+    UI->>S: asks for the Popular page
+    S->>D: reads published Articles by the new weights
+    D-->>S: the page
+    S-->>UI: the page
+    UI-->>U: shows the Popular feed using the new weights
+    Note over U,UI: Postcondition: the Popular feed uses the saved weights.
+```
+
+### Cross-cutting: a moderator tries an administrator-only action
+
+A Moderator cannot create a Category, assign a role, or change Popular feed weights.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a Moderator with a confirmed second factor. Screens SCR-20, SCR-21, and SCR-22.
+    U->>UI: tries to create a Category, assign a role, or change Popular feed weights
+    UI->>S: asks to do that
+    S->>D: reads the role
+    D-->>S: Moderator
+    S-->>UI: refused
+    UI-->>U: does not do the action
+    Note over U,UI: Postcondition: no Category, role, or weight was changed.
+```
+
+### Read platform statistics
+
+An Administrator sees the platform figures and whether the public site is answering. A Moderator sees no figures.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: staff with a confirmed second factor. Screen SCR-23.
+    U->>UI: opens platform statistics
+    UI->>S: asks for platform statistics
+    S->>D: reads the role
+    alt the person is a Moderator
+        D-->>S: Moderator
+        S-->>UI: no platform statistics
+        UI-->>U: shows no figures
+    else the person is an Administrator
+        D-->>S: Administrator
+        S->>D: reads the figures and whether the public site is answering
+        D-->>S: Users signed in today, Users signed in over the last 30 days, new Users, published Articles, Comments written, open Complaints, and whether the public site is answering
+        S-->>UI: those figures
+        UI-->>U: shows the six figures and whether the public site is answering
+    end
+    Note over U,UI: Postcondition: only an Administrator sees platform statistics.
+```
+
+### Staff soft-remove an article
+
+An Administrator soft-removes a published Article and gives a reason. Readers no longer see it. The record remains. A missing reason does not remove it.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: an Administrator and a published Article. Screen SCR-18.
+    U->>UI: soft-removes the Article
+    UI->>S: asks to soft-remove the Article
+    alt no reason
+        S-->>UI: a reason must be present
+        UI-->>U: stays on the staff Article and does not remove it
+    else a reason is present
+        S->>D: records the soft-remove and keeps the record
+        Note over S,D: persists staff soft-remove
+        D-->>S: removed from readers
+        S->>D: appends the audit row with that reason
+        Note over S,D: persists audit record
+        D-->>S: appended
+        S-->>UI: soft-removed
+        UI-->>U: confirms it
+        U->>UI: opens the Article as a reader
+        UI->>S: asks for the Article
+        S->>D: reads the soft-remove
+        D-->>S: readers cannot see it
+        S-->>UI: unavailable
+        UI-->>U: the reader no longer sees it
+    end
+    Note over U,UI: Postcondition: a reasoned staff soft-remove hides the Article from readers and keeps the record.
+```
+
+### Dismiss a complaint
+
+A Moderator or an Administrator dismisses a Complaint. A reason is required. The Article or Comment stays visible, and the Complaint leaves the open list.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: an open Complaint about a published Article or a Comment. Screen SCR-17.
+    U->>UI: dismisses the Complaint
+    UI->>S: asks to dismiss the Complaint
+    alt no reason
+        S-->>UI: a reason must be present
+        UI-->>U: stays on the Complaint, which remains open
+    else a reason is present
+        S->>D: records the dismissal and leaves the piece visible
+        Note over S,D: persists complaint dismissal
+        D-->>S: dismissed
+        S->>D: appends the audit row with that reason
+        Note over S,D: persists audit record
+        D-->>S: appended
+        S-->>UI: dismissed
+        UI-->>U: the piece stays visible and the Complaint has left the open list
+    end
+    Note over U,UI: Postcondition: a reasoned dismissal keeps the piece visible. A dismissal with no reason changes nothing.
+```
+
+### Read the audit trail
+
+An Administrator reads every recorded staff action. A Moderator reads only their own. Staff cannot rewrite or erase the trail.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: hide, Block, role-change, staff soft-remove, Complaint dismissal, and Category-change rows exist. Screen SCR-24.
+    U->>UI: opens the audit trail
+    UI->>S: asks for the audit trail
+    S->>D: reads the role and the trail
+    alt the person is an Administrator
+        D-->>S: every hide, Block, role change, staff soft-remove, and Complaint dismissal, each with its reason, and every Category change
+        S-->>UI: the whole trail
+        UI-->>U: shows every recorded action
+    else the person is a Moderator
+        D-->>S: only that Moderator's actions
+        S-->>UI: those rows
+        UI-->>U: shows only their own actions
+    end
+    U->>UI: tries to rewrite or erase a row
+    UI->>S: asks to change the trail
+    S-->>UI: refused
+    UI-->>U: the trail is unchanged
+    Note over U,UI: Postcondition: the trail was read according to the role and was not rewritten.
+```
+
+### Withdraw an article
+
+The owner soft-removes their published Article. Readers see it as unavailable and are not told that the author withdrew it. It is not a Moderator hide. A different User or a Moderator cannot soft-remove it. The Moderator can still hide it with a reason.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as <user>
+    participant UI as <ui>
+    participant S as <service>
+    participant D as <data-store>
+
+    Note over U,UI: Precondition: a published Article has an owner. Screens SCR-03 and SCR-18.
+    U->>UI: tries to soft-remove the Article
+    UI->>S: asks to soft-remove the Article
+    S->>D: reads the owner
+    alt a different User
+        D-->>S: not the owner
+        S-->>UI: refused
+        UI-->>U: does not soft-remove it
+    else a Moderator
+        D-->>S: a Moderator, not the owner
+        S-->>UI: refused
+        UI-->>U: does not soft-remove it
+        Note over U,UI: the Moderator can still hide it with a reason, on the hide path
+    else the owner
+        D-->>S: the owner
+        S->>D: records the author's soft-remove and keeps the record
+        Note over S,D: persists author soft-remove, not a moderator hide
+        D-->>S: withdrawn
+        S-->>UI: withdrawn
+        UI-->>U: shows the author the text and that they withdrew it
+        U->>UI: opens it as a Guest or a User who is not the author
+        UI->>S: asks for the Article
+        S->>D: reads the soft-remove
+        D-->>S: withdrawn, not a Moderator hide
+        S-->>UI: unavailable, with no text and no Comments
+        UI-->>U: shows it unavailable and does not say that the author withdrew it
+        U->>UI: opens it as staff
+        UI->>S: asks for the staff view
+        S->>D: reads the full text
+        D-->>S: the full text
+        S-->>UI: the full text
+        UI-->>U: shows the full text only in the admin panel
+    end
+    Note over U,UI: Postcondition: the owner's Article is withdrawn and the record remains. Anyone else who tries to soft-remove it is refused.
+```
+
+### Flags for later stages
+
+- The three Critical flow diagrams above use concrete container names from design. This stage left them unchanged.
+- View-flush failure in "Read a published article" is routed through `<message-bus>`. The view-flush worker does not publish domain events. Data-model should not treat that dead letter as an Article event.
+- Cached feed pages and Article rows share `<data-store>` on the feed diagrams. The cache is not an Article table.
+- Theme and Interface language are stored in the browser. No server column.
+- An Avatar on the profile is a stored field. The presigned image upload stays the Article image path.
+- A stale Article save is not a branch on "Revise a published article". It is an accepted architecture decision without an acceptance criterion.
+- Retry counts are not in the spec. Async flows say retries are exhausted, without a number.
+- An Administrator hide uses "Hide a comment and close its complaints". An Administrator Block uses "Block an account and lift the block". Neither is a third copy of those flows.
 
 ## 7. Deployment view
 
