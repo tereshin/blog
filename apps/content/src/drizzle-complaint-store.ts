@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import type { ArticleComplaint, ComplaintStore } from './complaint-store';
@@ -36,5 +36,12 @@ export class DrizzleComplaintStore implements ComplaintStore {
       status: 'open',
       created_at: row.created_at,
     }));
+  }
+
+  async closeOpen(article_id: string): Promise<void> {
+    await this.db
+      .update(article_complaints)
+      .set({ status: 'closed_hidden' })
+      .where(and(eq(article_complaints.article_id, article_id), eq(article_complaints.status, 'open')));
   }
 }

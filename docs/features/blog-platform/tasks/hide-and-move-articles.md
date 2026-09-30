@@ -9,7 +9,7 @@ files_hint: ["apps/content"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T30 — Hide an Article, move its Category, and staff-remove it
@@ -135,11 +135,11 @@ This task hides an Article, moves its Category, and soft-removes it as staff, ea
 
 ## Checklist
 
-- [ ] Hide with a reason, set the public view to unavailable, and close open Article Complaints
-- [ ] Insert `content.article.hidden` or `content.article.soft_removed` in the same transaction
-- [ ] Ask the users service to append the audit row, and retry if that append fails
-- [ ] Move Category with no reason and append `article.category.change`
-- [ ] Staff soft-remove is Administrator-only and sets `removed_by` `staff`. Author withdraw stays `author`
+- [x] Hide with a reason, set the public view to unavailable, and close open Article Complaints
+- [x] Insert `content.article.hidden` or `content.article.soft_removed` in the same transaction
+- [x] Ask the users service to append the audit row, and retry if that append fails
+- [x] Move Category with no reason and append `article.category.change`
+- [x] Staff soft-remove is Administrator-only and sets `removed_by` `staff`. Author withdraw stays `author`
 
 ## Edge cases
 
@@ -152,6 +152,6 @@ This task hides an Article, moves its Category, and soft-removes it as staff, ea
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-27 for an Article, AC-29, AC-39, AC-47, and the staff half of AC-40 and AC-41
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-27 for an Article, AC-29, AC-39, AC-47, and the staff half of AC-40 and AC-41
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

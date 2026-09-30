@@ -11,6 +11,10 @@ const status_by_code = {
   ACCOUNT_BLOCKED: 403,
   MEDIA_NOT_FOUND: 404,
   COMPLAINT_REASON_REQUIRED: 422,
+  REASON_REQUIRED: 422,
+  ADMIN_ONLY: 403,
+  STAFF_FORBIDDEN: 403,
+  CATEGORY_NOT_FOUND: 404,
 } as const;
 
 export type ArticleErrorCode = keyof typeof status_by_code;

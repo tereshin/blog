@@ -10,4 +10,12 @@ export class MemoryComplaintStore implements ComplaintStore {
   async listOpen(): Promise<ArticleComplaint[]> {
     return this.complaints.filter((complaint) => complaint.status === 'open');
   }
+
+  async closeOpen(article_id: string): Promise<void> {
+    for (const complaint of this.complaints) {
+      if (complaint.article_id === article_id && complaint.status === 'open') {
+        complaint.status = 'closed_hidden';
+      }
+    }
+  }
 }
