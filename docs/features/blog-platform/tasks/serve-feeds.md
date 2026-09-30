@@ -9,7 +9,7 @@ files_hint: ["apps/feed"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T27 — Serve Fresh, Popular, and My feed
@@ -117,11 +117,11 @@ Article rows are read over HTTP from content. Counts are read from engagement. F
 
 ## Checklist
 
-- [ ] Add `apps/feed`. Fresh is published Articles newest first. Popular scores Views, Likes, Comments, Bookmarks, and age with the current weights
-- [ ] Assemble My feed on read from the caller's Follows, newest first, each Article once
-- [ ] Apply `content_languages` for a User. NULL shows every Content language. A Guest has no limit
-- [ ] Cache each page in Redis. Drop Fresh, Popular, and My feed pages when `content.article.published`, `hidden`, `soft_removed`, or `revised` arrives
-- [ ] Update weights only for an Administrator
+- [x] Add `apps/feed`. Fresh is published Articles newest first. Popular scores Views, Likes, Comments, Bookmarks, and age with the current weights
+- [x] Assemble My feed on read from the caller's Follows, newest first, each Article once
+- [x] Apply `content_languages` for a User. NULL shows every Content language. A Guest has no limit
+- [x] Cache each page in Redis. Drop Fresh, Popular, and My feed pages when `content.article.published`, `hidden`, `soft_removed`, or `revised` arrives
+- [x] Update weights only for an Administrator
 
 ## Edge cases
 
@@ -134,6 +134,6 @@ Article rows are read over HTTP from content. Counts are read from engagement. F
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-03, AC-14, AC-46, the weights half of AC-33, and AC-32 visibility
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-03, AC-14, AC-46, the weights half of AC-33, and AC-32 visibility
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

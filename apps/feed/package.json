@@ -1,0 +1,30 @@
+{
+  "name": "@blog/feed",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@blog/contracts": "workspace:*",
+    "@blog/database": "workspace:*",
+    "@nestjs/common": "^12.1.0",
+    "@nestjs/core": "^12.1.0",
+    "drizzle-orm": "^0.45.3",
+    "pg": "^8.23.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@blog/eslint-config": "workspace:*",
+    "@blog/tsconfig": "workspace:*",
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.16.0",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "^5.0.2"
+  }
+}
