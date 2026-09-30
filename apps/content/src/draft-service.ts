@@ -68,7 +68,7 @@ export class DraftService {
     article_id: string;
   }): Promise<ArticleRecord | UnavailableArticle> {
     const article = await this.requireArticle(input.article_id);
-    if (article.status === 'draft' && input.viewer_id !== article.author_id) {
+    if (article.status !== 'published' && input.viewer_id !== article.author_id) {
       return { view: 'unavailable', id: article.id };
     }
     return article;

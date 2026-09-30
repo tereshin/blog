@@ -1,7 +1,8 @@
-import type { ArticleRecord, ArticleStore } from './article-store';
+import type { ArticleRecord, ArticleStore, OutboxEvent } from './article-store';
 
 export class MemoryArticleStore implements ArticleStore {
   readonly articles: ArticleRecord[] = [];
+  readonly outbox: OutboxEvent[] = [];
 
   async insert(article: ArticleRecord): Promise<void> {
     this.articles.push(structuredClone(article));
@@ -17,5 +18,10 @@ export class MemoryArticleStore implements ArticleStore {
     if (index >= 0) {
       this.articles[index] = structuredClone(article);
     }
+  }
+
+  async commit(article: ArticleRecord, event: OutboxEvent): Promise<void> {
+    await this.update(article);
+    this.outbox.push(event);
   }
 }

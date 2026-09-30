@@ -18,3 +18,16 @@ export const articles = content_schema.table('articles', {
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });
+
+export const outbox_events = content_schema.table('outbox_events', {
+  id: uuid('id').primaryKey(),
+  event_type: text('event_type').notNull(),
+  aggregate_id: uuid('aggregate_id').notNull(),
+  payload: jsonb('payload').notNull(),
+  correlation_id: uuid('correlation_id'),
+  causation_id: uuid('causation_id'),
+  producer: text('producer').notNull(),
+  event_version: integer('event_version').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
+  published_at: timestamp('published_at', { withTimezone: true, mode: 'string' }),
+});

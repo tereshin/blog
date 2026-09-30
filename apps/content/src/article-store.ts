@@ -23,8 +23,18 @@ export type ArticleRecord = {
   images: [];
 };
 
+export type OutboxEvent = {
+  id: string;
+  event_type: string;
+  aggregate_id: string;
+  payload: Record<string, unknown>;
+  producer: string;
+  event_version: number;
+};
+
 export interface ArticleStore {
   insert(article: ArticleRecord): Promise<void>;
   findById(article_id: string): Promise<ArticleRecord | null>;
   update(article: ArticleRecord): Promise<void>;
+  commit(article: ArticleRecord, event: OutboxEvent): Promise<void>;
 }

@@ -9,7 +9,7 @@ files_hint: ["apps/content"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T19 — Publish an Article and let the author withdraw it
