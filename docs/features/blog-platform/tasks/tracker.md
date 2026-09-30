@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|---|
 | T1 | Promote the users schema migration | migration | Backend Lead | S | — | done |
 | T2 | Promote the categories schema migration | migration | Backend Lead | S | T1 | done |
-| T3 | Promote the content schema migration | migration | Backend Lead | S | T2 | todo |
+| T3 | Promote the content schema migration | migration | Backend Lead | S | T2 | done |
 | T4 | Promote the media schema migration | migration | Backend Lead | S | T3 | todo |
 | T5 | Promote the comments schema migration | migration | Backend Lead | S | T4 | todo |
 | T6 | Promote the engagement schema migration | migration | Backend Lead | S | T5 | todo |

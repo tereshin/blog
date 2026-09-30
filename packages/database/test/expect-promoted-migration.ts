@@ -24,6 +24,7 @@ export function expectPromotedMigration(input: {
   previous_tag: string;
   idx: number;
   schema_name: string;
+  expects_foreign_keys?: boolean;
 }): void {
   const up_path = join(package_root, 'migrations', `${input.live_tag}.sql`);
   const down_path = join(
@@ -54,14 +55,25 @@ export function expectPromotedMigration(input: {
     breakpoints: true,
   });
 
+  const up_sql = readFileSync(up_path, 'utf8');
   const referenced_schemas = [
-    ...readFileSync(up_path, 'utf8').matchAll(
-      /REFERENCES\s+([a-z_][a-z0-9_]*)\./gi,
-    ),
+    ...up_sql.matchAll(/REFERENCES\s+([a-z_][a-z0-9_]*)\./gi),
   ].map((match) => match[1]);
+  const expects_foreign_keys = input.expects_foreign_keys ?? true;
 
-  expect(referenced_schemas.length).toBeGreaterThan(0);
-  expect(referenced_schemas.every((schema) => schema === input.schema_name)).toBe(
-    true,
-  );
+  if (expects_foreign_keys) {
+    expect(referenced_schemas.length).toBeGreaterThan(0);
+    expect(
+      referenced_schemas.every((schema) => schema === input.schema_name),
+    ).toBe(true);
+    return;
+  }
+
+  expect(referenced_schemas).toEqual([]);
+
+  if (input.schema_name.length > 0) {
+    expect(up_sql).toContain(
+      `CREATE SCHEMA IF NOT EXISTS ${input.schema_name}`,
+    );
+  }
 }

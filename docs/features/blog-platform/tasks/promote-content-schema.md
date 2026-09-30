@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/03_create_content.up.sql", 
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T3 — Promote the content schema migration
