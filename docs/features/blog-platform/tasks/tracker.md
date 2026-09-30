@@ -5,7 +5,7 @@
 
 | # | Task | Layer | Owner | Estimate | Blocked by | Status |
 |---|---|---|---|---|---|---|
-| T1 | Promote the users schema migration | migration | Backend Lead | S | — | todo |
+| T1 | Promote the users schema migration | migration | Backend Lead | S | — | done |
 | T2 | Promote the categories schema migration | migration | Backend Lead | S | T1 | todo |
 | T3 | Promote the content schema migration | migration | Backend Lead | S | T2 | todo |
 | T4 | Promote the media schema migration | migration | Backend Lead | S | T3 | todo |

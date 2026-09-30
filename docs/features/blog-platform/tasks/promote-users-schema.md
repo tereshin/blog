@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/01_create_users.up.sql", "d
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T1 — Promote the users schema migration
