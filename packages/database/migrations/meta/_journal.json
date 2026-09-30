@@ -64,6 +64,13 @@
       "when": 1790800007000,
       "tag": "0008_create_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790800008000,
+      "tag": "0009_create_notifications",
+      "breakpoints": true
     }
   ]
 }

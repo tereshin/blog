@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/09_create_notifications.up.
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T9 — Promote the notifications schema migration

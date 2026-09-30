@@ -13,7 +13,7 @@
 | T6 | Promote the engagement schema migration | migration | Backend Lead | S | T5 | done |
 | T7 | Promote the social schema migration | migration | Backend Lead | S | T6 | done |
 | T8 | Promote the messages schema migration | migration | Backend Lead | S | T7 | done |
-| T9 | Promote the notifications schema migration | migration | Backend Lead | S | T8 | todo |
+| T9 | Promote the notifications schema migration | migration | Backend Lead | S | T8 | done |
 | T10 | Promote the feed schema migration | migration | Backend Lead | S | T9 | todo |
 | T11 | Promote the rate-limit seed migration | migration | Backend Lead | S | T10 | todo |
 | T12 | Add Redis, RabbitMQ, MinIO, and typed config | wiring | Backend Lead | M | — | todo |
