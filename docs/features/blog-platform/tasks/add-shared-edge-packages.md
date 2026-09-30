@@ -9,7 +9,7 @@ files_hint: ["packages/firebase", "packages/redis", "packages/rabbitmq", "packag
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "L"   # justified: shared clients are one package set later services import
-status: "todo"
+status: "done"
 ---
 
 # T13 — Add Firebase verification, Redis, RabbitMQ, and the event envelope

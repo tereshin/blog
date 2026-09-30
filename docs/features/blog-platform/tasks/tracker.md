@@ -17,7 +17,7 @@
 | T10 | Promote the feed schema migration | migration | Backend Lead | S | T9 | done |
 | T11 | Promote the rate-limit seed migration | migration | Backend Lead | S | T10 | done |
 | T12 | Add Redis, RabbitMQ, MinIO, and typed config | wiring | Backend Lead | M | — | done |
-| T13 | Add Firebase verification, Redis, RabbitMQ, and the event envelope | wiring | Backend Lead | M | T12 | todo |
+| T13 | Add Firebase verification, Redis, RabbitMQ, and the event envelope | wiring | Backend Lead | M | T12 | done |
 | T14 | Record a User profile and a unique Username | app | Backend Lead | M | T1, T13 | todo |
 | T15 | Assign one role and keep the last Administrator | app | Backend Lead | M | T14 | todo |
 | T16 | Block an account and append the staff audit trail | app | Backend Lead | M | T15 | todo |

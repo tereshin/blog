@@ -1,0 +1,8 @@
+{
+  "extends": "@blog/tsconfig/nestjs.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src", "test", "vitest.config.mts"]
+}
