@@ -9,7 +9,7 @@ files_hint: ["docs/features/blog-platform/migrations/10_create_feed.up.sql", "do
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T10 — Promote the feed schema migration

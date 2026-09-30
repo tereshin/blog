@@ -14,7 +14,7 @@
 | T7 | Promote the social schema migration | migration | Backend Lead | S | T6 | done |
 | T8 | Promote the messages schema migration | migration | Backend Lead | S | T7 | done |
 | T9 | Promote the notifications schema migration | migration | Backend Lead | S | T8 | done |
-| T10 | Promote the feed schema migration | migration | Backend Lead | S | T9 | todo |
+| T10 | Promote the feed schema migration | migration | Backend Lead | S | T9 | done |
 | T11 | Promote the rate-limit seed migration | migration | Backend Lead | S | T10 | todo |
 | T12 | Add Redis, RabbitMQ, MinIO, and typed config | wiring | Backend Lead | M | — | todo |
 | T13 | Add Firebase verification, Redis, RabbitMQ, and the event envelope | wiring | Backend Lead | M | T12 | todo |
