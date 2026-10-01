@@ -9,7 +9,7 @@ files_hint: ["apps/api-gateway/src/public", "apps/api-gateway/src/app.module.ts"
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T33 — Compose the public Article read and refuse a Guest write
@@ -83,9 +83,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Compose Article, images, Comments, and counts by calling the owning services. Do not query their schemas
-- [ ] Record server timing on the composed read
-- [ ] Reject a Guest write with `AUTH_REQUIRED` before the command reaches the owning service
+- [x] Compose Article, images, Comments, and counts by calling the owning services. Do not query their schemas
+- [x] Record server timing on the composed read
+- [x] Reject a Guest write with `AUTH_REQUIRED` before the command reaches the owning service
 
 ## Edge cases
 
@@ -97,6 +97,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-01 for the composed payload and AC-16 for a Guest write
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-01 for the composed payload and AC-16 for a Guest write
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
