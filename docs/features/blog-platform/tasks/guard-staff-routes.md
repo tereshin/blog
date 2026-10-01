@@ -9,7 +9,7 @@ files_hint: ["apps/api-gateway/src/staff", "apps/api-gateway/src/app.module.ts"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T34 — Require the staff second factor on admin routes
@@ -79,10 +79,10 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Verify the Firebase token and the second-factor claim on admin routes
-- [ ] Read the role from the users service. A User gets `STAFF_FORBIDDEN` and no admin payload
-- [ ] A staff token without the second factor gets `STAFF_MFA_REQUIRED`
-- [ ] Expire the admin session after 30 idle minutes
+- [x] Verify the Firebase token and the second-factor claim on admin routes
+- [x] Read the role from the users service. A User gets `STAFF_FORBIDDEN` and no admin payload
+- [x] A staff token without the second factor gets `STAFF_MFA_REQUIRED`
+- [x] Expire the admin session after 30 idle minutes
 
 ## Edge cases
 
@@ -94,6 +94,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-28 and AC-30
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-28 and AC-30
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

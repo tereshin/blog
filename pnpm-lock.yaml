@@ -32,6 +32,9 @@ importers:
       '@blog/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@blog/firebase':
+        specifier: workspace:*
+        version: link:../../packages/firebase
       '@blog/redis':
         specifier: workspace:*
         version: link:../../packages/redis
