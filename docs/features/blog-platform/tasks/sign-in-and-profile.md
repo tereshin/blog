@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/profile", "packages/i18n/messages/profile"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T43 — Sign in and edit a public profile
@@ -100,10 +100,10 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-04, SCR-05, and SCR-06. Omit a profile field the API omitted
-- [ ] Show `username-taken` from `USERNAME_TAKEN`
-- [ ] Follow and unfollow on SCR-05
-- [ ] Route a Guest write's `AUTH_REQUIRED` to SCR-04
+- [x] Build SCR-04, SCR-05, and SCR-06. Omit a profile field the API omitted
+- [x] Show `username-taken` from `USERNAME_TAKEN`
+- [x] Follow and unfollow on SCR-05
+- [x] Route a Guest write's `AUTH_REQUIRED` to SCR-04
 
 ## Edge cases
 
@@ -115,6 +115,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-04 `default` and `error`, SCR-05 `default` and `not-found`, and SCR-06 `username-taken`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-04 `default` and `error`, SCR-05 `default` and `not-found`, and SCR-06 `username-taken`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

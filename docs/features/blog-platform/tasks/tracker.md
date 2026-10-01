@@ -47,7 +47,7 @@
 | T40 | Share HeroUI tokens, Theme, and Interface language | ui | Frontend Lead | M | — | done |
 | T41 | Render the Fresh feed, the Popular feed, and a Category | ui | Frontend Lead | M | T40, T27, T17, T26 | done |
 | T42 | Render a published Article with Comments and live counts | ui | Frontend Lead | M | T40, T33, T39, T22, T25 | done |
-| T43 | Sign in and edit a public profile | ui | Frontend Lead | M | T40, T14, T33, T26 | todo |
+| T43 | Sign in and edit a public profile | ui | Frontend Lead | M | T40, T14, T33, T26 | done |
 | T44 | Edit and publish a draft on one screen | ui | Frontend Lead | M | T40, T18, T19, T20, T21 | todo |
 | T45 | Show My feed and private Bookmarks | ui | Frontend Lead | M | T40, T27, T25 | todo |
 | T46 | Show conversations and a live thread | ui | Frontend Lead | M | T40, T28, T39 | todo |
