@@ -9,7 +9,7 @@ files_hint: ["apps/admin/src/features/moderation", "packages/i18n/messages/moder
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T49 — Review Complaints and the staff Article
@@ -111,10 +111,10 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-16, SCR-17, and SCR-18. Cursor next page is a Button
-- [ ] Hide and dismiss require a reason. Category move does not
-- [ ] Show the full Article text only on SCR-18. Author withdraw is not labeled as a staff hide
-- [ ] Register `StaffTable` under `apps/admin/src/shared`
+- [x] Build SCR-16, SCR-17, and SCR-18. Cursor next page is a Button
+- [x] Hide and dismiss require a reason. Category move does not
+- [x] Show the full Article text only on SCR-18. Author withdraw is not labeled as a staff hide
+- [x] Register `StaffTable` under `apps/admin/src/shared`
 
 ## Edge cases
 
@@ -127,6 +127,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-16 `empty`, SCR-17 `reason-required`, and SCR-18 `default`, `category-moved`, and `admin-only`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-16 `empty`, SCR-17 `reason-required`, and SCR-18 `default`, `category-moved`, and `admin-only`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
