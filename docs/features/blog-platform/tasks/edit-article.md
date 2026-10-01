@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/editor", "packages/i18n/messages/editor"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T44 — Edit and publish a draft on one screen
@@ -131,11 +131,11 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-08 as one screen. The second preview renders the same draft the editor holds
-- [ ] Autosave with the current `version`. On conflict show `version-conflict` and do not overwrite
-- [ ] Upload bytes to the presigned URL, then call the attach route
-- [ ] Publish from this screen. A missing image stays `default`, not its own layout
-- [ ] Another User sees `not-found` / unavailable, not the draft text
+- [x] Build SCR-08 as one screen. The second preview renders the same draft the editor holds
+- [x] Autosave with the current `version`. On conflict show `version-conflict` and do not overwrite
+- [x] Upload bytes to the presigned URL, then call the attach route
+- [x] Publish from this screen. A missing image stays `default`, not its own layout
+- [x] Another User sees `not-found` / unavailable, not the draft text
 
 ## Edge cases
 
@@ -148,6 +148,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-08 `default`, `category-required`, `title-required`, `text-required`, `block-rejected`, and `version-conflict`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-08 `default`, `category-required`, `title-required`, `text-required`, `block-rejected`, and `version-conflict`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

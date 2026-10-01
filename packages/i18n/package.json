@@ -9,7 +9,8 @@
     "./features/shell": "./src/features/shell/catalog.ts",
     "./features/feeds": "./src/features/feeds/catalog.ts",
     "./features/article": "./src/features/article/catalog.ts",
-    "./features/profile": "./src/features/profile/catalog.ts"
+    "./features/profile": "./src/features/profile/catalog.ts",
+    "./features/editor": "./src/features/editor/catalog.ts"
   },
   "scripts": {
     "lint": "eslint .",
