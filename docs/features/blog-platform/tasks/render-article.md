@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/article", "packages/i18n/messages/article"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T42 — Render a published Article with Comments and live counts
@@ -115,11 +115,11 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Server-render `default` from the composed payload, including a published Article with no image
-- [ ] Show `unavailable` without the words draft, hidden, or withdrawn. Show `author` with the text and the state
-- [ ] Nest replies through depth 3 and show a deeper reply flat
-- [ ] Apply socket events onto the TanStack Query cache for `live`. Do not move the View count on that event
-- [ ] Send the View after 3 seconds visible
+- [x] Server-render `default` from the composed payload, including a published Article with no image
+- [x] Show `unavailable` without the words draft, hidden, or withdrawn. Show `author` with the text and the state
+- [x] Nest replies through depth 3 and show a deeper reply flat
+- [x] Apply socket events onto the TanStack Query cache for `live`. Do not move the View count on that event
+- [x] Send the View after 3 seconds visible
 
 ## Edge cases
 
@@ -132,6 +132,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-03 `default`, `unavailable`, `author`, `live`, `comment-blocked`, and `flat-reply`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-03 `default`, `unavailable`, `author`, `live`, `comment-blocked`, and `flat-reply`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

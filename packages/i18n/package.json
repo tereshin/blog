@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./features/shell": "./src/features/shell/catalog.ts",
-    "./features/feeds": "./src/features/feeds/catalog.ts"
+    "./features/feeds": "./src/features/feeds/catalog.ts",
+    "./features/article": "./src/features/article/catalog.ts"
   },
   "scripts": {
     "lint": "eslint .",
