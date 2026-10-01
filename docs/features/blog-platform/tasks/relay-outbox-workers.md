@@ -9,7 +9,7 @@ files_hint: ["apps/content/src/outbox-worker", "apps/comments/src/outbox-worker"
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "L"   # justified: five relays share one loop and must not cross schemas
-status: "todo"
+status: "done"
 ---
 
 # T37 — Relay each schema outbox from its own worker
@@ -70,10 +70,10 @@ This task asserts no spec §5 id. Later tasks assert the criteria that read this
 
 ## Checklist
 
-- [ ] Run one relay process per emitting schema: content, comments, engagement, social, messaging
-- [ ] Publish the envelope from the outbox columns and set `published_at` after the broker confirms
-- [ ] Retry with backoff, then dead-letter. Alert when the oldest unpublished row is older than 500 ms
-- [ ] Do not let one worker select another schema
+- [x] Run one relay process per emitting schema: content, comments, engagement, social, messaging
+- [x] Publish the envelope from the outbox columns and set `published_at` after the broker confirms
+- [x] Retry with backoff, then dead-letter. Alert when the oldest unpublished row is older than 500 ms
+- [x] Do not let one worker select another schema
 
 ## Edge cases
 
@@ -84,6 +84,6 @@ This task asserts no spec §5 id. Later tasks assert the criteria that read this
 
 ## Definition of Done
 
-- [ ] Vitest covers a relay that publishes one schema's oldest row and does not select another schema
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers a relay that publishes one schema's oldest row and does not select another schema
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

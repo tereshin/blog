@@ -133,6 +133,9 @@ importers:
       '@blog/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@blog/rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -182,6 +185,9 @@ importers:
       '@blog/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@blog/rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -231,6 +237,9 @@ importers:
       '@blog/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@blog/rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -378,6 +387,9 @@ importers:
       '@blog/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@blog/rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -476,6 +488,9 @@ importers:
       '@blog/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@blog/rabbitmq':
+        specifier: workspace:*
+        version: link:../../packages/rabbitmq
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)

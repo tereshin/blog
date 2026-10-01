@@ -40,6 +40,8 @@ export const outbox_events = messages_schema.table('outbox_events', {
   event_type: text('event_type').notNull(),
   aggregate_id: uuid('aggregate_id').notNull(),
   payload: jsonb('payload').notNull(),
+  correlation_id: uuid('correlation_id'),
+  causation_id: uuid('causation_id'),
   producer: text('producer').notNull(),
   event_version: integer('event_version').notNull(),
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),

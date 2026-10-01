@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@blog/contracts": "workspace:*",
+    "@blog/rabbitmq": "workspace:*",
     "@blog/database": "workspace:*",
     "@nestjs/common": "^12.1.0",
     "@nestjs/core": "^12.1.0",
