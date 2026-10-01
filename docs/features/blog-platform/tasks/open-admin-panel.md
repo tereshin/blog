@@ -9,7 +9,7 @@ files_hint: ["apps/admin", "packages/i18n/messages/admin"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T48 — Open the admin panel only after a second factor
@@ -91,9 +91,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Add `apps/admin` as a Vite SPA. Do not server-render it
-- [ ] Build `AdminShell` and SCR-15. A refused User is not left inside the panel
-- [ ] Apply the same three Themes and three Interface languages, stored in this browser, English fallback
+- [x] Add `apps/admin` as a Vite SPA. Do not server-render it
+- [x] Build `AdminShell` and SCR-15. A refused User is not left inside the panel
+- [x] Apply the same three Themes and three Interface languages, stored in this browser, English fallback
 
 ## Edge cases
 
@@ -105,6 +105,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-15 `default`, `refused`, and `closed`, and AC-55 Theme plus English fallback
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-15 `default`, `refused`, and `closed`, and AC-55 Theme plus English fallback
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

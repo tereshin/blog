@@ -14,7 +14,13 @@ function isLocale(value: string | null): value is Locale {
   return value === 'en' || value === 'sr-Latn' || value === 'ru';
 }
 
-function AppearanceControls({ children }: { children: ReactNode }) {
+function AppearanceControls({
+  children,
+  on_locale,
+}: {
+  children: ReactNode;
+  on_locale?: (locale: Locale) => void;
+}) {
   const { setTheme, theme } = useTheme();
   const [locale, set_locale] = useState<Locale>('en');
   const [mounted, set_mounted] = useState(false);
@@ -29,8 +35,9 @@ function AppearanceControls({ children }: { children: ReactNode }) {
 
     if (isLocale(stored_locale)) {
       set_locale(stored_locale);
+      on_locale?.(stored_locale);
     }
-  }, []);
+  }, [on_locale]);
 
   useEffect(() => {
     if (!mounted || !theme) {
@@ -54,6 +61,7 @@ function AppearanceControls({ children }: { children: ReactNode }) {
   function chooseLocale(next_locale: Locale): void {
     set_locale(next_locale);
     localStorage.setItem(locale_storage_key, next_locale);
+    on_locale?.(next_locale);
   }
 
   return (
@@ -87,7 +95,13 @@ function AppearanceControls({ children }: { children: ReactNode }) {
   );
 }
 
-export function AppearanceFrame({ children }: { children: ReactNode }) {
+export function AppearanceFrame({
+  children,
+  on_locale,
+}: {
+  children: ReactNode;
+  on_locale?: (locale: Locale) => void;
+}) {
   return (
     <ThemeProvider
       attribute="class"
@@ -96,7 +110,7 @@ export function AppearanceFrame({ children }: { children: ReactNode }) {
       disableTransitionOnChange
       storageKey={theme_storage_key}
     >
-      <AppearanceControls>{children}</AppearanceControls>
+      <AppearanceControls on_locale={on_locale}>{children}</AppearanceControls>
     </ThemeProvider>
   );
 }

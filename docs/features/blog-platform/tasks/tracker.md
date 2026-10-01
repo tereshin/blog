@@ -52,7 +52,7 @@
 | T45 | Show My feed and private Bookmarks | ui | Frontend Lead | M | T40, T27, T25 | done |
 | T46 | Show conversations and a live thread | ui | Frontend Lead | M | T40, T28, T39 | done |
 | T47 | Show Notifications and file a Complaint | ui | Frontend Lead | M | T40, T29, T23, T24 | done |
-| T48 | Open the admin panel only after a second factor | ui | Frontend Lead | M | T40, T34 | todo |
+| T48 | Open the admin panel only after a second factor | ui | Frontend Lead | M | T40, T34 | done |
 | T49 | Review Complaints and the staff Article | ui | Frontend Lead | M | T48, T30, T31, T32 | todo |
 | T50 | Block and unblock an account from the admin panel | ui | Frontend Lead | S | T48, T16 | todo |
 | T51 | Manage Categories, roles, and Popular weights | ui | Frontend Lead | M | T48, T17, T15, T27 | todo |

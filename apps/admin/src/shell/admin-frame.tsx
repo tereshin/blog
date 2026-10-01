@@ -1,15 +1,13 @@
-'use client';
-
 import type { Locale } from '@blog/i18n';
 import type { ReactNode } from 'react';
-import { AppearanceFrame } from './appearance-frame';
+import { AdminShell } from '@blog/ui';
 
-export function AdminShell({
+export function AdminFrame({
   children,
   on_locale,
 }: {
   children: ReactNode;
   on_locale?: (locale: Locale) => void;
 }) {
-  return <AppearanceFrame on_locale={on_locale}>{children}</AppearanceFrame>;
+  return <AdminShell on_locale={on_locale}>{children}</AdminShell>;
 }
