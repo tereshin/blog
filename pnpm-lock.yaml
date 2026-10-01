@@ -32,6 +32,9 @@ importers:
       '@blog/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@blog/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)

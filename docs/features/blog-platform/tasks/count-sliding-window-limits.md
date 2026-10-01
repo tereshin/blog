@@ -9,7 +9,7 @@ files_hint: ["apps/users/src/rate-limits", "apps/api-gateway/src/rate-limit", "a
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T36 — Count rate limits with a sliding window
@@ -76,9 +76,9 @@ This task asserts no spec §5 id. Later tasks assert the criteria that read this
 
 ## Checklist
 
-- [ ] Count each seeded action in Redis over a sliding window of `window_seconds`
-- [ ] Return `RATE_LIMITED` before the command runs
-- [ ] Let an Administrator change `max_count` and `window_seconds` in `users.rate_limit_settings`
+- [x] Count each seeded action in Redis over a sliding window of `window_seconds`
+- [x] Return `RATE_LIMITED` before the command runs
+- [x] Let an Administrator change `max_count` and `window_seconds` in `users.rate_limit_settings`
 
 ## Edge cases
 
@@ -90,6 +90,6 @@ This task asserts no spec §5 id. Later tasks assert the criteria that read this
 
 ## Definition of Done
 
-- [ ] Vitest covers a window that blocks the 61st anonymous read and allows the action after the window slides
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers a window that blocks the 61st anonymous read and allows the action after the window slides
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

@@ -1,4 +1,4 @@
-import { date, jsonb, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { date, integer, jsonb, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const users_schema = pgSchema('users');
 
@@ -35,6 +35,13 @@ export const blocks = users_schema.table('blocks', {
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
   lifted_at: timestamp('lifted_at', { withTimezone: true, mode: 'string' }),
   lifted_by: uuid('lifted_by'),
+});
+
+export const rate_limit_settings = users_schema.table('rate_limit_settings', {
+  action: text('action').primaryKey(),
+  max_count: integer('max_count').notNull(),
+  window_seconds: integer('window_seconds').notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
 });
 
 export const admin_audit_log = users_schema.table('admin_audit_log', {
