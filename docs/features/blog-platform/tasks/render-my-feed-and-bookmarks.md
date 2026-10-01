@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/library", "packages/i18n/messages/library"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T45 — Show My feed and private Bookmarks
@@ -83,9 +83,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-09 and SCR-10 for the signed-in User only
-- [ ] Render each Article once, in the API order
-- [ ] Do not add a route that loads another User's Bookmark list
+- [x] Build SCR-09 and SCR-10 for the signed-in User only
+- [x] Render each Article once, in the API order
+- [x] Do not add a route that loads another User's Bookmark list
 
 ## Edge cases
 
@@ -97,6 +97,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-09 and SCR-10 `default` and `empty`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-09 and SCR-10 `default` and `empty`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
