@@ -17,4 +17,12 @@ export class MemoryCommentStore implements CommentStore {
   async listByArticle(article_id: string): Promise<CommentRecord[]> {
     return this.comments.filter((comment) => comment.article_id === article_id);
   }
+
+  async hide(comment: CommentRecord, event: CommentEvent): Promise<void> {
+    const index = this.comments.findIndex((row) => row.id === comment.id);
+    if (index >= 0) {
+      this.comments[index] = structuredClone(comment);
+    }
+    this.outbox.push(event);
+  }
 }

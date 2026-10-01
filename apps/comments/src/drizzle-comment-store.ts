@@ -86,4 +86,18 @@ export class DrizzleCommentStore implements CommentStore {
     }
     return comments;
   }
+
+  async hide(comment: CommentRecord, event: CommentEvent): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(comments_table).set({ status: 'hidden' }).where(eq(comments_table.id, comment.id));
+      await tx.insert(outbox_events).values({
+        id: event.id,
+        event_type: event.event_type,
+        aggregate_id: event.aggregate_id,
+        payload: event.payload,
+        producer: event.producer,
+        event_version: event.event_version,
+      });
+    });
+  }
 }

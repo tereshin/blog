@@ -9,7 +9,7 @@ files_hint: ["apps/comments"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T31 — Hide a Comment and close its Complaints
@@ -87,9 +87,9 @@ This task hides a Comment, closes its open Complaints, and emits the live event.
 
 ## Checklist
 
-- [ ] Hide only with a reason. Close open Complaints about that Comment
-- [ ] Insert `comments.comment.hidden` in the same transaction
-- [ ] Append `comment.hide` through the users service, with retry
+- [x] Hide only with a reason. Close open Complaints about that Comment
+- [x] Insert `comments.comment.hidden` in the same transaction
+- [x] Append `comment.hide` through the users service, with retry
 
 ## Edge cases
 
@@ -100,6 +100,6 @@ This task hides a Comment, closes its open Complaints, and emits the live event.
 
 ## Definition of Done
 
-- [ ] Vitest covers the Comment half of AC-27 and AC-29
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers the Comment half of AC-27 and AC-29
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

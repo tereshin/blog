@@ -35,7 +35,7 @@
 | T28 | Exchange Direct messages between two Users | app | Backend Lead | M | T8, T14, T16 | done |
 | T29 | Deliver in-product Notifications | app | Backend Lead | M | T9, T13, T22, T26, T28 | done |
 | T30 | Hide an Article, move its Category, and staff-remove it | app | Backend Lead | M | T16, T19, T23 | done |
-| T31 | Hide a Comment and close its Complaints | app | Backend Lead | M | T16, T22, T24 | todo |
+| T31 | Hide a Comment and close its Complaints | app | Backend Lead | M | T16, T22, T24 | done |
 | T32 | List open Complaints and dismiss one | ports | Backend Lead | M | T13, T16, T23, T24 | todo |
 | T33 | Compose the public Article read and refuse a Guest write | ports | Backend Lead | M | T13, T14, T19, T22, T25, T36 | todo |
 | T34 | Require the staff second factor on admin routes | ports | Backend Lead | M | T15, T16, T33 | todo |

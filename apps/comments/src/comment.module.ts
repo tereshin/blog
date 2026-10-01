@@ -8,13 +8,16 @@ import { ComplaintService } from './complaint-service';
 import type { ComplaintStore } from './complaint-store';
 import { DrizzleCommentStore } from './drizzle-comment-store';
 import { DrizzleComplaintStore } from './drizzle-complaint-store';
+import type { CommentAuditAppender } from './staff-audit';
+import { StaffCommentController } from './staff.controller';
+import { StaffCommentService } from './staff-service';
 
 export const COMMENT_STORE = Symbol('COMMENT_STORE');
 export const ARTICLE_VISIBILITY = Symbol('ARTICLE_VISIBILITY');
 export const COMPLAINT_STORE = Symbol('COMPLAINT_STORE');
 
 @Module({
-  controllers: [CommentController, ComplaintController],
+  controllers: [CommentController, ComplaintController, StaffCommentController],
   providers: [
     {
       provide: COMMENT_STORE,
@@ -38,6 +41,12 @@ export const COMPLAINT_STORE = Symbol('COMPLAINT_STORE');
       provide: ComplaintService,
       useFactory: (comments: CommentStore, complaints: ComplaintStore) =>
         new ComplaintService(comments, complaints),
+      inject: [COMMENT_STORE, COMPLAINT_STORE],
+    },
+    {
+      provide: StaffCommentService,
+      useFactory: (comments: CommentStore, complaints: ComplaintStore) =>
+        new StaffCommentService(comments, complaints, { async append() {} } satisfies CommentAuditAppender),
       inject: [COMMENT_STORE, COMPLAINT_STORE],
     },
   ],
