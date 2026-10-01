@@ -1,0 +1,43 @@
+import type { Catalog } from '../../translate';
+
+export const notices_catalog: Catalog = {
+  en: {
+    'notices.empty': 'No notices',
+    'notices.loading': 'Loading',
+    'notices.type.reply': 'Someone replied to your comment',
+    'notices.type.mention': 'Someone mentioned you',
+    'notices.type.follow': 'Someone followed you',
+    'notices.type.direct_message': 'You have a new message',
+    'notices.complaint.reason': 'Reason',
+    'notices.complaint.submit': 'Submit complaint',
+    'notices.complaint.back': 'Back to the article',
+    'notices.complaint.reason_required': 'A reason must be present',
+    'notices.complaint.not_found': 'That article or comment is not there',
+  },
+  'sr-Latn': {
+    'notices.empty': 'Nema obaveštenja',
+    'notices.loading': 'Učitavanje',
+    'notices.type.reply': 'Neko je odgovorio na vaš komentar',
+    'notices.type.mention': 'Neko vas je pomenuo',
+    'notices.type.follow': 'Neko vas je zapratio',
+    'notices.type.direct_message': 'Imate novu poruku',
+    'notices.complaint.reason': 'Razlog',
+    'notices.complaint.submit': 'Pošalji prijavu',
+    'notices.complaint.back': 'Nazad na članak',
+    'notices.complaint.reason_required': 'Razlog mora biti naveden',
+    'notices.complaint.not_found': 'Taj članak ili komentar ne postoji',
+  },
+  ru: {
+    'notices.empty': 'Нет уведомлений',
+    'notices.loading': 'Загрузка',
+    'notices.type.reply': 'Кто-то ответил на ваш комментарий',
+    'notices.type.mention': 'Кто-то вас упомянул',
+    'notices.type.follow': 'Кто-то на вас подписался',
+    'notices.type.direct_message': 'У вас новое сообщение',
+    'notices.complaint.reason': 'Причина',
+    'notices.complaint.submit': 'Отправить жалобу',
+    'notices.complaint.back': 'К статье',
+    'notices.complaint.reason_required': 'Нужно указать причину',
+    'notices.complaint.not_found': 'Этой статьи или комментария нет',
+  },
+};

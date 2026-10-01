@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/notices", "packages/i18n/messages/notices"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T47 — Show Notifications and file a Complaint
@@ -83,9 +83,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-13. A reply or mention opens the Article. A follower opens the profile. A Direct message opens the conversation
-- [ ] Build SCR-14 as a Modal. Require a reason before submit
-- [ ] Do not add an email or phone control
+- [x] Build SCR-13. A reply or mention opens the Article. A follower opens the profile. A Direct message opens the conversation
+- [x] Build SCR-14 as a Modal. Require a reason before submit
+- [x] Do not add an email or phone control
 
 ## Edge cases
 
@@ -97,6 +97,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-13 `default` and `empty`, and SCR-14 `reason-required`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-13 `default` and `empty`, and SCR-14 `reason-required`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
