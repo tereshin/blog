@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/feeds", "packages/i18n/messages/feeds"]
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T41 — Render the Fresh feed, the Popular feed, and a Category
@@ -87,10 +87,10 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Server-render SCR-01 and SCR-02 from the feed payload. Page size is whatever the API returned, expected 20
-- [ ] Do not offer My feed to a Guest. A signed-in User can set the Content-language control that calls T14's route
-- [ ] Build SCR-07 with Follow and the not-found empty state
-- [ ] Register `EmptyState` once under `apps/web/src/shared`. It is new because the primitive list has no empty state
+- [x] Server-render SCR-01 and SCR-02 from the feed payload. Page size is whatever the API returned, expected 20
+- [x] Do not offer My feed to a Guest. A signed-in User can set the Content-language control that calls T14's route
+- [x] Build SCR-07 with Follow and the not-found empty state
+- [x] Register `EmptyState` once under `apps/web/src/shared`. It is new because the primitive list has no empty state
 
 ## Edge cases
 
@@ -102,6 +102,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-01, SCR-02, and SCR-07 `default`, `loading`, `empty` or `not-found`, and `error`, and AC-03's Guest chrome
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-01, SCR-02, and SCR-07 `default`, `loading`, `empty` or `not-found`, and `error`, and AC-03's Guest chrome
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./features/shell": "./src/features/shell/catalog.ts"
+    "./features/shell": "./src/features/shell/catalog.ts",
+    "./features/feeds": "./src/features/feeds/catalog.ts"
   },
   "scripts": {
     "lint": "eslint .",
