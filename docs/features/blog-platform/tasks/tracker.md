@@ -50,7 +50,7 @@
 | T43 | Sign in and edit a public profile | ui | Frontend Lead | M | T40, T14, T33, T26 | done |
 | T44 | Edit and publish a draft on one screen | ui | Frontend Lead | M | T40, T18, T19, T20, T21 | done |
 | T45 | Show My feed and private Bookmarks | ui | Frontend Lead | M | T40, T27, T25 | done |
-| T46 | Show conversations and a live thread | ui | Frontend Lead | M | T40, T28, T39 | todo |
+| T46 | Show conversations and a live thread | ui | Frontend Lead | M | T40, T28, T39 | done |
 | T47 | Show Notifications and file a Complaint | ui | Frontend Lead | M | T40, T29, T23, T24 | todo |
 | T48 | Open the admin panel only after a second factor | ui | Frontend Lead | M | T40, T34 | todo |
 | T49 | Review Complaints and the staff Article | ui | Frontend Lead | M | T48, T30, T31, T32 | todo |

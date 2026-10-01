@@ -11,7 +11,8 @@
     "./features/article": "./src/features/article/catalog.ts",
     "./features/profile": "./src/features/profile/catalog.ts",
     "./features/editor": "./src/features/editor/catalog.ts",
-    "./features/library": "./src/features/library/catalog.ts"
+    "./features/library": "./src/features/library/catalog.ts",
+    "./features/messages": "./src/features/messages/catalog.ts"
   },
   "scripts": {
     "lint": "eslint .",

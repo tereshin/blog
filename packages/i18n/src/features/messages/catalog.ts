@@ -1,0 +1,40 @@
+import type { Catalog } from '../../translate';
+
+export const messages_catalog: Catalog = {
+  en: {
+    'messages.empty': 'No conversations',
+    'messages.unread': 'Unread',
+    'messages.read': 'Read',
+    'messages.send': 'Send',
+    'messages.label': 'Message',
+    'messages.body_required': 'The message must contain text',
+    'messages.loading': 'Loading',
+    'messages.thread.empty': 'No messages yet',
+    'messages.not_found': 'This conversation is not available',
+    'messages.back': 'Back to conversations',
+  },
+  'sr-Latn': {
+    'messages.empty': 'Nema razgovora',
+    'messages.unread': 'Nepročitano',
+    'messages.read': 'Pročitano',
+    'messages.send': 'Pošalji',
+    'messages.label': 'Poruka',
+    'messages.body_required': 'Poruka mora da sadrži tekst',
+    'messages.loading': 'Učitavanje',
+    'messages.thread.empty': 'Još nema poruka',
+    'messages.not_found': 'Ovaj razgovor nije dostupan',
+    'messages.back': 'Nazad na razgovore',
+  },
+  ru: {
+    'messages.empty': 'Нет разговоров',
+    'messages.unread': 'Непрочитано',
+    'messages.read': 'Прочитано',
+    'messages.send': 'Отправить',
+    'messages.label': 'Сообщение',
+    'messages.body_required': 'Сообщение должно содержать текст',
+    'messages.loading': 'Загрузка',
+    'messages.thread.empty': 'Сообщений пока нет',
+    'messages.not_found': 'Этот разговор недоступен',
+    'messages.back': 'К списку разговоров',
+  },
+};

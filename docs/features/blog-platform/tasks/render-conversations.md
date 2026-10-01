@@ -9,7 +9,7 @@ files_hint: ["apps/web/src/features/messages", "packages/i18n/messages/messages"
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T46 — Show conversations and a live thread
@@ -83,9 +83,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-11 and SCR-12. Show the unread count and, after read, the sender's read mark
-- [ ] Block an empty send in the UI from `MESSAGE_BODY_REQUIRED`
-- [ ] Append a socket message for this conversation only
+- [x] Build SCR-11 and SCR-12. Show the unread count and, after read, the sender's read mark
+- [x] Block an empty send in the UI from `MESSAGE_BODY_REQUIRED`
+- [x] Append a socket message for this conversation only
 
 ## Edge cases
 
@@ -97,6 +97,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-11 `empty`, SCR-12 `default`, `message-invalid`, and `live`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-11 `empty`, SCR-12 `default`, `message-invalid`, and `live`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package
