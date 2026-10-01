@@ -9,7 +9,7 @@ files_hint: ["apps/realtime"]
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "S"
-status: "todo"
+status: "done"
 ---
 
 # T39 — Push live Article and Direct message updates
@@ -75,10 +75,10 @@ Internal — no REST surface. Socket rooms: one published Article, and one conve
 
 ## Checklist
 
-- [ ] Add `apps/realtime`. Verify the socket token with `packages/firebase`
-- [ ] Push Like counts, Comment counts, new Comments, hidden Comments, and Article hide or unavailable
-- [ ] Push a Direct message only to the two members of that conversation
-- [ ] Do not push View increments and do not push `content.article.published`
+- [x] Add `apps/realtime`. Verify the socket token with `packages/firebase`
+- [x] Push Like counts, Comment counts, new Comments, hidden Comments, and Article hide or unavailable
+- [x] Push a Direct message only to the two members of that conversation
+- [x] Do not push View increments and do not push `content.article.published`
 
 ## Edge cases
 
@@ -90,6 +90,6 @@ Internal — no REST surface. Socket rooms: one published Article, and one conve
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-25: the Article room gets a Like, a Comment, and a hide, the conversation room gets a message, and a View emits nothing
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-25: the Article room gets a Like, a Comment, and a hide, the conversation room gets a message, and a View emits nothing
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

@@ -43,7 +43,7 @@
 | T36 | Count rate limits with a sliding window | app | Backend Lead | M | T11, T13, T16 | done |
 | T37 | Relay each schema outbox from its own worker | infra | Backend Lead | M | T13, T19, T22, T25, T26, T28, T30, T31 | done |
 | T38 | Flush view increments from Redis | infra | Backend Lead | S | T25, T13 | done |
-| T39 | Push live Article and Direct message updates | app | Backend Lead | M | T37, T28, T30, T31 | todo |
+| T39 | Push live Article and Direct message updates | app | Backend Lead | M | T37, T28, T30, T31 | done |
 | T40 | Share HeroUI tokens, Theme, and Interface language | ui | Frontend Lead | M | — | done |
 | T41 | Render the Fresh feed, the Popular feed, and a Category | ui | Frontend Lead | M | T40, T27, T17, T26 | todo |
 | T42 | Render a published Article with Comments and live counts | ui | Frontend Lead | M | T40, T33, T39, T22, T25 | todo |
