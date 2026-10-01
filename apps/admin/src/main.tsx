@@ -5,6 +5,8 @@ import { AdminApp } from './admin-app';
 import { BlockPreview } from './features/block/block-preview';
 import { CategoryScreen } from './features/catalog/category-screen';
 import { ComplaintListScreen } from './features/moderation/complaint-list-screen';
+import { AuditScreen } from './features/oversight/audit-screen';
+import { StatisticsScreen } from './features/oversight/statistics-screen';
 import { StaffArticleScreen } from './features/moderation/staff-article-screen';
 import { AdminFrame } from './shell/admin-frame';
 import './styles.css';
@@ -64,6 +66,34 @@ if (root) {
                   on_move={() => undefined}
                   on_remove={() => undefined}
                 />
+              </AdminFrame>
+            }
+          />
+          <Route
+            path="/statistics"
+            element={
+              <AdminFrame>
+                <StatisticsScreen
+                  locale="en"
+                  status="default"
+                  figures={{
+                    users_signed_in_today: 0,
+                    users_signed_in_last_30_days: 4,
+                    new_users: 1,
+                    articles_published: 2,
+                    comments_written: 3,
+                    open_complaints: 1,
+                    public_site_answering: true,
+                  }}
+                />
+              </AdminFrame>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <AdminFrame>
+                <AuditScreen locale="en" status="empty" rows={[]} has_next={false} on_next={() => undefined} />
               </AdminFrame>
             }
           />

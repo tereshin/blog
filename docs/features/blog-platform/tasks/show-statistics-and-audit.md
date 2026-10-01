@@ -9,7 +9,7 @@ files_hint: ["apps/admin/src/features/oversight", "packages/i18n/messages/oversi
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T52 — Show platform statistics and the audit trail
@@ -91,9 +91,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-23 with the seven figures, including the public-site answering flag
-- [ ] Build SCR-24 with cursor pages and no edit or delete control
-- [ ] A Moderator never receives the platform figures
+- [x] Build SCR-23 with the seven figures, including the public-site answering flag
+- [x] Build SCR-24 with cursor pages and no edit or delete control
+- [x] A Moderator never receives the platform figures
 
 ## Edge cases
 
@@ -106,6 +106,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-23 `default` and `no-figures`, and SCR-24 `default`, `own`, and `empty`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-23 `default` and `no-figures`, and SCR-24 `default`, `own`, and `empty`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

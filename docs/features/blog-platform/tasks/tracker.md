@@ -56,6 +56,6 @@
 | T49 | Review Complaints and the staff Article | ui | Frontend Lead | M | T48, T30, T31, T32 | done |
 | T50 | Block and unblock an account from the admin panel | ui | Frontend Lead | S | T48, T16 | done |
 | T51 | Manage Categories, roles, and Popular weights | ui | Frontend Lead | M | T48, T17, T15, T27 | done |
-| T52 | Show platform statistics and the audit trail | ui | Frontend Lead | M | T48, T35, T16 | todo |
+| T52 | Show platform statistics and the audit trail | ui | Frontend Lead | M | T48, T35, T16 | done |
 
 **Total:** 52 tasks, ~43.5 person-days.
