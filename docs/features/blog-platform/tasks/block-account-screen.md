@@ -9,7 +9,7 @@ files_hint: ["apps/admin/src/features/block", "packages/i18n/messages/block"]
 owner: "Frontend Lead"
 estimate: "S"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T50 — Block and unblock an account from the admin panel
@@ -66,8 +66,8 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-19 from a Complaint's author
-- [ ] Require a reason. Show Lift when a Block is active
+- [x] Build SCR-19 from a Complaint's author
+- [x] Require a reason. Show Lift when a Block is active
 
 ## Edge cases
 
@@ -78,6 +78,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-19 `reason-required`, `blocked`, and `lifted`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-19 `reason-required`, `blocked`, and `lifted`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

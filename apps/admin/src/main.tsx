@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AdminApp } from './admin-app';
+import { BlockPreview } from './features/block/block-preview';
 import { ComplaintListScreen } from './features/moderation/complaint-list-screen';
 import { StaffArticleScreen } from './features/moderation/staff-article-screen';
 import { AdminFrame } from './shell/admin-frame';
@@ -18,6 +19,14 @@ if (root) {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AdminApp />} />
+          <Route
+            path="/users/:userId/block"
+            element={
+              <AdminFrame>
+                <BlockPreview user_id="018f3c2a-7b10-7c3e-8f21-0000000000b2" />
+              </AdminFrame>
+            }
+          />
           <Route
             path="/complaints"
             element={
