@@ -4,8 +4,9 @@ import { HealthModule } from './health/health.module';
 import { PublicModule } from './public/public.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { StaffGuardModule } from './staff/staff.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
-  imports: [HealthModule, ComplaintsModule, RateLimitModule, PublicModule, StaffGuardModule],
+  imports: [HealthModule, ComplaintsModule, RateLimitModule, PublicModule, StaffGuardModule, StatisticsModule],
 })
 export class AppModule {}

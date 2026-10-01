@@ -9,7 +9,7 @@ files_hint: ["apps/api-gateway/src/statistics", "apps/api-gateway/src/app.module
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T35 — Report platform statistics to an Administrator
@@ -78,8 +78,8 @@ No DB changes. Each count is an HTTP read of the owning service.
 
 ## Checklist
 
-- [ ] Aggregate the six counts over HTTP. Read public-site liveness for the answering flag
-- [ ] Return `ADMIN_ONLY` for a Moderator, with no figures
+- [x] Aggregate the six counts over HTTP. Read public-site liveness for the answering flag
+- [x] Return `ADMIN_ONLY` for a Moderator, with no figures
 
 ## Edge cases
 
@@ -90,6 +90,6 @@ No DB changes. Each count is an HTTP read of the owning service.
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-53 and AC-54
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-53 and AC-54
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

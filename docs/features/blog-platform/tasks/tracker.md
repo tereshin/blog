@@ -39,7 +39,7 @@
 | T32 | List open Complaints and dismiss one | ports | Backend Lead | M | T13, T16, T23, T24 | done |
 | T33 | Compose the public Article read and refuse a Guest write | ports | Backend Lead | M | T13, T14, T19, T22, T25, T36 | done |
 | T34 | Require the staff second factor on admin routes | ports | Backend Lead | M | T15, T16, T33 | done |
-| T35 | Report platform statistics to an Administrator | ports | Backend Lead | M | T14, T19, T22, T23, T24, T34 | todo |
+| T35 | Report platform statistics to an Administrator | ports | Backend Lead | M | T14, T19, T22, T23, T24, T34 | done |
 | T36 | Count rate limits with a sliding window | app | Backend Lead | M | T11, T13, T16 | done |
 | T37 | Relay each schema outbox from its own worker | infra | Backend Lead | M | T13, T19, T22, T25, T26, T28, T30, T31 | todo |
 | T38 | Flush view increments from Redis | infra | Backend Lead | S | T25, T13 | todo |
