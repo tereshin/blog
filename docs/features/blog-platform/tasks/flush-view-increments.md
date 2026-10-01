@@ -9,7 +9,7 @@ files_hint: ["apps/engagement/src/view-flush"]
 owner: "Backend Lead"
 estimate: "S"
 context_budget: "S"
-status: "todo"
+status: "done"
 ---
 
 # T38 — Flush view increments from Redis
@@ -72,9 +72,9 @@ Internal — no API surface.
 
 ## Checklist
 
-- [ ] Add the engagement view-flush process. Add the Redis delta to `view_count` and clear the flushed delta
-- [ ] Do not insert an outbox row and do not push a socket event
-- [ ] Keep the 30-minute dedupe key in place
+- [x] Add the engagement view-flush process. Add the Redis delta to `view_count` and clear the flushed delta
+- [x] Do not insert an outbox row and do not push a socket event
+- [x] Keep the 30-minute dedupe key in place
 
 ## Edge cases
 
@@ -85,6 +85,6 @@ Internal — no API surface.
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-02 after a flush: one viewer produced one durable increment
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-02 after a flush: one viewer produced one durable increment
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

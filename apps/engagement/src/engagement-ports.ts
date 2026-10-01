@@ -31,4 +31,18 @@ export class MemoryViewWindow implements ViewWindow {
     this.pending.set(count_key, { expires_at: now_ms, count: (count?.count ?? 0) + 1 });
     return true;
   }
+
+  async takePending(): Promise<Array<{ article_id: string; count: number }>> {
+    const taken: Array<{ article_id: string; count: number }> = [];
+    for (const [key, value] of this.pending) {
+      if (!key.startsWith('pending:')) {
+        continue;
+      }
+      this.pending.delete(key);
+      if (value.count > 0) {
+        taken.push({ article_id: key.slice('pending:'.length), count: value.count });
+      }
+    }
+    return taken;
+  }
 }
