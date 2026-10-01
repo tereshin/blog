@@ -5,6 +5,7 @@ const status_by_code = {
   COMPLAINT_REASON_REQUIRED: 422,
   REASON_REQUIRED: 422,
   STAFF_FORBIDDEN: 403,
+  COMPLAINT_NOT_FOUND: 404,
 } as const;
 
 export type CommentErrorCode = keyof typeof status_by_code;

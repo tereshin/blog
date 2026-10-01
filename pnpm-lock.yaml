@@ -29,6 +29,9 @@ importers:
 
   apps/api-gateway:
     dependencies:
+      '@blog/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@nestjs/common':
         specifier: ^12.1.0
         version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)

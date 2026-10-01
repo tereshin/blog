@@ -4,6 +4,7 @@ import {
   Catch,
   Controller,
   type ExceptionFilter,
+  Get,
   Param,
   Post,
   Req,
@@ -42,5 +43,34 @@ export class ComplaintController {
       reporter_id: request.user_id ?? '',
       reason: body.reason ?? '',
     });
+  }
+
+  @Get('internal/complaints/open')
+  async listOpen() {
+    const rows = await this.complaints.listOpen();
+    return rows.map((row) => ({
+      id: row.id,
+      target_type: 'comment' as const,
+      target_id: row.comment_id,
+      reporter_id: row.reporter_id,
+      reason: row.reason,
+      status: row.status,
+      created_at: row.created_at,
+    }));
+  }
+
+  @Post('internal/complaints/:complaint_id/dismiss')
+  async dismiss(@Param('complaint_id') complaint_id: string, @Body() body: ComplaintBody) {
+    const row = await this.complaints.dismiss(complaint_id, body.reason ?? '');
+    return {
+      id: row.id,
+      target_type: 'comment' as const,
+      target_id: row.comment_id,
+      reporter_id: row.reporter_id,
+      reason: row.reason,
+      status: row.status,
+      created_at: row.created_at,
+      resolution_reason: row.resolution_reason ?? null,
+    };
   }
 }

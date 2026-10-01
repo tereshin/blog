@@ -51,4 +51,16 @@ export class ComplaintService {
   async listOpen(): Promise<CommentComplaint[]> {
     return this.complaints.listOpen();
   }
+
+  async dismiss(complaint_id: string, reason: string): Promise<CommentComplaint> {
+    const resolution_reason = reason.trim();
+    if (resolution_reason.length === 0) {
+      throw new CommentError('REASON_REQUIRED');
+    }
+    const complaint = await this.complaints.dismiss(complaint_id, resolution_reason);
+    if (!complaint) {
+      throw new CommentError('COMPLAINT_NOT_FOUND');
+    }
+    return complaint;
+  }
 }

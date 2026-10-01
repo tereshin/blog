@@ -9,7 +9,7 @@ files_hint: ["apps/api-gateway/src/complaints", "apps/api-gateway/src/app.module
 owner: "Backend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T32 — List open Complaints and dismiss one
@@ -80,9 +80,9 @@ No DB changes. Dismissal is a command to the content or comments service, which 
 
 ## Checklist
 
-- [ ] Add the gateway complaints module. Read open complaints from content and from comments over HTTP
-- [ ] Dismiss with a required reason. Leave the target visible
-- [ ] Append `complaint.dismiss` through the users service
+- [x] Add the gateway complaints module. Read open complaints from content and from comments over HTTP
+- [x] Dismiss with a required reason. Leave the target visible
+- [x] Append `complaint.dismiss` through the users service
 
 ## Edge cases
 
@@ -93,6 +93,6 @@ No DB changes. Dismissal is a command to the content or comments service, which 
 
 ## Definition of Done
 
-- [ ] Vitest covers AC-48 and AC-49
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Vitest covers AC-48 and AC-49
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

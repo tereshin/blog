@@ -38,6 +38,27 @@ export class DrizzleComplaintStore implements ComplaintStore {
     }));
   }
 
+  async dismiss(complaint_id: string, resolution_reason: string): Promise<ArticleComplaint | null> {
+    const rows = await this.db
+      .update(article_complaints)
+      .set({ status: 'dismissed', resolution_reason })
+      .where(and(eq(article_complaints.id, complaint_id), eq(article_complaints.status, 'open')))
+      .returning();
+    const row = rows[0];
+    if (!row) {
+      return null;
+    }
+    return {
+      id: row.id,
+      article_id: row.article_id,
+      reporter_id: row.reporter_id,
+      reason: row.reason,
+      status: 'dismissed',
+      created_at: row.created_at,
+      resolution_reason: row.resolution_reason,
+    };
+  }
+
   async closeOpen(article_id: string): Promise<void> {
     await this.db
       .update(article_complaints)

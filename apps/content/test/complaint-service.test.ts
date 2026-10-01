@@ -68,6 +68,10 @@ describe('article complaints', () => {
       }),
     ]);
     expect((await articles.findById(article_id))?.status).toBe('published');
+
+    await service.dismiss(filed.id, 'Reviewed and kept');
+    expect(await service.listOpen()).toEqual([]);
+    expect((await articles.findById(article_id))?.status).toBe('published');
   });
 
   it('refuses a blank reason and does not insert a complaint', async () => {

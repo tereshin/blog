@@ -15,6 +15,7 @@ const status_by_code = {
   ADMIN_ONLY: 403,
   STAFF_FORBIDDEN: 403,
   CATEGORY_NOT_FOUND: 404,
+  COMPLAINT_NOT_FOUND: 404,
 } as const;
 
 export type ArticleErrorCode = keyof typeof status_by_code;
