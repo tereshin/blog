@@ -16,7 +16,8 @@
     "./features/notices": "./src/features/notices/catalog.ts",
     "./features/admin": "./src/features/admin/catalog.ts",
     "./features/moderation": "./src/features/moderation/catalog.ts",
-    "./features/block": "./src/features/block/catalog.ts"
+    "./features/block": "./src/features/block/catalog.ts",
+    "./features/catalog": "./src/features/catalog/catalog.ts"
   },
   "scripts": {
     "lint": "eslint .",

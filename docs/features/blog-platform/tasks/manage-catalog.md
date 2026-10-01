@@ -9,7 +9,7 @@ files_hint: ["apps/admin/src/features/catalog", "packages/i18n/messages/catalog"
 owner: "Frontend Lead"
 estimate: "M"
 context_budget: "M"
-status: "todo"
+status: "done"
 ---
 
 # T51 — Manage Categories, roles, and Popular weights
@@ -111,9 +111,9 @@ No DB changes.
 
 ## Checklist
 
-- [ ] Build SCR-20, SCR-21, and SCR-22. The role screen takes a user id. Do not invent a people directory
-- [ ] A Moderator sees `admin-only` and no successful create, role change, or weight save
-- [ ] Show the seed weights until the Administrator saves. Do not invent a different starting score
+- [x] Build SCR-20, SCR-21, and SCR-22. The role screen takes a user id. Do not invent a people directory
+- [x] A Moderator sees `admin-only` and no successful create, role change, or weight save
+- [x] Show the seed weights until the Administrator saves. Do not invent a different starting score
 
 ## Edge cases
 
@@ -126,6 +126,6 @@ No DB changes.
 
 ## Definition of Done
 
-- [ ] Component tests cover SCR-20 `translations-required` and `admin-only`, SCR-21 `last-administrator`, and SCR-22 `admin-only`
-- [ ] every Hard Rule inlined above still holds
-- [ ] lint and typecheck are clean for the touched package
+- [x] Component tests cover SCR-20 `translations-required` and `admin-only`, SCR-21 `last-administrator`, and SCR-22 `admin-only`
+- [x] every Hard Rule inlined above still holds
+- [x] lint and typecheck are clean for the touched package

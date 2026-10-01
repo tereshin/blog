@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { AdminApp } from './admin-app';
 import { BlockPreview } from './features/block/block-preview';
+import { CategoryScreen } from './features/catalog/category-screen';
 import { ComplaintListScreen } from './features/moderation/complaint-list-screen';
 import { StaffArticleScreen } from './features/moderation/staff-article-screen';
 import { AdminFrame } from './shell/admin-frame';
@@ -19,6 +20,14 @@ if (root) {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AdminApp />} />
+          <Route
+            path="/categories"
+            element={
+              <AdminFrame>
+                <CategoryScreen locale="en" status="default" role="administrator" on_create={() => undefined} />
+              </AdminFrame>
+            }
+          />
           <Route
             path="/users/:userId/block"
             element={
