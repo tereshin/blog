@@ -1,0 +1,73 @@
+---
+description: Правила нейминга файлов, компонентов, хуков, переменных и типов в React/TS коде
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# Нейминг
+
+## Файлы и папки
+
+| Что | Стиль | Пример |
+|---|---|---|
+| Компонент | `PascalCase.tsx`, имя = имя компонента | `ChatList.tsx` |
+| Хук | `useCamelCase.ts` | `useChatList.ts` |
+| Остальные модули (api, lib, config) | `kebab-case.ts` | `http-client.ts`, `format-date.ts` |
+| Папки (слои, slices, сегменты) | `kebab-case` | `features/send-message/ui/` |
+| Тесты | рядом с кодом, `*.test.ts(x)` | `ChatList.test.tsx` |
+| Публичный API slice | `index.ts` | — |
+
+Имя файла компонента совпадает с экспортируемым компонентом: `ChatList.tsx` → `export function ChatList`.
+
+## Идентификаторы
+
+| Что | Стиль | Пример |
+|---|---|---|
+| Компонент | `PascalCase` | `MessageBubble` |
+| Хук | `use` + `PascalCase` | `useSendMessage` |
+| Функция / метод | `camelCase`, глагол | `formatPhone`, `fetchChats` |
+| Переменная, поле стейта, props при деструктуризации | `snake_case` | `is_open`, `chat_id`, `selected_message` |
+| Константа модульного уровня | `UPPER_SNAKE_CASE` | `MAX_MESSAGE_LENGTH` |
+| Тип / интерфейс / enum | `PascalCase`, без префикса `I`/`T` | `Chat`, `ChatListProps` |
+| Generic-параметр | `T` + смысл | `TItem`, `TResponse` |
+| Props-тип | `<Component>Props` | `ChatListProps` |
+| Обработчик в компоненте | `handle<Event>` | `handleSubmit` |
+| Коллбек-проп | `on<Event>` | `onSubmit`, `onSelect` |
+| Boolean | префикс `is_` / `has_` / `can_` / `should_` | `is_loading`, `has_unread` |
+| Zustand-стор | `use<Name>Store` | `useSessionStore` |
+| Query keys | `<entity>Keys` | `chatKeys.list(filters)` |
+| Контекст | `<Name>Context` + `use<Name>` | `ThemeContext`, `useTheme` |
+
+```tsx
+// ✅
+type ChatListProps = {
+  chats: Chat[]
+  onSelect: (chat_id: string) => void
+}
+
+export function ChatList({ chats, onSelect }: ChatListProps) {
+  const [selected_id, setSelectedId] = useState<string | null>(null)
+  const unread_count = useMemo(() => countUnread(chats), [chats])
+
+  const handleSelect = (chat_id: string) => {
+    setSelectedId(chat_id)
+    onSelect(chat_id)
+  }
+  // ...
+}
+
+// ❌
+export default function List(props: any) {
+  const [selectedId, setId] = useState()
+  const click = (id) => props.cb(id)
+}
+```
+
+## Семантика
+
+- Имя описывает **что**, а не **как**: `useChats`, а не `useFetchChatsWithAxios`.
+- Коллекции — множественное число: `chats`, `message_ids`. Map/Record — `<value>_by_<key>`: `chat_by_id`.
+- Функции-предикаты начинаются с `is`/`has`: `isExpired(token)`.
+- Асинхронные функции не получают суффикс `Async`; возвращаемый `Promise` виден из типа.
+- Сокращения только общепринятые (`id`, `url`, `dto`, `api`). Не `btn`, `msg`, `usr`.
+- Названия событий и статусов — в прошедшем времени / причастии: `message_sent`, `status: 'succeeded'`.

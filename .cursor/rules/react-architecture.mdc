@@ -1,0 +1,61 @@
+---
+description: Архитектура и структура React-приложения (слои, границы модулей, зависимости)
+alwaysApply: true
+---
+
+# Архитектура React-приложения
+
+Стек: React 19, TypeScript (strict), Vite, pnpm. Alias `@/` → `src/`.
+
+## Слои (Feature-Sliced Design)
+
+```
+src/
+  main.tsx          # bootstrap: createRoot, StrictMode. Больше ничего.
+  app/              # композиция: App, providers/, routes/, styles/
+  pages/            # страницы = композиция widgets/features. Один роут = один slice
+  widgets/          # крупные самостоятельные блоки UI (Header, ChatList)
+  features/         # пользовательские действия с бизнес-ценностью (send-message, login)
+  entities/         # бизнес-сущности: модель, API, базовые UI-карточки (user, message)
+  shared/           # не знает о бизнесе: ui/, api/, lib/, config/
+```
+
+Направление зависимостей строго сверху вниз: `app → pages → widgets → features → entities → shared`.
+- Слой импортирует только нижележащие слои. `entities` не импортирует `features`, `shared` не импортирует ничего из `src/*` кроме `shared`.
+- Slice внутри слоя не импортирует соседний slice того же слоя (`features/login` ≠ `features/logout`). Общее выносится вниз.
+
+## Структура slice
+
+```
+features/send-message/
+  index.ts          # публичный API: только то, что нужно снаружи
+  ui/SendMessageForm.tsx
+  model/useSendMessage.ts      # хуки, стор, бизнес-логика
+  api/sendMessage.ts           # запросы; типы DTO рядом
+  lib/                         # чистые функции slice (опционально)
+```
+
+- Импорт между slices только через `index.ts`: `import { SendMessageForm } from '@/features/send-message'`. Глубокие импорты (`.../ui/SendMessageForm`) запрещены.
+- Один компонент — один файл. Файл > 200 строк — сигнал к декомпозиции.
+
+## Разделение ответственности
+
+- Компонент отвечает за рендер. Логика (загрузка, трансформации, side effects) — в хуке `model/useX.ts`.
+- Серверное состояние (данные с API) и клиентское (UI-состояние) не смешиваются. Серверное — через query-слой с кэшем (TanStack Query); клиентское — `useState`/легковесный стор (Zustand), глобальный стор минимален.
+- Запросы только через `@/shared/api` (единый http-клиент: base URL, credentials, обработка ошибок, retry). Прямые `fetch` в компонентах запрещены.
+- Трансформация DTO → доменная модель делается в `entities/*/api` (mapper), компоненты не знают формат ответа бэкенда.
+- `import.meta.env` читается только в `@/shared/config/env.ts`.
+
+## Запрещено
+
+- Prop drilling глубже 2 уровней — композиция (`children`, slots) или контекст на уровне feature.
+- Бизнес-логика в `app/` и `shared/`.
+- Циклические импорты между любыми модулями.
+- `any`, `as unknown as`, `@ts-ignore` без комментария с причиной.
+- Default export (кроме `React.lazy`-страниц). Только named exports.
+
+## Типизация
+
+- Props: `type XProps = { ... }` в том же файле; `interface` только для расширяемых контрактов.
+- Значения от API валидируются на границе (zod/valibot) — тип выводится из схемы, а не дублируется вручную.
+- Discriminated unions вместо опциональных флагов: `{ status: 'loading' } | { status: 'error'; error } | { status: 'ok'; data }`.

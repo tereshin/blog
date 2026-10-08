@@ -1,0 +1,77 @@
+---
+description: Переиспользуемые компоненты (shared/ui, entities/ui, widgets) — композиция, контракт пропсов, варианты, headless-логика
+globs: src/shared/ui/**,src/entities/**/ui/**,src/widgets/**
+alwaysApply: false
+---
+
+# Переиспользуемые компоненты
+
+## Уровень определяется тем, что компонент знает
+
+| Слой | Знает | Не знает | Пример |
+|---|---|---|---|
+| `shared/ui` | только props (данные + коллбеки) | бизнес-модели, сторы, API | `Button`, `Dialog`, `DataTable` |
+| `entities/*/ui` | форму своей модели | что с ней делать (действия) | `UserAvatar`, `MessageBubble` |
+| `widgets` | фичи и сущности, которые собирает | конкретную страницу | `ChatSidebar` |
+
+Проп `user`, `chat`, хук стора или запрос внутри `shared/ui` — компонент лежит не в том слое.
+
+## Композиция вместо конфигурации
+
+Булевые пропсы-переключатели (`showHeader`, `withIcon`, `compact`, `isForChatPage`) не добавляются. Вместо них:
+
+```tsx
+// ❌ каждая новая комбинация ломает старые
+<Dialog title="Удалить?" showClose hasFooter confirmText="Да" cancelText="Нет" danger />
+
+// ✅ compound components: родитель держит контекст, части собираются свободно
+<Dialog>
+  <Dialog.Trigger><Button>Удалить</Button></Dialog.Trigger>
+  <Dialog.Content>
+    <Dialog.Title>Удалить чат?</Dialog.Title>
+    <Dialog.Actions>
+      <Button variant="ghost" slot="close">Нет</Button>
+      <Button tone="danger" onPress={handleDelete}>Да</Button>
+    </Dialog.Actions>
+  </Dialog.Content>
+</Dialog>
+```
+
+- Слоты — `children` или пропсы-элементы: `<Panel header={<Toolbar />} />`, а не `headerTitle` + `headerIcon` + `headerAction`.
+- Доступ к внутреннему состоянию — через функцию-ребёнка: `<VirtualList items={rows}>{(row) => <Row {...row} />}</VirtualList>`.
+- Стиль compound-компонентов совпадает с HeroUI (`Card.Header`, `Card.Content`): одна идиома на кодовую базу.
+
+## Headless: поведение отдельно от вида
+
+- Логика сложного контрола — в хуке (`useCombobox`), компонент — тонкая обёртка. Один хук обслуживает desktop-дропдаун, mobile bottom-sheet и фильтр в таблице.
+- Клавиатура, фокус, ARIA для combobox / menu / date picker / таблиц не пишутся вручную — берутся из React Aria / Radix / TanStack Table.
+
+## Контракт пропсов примитива
+
+```tsx
+type ButtonProps = ComponentPropsWithoutRef<'button'> & VariantProps<typeof button_variants> & {
+  as?: ElementType
+}
+
+export function Button({ variant, size, className, as: Tag = 'button', ...rest }: ButtonProps) {
+  return <Tag className={cn(button_variants({ variant, size }), className)} {...rest} />
+}
+```
+
+- Расширяет нативные атрибуты, `...rest` уходит на корневой элемент, `className` мержится (`tailwind-merge`), а не затирается. `ref` — обычный проп (React 19).
+- Варианты — декларативно через `cva` / `tailwind-variants`; значения выводятся в тип. Никаких `className={is_primary ? '…' : is_danger ? '…' : '…'}`.
+- Поддержка controlled и uncontrolled (`value` / `defaultValue` + `onChange`), иначе компонент не ляжет в формы.
+- Компоненты над данными — generic: `<Select<Chat> items={chats} getKey={(c) => c.id} />`, а не `items: any[]`.
+- Состояния `loading`, `empty`, `error`, `disabled`, `readonly` — часть контракта, а не ответственность потребителя.
+
+## Границы и контракт
+
+- Наружу из slice — только через `index.ts`; подкомпоненты (`DialogOverlay`, `TableRowInner`) не экспортируются.
+- Изменение API в `shared/ui` = миграция всех потребителей в том же PR. Эксперименты живут в `features`, в `shared/ui` попадает устоявшееся.
+- Для `shared/ui` и `entities/ui` каждый вариант и состояние имеет story (Storybook) — это исполняемый контракт и база для визуальной регрессии.
+
+## Когда не абстрагировать
+
+- Правило трёх: общий компонент выделяется на третьем одинаковом использовании, не на первом.
+- Два компонента похожи визуально, но меняются по разным причинам (разные фичи, разные владельцы) — это два компонента. Дублирование дешевле неверной абстракции.
+- Проп, описывающий контекст использования (`isForChatPage`, `mode="admin"`), — сигнал разделить компонент или перевести на слоты.

@@ -1,0 +1,203 @@
+---
+description: Архитектура, нейминг и оптимизация микросервисов на Node.js/TypeScript (границы сервисов, структура, контракты, события, производительность)
+globs: services/**/*.ts,packages/**/*.ts
+alwaysApply: false
+---
+
+# Микросервисы на Node.js
+
+Стек: Node.js 22 LTS, TypeScript (strict), ESM, pnpm workspaces, Fastify, Drizzle/Prisma, брокер сообщений (NATS / Kafka / RabbitMQ), OpenTelemetry, pino. Alias `@/` → `src/` внутри сервиса, `@contracts/*` → `packages/contracts`.
+
+## Границы сервисов
+
+- Один сервис = один bounded context = одна команда владельцев = одна база данных. Сервис единолично владеет своими таблицами; чужие таблицы читать и писать запрещено (database-per-service).
+- Общение между сервисами только через опубликованный контракт: синхронно — HTTP/gRPC, асинхронно — события через брокер. Общий код — только в `packages/*`, и там нет бизнес-логики.
+- Сервис деплоится и откатывается независимо. Если для релиза фичи нужно одновременно выкатить два сервиса — граница проведена неправильно.
+- Новый сервис выделяется по признаку: независимый цикл релизов, отдельный профиль нагрузки/масштабирования, отдельные данные. «Так аккуратнее» — не причина; распределённый монолит хуже обычного.
+- Цепочка синхронных вызовов не длиннее двух hop-ов (`gateway → A → B`). Глубже — переводить на события или денормализовать данные.
+
+## Структура монорепо
+
+```
+services/
+  order-service/
+    src/
+      main.ts                 # bootstrap: конфиг, DI, старт сервера, graceful shutdown. Больше ничего
+      app.ts                  # сборка Fastify: плагины, хуки, регистрация модулей
+      config/env.ts           # единственное место чтения process.env, валидация zod, fail fast
+      modules/
+        order/
+          order.routes.ts     # маршруты + схемы запрос/ответ
+          order.controller.ts # HTTP → вызов use case → HTTP-ответ, без логики
+          order.service.ts    # бизнес-логика (use cases), не знает про HTTP и ORM
+          order.repository.ts # доступ к БД, возвращает доменные модели
+          order.events.ts     # публикация/подписка событий модуля
+          order.schema.ts     # zod-схемы DTO; типы выводятся из схем
+          order.types.ts      # доменные типы
+          order.errors.ts     # ошибки домена
+          index.ts            # публичный API модуля
+      infra/
+        db/                   # клиент, пул, миграции
+        broker/               # клиент брокера, outbox
+        http/                 # клиенты других сервисов (undici), один файл = один сервис
+        cache/
+      shared/                 # утилиты только этого сервиса
+    test/
+      unit/
+      integration/            # testcontainers: реальная БД и брокер
+      contract/               # Pact / схемы событий
+    Dockerfile
+    package.json
+packages/
+  contracts/                  # схемы событий и API между сервисами, версионируются
+  logger/  config/  errors/  telemetry/   # инфраструктурные пакеты без бизнес-логики
+```
+
+Направление зависимостей внутри сервиса: `routes → controller → service → repository / events / http-clients`. Слой импортирует только нижележащие. `service` не импортирует Fastify, ORM-клиент и клиент брокера напрямую — только интерфейсы из `*.types.ts`; реализация подставляется в `app.ts`.
+
+- Модули не импортируют внутренности друг друга — только через `index.ts`. Модуль нуждается в данных соседа → вызов через его `service`, не через его `repository`.
+- Один файл — одна ответственность. Файл > 300 строк — сигнал к декомпозиции.
+- Default export запрещён. Только named exports.
+
+## Нейминг
+
+### Файлы и папки
+
+| Что | Стиль | Пример |
+|---|---|---|
+| Сервис (папка, образ, k8s Deployment) | `kebab-case` + суффикс `-service` | `order-service`, `notification-service` |
+| Папки | `kebab-case` | `modules/order-item/` |
+| Файлы модуля | `<entity>.<role>.ts` | `order.service.ts`, `order.repository.ts` |
+| Инфраструктурные файлы | `kebab-case.ts` | `pg-pool.ts`, `nats-client.ts` |
+| Тесты | рядом с кодом `*.test.ts`; интеграционные — `test/integration/*.spec.ts` | `order.service.test.ts` |
+| Миграции | `<timestamp>_<snake_case_действие>.sql` | `20260108_add_orders_status.sql` |
+| Публичный API модуля/пакета | `index.ts` | — |
+
+### Идентификаторы
+
+| Что | Стиль | Пример |
+|---|---|---|
+| Класс / тип / интерфейс / enum | `PascalCase`, без префикса `I`/`T` | `OrderService`, `Order`, `OrderStatus` |
+| Класс по роли | суффикс роли | `OrderController`, `OrderRepository`, `PaymentClient` |
+| Функция / метод | `camelCase`, глагол | `createOrder`, `findById`, `publishOrderCreated` |
+| Переменная, поле, параметр | `snake_case` | `order_id`, `created_at`, `retry_count` |
+| Константа модульного уровня | `UPPER_SNAKE_CASE` | `MAX_RETRY_COUNT`, `DEFAULT_PAGE_SIZE` |
+| Переменная окружения | `UPPER_SNAKE_CASE` | `DATABASE_URL`, `BROKER_URL`, `HTTP_PORT` |
+| Boolean | префикс `is_` / `has_` / `can_` / `should_` | `is_paid`, `has_items` |
+| Ошибка | `<Причина>Error` | `OrderNotFoundError`, `InsufficientStockError` |
+| Generic-параметр | `T` + смысл | `TPayload`, `TEntity` |
+| DTO-схема | `<Name>Schema`, тип — `<Name>` | `CreateOrderSchema` → `type CreateOrder = z.infer<...>` |
+
+### Внешние контракты
+
+| Что | Стиль | Пример |
+|---|---|---|
+| HTTP-маршрут | `/v<major>/<ресурс-во-множественном>/<id>`, `kebab-case`, без глаголов | `GET /v1/orders/:order_id`, `POST /v1/orders/:order_id/cancel` |
+| Query-параметры, поля JSON | `snake_case` | `?page_size=20&cursor=...`, `{ "order_id": ... }` |
+| Заголовки | `X-Request-Id`, `X-Idempotency-Key` | — |
+| Событие | `<context>.<entity>.<past-tense>`, версия в payload | `orders.order.created`, `payments.payment.failed` |
+| Топик / очередь | `kebab-case`, по домену | `orders-events`, `notifications-dlq` |
+| Таблица / колонка | `snake_case`, таблицы — множественное число | `orders`, `order_items.unit_price` |
+| Ключ в кэше | `<service>:<entity>:<id>[:<field>]` | `order-service:order:42`, `order-service:user:7:orders` |
+| Метрика | `<service>_<subsystem>_<name>_<unit>` | `order_service_http_request_duration_seconds` |
+
+Имя файла совпадает с главным экспортом: `order.service.ts` → `export class OrderService`. Коллекции — множественное число (`orders`, `item_ids`), Map/Record — `<value>_by_<key>` (`order_by_id`). События — в прошедшем времени: `created`, не `create`.
+
+## Контракты и коммуникация
+
+- Любой публичный HTTP-эндпоинт описан схемой (zod → OpenAPI) и валидирует запрос на границе. Тип DTO выводится из схемы, не дублируется руками.
+- Схемы событий лежат в `packages/contracts/events/<context>/<event>.v<N>.ts`. Изменение контракта — только обратно совместимое (добавить поле); ломающее изменение = новая версия, потребители переезжают постепенно.
+- Публикация события и запись в БД — одна транзакция через **outbox**: событие пишется в таблицу `outbox`, отдельный воркер доставляет его в брокер. Прямой `publish()` внутри транзакции запрещён.
+- Доставка at-least-once → каждый потребитель **идемпотентен**: таблица `processed_events(event_id)` или естественный ключ. Мутирующие HTTP-эндпоинты принимают `X-Idempotency-Key`.
+- Каждое событие несёт `event_id`, `occurred_at`, `correlation_id`, `causation_id`, `version`. `correlation_id` протягивается через все hop-ы и попадает в логи.
+- Исходящий HTTP-вызов обязан иметь: таймаут (по умолчанию 3 с), ретраи с экспоненциальным backoff + jitter только для идемпотентных операций, circuit breaker, бюджет ретраев. Клиент без таймаута — баг.
+- Межсервисная транзакция = сага (хореография через события или оркестратор) с компенсирующими действиями. Распределённые 2PC не используются.
+- Данные соседнего сервиса, нужные для чтения, денормализуются в свою БД по событиям, а не запрашиваются синхронно при каждом запросе.
+
+```ts
+// ✅ события через outbox в одной транзакции
+await db.transaction(async (tx) => {
+  const order = await order_repository.create(tx, input)
+  await outbox.append(tx, OrderCreatedV1.parse({ event_id: randomUUID(), order_id: order.id, ... }))
+})
+
+// ❌ запись и публикация порознь — потеря события при падении между строками
+const order = await order_repository.create(input)
+await broker.publish('orders.order.created', order)
+```
+
+## Конфигурация и ошибки
+
+- `process.env` читается только в `config/env.ts`, валидируется zod при старте; отсутствие обязательной переменной — падение процесса, а не `undefined` в рантайме. Секреты — из secret manager / смонтированных файлов, не из репозитория и не в образе.
+- Ошибки — иерархия от `AppError` с полями `code`, `http_status`, `is_operational`. Преобразование в HTTP-ответ (`application/problem+json`) — в одном error handler, не в контроллерах.
+- `catch` без обработки запрещён: либо оборачиваем с `cause`, либо логируем и пробрасываем. `unhandledRejection` / `uncaughtException` → лог → `process.exit(1)`; оркестратор перезапустит.
+- Результат операции, которая может предсказуемо не удаться, — discriminated union, а не исключение: `{ ok: true; data } | { ok: false; error }`.
+
+## Наблюдаемость
+
+- Логи — структурированный JSON через `pino`, один логгер из `packages/logger`, в каждой записи `service`, `request_id`, `correlation_id`, `trace_id`. `console.*` запрещён.
+- Не логировать токены, пароли, заголовок `Authorization`, персональные данные, полные тела запросов — `redact` в конфиге pino.
+- Трейсинг OpenTelemetry с автоинструментацией HTTP, БД, брокера; контекст пробрасывается в события через заголовки/metadata.
+- Обязательные эндпоинты: `GET /health/live` (процесс жив), `GET /health/ready` (БД, брокер доступны), `GET /metrics` (Prometheus). Readiness ≠ liveness: падение БД — не readiness, а не перезапуск.
+- Метрики RED на каждый эндпоинт и потребитель событий: rate, errors, duration (гистограмма). Лаг консьюмера и глубина DLQ — алерты.
+
+## Оптимизация
+
+### Event loop
+
+- В пути запроса нет синхронных вызовов: `fs.*Sync`, `crypto.pbkdf2Sync`, `JSON.parse` мегабайтных строк, `zlib.*Sync`. Тяжёлый CPU (хеширование, изображения, парсинг больших файлов) — в `worker_threads` (пул, `piscina`) или в отдельный сервис.
+- Лаг event loop измеряется (`perf_hooks.monitorEventLoopDelay`) и отправляется в метрики; p99 > 50 мс — баг.
+- Fastify вместо Express: схемы ответов задаются явно — сериализация через `fast-json-stringify` в разы быстрее `JSON.stringify`.
+
+### База данных и внешние вызовы
+
+- Пул соединений с явным размером (`max` ≈ `(ядер × 2) + дисков`, не «100 на всякий случай»); `statement_timeout` на уровне пула.
+- Нет N+1: батчинг через `dataloader` или `WHERE id = ANY($1)`. Выбираются только нужные колонки; `SELECT *` в коде запрещён.
+- Пагинация — курсорная (`WHERE (created_at, id) < ($1, $2) ORDER BY ... LIMIT`), не `OFFSET`.
+- Исходящий HTTP — `undici` с keep-alive и пулом; новый `Agent` на каждый запрос запрещён.
+- Долгие операции (отправка писем, генерация отчётов) — не в запросе, а в очередь; клиенту возвращается `202 Accepted` + `job_id`.
+
+### Кэширование
+
+- Redis, паттерн cache-aside с TTL и jitter TTL (±10 %) против синхронного протухания. Защита от stampede — `singleflight` / lock на ключ.
+- Инвалидация по событиям домена, а не по таймеру «авось протухнет». Ключи — по схеме из таблицы нейминга.
+- In-memory кэш в процессе — только ограниченный (`lru-cache` с `max` и `ttl`). `Map` без лимита = утечка.
+- HTTP-ответы на чтение — `ETag` / `Cache-Control`, `304` на совпадение.
+
+### Потоки и память
+
+- Большие тела (файлы, экспорт) — через `stream.pipeline`, не `Buffer` целиком. Лимит размера тела в Fastify (`bodyLimit`) задан явно.
+- Контейнеру задаётся `--max-old-space-size` ≈ 75 % лимита памяти пода; heap snapshot (`--heapsnapshot-signal`) включён для разбора утечек.
+- Потребитель событий ограничивает `prefetch` / `maxInFlight` и обрабатывает батчами; без лимита — OOM при всплеске очереди.
+
+### Запуск и остановка
+
+- Graceful shutdown по `SIGTERM`: перестать принимать соединения → дождаться активных запросов (лимит 10 с) → остановить консьюмеры → закрыть пул БД и брокер → `exit(0)`. Готовый пример — `close-with-grace`.
+- Readiness становится `false` до начала остановки, чтобы балансировщик снял трафик.
+- Старт до readiness ≤ 5 с: соединения открываются параллельно, миграции запускаются отдельным job, не на старте каждой реплики.
+
+### Образ
+
+- Multi-stage Dockerfile: `pnpm deploy --prod --filter <service>` → runtime `node:22-slim` или distroless, пользователь не root, `NODE_ENV=production`, `.dockerignore` исключает тесты и исходники.
+- Один процесс на контейнер; масштабирование — репликами, не `cluster`. Сигналы доходят до Node напрямую (`CMD ["node", "dist/main.js"]`, не через `npm start`).
+
+## Безопасность (кратко)
+
+- Входящий запрос валидируется на границе; всё, что не описано схемой, отбрасывается (`additionalProperties: false`).
+- Между сервисами — mTLS или подписанные сервисные JWT с коротким TTL; доверие «внутренней сети» не считается аутентификацией.
+- `@fastify/helmet`, `@fastify/rate-limit` на публичных эндпоинтах. Секреты не попадают в логи, ошибки и ответы. `pnpm audit` в CI, lockfile закоммичен.
+
+## Тестирование
+
+- Unit — `service` и домен без БД и сети. Integration — реальные Postgres/брокер через `testcontainers`; мок ORM запрещён.
+- Контракт между сервисами проверяется тестом на схему из `packages/contracts` (Pact или валидация фикстур обеими сторонами) — не e2e на всём кластере.
+- Каждый потребитель событий тестируется на идемпотентность: событие доставляется дважды, эффект один.
+
+## Запрещено
+
+- Общая база или общий ORM-пакет с моделями нескольких сервисов.
+- Бизнес-логика в `packages/*`, контроллерах, репозиториях, обработчиках брокера.
+- Синхронные цепочки глубже двух hop-ов; вызов сервиса из сервиса без таймаута и circuit breaker.
+- `publish()` события вне outbox; потребитель без защиты от дублей.
+- `process.env` вне `config/env.ts`; `console.*`; `any`, `as unknown as`, `@ts-ignore` без комментария с причиной.
+- Циклические импорты; импорт внутренностей чужого модуля или пакета мимо `index.ts`.
