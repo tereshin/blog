@@ -93,6 +93,61 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
 
+  test('«Показать полностью» раскрывает остаток в карточке и не меняет адрес', async ({ page }) => {
+    await page.goto('/')
+    const card = page.getByRole('main').getByRole('article').first()
+    await card.getByRole('button', { name: 'Показать полностью' }).click()
+    await expect(card.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
+    await expect(card.getByRole('button', { name: 'Свернуть' })).toBeVisible()
+    await expect(page).toHaveURL(/\/$/)
+    await card.getByRole('button', { name: 'Свернуть' }).click()
+    await expect(card.getByText('Полный текст статьи для проверки раскрытия.')).toBeHidden()
+  })
+
+  test('участник ставит реакцию, повтор снимает, другой вид заменяет', async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
+    const states_ready = page.waitForResponse((response) => response.url().includes('/v1/me/article-states') && response.ok())
+    await page.goto('/')
+    await states_ready
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
+    const card = page.getByRole('main').getByRole('article').first()
+    await card.getByRole('button', { name: 'Добавить реакцию' }).click()
+    await page.getByRole('menuitem', { name: 'Смех' }).click()
+    const laugh = card.getByRole('button', { name: /Смех/ })
+    await expect(laugh).toHaveAttribute('aria-pressed', 'true')
+    await laugh.click()
+    await expect(card.getByRole('button', { name: /Смех/ })).toHaveCount(0)
+    await card.getByRole('button', { name: 'Добавить реакцию' }).click()
+    await page.getByRole('menuitem', { name: 'Смех' }).click()
+    await expect(card.getByRole('button', { name: /Смех/ })).toHaveAttribute('aria-pressed', 'true')
+    await card.getByRole('button', { name: 'Добавить реакцию' }).click()
+    await page.getByRole('menuitem', { name: 'Огонь' }).click()
+    await expect(card.getByRole('button', { name: /Смех/ })).toHaveCount(0)
+    await expect(card.getByRole('button', { name: /Огонь/ })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('гость при реакции и закладке видит диалог входа, числа не меняются', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Войти' })).toBeVisible()
+    const card = page.getByRole('main').getByRole('article').first()
+    const bookmark = card.getByRole('button', { name: 'В закладки' })
+    const before = await bookmark.textContent()
+    await card.getByRole('button', { name: 'Добавить реакцию' }).click()
+    await expect(page.getByRole('dialog')).toContainText('Войдите, чтобы продолжить')
+    await page.getByRole('dialog').getByRole('button', { name: 'Закрыть' }).click()
+    await bookmark.click()
+    await expect(page.getByRole('dialog')).toContainText('Войдите, чтобы продолжить')
+    await expect(bookmark).toHaveText(before ?? '')
+    await expect(card.getByRole('button', { name: /Смех|Сердце|Огонь|Палец/ })).toHaveCount(0)
+  })
+
+  test('фрагмент комментария открывает обсуждение статьи', async ({ page }) => {
+    await page.goto('/')
+    const card = page.getByRole('main').getByRole('article').nth(2)
+    await card.getByRole('link', { name: 'Самый обсуждаемый комментарий' }).click()
+    await expect(page).toHaveURL(/\/p\/statya-3#comments/)
+  })
+
   test('ошибка ленты показывается в центре с повтором', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_feed', 'error'))
     await page.goto('/')

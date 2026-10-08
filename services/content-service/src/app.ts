@@ -6,6 +6,7 @@ import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
 import { accessRoutes } from './modules/access/index.ts'
+import { articleRoutes } from './modules/article/index.ts'
 import { feedRoutes } from './modules/feed/index.ts'
 import { settingsRoutes } from './modules/settings/index.ts'
 import { topicRoutes } from './modules/topic/index.ts'
@@ -39,6 +40,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(topicRoutes, { database: deps.database })
   await app.register(settingsRoutes, { database: deps.database })
   await app.register(feedRoutes, { database: deps.database })
+  await app.register(articleRoutes, { database: deps.database })
 
   return app
 }

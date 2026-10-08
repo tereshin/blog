@@ -1,9 +1,11 @@
 import { useCallback } from 'react'
 import type { ReactNode } from 'react'
-import { ArticleCard } from '@/entities/article'
+import { ArticleCard, useArticleStates } from '@/entities/article'
 import type { FeedMode } from '@/entities/article'
+import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { ErrorState } from '@/shared/ui'
+import { useFeedLive } from '../model/useFeedLive.ts'
 import { useFeed } from '../model/useFeed.ts'
 import { FeedEmpty } from './FeedEmpty.tsx'
 import { FeedItem } from './FeedItem.tsx'
@@ -34,7 +36,11 @@ function FeedSkeletons({ count }: { count: number }) {
 /** Лента карточек выбранного режима. Загрузка, пустота и ошибка показываются в центре, подгрузка не сбрасывает прокрутку. */
 export function Feed({ mode, banner, ...slots }: FeedProps) {
   const { t } = useT()
+  const { viewer } = useViewer()
   const state = useFeed(mode)
+  const article_ids = state.status === 'ok' ? state.article_ids : []
+  const viewer_states = useArticleStates(article_ids, viewer.status === 'member')
+  useFeedLive(mode, article_ids)
 
   const has_next = state.status === 'ok' && state.has_next
   const is_busy = state.status === 'ok' && (state.is_fetching_next || state.next_error)
@@ -49,7 +55,8 @@ export function Feed({ mode, banner, ...slots }: FeedProps) {
 
   const renderItem = (article_id: string) => {
     const article = state.article_by_id.get(article_id)
-    return article ? <FeedItem article={article} slots={slots} /> : null
+    const viewer_state = viewer_states.get(article_id)
+    return article ? <FeedItem article={article} slots={slots} {...(viewer_state ? { viewer_state } : {})} /> : null
   }
   const List = state.article_ids.length > VIRTUALIZATION_THRESHOLD ? VirtualFeedList : PlainFeedList
 

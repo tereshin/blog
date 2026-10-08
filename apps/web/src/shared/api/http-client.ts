@@ -7,14 +7,16 @@ export class ApiError extends Error {
   readonly status: number
   readonly detail: string | undefined
   readonly request_id: string | undefined
+  readonly reason: string | undefined
 
-  constructor(input: { code: string; status: number; message: string; detail?: string; request_id?: string }) {
+  constructor(input: { code: string; status: number; message: string; detail?: string; request_id?: string; reason?: string }) {
     super(input.message)
     this.name = 'ApiError'
     this.code = input.code
     this.status = input.status
     this.detail = input.detail
     this.request_id = input.request_id
+    this.reason = input.reason
   }
 }
 
@@ -23,6 +25,7 @@ const problemSchema = z.looseObject({
   title: z.string().optional(),
   detail: z.string().optional(),
   request_id: z.string().optional(),
+  errors: z.looseObject({ reason: z.string().optional() }).optional(),
 })
 
 export type QueryValue = string | number | boolean | null | undefined
@@ -69,6 +72,7 @@ async function toApiError(response: Response): Promise<ApiError> {
     message: problem.title ?? response.statusText,
     ...(problem.detail ? { detail: problem.detail } : {}),
     ...(problem.request_id ? { request_id: problem.request_id } : {}),
+    ...(problem.errors?.reason ? { reason: problem.errors.reason } : {}),
   })
 }
 

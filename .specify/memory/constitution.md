@@ -1,50 +1,226 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: unversioned template → 1.0.0
+- Modified principles:
+  - [PRINCIPLE_1_NAME] (placeholder) → I. Владение данными и границы сервисов
+  - [PRINCIPLE_2_NAME] (placeholder) → II. Слои клиентского приложения
+  - [PRINCIPLE_3_NAME] (placeholder) → III. Сессия и секреты (NON-NEGOTIABLE)
+  - [PRINCIPLE_4_NAME] (placeholder) → IV. Контракты на границе и проверяемость
+  - [PRINCIPLE_5_NAME] (placeholder) → V. Один каркас и закрытый состав инфраструктуры
+- Added sections:
+  - Стек и ограничения (replaces [SECTION_2_NAME])
+  - Ворота качества (replaces [SECTION_3_NAME])
+- Removed sections: none
+- Follow-up TODOs: none
+-->
+
+# Конституция платформы публикаций
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Владение данными и границы сервисов
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Один сервис — один bounded context — одна база данных. Сервис единолично
+владеет своими таблицами. Читать и писать чужие таблицы запрещено.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+Браузер общается только с `gateway`. `gateway` проверяет сессию в сервисе
+идентичности и передаёт остальным сервисам подписанный служебный контекст.
+Сервисы cookie браузера не видят.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Сервисы общаются только через опубликованный контракт: синхронно — HTTP,
+асинхронно — события через брокер. Общий код живёт в `packages/*` и не
+содержит бизнес-логики.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Запись в свою базу и публикация события — одна транзакция через outbox.
+Прямой `publish()` внутри транзакции запрещён. Доставка at-least-once,
+поэтому каждый потребитель идемпотентен.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Синхронная цепочка не длиннее двух переходов (`gateway → A → B`). Данные
+соседнего сервиса, нужные для чтения, денормализуются в свою базу по
+событиям.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+Сервис выкатывается и откатывается независимо. Релиз, который требует
+одновременной выкладки двух сервисов, означает неверную границу. Новый
+сервис появляется только при независимом цикле релизов, отдельном профиле
+нагрузки или отдельных данных.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Обоснование**: падение или задержка одного сервиса ограничивает только его
+раздел. Каркас и остальные разделы продолжают работать.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### II. Слои клиентского приложения
+
+Клиент в `apps/web` следует Feature-Sliced Design. Зависимости идут строго
+сверху вниз: `app → pages → widgets → features → entities → shared`. Слой
+импортирует только нижележащие слои. Соседние slices одного слоя друг друга
+не импортируют; общее выносится вниз. Импорт между slices — только через
+публичный `index.ts`.
+
+Компонент отвечает за рендер. Загрузка, преобразования и побочные эффекты
+живут в хуке `model/useX.ts`. Серверное состояние хранится в TanStack Query.
+Клиентское состояние интерфейса хранится в `useState` или в минимальном
+Zustand. Смешивать эти два вида состояния запрещено.
+
+Запросы идут только через `@/shared/api`. Прямой `fetch` в компонентах
+запрещён. Преобразование DTO в доменную модель делается в `entities/*/api`.
+`import.meta.env` читается только в `@/shared/config/env.ts`.
+
+`shared` не знает о бизнесе. Бизнес-логики в `app/` и `shared/` нет. Prop
+drilling глубже двух уровней заменяется композицией (`children`, слоты) или
+контекстом на уровне feature.
+
+Страница компонует widgets и features. Один маршрут — один slice страницы.
+
+**Обоснование**: направление зависимостей проверяется ревью и не даёт
+каркасу, страницам и сущностям срастись.
+
+### III. Сессия и секреты (NON-NEGOTIABLE)
+
+В браузере секретов нет. Всё, что попало в бандл или в хранилище, доступное
+JavaScript, считается скомпрометированным.
+
+Сессия — cookie `HttpOnly; Secure; SameSite=Lax` (допустим `Strict`),
+которую ставит и читает `gateway`. CSRF — double-submit: не-HttpOnly cookie
+или `<meta>` и заголовок `X-CSRF-Token`.
+
+Токены, session id, API-ключи и персональные данные запрещено хранить в
+`localStorage`, `sessionStorage`, `document.cookie`, IndexedDB и URL.
+Секреты в `VITE_*` запрещены. Вызовы сторонних API с секретом идут через
+`gateway` или сервис-владелец. IndexedDB запрещён для любых данных.
+
+В браузере допустимо только следующее: query-кэш в памяти на время вкладки;
+состояние вкладки (прокрутка ленты, закрытая полоса) в `sessionStorage`;
+предпочтения интерфейса (тема, язык, ширина панели) в `localStorage`.
+Офлайн-кэша нет.
+
+`401` обрабатывается в любом запросе. Поверх текущего раздела показывается
+панель входа, кэш сессии сбрасывается, несохранённый текст редактора и
+комментария сохраняется. Выход инвалидирует сессию на сервере и очищает
+cookie. Клиент сбрасывает query-кэш и сторы.
+
+В репозитории коммитятся только `*.env.example` с заглушками. Логи,
+мониторинг и `console.*` не содержат токены, cookies, заголовок
+`Authorization` и тела auth-запросов.
+
+Текст участника рендерится из структурированного документа редактора.
+`dangerouslySetInnerHTML` без санитайзера и комментария с причиной запрещён.
+Ссылки несут `rel="noopener noreferrer"`. Схема ссылки — только `http`,
+`https` или `mailto`.
+
+Вход — только Google OIDC. Обходного эндпоинта входа нет ни под каким
+флагом. `mock-google` есть только в `local` и `dev`. В `prod`
+`identity-service` не стартует, если издатель отличается от
+`https://accounts.google.com`. Код входа и сессий один во всех окружениях.
+
+**Обоснование**: при cookie-сессии путь к ней из браузера — XSS. HttpOnly
+cookie и отсутствие секретов в бандле этот путь закрывают.
+
+### IV. Контракты на границе и проверяемость
+
+Значение от внешнего источника валидируется на границе схемой (zod). Тип
+выводится из схемы и вручную не дублируется. Публичный HTTP-эндпоинт описан
+схемой и отдаёт OpenAPI.
+
+Схемы событий лежат в `packages/contracts`. Добавление поля сохраняет
+совместимость. Ломающее изменение выпускает новую версию. Потребители
+переезжают на неё постепенно.
+
+Мутации идемпотентны по заголовку `X-Idempotency-Key`. Исходящий
+межсервисный HTTP имеет таймаут (по умолчанию 3 с), circuit breaker и
+ретраи только для идемпотентных операций.
+
+Проверка лежит на слое, который владеет правилом:
+
+- чистая логика use case — unit-тест без базы;
+- доступ, публикация, адреса и идемпотентность потребителя — интеграционный
+  тест на реальной базе и брокере;
+- событие из `packages/contracts` — контрактный тест с обеих сторон;
+- состояние карточки (данные, пусто, загрузка, ошибка) — story;
+- путь человека из quickstart — сквозной тест против окружения `local`.
+
+Изменение без теста на затронутом слое не готово.
+
+**Обоснование**: схема на границе и тест владельца правила обнаруживают
+расхождение контракта и поведения до слияния.
+
+### V. Один каркас и закрытый состав инфраструктуры
+
+Публичные разделы и администрирование живут в одной оболочке. Маршрутизатор
+меняет только центр. Шапка и боковые карточки остаются смонтированными при
+переходе и присутствуют в первом кадре прямой ссылки. Пустая правая карточка
+сохраняет свою колонку. Отдельного приложения для телефона нет: ниже 1200px
+тот же каркас складывается в одну колонку.
+
+Всё инфраструктурное лежит в `infra/`. Состав закрыт: сервисы, их базы,
+брокер событий, хранилище файлов и клиентское приложение. Обратный прокси,
+сбор метрик и трасс, Redis, сбор логов и резервное копирование в этот
+состав не входят. Окружения `local`, `dev` и `prod` поднимаются Docker
+Compose, каждое на одном сервере. Kubernetes не используется.
+
+Тестовые данные детерминированы и создаются только в `local` и `dev`. В
+`prod` seed завершается ошибкой до первой записи. Минимум для `prod`
+(суперадминистратор и настройки по умолчанию) создаёт отдельная команда и
+не создаёт тестовых людей. Seed пишет только в базу своего сервиса и
+публикует события только через outbox.
+
+**Обоснование**: одна оболочка держит разделы в одном продукте. Закрытый
+`infra/` не даёт окружению обрасти обходными сервисами.
+
+## Стек и ограничения
+
+- Язык везде — TypeScript в режиме strict. `any`, `as unknown as` и
+  `@ts-ignore` без комментария с причиной запрещены. Default export запрещён,
+  кроме страниц на `React.lazy`.
+- Клиент: React 19, Vite, pnpm, React Router, TanStack Query, HeroUI v3 и
+  Tailwind CSS 4 как база `shared/ui`. Свой компонент появляется только там,
+  где у библиотеки нет аналога. Клавиатура и читалка экрана обеспечиваются
+  HeroUI.
+- Сервисы: Node.js 22 LTS, ESM, Fastify, Drizzle, PostgreSQL 16 (база на
+  сервис), NATS JetStream, pino, OpenTelemetry. `process.env` читается только
+  в `config/env.ts` и валидируется на старте. Отсутствие обязательной
+  переменной останавливает процесс.
+- Имена: переменные, поля JSON, колонки и query-параметры — `snake_case`.
+  HTTP-путь — `/v<major>/<ресурс-во-множественном>`, без глагола в пути.
+  Событие — `<context>.<entity>.<past-tense>`.
+- Список длиннее 100 элементов виртуализируется. Пагинация ленты курсорная.
+  Мутация в интерфейсе оптимистична и откатывается при ошибке. Входящие
+  события потока применяются пакетом. Переподключение идёт с backoff и
+  jitter.
+
+## Ворота качества
+
+Каждый план реализации (`specs/*/plan.md`) содержит Constitution Check до
+исследования и повторно после дизайна. Проверка сопоставляет каждый принцип
+этой конституции с решением фичи и ставит PASS либо записывает отклонение в
+Complexity Tracking вместе с причиной.
+
+Ревью перед слиянием проверяет то же соответствие. Отклонение без записи в
+Complexity Tracking блокирует слияние.
+
+Правила `.cursor/rules/` — рабочая детализация этой конституции. При
+конфликте побеждает конституция, а правило приводится к ней отдельной
+правкой.
+
+Сложность сверх этих принципов (новый сервис, вторая оболочка, второе
+хранилище сессии, зависимость в `infra/` вне закрытого списка) требует
+явного обоснования в плане. Ссылка на шаблон и задел «на потом» основанием
+не являются.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Эта конституция выше противоречащих ей практик, черновиков и локальных
+исключений.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Поправка вносится правкой этого файла. Вместе с правкой обновляются версия
+и дата **Last Amended**. Пока поправку не просмотрели, в начале файла
+остаётся Sync Impact Report. Перед коммитом отчёт удаляется.
+
+Версия следует semver:
+
+- MAJOR — удаление или переопределение принципа, ломающее прежние ворота.
+- MINOR — новый принцип или существенное расширение правила.
+- PATCH — уточнение формулировки без смены смысла.
+
+Дата **Ratified** фиксирует исходное принятие и последующими поправками не
+сдвигается.
+
+**Version**: 1.0.0 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-10-08

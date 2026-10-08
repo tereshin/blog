@@ -5,7 +5,10 @@ import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
+import { articleStateRoutes } from './modules/article-state/index.ts'
+import { bookmarkRoutes } from './modules/bookmark/index.ts'
 import { commentRoutes } from './modules/comment/index.ts'
+import { reactionRoutes } from './modules/reaction/index.ts'
 
 export type AppDeps = {
   env: Env
@@ -33,6 +36,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
 
   await app.register(commentRoutes, { database: deps.database })
+  await app.register(reactionRoutes, { database: deps.database })
+  await app.register(bookmarkRoutes, { database: deps.database })
+  await app.register(articleStateRoutes, { database: deps.database })
 
   return app
 }

@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgEnum, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -90,6 +90,18 @@ export const bookmarks = pgTable(
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.user_id, table.article_id] }), index('bookmarks_user_idx').on(table.user_id, table.created_at)],
+)
+
+/** Ответ мутации по `X-Idempotency-Key`: повтор того же ключа не меняет данные ещё раз. */
+export const idempotency_keys = pgTable(
+  'idempotency_keys',
+  {
+    user_id: uuid('user_id').notNull(),
+    key: text('key').notNull(),
+    response: jsonb('response').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.user_id, table.key] })],
 )
 
 export const seed_runs = pgTable('seed_runs', {

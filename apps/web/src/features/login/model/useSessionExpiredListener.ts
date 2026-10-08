@@ -16,12 +16,17 @@ export function useSessionExpiredListener(): void {
   const openLogin = useLoginDialog((state) => state.open)
 
   useEffect(() => {
-    return sessionEvents.on('expired', () => {
+    const stop_required = sessionEvents.on('login_required', () => openLogin('required'))
+    const stop_expired = sessionEvents.on('expired', () => {
       // Гость остаётся гостем: диалог не перекрывает уже показанное объяснение.
       const was_member = query_client.getQueryData<Session>(sessionKeys.current())?.status === 'member'
       // Не инвалидируем запрос сессии: повторный 401 запустил бы цикл. Правду вернёт ближайшее чтение.
       query_client.setQueryData(sessionKeys.current(), GUEST)
       openLogin(was_member ? 'expired' : 'required')
     })
+    return () => {
+      stop_required()
+      stop_expired()
+    }
   }, [query_client, openLogin])
 }

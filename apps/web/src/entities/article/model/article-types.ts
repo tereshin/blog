@@ -29,3 +29,29 @@ export type ArticleCardModel = {
 }
 
 export type FeedPageModel = { items: ArticleCardModel[]; next_cursor: string | null }
+
+export type ArticleBlock = { id?: string; type: string; data?: Record<string, unknown> }
+
+/** Полная статья: блоки документа, а не фрагмент карточки. */
+export type ArticleModel = {
+  id: string
+  slug: string
+  title: string
+  blocks: ArticleBlock[]
+  author: ArticleCardModel['author']
+  topic: ArticleCardModel['topic']
+  published_at: string | null
+  visibility: ArticleVisibility
+  comments_enabled: boolean
+  status: 'draft' | 'published' | 'hidden' | 'deleted'
+  reaction_counts: ReactionCounts
+  reaction_count: number
+  comment_count: number
+  bookmark_count: number
+  view_count: number
+  is_own: boolean
+}
+
+export type ArticleLoad = { status: 'ok'; article: ArticleModel } | { status: 'members_only' } | { status: 'unavailable' }
+
+export type ArticleViewerState = { my_reaction: ReactionKind | null; is_bookmarked: boolean }

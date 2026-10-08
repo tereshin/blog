@@ -155,3 +155,11 @@ storybook-static
 
 # Real environment files (the generic `.env.*` pattern does not match `local.env`)
 infra/env/*.env
+
+# Editor and OS scratch files
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/

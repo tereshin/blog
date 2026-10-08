@@ -11,7 +11,8 @@ export function readMockFeed(): 'normal' | 'empty' | 'error' {
   return stored === 'empty' || stored === 'error' ? stored : 'normal'
 }
 
-const all = buildFeedFixture()
+export const mockFeedArticles = buildFeedFixture()
+const all = mockFeedArticles
 
 function select(mode: string): FeedCardFixture[] {
   if (mode === 'popular') return [...all].sort((a, b) => b.reaction_count + b.comment_count - (a.reaction_count + a.comment_count) || (a.id < b.id ? 1 : -1))

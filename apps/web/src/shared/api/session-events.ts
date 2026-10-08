@@ -1,4 +1,4 @@
-export type SessionEventName = 'expired' | 'logged_out'
+export type SessionEventName = 'expired' | 'logged_out' | 'login_required'
 
 type SessionEventHandler = () => void
 
@@ -7,6 +7,7 @@ export function createSessionEvents() {
   const handlers_by_event: Record<SessionEventName, Set<SessionEventHandler>> = {
     expired: new Set(),
     logged_out: new Set(),
+    login_required: new Set(),
   }
   return {
     on(event: SessionEventName, handler: SessionEventHandler): () => void {

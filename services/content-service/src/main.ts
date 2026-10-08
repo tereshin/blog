@@ -6,6 +6,7 @@ import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
 import { startCopiesConsumers } from './modules/copies/index.ts'
+import { startCountersConsumers } from './modules/counters/index.ts'
 
 const SERVICE = 'content-service'
 
@@ -22,12 +23,16 @@ async function main(): Promise<void> {
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
   relay.start()
   const copies = await startCopiesConsumers({ db: database.db, broker, logger })
+  const counters = await startCountersConsumers({ db: database.db, broker, logger })
 
   registerShutdown({
     app,
     logger,
     stoppers: [
       () => copies.stop(),
+      async () => {
+        await Promise.all(counters.map((consumer) => consumer.stop()))
+      },
       () => relay.stop(),
       () => broker.close(),
       () => database.close(),

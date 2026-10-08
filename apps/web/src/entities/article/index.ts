@@ -1,8 +1,17 @@
+export { getArticle } from './api/get-article.ts'
+export { getArticleStates } from './api/get-article-states.ts'
+export { getArticlesByIds } from './api/get-articles.ts'
 export { getFeed } from './api/get-feed.ts'
 export { feedPageDtoSchema, toArticleCard, toFeedPage } from './api/feed-schema.ts'
 export { articleKeys } from './model/article-keys.ts'
+export { mapFeedCards } from './model/map-feed-cards.ts'
+export { useArticleStates } from './model/useArticleStates.ts'
 export type {
+  ArticleBlock,
   ArticleCardModel,
+  ArticleLoad,
+  ArticleModel,
+  ArticleViewerState,
   ArticleVisibility,
   FeedMode,
   FeedPageModel,
@@ -10,4 +19,6 @@ export type {
   ReactionKind,
 } from './model/article-types.ts'
 export { ArticleCard } from './ui/ArticleCard.tsx'
+export { ArticleCardExpand } from './ui/ArticleCardExpand.tsx'
+export { BlockRenderer } from './ui/BlockRenderer.tsx'
 export { useFirstArticle } from './model/useFirstArticle.ts'

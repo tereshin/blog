@@ -126,10 +126,12 @@ function Actions({ bookmark, share }: ActionsProps) {
         <CommentIcon width={18} height={18} />
         <span>{formatCount(article.comment_count, locale)}</span>
       </Link>
-      <span className="flex items-center gap-1.5">
-        {bookmark ?? <BookmarkIcon width={18} height={18} />}
-        <span>{formatCount(article.bookmark_count, locale)}</span>
-      </span>
+      {bookmark ?? (
+        <span className="flex items-center gap-1.5">
+          <BookmarkIcon width={18} height={18} />
+          <span>{formatCount(article.bookmark_count, locale)}</span>
+        </span>
+      )}
       {share ?? <ShareIcon width={18} height={18} />}
       <span
         className="ml-auto flex items-center gap-1.5"
