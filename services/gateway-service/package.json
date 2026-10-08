@@ -1,0 +1,31 @@
+{
+  "name": "gateway-service",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx ../../infra/scripts/with-host-env.ts gateway -- tsx watch src/main.ts",
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@blog/broker": "workspace:^",
+    "@blog/config": "workspace:^",
+    "@blog/contracts": "workspace:^",
+    "@blog/errors": "workspace:^",
+    "@blog/http-kit": "workspace:^",
+    "@blog/logger": "workspace:^",
+    "@blog/telemetry": "workspace:^",
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/cors": "^11.3.1",
+    "@fastify/helmet": "^13.1.2",
+    "@fastify/rate-limit": "^11.2.1",
+    "@nats-io/transport-node": "^3.4.0",
+    "fastify": "^5.12.5",
+    "fastify-plugin": "^6.0.0",
+    "jose": "^6.2.12",
+    "lru-cache": "^11.5.3",
+    "undici": "^8.11.2",
+    "zod": "^4.6.5"
+  }
+}

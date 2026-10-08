@@ -1,0 +1,194 @@
+# local: сборка из исходников, открытые порты, mock-google, без перезапуска.
+services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: gateway-service
+    image: blog/gateway:local
+    restart: "no"
+    ports:
+      - "3000:3000"
+
+  identity:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: identity-service
+    image: blog/identity:local
+    restart: "no"
+
+  content:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: content-service
+    image: blog/content:local
+    restart: "no"
+
+  discussion:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: discussion-service
+    image: blog/discussion:local
+    restart: "no"
+
+  messaging:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: messaging-service
+    image: blog/messaging:local
+    restart: "no"
+
+  notification:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: notification-service
+    image: blog/notification:local
+    restart: "no"
+
+  media:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: media-service
+    image: blog/media:local
+    restart: "no"
+
+  identity-migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: identity-service
+    image: blog/identity:local
+
+  content-migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: content-service
+    image: blog/content:local
+
+  discussion-migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: discussion-service
+    image: blog/discussion:local
+
+  messaging-migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: messaging-service
+    image: blog/messaging:local
+
+  notification-migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: notification-service
+    image: blog/notification:local
+
+  media-migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/service.Dockerfile
+      args:
+        SERVICE: media-service
+    image: blog/media:local
+
+  identity-db:
+    restart: "no"
+    ports:
+      - "5433:5432"
+
+  content-db:
+    restart: "no"
+    ports:
+      - "5434:5432"
+
+  discussion-db:
+    restart: "no"
+    ports:
+      - "5435:5432"
+
+  messaging-db:
+    restart: "no"
+    ports:
+      - "5436:5432"
+
+  notification-db:
+    restart: "no"
+    ports:
+      - "5437:5432"
+
+  media-db:
+    restart: "no"
+    ports:
+      - "5438:5432"
+
+  nats:
+    restart: "no"
+    ports:
+      - "4222:4222"
+
+  minio:
+    restart: "no"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:3000
+    image: blog/web:local
+    restart: "no"
+    ports:
+      - "8080:8080"
+
+  mock-google:
+    build:
+      context: ../..
+      dockerfile: infra/mock-google/Dockerfile
+    image: blog/mock-google:local
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "8081"
+      ISSUER_URL: "${GOOGLE_ISSUER_URL:?}"
+      CLIENT_ID: "${GOOGLE_CLIENT_ID:?}"
+      CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?}"
+      REDIRECT_URI: "${GOOGLE_REDIRECT_URI:?}"
+      SUPERADMIN_EMAIL: "${SUPERADMIN_EMAIL:?}"
+      S3_PUBLIC_URL: "${S3_PUBLIC_URL:-}"
+    ports:
+      - "8081:8081"
+    networks:
+      default:
+        aliases:
+          - mock-google.localhost
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/.well-known/openid-configuration').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+

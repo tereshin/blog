@@ -1,0 +1,6 @@
+[
+  { "id": "5f0f6a52-0d8b-4f6e-a8b1-000000000001", "slug": "tehnologii", "title": "Технологии", "description": "Разработка, инструменты, инфраструктура", "avatar_url": null, "cover_url": null, "status": "active", "position": 1 },
+  { "id": "5f0f6a52-0d8b-4f6e-a8b1-000000000002", "slug": "dizajn", "title": "Дизайн", "description": "Интерфейсы и визуальный язык", "avatar_url": null, "cover_url": null, "status": "active", "position": 2 },
+  { "id": "5f0f6a52-0d8b-4f6e-a8b1-000000000003", "slug": "nauka", "title": "Наука", "description": "Исследования и открытия", "avatar_url": null, "cover_url": null, "status": "active", "position": 3 },
+  { "id": "5f0f6a52-0d8b-4f6e-a8b1-000000000004", "slug": "kultura", "title": "Культура", "description": "Книги, кино, музыка", "avatar_url": null, "cover_url": null, "status": "active", "position": 4 }
+]

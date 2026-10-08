@@ -147,3 +147,11 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Monorepo build artifacts
+playwright-report
+test-results
+storybook-static
+
+# Real environment files (the generic `.env.*` pattern does not match `local.env`)
+infra/env/*.env

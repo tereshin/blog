@@ -1,0 +1,25 @@
+{
+  "name": "@blog/http-kit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@blog/contracts": "workspace:^",
+    "@blog/errors": "workspace:^",
+    "@blog/logger": "workspace:^",
+    "@blog/telemetry": "workspace:^",
+    "close-with-grace": "^2.5.0",
+    "fastify": "^5.12.5",
+    "fastify-plugin": "^6.0.0",
+    "jose": "^6.2.12",
+    "undici": "^8.11.2",
+    "zod": "^4.6.5"
+  }
+}

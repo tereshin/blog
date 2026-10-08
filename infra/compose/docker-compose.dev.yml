@@ -1,0 +1,142 @@
+# dev: образы из реестра (тег — IMAGE_TAG), перезапуск unless-stopped, мягкие лимиты памяти.
+services:
+  gateway:
+    image: ${REGISTRY:?}/gateway:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  identity:
+    image: ${REGISTRY:?}/identity:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  content:
+    image: ${REGISTRY:?}/content:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  discussion:
+    image: ${REGISTRY:?}/discussion:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  messaging:
+    image: ${REGISTRY:?}/messaging:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  notification:
+    image: ${REGISTRY:?}/notification:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  media:
+    image: ${REGISTRY:?}/media:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_reservation: 256m
+    mem_limit: 1024m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=768"
+
+  identity-migrate:
+    image: ${REGISTRY:?}/identity:${IMAGE_TAG:?}
+
+  content-migrate:
+    image: ${REGISTRY:?}/content:${IMAGE_TAG:?}
+
+  discussion-migrate:
+    image: ${REGISTRY:?}/discussion:${IMAGE_TAG:?}
+
+  messaging-migrate:
+    image: ${REGISTRY:?}/messaging:${IMAGE_TAG:?}
+
+  notification-migrate:
+    image: ${REGISTRY:?}/notification:${IMAGE_TAG:?}
+
+  media-migrate:
+    image: ${REGISTRY:?}/media:${IMAGE_TAG:?}
+
+  identity-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  content-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  discussion-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  messaging-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  notification-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  media-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  nats:
+    restart: unless-stopped
+    mem_limit: 512m
+
+  minio:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  web:
+    image: ${REGISTRY:?}/web:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 128m
+    ports:
+      - "8080:8080"
+
+  mock-google:
+    image: ${REGISTRY:?}/mock-google:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "8081"
+      ISSUER_URL: "${GOOGLE_ISSUER_URL:?}"
+      CLIENT_ID: "${GOOGLE_CLIENT_ID:?}"
+      CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?}"
+      REDIRECT_URI: "${GOOGLE_REDIRECT_URI:?}"
+      SUPERADMIN_EMAIL: "${SUPERADMIN_EMAIL:?}"
+      S3_PUBLIC_URL: "${S3_PUBLIC_URL:-}"
+    ports:
+      - "8081:8081"
+    networks:
+      default:
+        aliases:
+          - "${MOCK_GOOGLE_HOST:?}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/.well-known/openid-configuration').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+

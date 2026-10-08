@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+infra/env/*.env
+.git
+.cursor
+.specify
+specs
+services
+packages
+*.log

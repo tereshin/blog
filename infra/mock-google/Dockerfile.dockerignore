@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+infra/env/*.env
+.git
+.cursor
+.specify
+specs
+apps
+docs
+*.log

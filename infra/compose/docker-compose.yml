@@ -1,0 +1,406 @@
+# База, общая для окружений (FR-124): образы, сеть, depends_on, healthcheck, команды, тома.
+# Не содержит build, image, ports, restart, mem_limit и mock-google — это забота файлов окружений.
+# Порядок запуска: базы, NATS, MinIO -> service_healthy; миграции и minio-init -> service_completed_successfully;
+# identity -> content, discussion, messaging, notification, media -> gateway -> web.
+# Секреты попадают только в тот сервис, которому нужны: env_file не используется, значения подставляются из --env-file.
+name: blog
+
+services:
+  identity-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: identity
+      POSTGRES_DB: identity
+      POSTGRES_PASSWORD: "${IDENTITY_DB_PASSWORD:?}"
+    volumes:
+      - identity-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U identity -d identity"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  content-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: content
+      POSTGRES_DB: content
+      POSTGRES_PASSWORD: "${CONTENT_DB_PASSWORD:?}"
+    volumes:
+      - content-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U content -d content"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  discussion-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: discussion
+      POSTGRES_DB: discussion
+      POSTGRES_PASSWORD: "${DISCUSSION_DB_PASSWORD:?}"
+    volumes:
+      - discussion-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U discussion -d discussion"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  messaging-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: messaging
+      POSTGRES_DB: messaging
+      POSTGRES_PASSWORD: "${MESSAGING_DB_PASSWORD:?}"
+    volumes:
+      - messaging-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U messaging -d messaging"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  notification-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: notification
+      POSTGRES_DB: notification
+      POSTGRES_PASSWORD: "${NOTIFICATION_DB_PASSWORD:?}"
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notification -d notification"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  media-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: media
+      POSTGRES_DB: media
+      POSTGRES_PASSWORD: "${MEDIA_DB_PASSWORD:?}"
+    volumes:
+      - media-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U media -d media"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  nats:
+    image: nats:2-alpine
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Образы minio/minio и minio/mc сняты с Docker Hub (сентябрь 2026), quay.io закрыт для анонимной загрузки.
+  # pgsty/silo — совместимый форк: та же команда `server`, `mc ready` и клиент `mc`.
+  minio:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:?}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio-init:
+    image: pgsty/mc:RELEASE.2026-09-16T00-00-00Z
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && mc mb --ignore-existing local/media
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:?}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  identity-migrate:
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      DATABASE_URL: "postgres://identity:${IDENTITY_DB_PASSWORD:?}@identity-db:5432/identity"
+    depends_on:
+      identity-db:
+        condition: service_healthy
+
+  content-migrate:
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      DATABASE_URL: "postgres://content:${CONTENT_DB_PASSWORD:?}@content-db:5432/content"
+    depends_on:
+      content-db:
+        condition: service_healthy
+
+  discussion-migrate:
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      DATABASE_URL: "postgres://discussion:${DISCUSSION_DB_PASSWORD:?}@discussion-db:5432/discussion"
+    depends_on:
+      discussion-db:
+        condition: service_healthy
+
+  messaging-migrate:
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      DATABASE_URL: "postgres://messaging:${MESSAGING_DB_PASSWORD:?}@messaging-db:5432/messaging"
+    depends_on:
+      messaging-db:
+        condition: service_healthy
+
+  notification-migrate:
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      DATABASE_URL: "postgres://notification:${NOTIFICATION_DB_PASSWORD:?}@notification-db:5432/notification"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+
+  media-migrate:
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      DATABASE_URL: "postgres://media:${MEDIA_DB_PASSWORD:?}@media-db:5432/media"
+    depends_on:
+      media-db:
+        condition: service_healthy
+
+  gateway:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3000"
+      NATS_URL: "nats://nats:4222"
+      PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:?}"
+      WEB_ORIGIN: "${WEB_ORIGIN:?}"
+      SESSION_COOKIE_NAME: "blog_session"
+      GUEST_COOKIE_NAME: "blog_guest"
+      CSRF_COOKIE_NAME: "blog_csrf"
+      SERVICE_JWT_PRIVATE_KEY: "${SERVICE_JWT_PRIVATE_KEY:?}"
+      IDENTITY_URL: "http://identity:3001"
+      CONTENT_URL: "http://content:3002"
+      DISCUSSION_URL: "http://discussion:3003"
+      MESSAGING_URL: "http://messaging:3004"
+      NOTIFICATION_URL: "http://notification:3005"
+      MEDIA_URL: "http://media:3006"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      nats:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      content:
+        condition: service_healthy
+      discussion:
+        condition: service_healthy
+      messaging:
+        condition: service_healthy
+      notification:
+        condition: service_healthy
+      media:
+        condition: service_healthy
+
+  identity:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3001"
+      DATABASE_URL: "postgres://identity:${IDENTITY_DB_PASSWORD:?}@identity-db:5432/identity"
+      NATS_URL: "nats://nats:4222"
+      SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:?}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?}"
+      GOOGLE_REDIRECT_URI: "${GOOGLE_REDIRECT_URI:?}"
+      GOOGLE_ISSUER_URL: "${GOOGLE_ISSUER_URL:?}"
+      SUPERADMIN_EMAIL: "${SUPERADMIN_EMAIL:?}"
+      SESSION_TTL_DAYS: "${SESSION_TTL_DAYS:-30}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      identity-db:
+        condition: service_healthy
+      identity-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+
+  content:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3002"
+      DATABASE_URL: "postgres://content:${CONTENT_DB_PASSWORD:?}@content-db:5432/content"
+      NATS_URL: "nats://nats:4222"
+      SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
+      MEDIA_URL: "http://media:3006"
+      PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:?}"
+      S3_PUBLIC_URL: "${S3_PUBLIC_URL:-}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      content-db:
+        condition: service_healthy
+      content-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+
+  discussion:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3003"
+      DATABASE_URL: "postgres://discussion:${DISCUSSION_DB_PASSWORD:?}@discussion-db:5432/discussion"
+      NATS_URL: "nats://nats:4222"
+      SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
+      S3_PUBLIC_URL: "${S3_PUBLIC_URL:-}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      discussion-db:
+        condition: service_healthy
+      discussion-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+
+  messaging:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3004"
+      DATABASE_URL: "postgres://messaging:${MESSAGING_DB_PASSWORD:?}@messaging-db:5432/messaging"
+      NATS_URL: "nats://nats:4222"
+      SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3004/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      messaging-db:
+        condition: service_healthy
+      messaging-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+
+  notification:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3005"
+      DATABASE_URL: "postgres://notification:${NOTIFICATION_DB_PASSWORD:?}@notification-db:5432/notification"
+      NATS_URL: "nats://nats:4222"
+      SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3005/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      notification-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+
+  media:
+    environment:
+      APP_ENV: "${APP_ENV:?}"
+      HTTP_PORT: "3006"
+      DATABASE_URL: "postgres://media:${MEDIA_DB_PASSWORD:?}@media-db:5432/media"
+      NATS_URL: "nats://nats:4222"
+      SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_BUCKET: "media"
+      S3_REGION: "us-east-1"
+      S3_ACCESS_KEY: "${MINIO_ROOT_USER:?}"
+      S3_SECRET_KEY: "${MINIO_ROOT_PASSWORD:?}"
+      S3_FORCE_PATH_STYLE: "true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3006/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      media-db:
+        condition: service_healthy
+      media-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+  web:
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+volumes:
+  identity-db-data:
+  content-db-data:
+  discussion-db-data:
+  messaging-db-data:
+  notification-db-data:
+  media-db-data:
+  nats-data:
+  minio-data:

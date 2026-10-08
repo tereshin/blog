@@ -1,0 +1,5 @@
+export { proxyRoutes } from './proxy.routes.ts'
+export type { ProxyRoutesOptions } from './proxy.routes.ts'
+export { PayloadTooLargeError, ProxyService, filterRequestHeaders, filterResponseHeaders, limitBytes } from './proxy.service.ts'
+export { ROUTE_TABLE, resolveRoute } from './route-table.ts'
+export type { RouteEntry, UpstreamName } from './route-table.ts'

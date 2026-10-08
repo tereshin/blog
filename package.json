@@ -1,0 +1,45 @@
+{
+  "name": "blog",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:contract": "pnpm -r --if-present test:contract",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "test:infra": "vitest run --root infra/scripts",
+    "infra:up": "tsx infra/scripts/up.ts",
+    "infra:down": "tsx infra/scripts/down.ts",
+    "infra:seed": "tsx infra/scripts/seed.ts",
+    "infra:bootstrap-prod": "tsx infra/scripts/bootstrap-prod.ts",
+    "local": "pnpm infra:up local && pnpm infra:seed local small"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.4",
+    "eslint": "^10.12.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.2.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3",
+    "zod": "^4.6.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/pg": "8.23.1"
+    }
+  }
+}

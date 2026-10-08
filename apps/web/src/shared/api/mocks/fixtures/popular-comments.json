@@ -1,0 +1,22 @@
+[
+  {
+    "id": "7a1c2d30-1111-4a11-8a11-000000000001",
+    "author_name": "Борис Писарев",
+    "author_avatar_url": null,
+    "article_id": "9b2e3f40-2222-4b22-8b22-000000000001",
+    "article_title": "Как мы переписали ленту на курсорную пагинацию",
+    "article_slug": "kursornaya-paginatsiya",
+    "excerpt": "Главное — стабильный порядок: пара (дата, id) решает все гонки при вставке.",
+    "reaction_count": 12
+  },
+  {
+    "id": "7a1c2d30-1111-4a11-8a11-000000000002",
+    "author_name": "Анна Авторова",
+    "author_avatar_url": null,
+    "article_id": "9b2e3f40-2222-4b22-8b22-000000000002",
+    "article_title": "Тёмная тема без компромиссов",
+    "article_slug": "temnaya-tema",
+    "excerpt": "Контраст важнее красоты: проверяйте текст на втором уровне серого.",
+    "reaction_count": 7
+  }
+]

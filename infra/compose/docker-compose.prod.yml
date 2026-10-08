@@ -1,0 +1,117 @@
+# prod: образы из реестра (тег — IMAGE_TAG), перезапуск unless-stopped, жёсткие лимиты памяти.
+services:
+  gateway:
+    image: ${REGISTRY:?}/gateway:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  identity:
+    image: ${REGISTRY:?}/identity:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  content:
+    image: ${REGISTRY:?}/content:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  discussion:
+    image: ${REGISTRY:?}/discussion:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  messaging:
+    image: ${REGISTRY:?}/messaging:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  notification:
+    image: ${REGISTRY:?}/notification:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  media:
+    image: ${REGISTRY:?}/media:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
+
+  identity-migrate:
+    image: ${REGISTRY:?}/identity:${IMAGE_TAG:?}
+
+  content-migrate:
+    image: ${REGISTRY:?}/content:${IMAGE_TAG:?}
+
+  discussion-migrate:
+    image: ${REGISTRY:?}/discussion:${IMAGE_TAG:?}
+
+  messaging-migrate:
+    image: ${REGISTRY:?}/messaging:${IMAGE_TAG:?}
+
+  notification-migrate:
+    image: ${REGISTRY:?}/notification:${IMAGE_TAG:?}
+
+  media-migrate:
+    image: ${REGISTRY:?}/media:${IMAGE_TAG:?}
+
+  identity-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  content-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  discussion-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  messaging-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  notification-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  media-db:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  nats:
+    restart: unless-stopped
+    mem_limit: 512m
+
+  minio:
+    restart: unless-stopped
+    mem_limit: 1024m
+
+  web:
+    image: ${REGISTRY:?}/web:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 128m
+    ports:
+      - "8080:8080"
+

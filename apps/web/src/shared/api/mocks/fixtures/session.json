@@ -1,0 +1,13 @@
+{
+  "guest": { "status": "guest" },
+  "member": {
+    "status": "member",
+    "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000005", "public_number": 5, "role": "member", "can_publish": true, "is_restricted": false, "appearance": "dark" },
+    "profile": { "display_name": "Роман Читаев", "avatar_url": null, "slug": "reader" }
+  },
+  "admin": {
+    "status": "member",
+    "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000002", "public_number": 2, "role": "admin", "can_publish": true, "is_restricted": false, "appearance": "dark" },
+    "profile": { "display_name": "Адам Модератов", "avatar_url": null, "slug": "admin" }
+  }
+}
