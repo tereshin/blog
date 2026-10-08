@@ -98,8 +98,8 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
     await app.register(accessRoutes, { database })
-    await app.register(topicRoutes, { database })
-    await app.register(settingsRoutes, { database })
+    await app.register(topicRoutes, { database, media_url: 'http://media.test' })
+    await app.register(settingsRoutes, { database, media_url: 'http://media.test' })
     await app.register(feedRoutes, { database })
   }, 120_000)
 

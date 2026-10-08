@@ -1,20 +1,51 @@
 import { eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@blog/broker'
 import { settings } from '../../infra/db/schema.ts'
+import { appendSettingsUpdated } from './settings.events.ts'
 
-export type SettingsRow = { name: string; logo_url: string | null; locale: 'ru' | 'en' | 'sr'; about: string }
+export type SettingsRow = {
+  name: string
+  logo_url: string | null
+  locale: 'ru' | 'en' | 'sr'
+  about: string
+  registration_open: boolean
+  new_members_can_publish: boolean
+}
 
-export type SettingsRepository = { findPublic: () => Promise<SettingsRow | null> }
+const columns = {
+  name: settings.name,
+  logo_url: settings.logo_url,
+  locale: settings.locale,
+  about: settings.about,
+  registration_open: settings.registration_open,
+  new_members_can_publish: settings.new_members_can_publish,
+}
+
+export type SettingsRepository = {
+  find: () => Promise<SettingsRow | null>
+  save: (input: SettingsRow, correlation_id: string) => Promise<SettingsRow>
+}
 
 export function createSettingsRepository(db: NodePgDatabase): SettingsRepository {
   return {
-    async findPublic() {
-      const [row] = await db
-        .select({ name: settings.name, logo_url: settings.logo_url, locale: settings.locale, about: settings.about })
-        .from(settings)
-        .where(eq(settings.id, 1))
-        .limit(1)
+    async find() {
+      const [row] = await db.select(columns).from(settings).where(eq(settings.id, 1)).limit(1)
       return row ?? null
+    },
+
+    async save(input, correlation_id) {
+      return (db as Database).transaction(async (tx) => {
+        const database = tx as Database
+        const [row] = await database
+          .insert(settings)
+          .values({ id: 1, ...input })
+          .onConflictDoUpdate({ target: settings.id, set: input })
+          .returning(columns)
+        if (!row) throw new Error('settings row was not written')
+        await appendSettingsUpdated(database, { ...input, correlation_id })
+        return row
+      })
     },
   }
 }

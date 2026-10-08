@@ -1,0 +1,19 @@
+{
+  "event_id": "0b9f6a6e-6f0c-4f64-9d84-6d2f0f8d1c23",
+  "name": "content.article.deleted",
+  "occurred_at": "2026-10-08T12:10:00.000Z",
+  "correlation_id": "c-1",
+  "causation_id": null,
+  "version": 1,
+  "article_id": "3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22",
+  "author_id": "9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99",
+  "topic_id": "5f0f6a52-0d8b-4f6e-a8b1-000000000001",
+  "title": "Заголовок",
+  "slug": "zagolovok",
+  "visibility": "public",
+  "status": "deleted",
+  "comments_enabled": true,
+  "excerpt": "",
+  "first_image_url": null,
+  "published_at": "2026-10-08T12:00:00.000Z"
+}

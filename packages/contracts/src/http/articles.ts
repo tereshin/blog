@@ -45,6 +45,41 @@ export const articleUnavailableSchema = z.strictObject({
 })
 export type ArticleUnavailable = z.infer<typeof articleUnavailableSchema>
 
+/** Черновик и публикация. `visibility` и комментарии имеют значения по умолчанию только при создании. */
+export const createArticleSchema = z.strictObject({
+  title: z.string().min(1).max(150),
+  topic_id: z.uuid(),
+  blocks: blocksDocumentSchema,
+  visibility: articleVisibilitySchema.default('public'),
+  comments_enabled: z.boolean().default(true),
+  slug: z.string().optional(),
+})
+export type CreateArticle = z.infer<typeof createArticleSchema>
+
+/** Частичное сохранение. Поле попадает в запись, только если автор его прислал. */
+export const updateArticleSchema = z.strictObject({
+  title: z.string().min(1).max(150).optional(),
+  topic_id: z.uuid().optional(),
+  blocks: blocksDocumentSchema.optional(),
+  visibility: articleVisibilitySchema.optional(),
+  comments_enabled: z.boolean().optional(),
+  slug: z.string().optional(),
+})
+export type UpdateArticle = z.infer<typeof updateArticleSchema>
+
+/** Черновик автора: полный документ, без публичной карточки. */
+export const articleDraftSchema = z.strictObject({
+  id: z.uuid(),
+  title: z.string(),
+  blocks: blocksDocumentSchema,
+  topic_id: z.uuid(),
+  visibility: articleVisibilitySchema,
+  comments_enabled: z.boolean(),
+  slug: z.string(),
+  status: articleStatusSchema,
+})
+export type ArticleDraft = z.infer<typeof articleDraftSchema>
+
 /** `GET /v1/articles?ids=` — карточки в порядке запроса, без недоступных зрителю. */
 export const articleCardsSchema = z.strictObject({
   items: z.array(feedCardSchema),

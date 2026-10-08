@@ -1,4 +1,7 @@
 import { createBrowserRouter } from 'react-router'
+import { AboutPage } from '@/pages/about'
+import { AdminSettingsPage } from '@/pages/admin-settings'
+import { AdminTopicsPage } from '@/pages/admin-topics'
 import { ArticlePage } from '@/pages/article'
 import { FollowersPage } from '@/pages/followers'
 import { FollowingPage } from '@/pages/following'
@@ -21,6 +24,9 @@ export const router = createBrowserRouter([
       { path: 'u/:slug/followers', element: <FollowersPage /> },
       { path: 'u/:slug/following', element: <FollowingPage /> },
       { path: 'rating', element: <RatingPage /> },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'admin/settings', element: <AdminSettingsPage /> },
+      { path: 'admin/topics', element: <AdminTopicsPage /> },
       // Адреса, которых ещё нет в приложении, остаются внутри каркаса.
       { path: '*', element: <NotFoundPage /> },
     ],

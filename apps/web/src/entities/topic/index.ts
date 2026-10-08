@@ -1,6 +1,6 @@
 export { getTopic } from './api/get-topic.ts'
-export { getTopics } from './api/get-topics.ts'
-export { toTopic } from './api/topic-schema.ts'
+export { getAllTopics, getTopics } from './api/get-topics.ts'
+export { toTopic, topicDtoSchema } from './api/topic-schema.ts'
 export type { Topic } from './api/topic-schema.ts'
 export { topicKeys } from './model/topic-keys.ts'
 export { topicHue } from './model/topic-color.ts'

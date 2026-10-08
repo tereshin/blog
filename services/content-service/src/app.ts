@@ -38,8 +38,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
 
   await app.register(accessRoutes, { database: deps.database })
-  await app.register(topicRoutes, { database: deps.database })
-  await app.register(settingsRoutes, { database: deps.database })
+  await app.register(topicRoutes, { database: deps.database, media_url: env.MEDIA_URL })
+  await app.register(settingsRoutes, { database: deps.database, media_url: env.MEDIA_URL })
   await app.register(feedRoutes, { database: deps.database })
   await app.register(articleRoutes, { database: deps.database })
   await app.register(profileRoutes, { database: deps.database, media_url: env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN })

@@ -9,5 +9,10 @@
     "status": "member",
     "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000002", "public_number": 2, "role": "admin", "can_publish": true, "is_restricted": false, "appearance": "dark" },
     "profile": { "display_name": "Адам Модератов", "avatar_url": null, "slug": "admin" }
+  },
+  "superadmin": {
+    "status": "member",
+    "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000003", "public_number": 1, "role": "superadmin", "can_publish": true, "is_restricted": false, "appearance": "dark" },
+    "profile": { "display_name": "Саша Владельцева", "avatar_url": null, "slug": "owner" }
   }
 }

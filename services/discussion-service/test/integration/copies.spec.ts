@@ -30,11 +30,14 @@ const user = { user_id: USER, public_number: 7, role: 'member', can_publish: tru
 const article = {
   article_id: ARTICLE,
   author_id: USER,
+  topic_id: '5f0f6a52-0d8b-4f6e-a8b1-000000000001',
   title: 'Заголовок',
   slug: 'zagolovok',
   visibility: 'public',
   status: 'published',
   comments_enabled: true,
+  excerpt: 'Коротко',
+  first_image_url: null,
   published_at: '2026-10-01T00:00:00.000Z',
 }
 
