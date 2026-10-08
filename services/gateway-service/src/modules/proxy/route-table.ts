@@ -17,6 +17,7 @@ const MB = 1024 * 1024
 export const ROUTE_TABLE: readonly RouteEntry[] = [
   { prefix: '/v1/auth', service: 'identity' },
   { prefix: '/v1/users', service: 'identity' },
+  { prefix: '/v1/users', suffix: '/comments', service: 'discussion' },
   { prefix: '/v1/feed', service: 'content' },
   { prefix: '/v1/articles', service: 'content' },
   { prefix: '/v1/articles', suffix: '/comments', service: 'discussion' },

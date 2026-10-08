@@ -5,6 +5,7 @@ import { createServiceMetrics, startTelemetry } from '@blog/telemetry'
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
+import { startSettingsCopyConsumer } from './modules/settings-copy/index.ts'
 
 const SERVICE = 'identity-service'
 
@@ -20,11 +21,13 @@ async function main(): Promise<void> {
 
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
   relay.start()
+  const settings_copy = await startSettingsCopyConsumer({ db: database.db, broker, logger })
 
   registerShutdown({
     app,
     logger,
     stoppers: [
+      () => settings_copy.stop(),
       () => relay.stop(),
       () => broker.close(),
       () => database.close(),

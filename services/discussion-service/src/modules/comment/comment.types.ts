@@ -1,5 +1,5 @@
-import type { ArticleAccessFields, CommentTreePage, PageQuery, PopularComment, ReactionKind, ServiceContext } from '@blog/contracts'
-import type { CommentCursor } from './comment.schema.ts'
+import type { ArticleAccessFields, CommentTreePage, PageQuery, PopularComment, ReactionKind, ServiceContext, UserCommentPage } from '@blog/contracts'
+import type { CommentCursor, UserCommentCursor } from './comment.schema.ts'
 import type { CommentRow } from './comment.tree.ts'
 
 export type PopularCommentRow = {
@@ -13,6 +13,8 @@ export type PopularCommentRow = {
   author_avatar_url: string | null
 }
 
+export type UserCommentRow = PopularCommentRow & { created_at: Date }
+
 export type CommentRepository = {
   /** Видимые комментарии опубликованных статей, доступных зрителю, по убыванию реакций. */
   findPopular: (viewer: ServiceContext, limit: number) => Promise<PopularCommentRow[]>
@@ -21,9 +23,17 @@ export type CommentRepository = {
   listReplies: (root_ids: readonly string[]) => Promise<CommentRow[]>
   countReactions: (comment_ids: readonly string[]) => Promise<{ target_id: string; kind: ReactionKind; total: number }[]>
   findMine: (user_id: string, comment_ids: readonly string[]) => Promise<{ target_id: string; kind: ReactionKind }[]>
+  listByAuthor: (
+    viewer: ServiceContext,
+    author_id: string,
+    sort: 'fresh' | 'popular',
+    cursor: UserCommentCursor | null,
+    limit: number,
+  ) => Promise<UserCommentRow[]>
 }
 
 export type CommentService = {
   getPopular: (viewer: ServiceContext) => Promise<PopularComment[]>
   listForArticle: (viewer: ServiceContext, article_id: string, query: PageQuery) => Promise<CommentTreePage>
+  listByAuthor: (viewer: ServiceContext, author_id: string, sort: 'fresh' | 'popular', query: PageQuery) => Promise<UserCommentPage>
 }

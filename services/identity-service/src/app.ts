@@ -5,6 +5,7 @@ import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
+import { authRoutes } from './modules/auth/index.ts'
 import { sessionRoutes } from './modules/session/index.ts'
 
 export type AppDeps = {
@@ -32,6 +33,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // Служебный контекст проверяется на каждом маршруте без `config: { is_public: true }`.
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
   await app.register(sessionRoutes, { database: deps.database })
+  await app.register(authRoutes, { database: deps.database, env })
 
   return app
 }

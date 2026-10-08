@@ -18,3 +18,17 @@ export function encodeCommentCursor(cursor: CommentCursor): string {
 export function decodeCommentCursor(value: string): CommentCursor {
   return cursorSchema.parse(JSON.parse(Buffer.from(value, 'base64url').toString('utf8')))
 }
+
+const userCursorSchema = z.discriminatedUnion('k', [
+  z.strictObject({ k: z.literal('time'), t: z.iso.datetime(), id: z.uuid() }),
+  z.strictObject({ k: z.literal('score'), s: z.number().int().nonnegative(), id: z.uuid() }),
+])
+export type UserCommentCursor = z.infer<typeof userCursorSchema>
+
+export function encodeUserCommentCursor(cursor: UserCommentCursor): string {
+  return Buffer.from(JSON.stringify(cursor)).toString('base64url')
+}
+
+export function decodeUserCommentCursor(value: string): UserCommentCursor {
+  return userCursorSchema.parse(JSON.parse(Buffer.from(value, 'base64url').toString('utf8')))
+}

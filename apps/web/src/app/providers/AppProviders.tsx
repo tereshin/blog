@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useSettings } from '@/entities/settings'
 import { LoginDialog, useSessionExpiredListener } from '@/features/login'
+import { useSessionBroadcast } from '@/features/logout'
 import { createQueryClient } from '@/shared/api'
 import { I18nProvider } from '@/shared/i18n'
 import { ToastProvider } from '@/shared/ui'
@@ -16,6 +17,7 @@ function LocaleProvider({ children }: { children: ReactNode }) {
 
 function SessionExpiredListener() {
   useSessionExpiredListener()
+  useSessionBroadcast()
   return null
 }
 

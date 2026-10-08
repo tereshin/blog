@@ -14,6 +14,8 @@ describe('resolveRoute', () => {
     ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010', 'content'],
     ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010/comments', 'discussion'],
     ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010/comments?cursor=abc', 'discussion'],
+    ['/v1/users/3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22', 'identity'],
+    ['/v1/users/3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22/comments', 'discussion'],
   ])('%s → %s', (path, service) => {
     expect(resolveRoute(path)?.service).toBe(service)
   })

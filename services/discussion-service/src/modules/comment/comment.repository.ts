@@ -78,6 +78,36 @@ export function createCommentRepository(db: NodePgDatabase): CommentRepository {
         .from(reactions)
         .where(and(eq(reactions.user_id, user_id), eq(reactions.target_type, 'comment'), inArray(reactions.target_id, [...comment_ids])))
     },
+
+    async listByAuthor(viewer, author_id, sort, cursor, limit) {
+      const score = sql<number>`${comments.reaction_count}`
+      const after =
+        sort === 'popular'
+          ? cursor?.k === 'score'
+            ? sql`(${score}, ${comments.id}) < (${cursor.s}, ${cursor.id})`
+            : undefined
+          : cursor?.k === 'time'
+            ? sql`(${comments.created_at}, ${comments.id}) < (${new Date(cursor.t)}, ${cursor.id})`
+            : undefined
+      return db
+        .select({
+          id: comments.id,
+          body: comments.body,
+          reaction_count: comments.reaction_count,
+          article_id: articles_copy.article_id,
+          article_title: articles_copy.title,
+          article_slug: articles_copy.slug,
+          author_name: users_copy.display_name,
+          author_avatar_url: users_copy.avatar_url,
+          created_at: comments.created_at,
+        })
+        .from(comments)
+        .innerJoin(articles_copy, eq(articles_copy.article_id, comments.article_id))
+        .leftJoin(users_copy, eq(users_copy.user_id, comments.author_id))
+        .where(and(eq(comments.author_id, author_id), eq(comments.status, 'visible'), readableArticleWhere(viewer), after))
+        .orderBy(sort === 'popular' ? desc(comments.reaction_count) : desc(comments.created_at), desc(comments.id))
+        .limit(limit)
+    },
   }
 }
 

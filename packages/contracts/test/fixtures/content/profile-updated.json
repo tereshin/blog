@@ -1,0 +1,12 @@
+{
+  "event_id": "3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a25",
+  "name": "content.profile.updated",
+  "occurred_at": "2026-10-08T12:00:00.000Z",
+  "correlation_id": "c-1",
+  "causation_id": null,
+  "version": 1,
+  "user_id": "9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99",
+  "display_name": "Наум",
+  "avatar_url": null,
+  "slug": "naum"
+}

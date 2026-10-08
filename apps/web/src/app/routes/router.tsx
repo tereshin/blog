@@ -1,7 +1,11 @@
 import { createBrowserRouter } from 'react-router'
 import { ArticlePage } from '@/pages/article'
+import { FollowersPage } from '@/pages/followers'
+import { FollowingPage } from '@/pages/following'
 import { FreshFeedPage } from '@/pages/fresh-feed'
 import { NotFoundPage } from '@/pages/not-found'
+import { ProfilePage } from '@/pages/profile'
+import { RatingPage } from '@/pages/rating'
 import { ShellLayout } from './ShellLayout.tsx'
 
 // Один родительский маршрут каркаса. Остальные адреса таблицы `contracts/sections.md`
@@ -13,6 +17,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <FreshFeedPage /> },
       { path: 'p/:slug', element: <ArticlePage /> },
+      { path: 'u/:slug', element: <ProfilePage /> },
+      { path: 'u/:slug/followers', element: <FollowersPage /> },
+      { path: 'u/:slug/following', element: <FollowingPage /> },
+      { path: 'rating', element: <RatingPage /> },
       // Адреса, которых ещё нет в приложении, остаются внутри каркаса.
       { path: '*', element: <NotFoundPage /> },
     ],

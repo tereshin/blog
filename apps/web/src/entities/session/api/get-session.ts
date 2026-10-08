@@ -7,7 +7,7 @@ const userSchema = z.object({
   role: z.enum(['member', 'admin', 'superadmin']),
   can_publish: z.boolean(),
   is_restricted: z.boolean(),
-  appearance: z.enum(['light', 'dark']),
+  appearance: z.enum(['light', 'dark']).nullable(),
 })
 
 const profileSchema = z.object({

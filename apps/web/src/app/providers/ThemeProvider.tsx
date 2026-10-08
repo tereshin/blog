@@ -19,7 +19,8 @@ export function useTheme(): ThemeValue {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { viewer } = useViewer()
   const [guest_theme, setGuestThemeState] = useState<Theme>(readStoredTheme)
-  const theme: Theme = viewer.status === 'member' ? viewer.user.appearance : guest_theme
+  const account_theme = viewer.status === 'member' ? viewer.user.appearance : null
+  const theme: Theme = account_theme ?? guest_theme
 
   useEffect(() => {
     const root = document.documentElement

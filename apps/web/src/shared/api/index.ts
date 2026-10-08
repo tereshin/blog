@@ -1,4 +1,4 @@
-export { ApiError, http, request, emptyResponseSchema, readCsrfToken, buildUrl } from './http-client.ts'
+export { ApiError, http, postBinary, request, emptyResponseSchema, readCsrfToken, buildUrl } from './http-client.ts'
 export type { RequestOptions } from './http-client.ts'
 export { sessionEvents, createSessionEvents } from './session-events.ts'
 export type { SessionEventName } from './session-events.ts'

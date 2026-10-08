@@ -36,6 +36,15 @@ export const settings_copy = pgTable('settings_copy', {
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
 })
 
+/** Одноразовое состояние входа: `state` → PKCE и адрес возврата. Живёт минуты, не сессию. */
+export const auth_states = pgTable('auth_states', {
+  state: text('state').primaryKey(),
+  code_verifier: text('code_verifier').notNull(),
+  nonce: text('nonce').notNull(),
+  return_to: text('return_to').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const seed_runs = pgTable('seed_runs', {
   profile: text('profile').primaryKey(),
   anchor_at: timestamp('anchor_at', { withTimezone: true }).notNull(),

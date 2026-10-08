@@ -8,6 +8,8 @@ export {
   setSessionCookie,
 } from './session.cookies.ts'
 export type { CookieNames } from './session.cookies.ts'
+export { authGatewayRoutes } from './session.routes.ts'
+export type { AuthGatewayOptions } from './session.routes.ts'
 export { sessionModule } from './session.plugin.ts'
 export type { SessionPluginOptions } from './session.plugin.ts'
 export { subscribeSessionRevocations } from './session.revocations.ts'

@@ -11,4 +11,5 @@ export const commentRoutes: FastifyPluginAsync<CommentRoutesOptions> = async (ap
   const controller = createCommentController(createCommentService(createCommentRepository(options.database.db)))
   app.get('/v1/comments/popular', (request, reply) => controller.popular(request, reply))
   app.get('/v1/articles/:article_id/comments', (request, reply) => controller.list(request, reply))
+  app.get('/v1/users/:user_id/comments', (request, reply) => controller.byAuthor(request, reply))
 }

@@ -114,12 +114,40 @@ export async function request<TResponse>(
   return schema.parse(payload)
 }
 
+/** Тело — сам файл, не JSON. Ключ идемпотентности ставится так же, как у остальных мутаций. */
+export async function postBinary<TResponse>(path: string, body: Blob, schema: z.ZodType<TResponse>, options: RequestOptions = {}): Promise<TResponse> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': body.type || 'application/octet-stream',
+    'X-CSRF-Token': readCsrfToken(),
+    'X-Idempotency-Key': options.idempotency_key ?? crypto.randomUUID(),
+    ...options.headers,
+  }
+  let response: Response
+  try {
+    response = await fetch(buildUrl(path, options.query), {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body,
+      ...(options.signal ? { signal: options.signal } : {}),
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error
+    throw new ApiError({ code: 'network_error', status: 0, message: 'Нет связи с сервером' })
+  }
+  if (response.status === 401) sessionEvents.emit('expired')
+  if (!response.ok) throw await toApiError(response)
+  return schema.parse(await response.json())
+}
+
 export const http = {
   get: <TResponse>(path: string, schema: z.ZodType<TResponse>, options?: RequestOptions) => request('GET', path, schema, options),
   post: <TResponse>(path: string, schema: z.ZodType<TResponse>, options?: RequestOptions) => request('POST', path, schema, options),
   put: <TResponse>(path: string, schema: z.ZodType<TResponse>, options?: RequestOptions) => request('PUT', path, schema, options),
   patch: <TResponse>(path: string, schema: z.ZodType<TResponse>, options?: RequestOptions) => request('PATCH', path, schema, options),
   delete: <TResponse>(path: string, schema: z.ZodType<TResponse>, options?: RequestOptions) => request('DELETE', path, schema, options),
+  postBinary,
 }
 
 export const emptyResponseSchema = z.undefined()

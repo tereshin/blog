@@ -130,4 +130,14 @@ describe('discussion: GET /v1/comments/popular', () => {
     expect(long.endsWith('…')).toBe(true)
     expect(long.endsWith(' …')).toBe(false)
   })
+
+  it('комментарии автора видны только на статьях, которые зритель может читать', async () => {
+    const response = await app.inject({ method: 'GET', url: `/v1/users/${AUTHOR}/comments?sort=fresh`, headers: { 'x-test-viewer': 'guest' } })
+    expect(response.statusCode).toBe(200)
+    const slugs = (response.json() as { items: { article_slug: string }[] }).items.map((item) => item.article_slug)
+    expect(slugs).toContain('public')
+    expect(slugs).not.toContain('members')
+    expect(slugs).not.toContain('hidden')
+    expect(slugs).not.toContain('draft')
+  })
 })

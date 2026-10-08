@@ -1,0 +1,14 @@
+{
+  "event_id": "3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a23",
+  "name": "identity.user.updated",
+  "occurred_at": "2026-10-08T12:00:00.000Z",
+  "correlation_id": "c-1",
+  "causation_id": null,
+  "version": 1,
+  "user_id": "9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99",
+  "public_number": 9,
+  "role": "admin",
+  "can_publish": true,
+  "is_restricted": false,
+  "created_at": "2026-10-08T12:00:00.000Z"
+}

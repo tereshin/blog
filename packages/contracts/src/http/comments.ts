@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { reactionCountsSchema, reactionKindSchema } from './feed.ts'
+import { pageSchema } from './pagination.ts'
 
 /** Строка правой карточки: самый популярный комментарий доступной зрителю статьи. */
 export const popularCommentSchema = z.strictObject({
@@ -52,3 +53,18 @@ export const commentTreePageSchema = z.strictObject({
   next_cursor: z.string().nullable(),
 })
 export type CommentTreePage = z.infer<typeof commentTreePageSchema>
+
+/** Комментарий в списке профиля: фрагмент и статья, на которой он оставлен. */
+export const userCommentSchema = z.strictObject({
+  id: z.uuid(),
+  excerpt: z.string(),
+  article_id: z.uuid(),
+  article_title: z.string(),
+  article_slug: z.string(),
+  created_at: z.iso.datetime(),
+  reaction_count: z.number().int().nonnegative(),
+})
+export type UserComment = z.infer<typeof userCommentSchema>
+
+export const userCommentPageSchema = pageSchema(userCommentSchema)
+export type UserCommentPage = z.infer<typeof userCommentPageSchema>

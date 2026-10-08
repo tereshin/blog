@@ -1,6 +1,6 @@
 import { Suspense, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router'
-import { CenterSkeleton, HeaderCenter, LeftNav, RightRail, Shell, SiteHeader, useShellStore } from '@/widgets/shell'
+import { AccountMenu, CenterSkeleton, HeaderCenter, LeftNav, RightRail, Shell, SiteHeader, useShellStore } from '@/widgets/shell'
 import { CenterErrorBoundary } from './CenterErrorBoundary.tsx'
 
 /** Единственный layout-маршрут: шапка и обе карточки не размонтируются при переходах, меняется только центр. */
@@ -15,7 +15,7 @@ export function ShellLayout() {
 
   return (
     <Shell
-      header={<SiteHeader center={<HeaderCenter />} />}
+      header={<SiteHeader center={<HeaderCenter />} account={<AccountMenu />} />}
       left={<LeftNav />}
       right={<RightRail />}
       scroll_key={pathname}

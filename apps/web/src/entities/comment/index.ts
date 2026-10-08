@@ -1,4 +1,6 @@
 export { getComments } from './api/get-comments.ts'
+export { getUserComments } from './api/get-user-comments.ts'
+export type { UserCommentModel, UserCommentPage } from './api/get-user-comments.ts'
 export { getPopularComments } from './api/get-popular-comments.ts'
 export { toPopularComment } from './api/comment-schema.ts'
 export type { PopularCommentModel } from './api/comment-schema.ts'

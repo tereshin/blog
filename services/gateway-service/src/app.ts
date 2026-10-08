@@ -12,7 +12,7 @@ import { eventsRoutes } from './modules/events/index.ts'
 import type { EventsService } from './modules/events/index.ts'
 import { proxyRoutes } from './modules/proxy/index.ts'
 import type { ProxyService } from './modules/proxy/index.ts'
-import { sessionModule } from './modules/session/index.ts'
+import { authGatewayRoutes, sessionModule } from './modules/session/index.ts'
 import type { ContextSigner, CookieNames, SessionService } from './modules/session/index.ts'
 
 export type AppDeps = {
@@ -63,6 +63,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   // Каждый модуль маршрутов — отдельный контекст: у proxy тело идёт потоком, у events — разбирается как JSON.
   await app.register(eventsRoutes, { events: deps.events })
+  await app.register(authGatewayRoutes, { proxy: deps.proxy, cookies, sessions: deps.sessions })
   await app.register(proxyRoutes, { proxy: deps.proxy, cookies })
 
   return app

@@ -26,8 +26,8 @@ export {
 export type { FeedCard, FeedMode, FeedPage, ReactionCounts, ReactionKind } from './feed.ts'
 export { topicListSchema, topicSchema } from './topics.ts'
 export type { Topic } from './topics.ts'
-export { commentSchema, commentTreePageSchema, popularCommentListSchema, popularCommentSchema } from './comments.ts'
-export type { Comment, CommentTreePage, PopularComment } from './comments.ts'
+export { commentSchema, commentTreePageSchema, popularCommentListSchema, popularCommentSchema, userCommentPageSchema, userCommentSchema } from './comments.ts'
+export type { Comment, CommentTreePage, PopularComment, UserComment, UserCommentPage } from './comments.ts'
 export { localeSchema, publicSettingsSchema } from './settings.ts'
 export type { PublicSettings } from './settings.ts'
 export { EMBED_SERVICES, blocksDocumentSchema, editorBlockSchema, embedServiceSchema, listItemSchema } from './blocks.ts'
@@ -40,3 +40,28 @@ export { bookmarkPageSchema, bookmarkStateSchema } from './bookmarks.ts'
 export type { BookmarkPage, BookmarkState } from './bookmarks.ts'
 export { articleStatesSchema } from './article-states.ts'
 export type { ArticleStates, ArticleViewerState } from './article-states.ts'
+export {
+  AUTH_CALLBACK_ERRORS,
+  SESSION_ID_HEADER,
+  authCallbackErrorSchema,
+  authCallbackSuccessSchema,
+  sessionProfileSchema,
+  sessionResponseSchema,
+  sessionUserSchema,
+} from './auth.ts'
+export type { AuthCallbackError, SessionProfile, SessionResponse, SessionUser } from './auth.ts'
+export {
+  PROFILE_BADGES,
+  PROFILE_SLUG_PATTERN,
+  profileArticlePageSchema,
+  profileArticleSchema,
+  profileBadgeSchema,
+  profileSchema,
+  profileStatsSchema,
+  updateProfileSchema,
+  userListItemSchema,
+  userListPageSchema,
+} from './profiles.ts'
+export type { Profile, ProfileArticle, ProfileArticlePage, ProfileBadge, ProfileStats, UpdateProfile, UserListItem, UserListPage } from './profiles.ts'
+export { mediaKindSchema, mediaUploadResponseSchema } from './media.ts'
+export type { MediaKind, MediaUploadResponse } from './media.ts'

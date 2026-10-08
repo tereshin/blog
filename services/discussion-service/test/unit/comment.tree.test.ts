@@ -54,6 +54,7 @@ describe('listForArticle', () => {
     listReplies: async () => [],
     countReactions: async () => [],
     findMine: async () => [],
+    listByAuthor: async () => [],
   }
 
   it('гость не читает обсуждение статьи только для участников', async () => {
