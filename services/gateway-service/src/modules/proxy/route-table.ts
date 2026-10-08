@@ -3,6 +3,8 @@ export type UpstreamName = 'identity' | 'content' | 'discussion' | 'messaging' |
 export type RouteEntry = {
   prefix: string
   service: UpstreamName
+  /** Дополнительное окончание пути: `/v1/articles/{id}/comments` при префиксе `/v1/articles`. */
+  suffix?: string
   /** Максимальный размер тела запроса, байт. */
   max_body_bytes?: number
   /** Таймаут ожидания ответа сервиса, мс. По умолчанию 3 с (node-microservices.mdc). */
@@ -17,6 +19,7 @@ export const ROUTE_TABLE: readonly RouteEntry[] = [
   { prefix: '/v1/users', service: 'identity' },
   { prefix: '/v1/feed', service: 'content' },
   { prefix: '/v1/articles', service: 'content' },
+  { prefix: '/v1/articles', suffix: '/comments', service: 'discussion' },
   { prefix: '/v1/topics', service: 'content' },
   { prefix: '/v1/profiles', service: 'content' },
   { prefix: '/v1/follows', service: 'content' },
@@ -38,15 +41,23 @@ export const ROUTE_TABLE: readonly RouteEntry[] = [
 export const DEFAULT_MAX_BODY_BYTES = 1 * MB
 export const DEFAULT_TIMEOUT_MS = 3_000
 
-function matches(path: string, prefix: string): boolean {
-  return path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`)
+function pathOnly(path: string): string {
+  const query = path.indexOf('?')
+  return query === -1 ? path : path.slice(0, query)
 }
 
-/** Самый длинный подходящий префикс; `/v1/feed-seen` не путается с `/v1/feed`. */
+function matches(path: string, entry: RouteEntry): boolean {
+  const bare = pathOnly(path)
+  if (entry.suffix) return bare.startsWith(`${entry.prefix}/`) && bare.endsWith(entry.suffix) && bare.length > entry.prefix.length + entry.suffix.length
+  return path === entry.prefix || path.startsWith(`${entry.prefix}/`) || path.startsWith(`${entry.prefix}?`)
+}
+
+/** Самый длинный подходящий префикс; суффикс (`/comments`) побеждает общий префикс той же длины. */
 export function resolveRoute(path: string, table: readonly RouteEntry[] = ROUTE_TABLE): RouteEntry | null {
   let best: RouteEntry | null = null
   for (const entry of table) {
-    if (matches(path, entry.prefix) && (!best || entry.prefix.length > best.prefix.length)) best = entry
+    if (!matches(path, entry)) continue
+    if (!best || entry.prefix.length > best.prefix.length || (entry.prefix.length === best.prefix.length && entry.suffix && !best.suffix)) best = entry
   }
   return best
 }

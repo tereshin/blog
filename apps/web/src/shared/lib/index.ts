@@ -1,5 +1,7 @@
 export { cn } from './cn.ts'
 export { findScrollParent } from './find-scroll-parent.ts'
+export { getReturnTarget, readFeedReturn, saveFeedReturn } from './feed-return.ts'
+export type { FeedReturn } from './feed-return.ts'
 export { formatCount } from './format-count.ts'
 export type { CountLocale } from './format-count.ts'
 export { formatTime } from './format-time.ts'

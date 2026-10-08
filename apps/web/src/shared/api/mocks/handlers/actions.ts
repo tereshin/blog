@@ -40,11 +40,37 @@ export const actionHandlers = [
         blocks: [
           { type: 'paragraph', data: { text: article.excerpt } },
           { type: 'paragraph', data: { text: 'Полный текст статьи для проверки раскрытия.' } },
-          { type: 'header', data: { text: 'Дальше', level: 2 } },
+          { type: 'image', data: { file: { url: 'https://example.com/cover-1.png' }, caption: 'Первое изображение' } },
+          { type: 'image', data: { file: { url: 'https://example.com/cover-2.png' }, caption: 'Второе изображение' } },
         ],
       },
       status: 'published',
-      is_own: false,
+      is_own: window.localStorage.getItem('mock_article') === 'own',
+    })
+  }),
+
+  http.get('*/v1/articles/:article_id/comments', ({ params }) => {
+    const article = mockFeedArticles.find((item) => item.id === params.article_id)
+    if (!article) {
+      return HttpResponse.json({ code: 'not_found', title: 'Статья недоступна', status: 404 }, { status: 404 })
+    }
+    if (article.comment_count === 0) return HttpResponse.json({ comments: [], next_cursor: null })
+    return HttpResponse.json({
+      comments: [
+        {
+          id: article.top_comment?.id ?? `7a1c2d30-1111-4a11-8a11-${article.id.slice(-12)}`,
+          author: { user_id: 'a1000000-0000-4000-8000-000000000002', display_name: 'Борис Писарев', avatar_url: null },
+          body: article.top_comment?.excerpt ?? 'Хороший разбор, спасибо.',
+          status: 'visible',
+          edited_at: null,
+          reaction_counts: { laugh: 1, heart: 0, thumb: 0, fire: 0 },
+          reaction_count: 1,
+          my_reaction: null,
+          created_at: article.published_at,
+          replies: [],
+        },
+      ],
+      next_cursor: null,
     })
   }),
 

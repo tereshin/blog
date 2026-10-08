@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router'
+import { ArticlePage } from '@/pages/article'
 import { FreshFeedPage } from '@/pages/fresh-feed'
 import { NotFoundPage } from '@/pages/not-found'
 import { ShellLayout } from './ShellLayout.tsx'
@@ -11,6 +12,7 @@ export const router = createBrowserRouter([
     element: <ShellLayout />,
     children: [
       { index: true, element: <FreshFeedPage /> },
+      { path: 'p/:slug', element: <ArticlePage /> },
       // Адреса, которых ещё нет в приложении, остаются внутри каркаса.
       { path: '*', element: <NotFoundPage /> },
     ],

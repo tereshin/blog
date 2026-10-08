@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router'
+import { Link } from 'react-router'
 import { cn } from '@/shared/lib'
 import { topicHue } from '../model/topic-color.ts'
 import type { Topic } from '../api/topic-schema.ts'
@@ -12,7 +12,7 @@ type TopicNavItemProps = {
 /** Пункт темы в левой карточке: круглый цветной значок (цвет из хеша id) и название. */
 export function TopicNavItem({ topic, is_selected = false }: TopicNavItemProps) {
   return (
-    <NavLink
+    <Link
       to={`/t/${topic.slug}`}
       aria-current={is_selected ? 'page' : undefined}
       className={cn(
@@ -28,6 +28,6 @@ export function TopicNavItem({ topic, is_selected = false }: TopicNavItemProps) 
         {topic.title.charAt(0).toUpperCase()}
       </span>
       <span className="min-w-0 truncate">{topic.title}</span>
-    </NavLink>
+    </Link>
   )
 }

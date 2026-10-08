@@ -76,6 +76,13 @@
     "other": "{value} реакции"
   },
   "comment.author_unknown": "Участник",
+  "comment.empty": "Комментариев пока нет",
+  "comment.deleted": "Комментарий удалён",
+  "comment.hidden": "Комментарий скрыт",
+  "comment.edited": "изменён",
+  "comment.load_error": "Не удалось загрузить комментарии",
+  "comment.loading": "Загружаем комментарии",
+  "article.reach": "Ваш пост может собрать больше охватов",
 
   "article.reading_time": {
     "one": "{count} минута чтения",

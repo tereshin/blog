@@ -1,9 +1,10 @@
-import { useCallback } from 'react'
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { ArticleCard, useArticleStates } from '@/entities/article'
 import type { FeedMode } from '@/entities/article'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
+import { findScrollParent, readFeedReturn, saveFeedReturn } from '@/shared/lib'
 import { ErrorState } from '@/shared/ui'
 import { useFeedLive } from '../model/useFeedLive.ts'
 import { useFeed } from '../model/useFeed.ts'
@@ -38,6 +39,7 @@ export function Feed({ mode, banner, ...slots }: FeedProps) {
   const { t } = useT()
   const { viewer } = useViewer()
   const state = useFeed(mode)
+  const root_ref = useRef<HTMLDivElement>(null)
   const article_ids = state.status === 'ok' ? state.article_ids : []
   const viewer_states = useArticleStates(article_ids, viewer.status === 'member')
   useFeedLive(mode, article_ids)
@@ -48,6 +50,24 @@ export function Feed({ mode, banner, ...slots }: FeedProps) {
   const handleNearEnd = useCallback(() => {
     if (has_next && !is_busy) fetchNext?.()
   }, [has_next, is_busy, fetchNext])
+
+  // Возврат со статьи: каркас сначала ставит центр в начало, затем кадр возвращает сохранённую прокрутку.
+  const is_ready = state.status === 'ok' && state.article_ids.length > 0
+  useEffect(() => {
+    const saved = readFeedReturn()
+    if (!is_ready || !saved || saved.mode !== mode) return
+    const frame = requestAnimationFrame(() => {
+      findScrollParent(root_ref.current)?.scrollTo({ top: saved.scroll_top })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [mode, is_ready])
+
+  const rememberReturn = (event: MouseEvent<HTMLDivElement>) => {
+    const link = event.target instanceof Element ? event.target.closest('a') : null
+    const href = link?.getAttribute('href') ?? ''
+    if (!href.startsWith('/p/') || href.includes('#')) return
+    saveFeedReturn({ mode, scroll_top: findScrollParent(root_ref.current)?.scrollTop ?? 0 })
+  }
 
   if (state.status === 'loading') return <FeedSkeletons count={SKELETON_COUNT} />
   if (state.status === 'error') return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
@@ -61,7 +81,7 @@ export function Feed({ mode, banner, ...slots }: FeedProps) {
   const List = state.article_ids.length > VIRTUALIZATION_THRESHOLD ? VirtualFeedList : PlainFeedList
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={root_ref} className="flex flex-col gap-4" onClick={rememberReturn}>
       {banner}
       <List article_ids={state.article_ids} renderItem={renderItem} onNearEnd={handleNearEnd} />
       {state.is_fetching_next ? <ArticleCard.Skeleton /> : null}

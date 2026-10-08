@@ -11,6 +11,9 @@ describe('resolveRoute', () => {
     ['/v1/conversations/1', 'messaging'],
     ['/v1/notifications', 'notification'],
     ['/v1/media', 'media'],
+    ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010', 'content'],
+    ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010/comments', 'discussion'],
+    ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010/comments?cursor=abc', 'discussion'],
   ])('%s → %s', (path, service) => {
     expect(resolveRoute(path)?.service).toBe(service)
   })

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { articleKeys, mapFeedCards } from '@/entities/article'
+import { commentKeys } from '@/entities/comment'
 import type { ArticleLoad, ArticleViewerState } from '@/entities/article'
 import { applyReactionChange } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
@@ -68,6 +69,7 @@ export function useReaction(target: ReactionTarget): { react: (kind: ReactionKin
         reaction_count: response.reaction_count,
         my_reaction: response.my_reaction,
       })
+      if (target.target_type === 'comment') void queryClient.invalidateQueries({ queryKey: commentKeys.all })
     },
   })
 
