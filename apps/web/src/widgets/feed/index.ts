@@ -1,5 +1,7 @@
 export { ArticleFeed } from './ui/ArticleFeed.tsx'
+export { ArticleOverflowMenu } from './ui/ArticleOverflowMenu.tsx'
 export { Feed } from './ui/Feed.tsx'
+export { markSeenArticle } from './model/useSeenArticles.ts'
 export type { FeedSlots } from './ui/FeedItem.tsx'
 export { useFeed } from './model/useFeed.ts'
 export type { FeedState } from './model/useFeed.ts'

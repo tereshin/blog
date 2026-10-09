@@ -123,7 +123,11 @@ export async function request<TResponse>(
   }
 
   if (response.status === 401) sessionEvents.emit('expired')
-  if (!response.ok) throw await toApiError(response)
+  if (!response.ok) {
+    const error = await toApiError(response)
+    if (error.code === 'restricted') sessionEvents.emit('restricted')
+    throw error
+  }
   if (response.status === 204) return schema.parse(undefined)
 
   const payload: unknown = await response.json()
@@ -154,7 +158,11 @@ export async function postBinary<TResponse>(path: string, body: Blob, schema: z.
     throw new ApiError({ code: 'network_error', status: 0, message: 'Нет связи с сервером' })
   }
   if (response.status === 401) sessionEvents.emit('expired')
-  if (!response.ok) throw await toApiError(response)
+  if (!response.ok) {
+    const error = await toApiError(response)
+    if (error.code === 'restricted') sessionEvents.emit('restricted')
+    throw error
+  }
   return schema.parse(await response.json())
 }
 

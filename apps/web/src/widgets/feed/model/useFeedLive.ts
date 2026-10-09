@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { articleKeys, getArticlesByIds, mapFeedCards } from '@/entities/article'
+import { articleKeys, getArticlesByIds, syncFeedCards } from '@/entities/article'
+import { commentKeys } from '@/entities/comment'
 import type { FeedMode } from '@/entities/article'
 import { useLiveSignals } from '@/shared/api'
 import type { LiveFrame } from '@/shared/api'
@@ -10,7 +11,8 @@ async function refreshArticles(queryClient: ReturnType<typeof useQueryClient>, f
   try {
     const cards = await getArticlesByIds(ids)
     const by_id = new Map(cards.map((card) => [card.id, card]))
-    queryClient.setQueriesData({ queryKey: articleKeys.lists() }, (data) => mapFeedCards(data, (card) => by_id.get(card.id) ?? card))
+    const requested = new Set(ids)
+    queryClient.setQueriesData({ queryKey: articleKeys.lists() }, (data) => syncFeedCards(data, requested, by_id))
     for (const card of cards) void queryClient.invalidateQueries({ queryKey: articleKeys.detail(card.slug) })
   } catch {
     // Поток — подсказка. Следующее чтение ленты само подтянет числа, если запрос карточек не удался.
@@ -26,10 +28,14 @@ export function useFeedLive(mode: FeedMode, article_ids: readonly string[]): voi
   useLiveSignals({
     subscribe: { feed_key: mode, article_ids: [...article_ids].sort() },
     on: {
+      article: (frames) => void refreshArticles(queryClient, frames),
       reaction: (frames) => void refreshArticles(queryClient, frames),
       bookmark: (frames) => void refreshArticles(queryClient, frames),
       view: (frames) => void refreshArticles(queryClient, frames),
-      comment: (frames) => void refreshArticles(queryClient, frames),
+      comment: (frames) => {
+        void refreshArticles(queryClient, frames)
+        void queryClient.invalidateQueries({ queryKey: commentKeys.popular() })
+      },
     },
   })
 }

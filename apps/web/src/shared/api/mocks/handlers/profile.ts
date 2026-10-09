@@ -1,4 +1,5 @@
 import { delay, HttpResponse, http } from 'msw'
+import { readMockViewer } from './session.ts'
 
 type ProfileBody = {
   display_name: string
@@ -76,8 +77,12 @@ const comment = {
 }
 
 function profileOf(slug: string) {
-  if (slug === anna.slug || slug === String(anna.public_number)) return anna
-  if (slug === profile.slug || slug === String(profile.public_number)) return { ...profile, is_own: true }
+  const viewer = readMockViewer()
+  if (slug === anna.slug || slug === String(anna.public_number)) {
+    const is_own = viewer === 'author'
+    return { ...anna, ...(is_own ? { user_id: 'a1000000-0000-4000-8000-000000000001' } : {}), is_own }
+  }
+  if (slug === profile.slug || slug === String(profile.public_number)) return { ...profile, is_own: viewer === 'member' }
   return null
 }
 

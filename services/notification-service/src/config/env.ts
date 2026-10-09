@@ -27,3 +27,18 @@ export function loadMigrateEnv(source: Record<string, string | undefined> = proc
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
+
+const seedEnvSchema = baseEnvSchema.extend({
+  DATABASE_URL: z.string().min(1),
+  S3_PUBLIC_URL: z.url(),
+  SUPERADMIN_EMAIL: z.email(),
+})
+
+export type SeedEnv = z.infer<typeof seedEnvSchema>
+
+/** Одноразовая задача seed: база и адреса файлов, без брокера. */
+export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
+  const env = defineEnv(seedEnvSchema, source)
+  rejectPlaceholders(env, ['DATABASE_URL'])
+  return env
+}

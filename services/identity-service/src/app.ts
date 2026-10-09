@@ -7,6 +7,7 @@ import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
 import { authRoutes } from './modules/auth/index.ts'
 import { sessionRoutes } from './modules/session/index.ts'
+import { userRoutes } from './modules/user/index.ts'
 
 export type AppDeps = {
   env: Env
@@ -34,6 +35,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
   await app.register(sessionRoutes, { database: deps.database })
   await app.register(authRoutes, { database: deps.database, env })
+  await app.register(userRoutes, { database: deps.database })
 
   return app
 }

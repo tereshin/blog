@@ -9,6 +9,7 @@ export const topicDtoSchema = z.object({
   slug: z.string(),
   status: z.enum(['active', 'archived']),
   position: z.number().int(),
+  is_following: z.boolean().optional(),
 })
 
 export const topicListDtoSchema = z.array(topicDtoSchema)
@@ -24,6 +25,7 @@ export type Topic = {
   slug: string
   status: 'active' | 'archived'
   position: number
+  is_following: boolean
 }
 
 export function toTopic(dto: TopicDto): Topic {
@@ -36,5 +38,6 @@ export function toTopic(dto: TopicDto): Topic {
     slug: dto.slug,
     status: dto.status,
     position: dto.position,
+    is_following: dto.is_following ?? false,
   }
 }

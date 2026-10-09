@@ -8,12 +8,15 @@ import { commentKeys, getUserComments } from '@/entities/comment'
 import { getProfileArticles, profileKeys, useProfile } from '@/entities/profile'
 import type { ProfileArticleDto, ProfileArticleStatus } from '@/entities/profile'
 import { useUpdateProfile } from '@/features/edit-profile'
-import { OwnArticleMenu } from '@/features/manage-article'
+import { FollowButton } from '@/features/follow'
+import { PromoteDialog } from '@/features/promote-article'
+import { ShareButton } from '@/features/share-article'
 import { ImageUploadButton } from '@/features/upload-media'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
 import { Button, EmptyState, ErrorState } from '@/shared/ui'
 import { ReachBanner } from '@/widgets/article-view'
+import { ArticleOverflowMenu } from '@/widgets/feed'
 import { OwnerActions, ProfileCard, ProfileListCard, ReputationHint, UserCommentRow } from '@/widgets/profile-card'
 import { useShellStore } from '@/widgets/shell'
 
@@ -85,17 +88,17 @@ export default function ProfilePage() {
             <ImageUploadButton label={t(profile.cover_url ? 'profile.change_cover' : 'profile.add_cover')} onUploaded={saveCover} />
           }
         />
-        <div className="flex items-end justify-between gap-3 px-4">
+        <div className="flex flex-wrap items-end gap-3 px-4">
           <ProfileCard.Avatar profile={profile} />
-          <ProfileCard.Actions>
-            {profile.is_own ? (
-              <OwnerActions profile={profile} />
-            ) : (
-              <Button variant="primary" isDisabled>
-                {t('profile.follow')}
-              </Button>
-            )}
-          </ProfileCard.Actions>
+          <div className="ml-auto flex flex-wrap justify-end gap-2 max-[1199px]:order-last max-[1199px]:w-full">
+            <ProfileCard.Actions>
+              {profile.is_own ? (
+                <OwnerActions profile={profile} />
+              ) : (
+                <FollowButton target_type="user" target_id={profile.user_id} is_following={profile.is_following} is_own={false} />
+              )}
+            </ProfileCard.Actions>
+          </div>
         </div>
         <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
           <ProfileCard.Name profile={profile} aside={profile.is_own ? <ReputationHint /> : null} />
@@ -108,7 +111,11 @@ export default function ProfilePage() {
       </ProfileCard>
       <ProfileListCard.Sort sort={sort} onChange={setSort} />
       <ProfileListCard>
-        <ProfileListCard.Reach>{profile.is_own && tab === 'posts' ? <ReachBanner /> : null}</ProfileListCard.Reach>
+        <ProfileListCard.Reach>
+          {profile.is_own && tab === 'posts' && article_items[0] ? (
+            <ReachBanner action={<PromoteDialog article_id={article_items[0].id} />} />
+          ) : null}
+        </ProfileListCard.Reach>
         {list.isPending ? <ProfileCard.Skeleton /> : null}
         {list.isError ? <ErrorState title={t('error.unknown')} onRetry={() => void list.refetch()} /> : null}
         {tab === 'posts' && !articles.isPending ? (
@@ -120,10 +127,21 @@ export default function ProfilePage() {
                 <div key={article.id} className="flex flex-col gap-2">
                   {article.status !== 'published' ? <p className="text-xs text-muted">{t(`profile.status.${article.status}`)}</p> : null}
                   <ArticleCard article={article}>
-                    <ArticleCard.Header menu={profile.is_own ? <OwnArticleMenu article_id={article.id} /> : undefined} />
+                    <ArticleCard.Header
+                      follow={
+                        <FollowButton
+                          target_type="user"
+                          target_id={article.author.user_id}
+                          is_following={article.is_following ?? profile.is_following}
+                          is_own={profile.is_own}
+                        />
+                      }
+                      menu={<ArticleOverflowMenu article_id={article.id} slug={article.slug} is_own={profile.is_own} />}
+                    />
                     <ArticleCard.Title />
                     <ArticleCard.Excerpt />
                     <ArticleCard.Image />
+                    <ArticleCard.Actions share={<ShareButton slug={article.slug} />} />
                   </ArticleCard>
                 </div>
               ))}

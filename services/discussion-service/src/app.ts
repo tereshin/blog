@@ -9,6 +9,7 @@ import { articleStateRoutes } from './modules/article-state/index.ts'
 import { bookmarkRoutes } from './modules/bookmark/index.ts'
 import { commentRoutes } from './modules/comment/index.ts'
 import { reactionRoutes } from './modules/reaction/index.ts'
+import { seenRoutes } from './modules/seen/index.ts'
 import { viewRoutes } from './modules/view/index.ts'
 
 export type AppDeps = {
@@ -41,6 +42,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(bookmarkRoutes, { database: deps.database })
   await app.register(articleStateRoutes, { database: deps.database })
   await app.register(viewRoutes, { database: deps.database })
+  await app.register(seenRoutes, { database: deps.database })
 
   return app
 }

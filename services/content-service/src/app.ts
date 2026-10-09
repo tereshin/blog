@@ -7,9 +7,13 @@ import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
 import { lookupMediaFile } from './infra/http/media-files.ts'
 import { accessRoutes } from './modules/access/index.ts'
-import { articleRoutes } from './modules/article/index.ts'
+import { articleRoutes, prerenderRoutes } from './modules/article/index.ts'
 import { feedRoutes } from './modules/feed/index.ts'
+import { followRoutes } from './modules/follow/index.ts'
+import { moderationRoutes } from './modules/moderation/index.ts'
 import { profileRoutes } from './modules/profile/index.ts'
+import { promotionRoutes } from './modules/promotion/index.ts'
+import { reportRoutes } from './modules/report/index.ts'
 import { searchRoutes } from './modules/search/index.ts'
 import { settingsRoutes } from './modules/settings/index.ts'
 import { topicRoutes } from './modules/topic/index.ts'
@@ -49,12 +53,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(settingsRoutes, { database: deps.database, media_url: env.MEDIA_URL })
   await app.register(feedRoutes, { database: deps.database })
   await app.register(searchRoutes, { database: deps.database })
+  await app.register(prerenderRoutes, { database: deps.database })
   await app.register(articleRoutes, {
     database: deps.database,
     media_urls: [env.MEDIA_URL],
     lookupFile: (url) => lookupMediaFile(media, url),
   })
   await app.register(profileRoutes, { database: deps.database, media_url: env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN })
+  await app.register(followRoutes, { database: deps.database })
+  await app.register(promotionRoutes, { database: deps.database })
+  await app.register(reportRoutes, { database: deps.database })
+  await app.register(moderationRoutes, { database: deps.database })
 
   return app
 }

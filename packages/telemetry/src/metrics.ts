@@ -7,6 +7,8 @@ export type ServiceMetrics = {
   registry: Registry
   http_duration: Histogram<'method' | 'route' | 'status'>
   consumer_duration: Histogram<'subject' | 'outcome'>
+  consumer_lag: Gauge<'durable'>
+  dlq_depth: Gauge<'stream'>
   event_loop_lag_p99: Gauge
   /** Останавливает измерение лага event loop (при остановке сервиса). */
   stop: () => void
@@ -40,6 +42,20 @@ export function createServiceMetrics(service: string): ServiceMetrics {
     registers: [registry],
   })
 
+  const consumer_lag = new Gauge({
+    name: `${prefix}_consumer_lag_messages`,
+    help: 'Сколько сообщений ещё не подтверждено потребителем',
+    labelNames: ['durable'] as const,
+    registers: [registry],
+  })
+
+  const dlq_depth = new Gauge({
+    name: `${prefix}_dlq_depth_messages`,
+    help: 'Сколько сообщений лежит в DLQ потока',
+    labelNames: ['stream'] as const,
+    registers: [registry],
+  })
+
   const loop_delay = monitorEventLoopDelay({ resolution: 20 })
   loop_delay.enable()
   const event_loop_lag_p99 = new Gauge({
@@ -56,6 +72,8 @@ export function createServiceMetrics(service: string): ServiceMetrics {
     registry,
     http_duration,
     consumer_duration,
+    consumer_lag,
+    dlq_depth,
     event_loop_lag_p99,
     stop: () => loop_delay.disable(),
   }

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from '@/app/App'
 import { env } from '@/shared/config'
+import { reportWebVitals } from '@/shared/lib'
 import '@/app/styles/globals.css'
 
 const root_element = document.getElementById('root')
@@ -20,4 +21,5 @@ async function bootstrap(container: HTMLElement) {
   )
 }
 
+reportWebVitals()
 void bootstrap(root_element)

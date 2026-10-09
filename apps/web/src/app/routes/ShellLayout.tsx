@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from 'react'
 import { Outlet, useLocation, useMatches } from 'react-router'
+import { RestrictedNotice } from '@/entities/session'
 import { NotificationBell } from '@/widgets/notification-bell'
 import { AccountMenu, CenterSkeleton, HeaderCenter, LeftNav, RightRail, Shell, SiteHeader, useShellStore } from '@/widgets/shell'
 import type { CenterSkeletonKind } from '@/widgets/shell'
@@ -33,6 +34,7 @@ export function ShellLayout() {
       center={
         <CenterErrorBoundary key={pathname}>
           <Suspense fallback={<CenterSkeleton kind={skeleton} />}>
+            <RestrictedNotice />
             <Outlet />
           </Suspense>
         </CenterErrorBoundary>

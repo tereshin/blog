@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { Profile } from '@/entities/profile'
+import { AppearanceToggle } from '@/features/toggle-appearance'
 import { useUpdateProfile } from '@/features/edit-profile'
 import { useLogout } from '@/features/logout'
 import { ApiError } from '@/shared/api'
@@ -55,6 +56,7 @@ export function SettingsDialog({ is_open, onOpenChange, profile, theme }: Settin
       </Dialog.Header>
       <Dialog.Body>
         <div className="flex flex-col gap-3">
+          <AppearanceToggle />
           {theme}
           <Link to="/about" className="text-sm text-accent outline-offset-2 hover:underline">
             {t('account.about')}

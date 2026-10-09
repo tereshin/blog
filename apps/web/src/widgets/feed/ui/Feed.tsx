@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { MouseEvent, ReactNode } from 'react'
+import type { MouseEvent } from 'react'
 import { ArticleCard, useArticleStates } from '@/entities/article'
 import type { FeedMode } from '@/entities/article'
 import { useViewer } from '@/entities/session'
@@ -8,10 +8,12 @@ import { findScrollParent, readFeedReturn, saveFeedReturn } from '@/shared/lib'
 import { ErrorState } from '@/shared/ui'
 import { useFeedLive } from '../model/useFeedLive.ts'
 import { useFeed } from '../model/useFeed.ts'
+import { useSeenArticles } from '../model/useSeenArticles.ts'
 import { FeedEmpty } from './FeedEmpty.tsx'
 import { FeedItem } from './FeedItem.tsx'
 import type { FeedSlots } from './FeedItem.tsx'
 import { PlainFeedList } from './PlainFeedList.tsx'
+import { SeenBanner } from './SeenBanner.tsx'
 import { VirtualFeedList } from './VirtualFeedList.tsx'
 
 /** Выше этого числа карточек список виртуализируется (в DOM только видимые). */
@@ -20,8 +22,8 @@ const SKELETON_COUNT = 3
 
 type FeedProps = FeedSlots & {
   mode: FeedMode
-  /** Полоса над первой карточкой («Скрыто N просмотренных»). */
-  banner?: ReactNode
+  /** Ключ полосы просмотренного. Для темы это `topic:{id}`, иначе совпадает с режимом. */
+  feed_key?: string
 }
 
 function FeedSkeletons({ count }: { count: number }) {
@@ -35,10 +37,11 @@ function FeedSkeletons({ count }: { count: number }) {
 }
 
 /** Лента карточек выбранного режима. Загрузка, пустота и ошибка показываются в центре, подгрузка не сбрасывает прокрутку. */
-export function Feed({ mode, banner, ...slots }: FeedProps) {
+export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
   const { t } = useT()
   const { viewer } = useViewer()
   const state = useFeed(mode)
+  const seen = useSeenArticles(feed_key)
   const root_ref = useRef<HTMLDivElement>(null)
   const article_ids = state.status === 'ok' ? state.article_ids : []
   const viewer_states = useArticleStates(article_ids, viewer.status === 'member')
@@ -66,24 +69,26 @@ export function Feed({ mode, banner, ...slots }: FeedProps) {
     const link = event.target instanceof Element ? event.target.closest('a') : null
     const href = link?.getAttribute('href') ?? ''
     if (!href.startsWith('/p/') || href.includes('#')) return
-    saveFeedReturn({ mode, scroll_top: findScrollParent(root_ref.current)?.scrollTop ?? 0 })
+    saveFeedReturn({ mode, feed_key, scroll_top: findScrollParent(root_ref.current)?.scrollTop ?? 0 })
   }
 
   if (state.status === 'loading' || state.status === 'idle') return <FeedSkeletons count={SKELETON_COUNT} />
   if (state.status === 'error') return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
   if (state.article_ids.length === 0) return <FeedEmpty />
 
+  const hidden_ids = state.article_ids.filter((id) => seen.seen_ids.has(id))
+  const visible_ids = seen.is_revealed ? state.article_ids : state.article_ids.filter((id) => !seen.seen_ids.has(id))
   const renderItem = (article_id: string) => {
     const article = state.article_by_id.get(article_id)
     const viewer_state = viewer_states.get(article_id)
-    return article ? <FeedItem article={article} slots={slots} {...(viewer_state ? { viewer_state } : {})} /> : null
+    return article ? <FeedItem article={article} slots={slots} onExpanded={seen.mark} {...(viewer_state ? { viewer_state } : {})} /> : null
   }
-  const List = state.article_ids.length > VIRTUALIZATION_THRESHOLD ? VirtualFeedList : PlainFeedList
+  const List = visible_ids.length > VIRTUALIZATION_THRESHOLD ? VirtualFeedList : PlainFeedList
 
   return (
     <div ref={root_ref} className="flex flex-col gap-4" onClick={rememberReturn}>
-      {banner}
-      <List article_ids={state.article_ids} renderItem={renderItem} onNearEnd={handleNearEnd} />
+      {hidden_ids.length > 0 && !seen.is_dismissed ? <SeenBanner count={hidden_ids.length} onReveal={seen.reveal} onDismiss={seen.dismiss} /> : null}
+      {visible_ids.length > 0 ? <List article_ids={visible_ids} renderItem={renderItem} onNearEnd={handleNearEnd} /> : null}
       {state.is_fetching_next ? <ArticleCard.Skeleton /> : null}
       {state.next_error ? <ErrorState title={t('feed.load_more_error')} onRetry={state.fetchNext} className="py-4" /> : null}
     </div>

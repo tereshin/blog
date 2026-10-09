@@ -16,10 +16,21 @@ function toPublic(row: SettingsRow): PublicSettings {
   return { name: row.name, logo_url: row.logo_url, locale: row.locale, about: row.about }
 }
 
+/** Настройки пустой площадки: регистрация закрыта, публиковать новым участникам можно. */
+export const BOOTSTRAP_SETTINGS: SettingsRow = {
+  name: 'Блог',
+  logo_url: null,
+  locale: 'ru',
+  about: '',
+  registration_open: false,
+  new_members_can_publish: true,
+}
+
 export type SettingsService = {
   getPublic: () => Promise<PublicSettings>
   getAdmin: (viewer: ServiceContext) => Promise<AdminSettings>
   update: (viewer: ServiceContext, input: UpdateSettings, correlation_id: string) => Promise<AdminSettings>
+  ensureDefaults: (correlation_id: string) => Promise<SettingsRow>
 }
 
 export function createSettingsService(repository: SettingsRepository, options: { media_url: string }): SettingsService {
@@ -38,6 +49,12 @@ export function createSettingsService(repository: SettingsRepository, options: {
       requireSuperadmin(viewer)
       assertMediaUrl(input.logo_url, options.media_url, 'logo_url')
       return repository.save(input, correlation_id)
+    },
+
+    async ensureDefaults(correlation_id) {
+      const existing = await repository.find()
+      if (existing) return existing
+      return (await repository.insertIfAbsent(BOOTSTRAP_SETTINGS, correlation_id)) ?? (await repository.find()) ?? BOOTSTRAP_SETTINGS
     },
   }
 }

@@ -17,5 +17,8 @@ export const commentRoutes: FastifyPluginAsync<CommentRoutesOptions> = async (ap
   app.post('/v1/articles/:article_id/comments', (request, reply) => controller.create(request, reply))
   app.patch('/v1/comments/:id', (request, reply) => controller.update(request, reply))
   app.delete('/v1/comments/:id', (request, reply) => controller.remove(request, reply))
+  app.post('/v1/comments/:id/hide', (request, reply) => controller.hide(request, reply))
+  app.post('/v1/comments/:id/restore', (request, reply) => controller.restore(request, reply))
+  app.delete('/v1/moderation/comments/:id', (request, reply) => controller.moderateRemove(request, reply))
   app.get('/v1/users/:user_id/comments', (request, reply) => controller.byAuthor(request, reply))
 }

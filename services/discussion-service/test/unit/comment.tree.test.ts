@@ -63,6 +63,7 @@ describe('listForArticle', () => {
       insert: async () => { throw new Error('unused') },
       update: async () => { throw new Error('unused') },
       remove: async () => { throw new Error('unused') },
+      moderate: async () => { throw new Error('unused') },
     }
     const service = createCommentService(repository, writer)
     await expect(service.listForArticle(guest, '7a1c2d30-1111-4a11-8a11-000000000099', query)).rejects.toMatchObject({ http_status: 404 })

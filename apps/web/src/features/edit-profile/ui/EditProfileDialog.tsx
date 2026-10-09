@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
@@ -37,11 +37,14 @@ export function EditProfileDialog({ is_open, onOpenChange, initial, upload }: Ed
   const [field_error, setFieldError] = useState<string | null>(null)
 
   const snapshot = `${initial.display_name}\0${initial.slug}\0${initial.avatar_url ?? ''}`
-  useEffect(() => {
-    if (is_open) return
-    setDraft(initial)
-    setFieldError(null)
-  }, [is_open, initial, snapshot])
+  const [seen, setSeen] = useState({ is_open, snapshot })
+  if (seen.is_open !== is_open || seen.snapshot !== snapshot) {
+    setSeen({ is_open, snapshot })
+    if (!is_open) {
+      setDraft(initial)
+      setFieldError(null)
+    }
+  }
 
   const save = () => {
     setFieldError(null)

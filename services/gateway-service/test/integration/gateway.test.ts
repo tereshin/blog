@@ -104,6 +104,7 @@ describe('gateway: сессия, прокси, поток событий', () =>
         notification: 'http://127.0.0.1:1',
         media: 'http://127.0.0.1:1',
       }),
+      content: createServiceClient({ name: 'content', base_url: content.url, max_retries: 0 }),
       events,
       is_broker_ready: () => true,
     })

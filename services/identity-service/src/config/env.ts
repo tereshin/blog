@@ -54,3 +54,17 @@ export function loadSeedEnv(source: Record<string, string | undefined> = process
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
+
+const bootstrapEnvSchema = baseEnvSchema.extend({
+  DATABASE_URL: z.string().min(1),
+  SUPERADMIN_EMAIL: z.email(),
+})
+
+export type BootstrapEnv = z.infer<typeof bootstrapEnvSchema>
+
+/** Окружение `bootstrap`: база и почта суперадминистратора. Без почты процесс не стартует. */
+export function loadBootstrapEnv(source: Record<string, string | undefined> = process.env): BootstrapEnv {
+  const env = defineEnv(bootstrapEnvSchema, source)
+  rejectPlaceholders(env, ['DATABASE_URL', 'SUPERADMIN_EMAIL'])
+  return env
+}

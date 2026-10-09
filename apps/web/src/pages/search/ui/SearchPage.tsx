@@ -8,10 +8,12 @@ import { useViewer } from '@/entities/session'
 import { TopicNavItem } from '@/entities/topic'
 import { UserListItem } from '@/entities/user'
 import { BookmarkControl } from '@/features/bookmark'
-import { OwnArticleMenu } from '@/features/manage-article'
+import { FollowButton } from '@/features/follow'
 import { ReactionControl } from '@/features/react'
+import { ShareButton } from '@/features/share-article'
 import { useT } from '@/shared/i18n'
 import { EmptyState, ErrorState } from '@/shared/ui'
+import { ArticleOverflowMenu } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 
 function asCard(article: SearchArticle): ArticleCardModel {
@@ -45,7 +47,17 @@ export default function SearchPage() {
             const viewer_state = states.get(article.id)
             return (
               <ArticleCard key={article.id} article={article}>
-                <ArticleCard.Header menu={is_own(article.author.user_id) ? <OwnArticleMenu article_id={article.id} /> : null} />
+                <ArticleCard.Header
+                  follow={
+                    <FollowButton
+                      target_type="user"
+                      target_id={article.author.user_id}
+                      is_following={article.is_following ?? false}
+                      is_own={is_own(article.author.user_id)}
+                    />
+                  }
+                  menu={<ArticleOverflowMenu article_id={article.id} slug={article.slug} is_own={is_own(article.author.user_id)} />}
+                />
                 <ArticleCard.Title />
                 <ArticleCard.Excerpt />
                 <ArticleCard.Image />
@@ -60,6 +72,7 @@ export default function SearchPage() {
                       <BookmarkControl article_id={article.id} slug={article.slug} count={article.bookmark_count} is_bookmarked={viewer_state.is_bookmarked} />
                     ) : null
                   }
+                  share={<ShareButton slug={article.slug} />}
                 />
               </ArticleCard>
             )

@@ -8,7 +8,9 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:contract": "vitest run test/events.contract.test.ts",
+    "test:unit": "vitest run --passWithNoTests --exclude '**/integration/**' --exclude '**/e2e/**'"
   },
   "dependencies": {
     "zod": "^4.6.5"

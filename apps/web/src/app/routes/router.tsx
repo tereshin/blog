@@ -44,6 +44,7 @@ export const shellRoute: RouteObject = {
     child('u/:slug/followers', <FollowersPage />, 'profile'),
     child('u/:slug/following', <FollowingPage />, 'profile'),
     child('messages', <MessagesPage />, 'feed'),
+    child('messages/new', <MessagesPage />, 'feed'),
     child('messages/:id', <MessagesPage />, 'feed'),
     child('rating', <RatingPage />, 'feed'),
     child('bookmarks', <BookmarksPage />, 'feed'),

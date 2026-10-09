@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, gt, isNull, lt, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { SessionRevokedV1, UserCreatedV1, UserUpdatedV1 } from '@blog/contracts'
+import { UserUpdatedV1 } from '@blog/contracts'
 import { appendToOutbox, newEventId } from '@blog/broker'
+import { sessionRevokedEvent, userCreatedEvent } from './auth.events.ts'
 import type { Database } from '@blog/broker'
 import { auth_states, sessions, settings_copy, users } from '../../infra/db/schema.ts'
-import { normalizeEmail } from './auth.policy.ts'
-import type { AccountUser, AuthRepository, GoogleClaims } from './auth.types.ts'
+import { hintFromEmail, normalizeEmail } from './auth.policy.ts'
+import type { AccountUser, AuthRepository } from './auth.types.ts'
 
 const STATE_TTL_MS = 15 * 60 * 1000
 
@@ -99,8 +100,19 @@ export function createAuthRepository(db: NodePgDatabase): AuthRepository {
         if (!row) throw new Error('учётная запись суперадминистратора уже привязана')
         const user = toUser(row)
         await tx.insert(sessions).values({ id: input.session_id, user_id: user.id, expires_at: input.expires_at })
-        const base = envelope('identity.user.created', input.correlation_id)
-        await appendToOutbox(tx, UserCreatedV1.parse({ ...base, ...snapshot(user), display_name: input.display_name }))
+        await appendToOutbox(
+          tx,
+          userCreatedEvent({
+            correlation_id: input.correlation_id,
+            user_id: user.id,
+            public_number: user.public_number,
+            role: user.role,
+            can_publish: user.can_publish,
+            is_restricted: user.restricted_at !== null,
+            created_at: user.created_at.toISOString(),
+            display_name: input.display_name,
+          }),
+        )
         if (input.user.role !== role || !input.user.can_publish) {
           await appendToOutbox(tx, UserUpdatedV1.parse({ ...envelope('identity.user.updated', input.correlation_id), ...snapshot(user) }))
         }
@@ -125,14 +137,55 @@ export function createAuthRepository(db: NodePgDatabase): AuthRepository {
         await tx.insert(sessions).values({ id: input.session_id, user_id: user.id, expires_at: input.expires_at })
         await appendToOutbox(
           tx,
-          UserCreatedV1.parse({
-            ...envelope('identity.user.created', input.correlation_id),
-            ...snapshot(user),
+          userCreatedEvent({
+            correlation_id: input.correlation_id,
+            user_id: user.id,
+            public_number: user.public_number,
+            role: user.role,
+            can_publish: user.can_publish,
+            is_restricted: user.restricted_at !== null,
+            created_at: user.created_at.toISOString(),
             display_name: input.display_name,
           }),
         )
         return user
       })
+    },
+
+    async provisionSuperadmin(input) {
+      const email = normalizeEmail(input.email)
+      if (!email) throw new Error('SUPERADMIN_EMAIL не задан')
+      const existing = await db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
+      if (existing[0]) return { created: false, user_id: existing[0].id }
+      try {
+        return await (db as Database).transaction(async (tx) => {
+          const [row] = await tx
+            .insert(users)
+            .values({ id: randomUUID(), email, google_sub: null, role: 'superadmin', can_publish: true })
+            .returning()
+          if (!row) throw new Error('учётная запись суперадминистратора не создана')
+          const user = toUser(row)
+          await appendToOutbox(
+            tx,
+            userCreatedEvent({
+              correlation_id: input.correlation_id,
+              user_id: user.id,
+              public_number: user.public_number,
+              role: user.role,
+              can_publish: user.can_publish,
+              is_restricted: false,
+              created_at: user.created_at.toISOString(),
+              display_name: hintFromEmail(email),
+            }),
+          )
+          return { created: true, user_id: user.id }
+        })
+      } catch (error) {
+        if (!(typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === '23505')) throw error
+        const [row] = await db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
+        if (!row) throw error
+        return { created: false, user_id: row.id }
+      }
     },
 
     async revokeSession(session_id, correlation_id) {
@@ -145,8 +198,8 @@ export function createAuthRepository(db: NodePgDatabase): AuthRepository {
         if (!row) return
         await appendToOutbox(
           tx,
-          SessionRevokedV1.parse({
-            ...envelope('identity.session.revoked', correlation_id),
+          sessionRevokedEvent({
+            correlation_id,
             session_ids: [session_id],
             user_id: row.user_id,
           }),

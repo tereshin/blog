@@ -1,7 +1,9 @@
 import { HttpResponse, http } from 'msw'
+import { promotedIds } from './engagement-store.ts'
+import { hiddenArticleIds } from './moderation-store.ts'
 import { mockFeedArticles } from './feed.ts'
 import type { FeedCardFixture } from '../fixtures/feed.ts'
-import { currentMockAuthor } from './articles-store.ts'
+import { currentMockAuthor, publishedFeedCards, readMockArticles } from './articles-store.ts'
 import { commentTree, commentsForArticle, mockViewerId, patchStoredComment, readStoredComments, recordMockView, saveComment } from './discussion-store.ts'
 import type { StoredComment } from './discussion-store.ts'
 import { addMockNotification } from './notifications-store.ts'
@@ -13,6 +15,9 @@ type Kind = (typeof KINDS)[number]
 
 const mine = new Map<string, Kind>()
 const bookmarks = new Set<string>()
+const bookmark_order: string[] = []
+const follows = new Set<string>()
+const seen_by_key = new Map<string, string[]>()
 
 function isKind(value: unknown): value is Kind {
   return typeof value === 'string' && (KINDS as readonly string[]).includes(value)
@@ -68,7 +73,44 @@ function presentStored(row: StoredComment, viewer_id: string) {
 
 export const actionHandlers = [
   http.get('*/v1/articles/:slug', ({ params }) => {
+    const stored = readMockArticles().find((item) => item.slug === params.slug && item.status === 'published')
+    if (stored) {
+      const viewer = currentMockAuthor()
+      const is_admin = readMockViewer() === 'admin' || readMockViewer() === 'superadmin'
+      const is_author = viewer?.id === stored.author_id
+      if (stored.visibility === 'members' && !viewer) {
+        return HttpResponse.json(
+          { type: 'about:blank', title: 'Статья доступна участникам', status: 401, code: 'unauthorized', errors: { reason: 'members_only' } },
+          { status: 401 },
+        )
+      }
+      if (stored.visibility === 'author' && !is_author && !is_admin) {
+        return HttpResponse.json(
+          { type: 'about:blank', title: 'Статья недоступна', status: 404, code: 'not_found', errors: { reason: 'unavailable' } },
+          { status: 404 },
+        )
+      }
+      const card = publishedFeedCards().find((item) => item.id === stored.id)
+      if (!card) {
+        return HttpResponse.json(
+          { type: 'about:blank', title: 'Статья недоступна', status: 404, code: 'not_found', errors: { reason: 'unavailable' } },
+          { status: 404 },
+        )
+      }
+      return HttpResponse.json({ ...card, blocks: stored.blocks, status: 'published', is_own: is_author })
+    }
     const article = mockFeedArticles.find((item) => item.slug === params.slug)
+    if (article && hiddenArticleIds.has(article.id)) {
+      const viewer = readMockViewer()
+      const is_staff = viewer === 'admin' || viewer === 'superadmin'
+      const is_author = viewer === 'author' && article.author.user_id === 'a1000000-0000-4000-8000-000000000001'
+      if (!is_staff && !is_author) {
+        return HttpResponse.json(
+          { type: 'about:blank', title: 'Статья недоступна', status: 404, code: 'not_found', errors: { reason: 'unavailable' } },
+          { status: 404 },
+        )
+      }
+    }
     if (!article) {
       return HttpResponse.json(
         { type: 'about:blank', title: 'Статья недоступна', status: 404, code: 'not_found', errors: { reason: 'unavailable' } },
@@ -90,7 +132,7 @@ export const actionHandlers = [
     return HttpResponse.json({
       ...article,
       blocks: { time: 1, version: '2.30.0', blocks },
-      status: 'published',
+      status: hiddenArticleIds.has(article.id) ? 'hidden' : 'published',
       is_own: window.localStorage.getItem('mock_article') === 'own',
     })
   }),
@@ -198,7 +240,14 @@ export const actionHandlers = [
 
   http.get('*/v1/articles', ({ request }) => {
     const ids = new URL(request.url).searchParams.get('ids')?.split(',').filter(Boolean) ?? []
-    const items = ids.flatMap((id) => mockFeedArticles.filter((item) => item.id === id))
+    const source = [...publishedFeedCards(), ...mockFeedArticles]
+    const viewer = readMockViewer()
+    const is_staff = viewer === 'admin' || viewer === 'superadmin'
+    const items = ids.flatMap((id) => {
+      if (hiddenArticleIds.has(id) && !is_staff) return []
+      const card = source.find((item) => item.id === id)
+      return card ? [card] : []
+    })
     return HttpResponse.json({ items })
   }),
 
@@ -254,6 +303,7 @@ export const actionHandlers = [
     if (!article) return HttpResponse.json({ code: 'not_found', title: 'Не найдено', status: 404 }, { status: 404 })
     if (!bookmarks.has(article_id)) {
       bookmarks.add(article_id)
+      bookmark_order.unshift(article_id)
       article.bookmark_count += 1
     }
     return HttpResponse.json({ article_id, bookmark_count: article.bookmark_count, is_bookmarked: true })
@@ -266,8 +316,91 @@ export const actionHandlers = [
     if (!article) return HttpResponse.json({ code: 'not_found', title: 'Не найдено', status: 404 }, { status: 404 })
     if (bookmarks.has(article_id)) {
       bookmarks.delete(article_id)
+      const index = bookmark_order.indexOf(article_id)
+      if (index >= 0) bookmark_order.splice(index, 1)
       article.bookmark_count = Math.max(0, article.bookmark_count - 1)
     }
     return HttpResponse.json({ article_id, bookmark_count: article.bookmark_count, is_bookmarked: false })
+  }),
+
+  http.get('*/v1/bookmarks', () => {
+    if (readMockViewer() === 'guest') return unauthorized()
+    return HttpResponse.json({ article_ids: [...bookmark_order], next_cursor: null })
+  }),
+
+  http.put('*/v1/follows', async ({ request }) => {
+    const actor = currentMockAuthor()
+    if (!actor) return unauthorized()
+    if (actor.is_restricted) return restricted()
+    const body: unknown = await request.json()
+    const target_type = typeof body === 'object' && body && 'target_type' in body ? String(body.target_type) : ''
+    const target_id = typeof body === 'object' && body && 'target_id' in body ? String(body.target_id) : ''
+    if (target_type === 'user' && target_id === actor.id) {
+      return HttpResponse.json({ code: 'self_follow', title: 'На себя подписаться нельзя', status: 422 }, { status: 422 })
+    }
+    follows.add(`${target_type}:${target_id}`)
+    return HttpResponse.json({ target_type, target_id, is_following: true })
+  }),
+
+  http.delete('*/v1/follows', async ({ request }) => {
+    const actor = currentMockAuthor()
+    if (!actor) return unauthorized()
+    if (actor.is_restricted) return restricted()
+    const body: unknown = await request.json()
+    const target_type = typeof body === 'object' && body && 'target_type' in body ? String(body.target_type) : ''
+    const target_id = typeof body === 'object' && body && 'target_id' in body ? String(body.target_id) : ''
+    follows.delete(`${target_type}:${target_id}`)
+    return HttpResponse.json({ target_type, target_id, is_following: false })
+  }),
+
+  http.get('*/v1/me/follows', ({ request }) => {
+    const actor = currentMockAuthor()
+    if (!actor) return unauthorized()
+    const url = new URL(request.url)
+    const target_type = url.searchParams.get('target_type') ?? 'user'
+    const target_ids = url.searchParams.get('target_ids')?.split(',').filter(Boolean) ?? []
+    return HttpResponse.json({
+      items: target_ids.map((target_id) => ({ target_type, target_id, is_following: follows.has(`${target_type}:${target_id}`) })),
+    })
+  }),
+
+  http.post('*/v1/articles/:article_id/reports', ({ params }) => {
+    const actor = currentMockAuthor()
+    if (!actor) return unauthorized()
+    if (actor.is_restricted) return restricted()
+    const article = mockFeedArticles.find((item) => item.id === params.article_id)
+    if (!article) return HttpResponse.json({ code: 'not_found', title: 'Статья недоступна', status: 404 }, { status: 404 })
+    if (actor.id === article.author.user_id) {
+      return HttpResponse.json({ code: 'forbidden', title: 'На свою статью пожаловаться нельзя', status: 403 }, { status: 403 })
+    }
+    return HttpResponse.json({ id: crypto.randomUUID() })
+  }),
+
+  http.post('*/v1/articles/:article_id/promotion', ({ params }) => {
+    const actor = currentMockAuthor()
+    if (!actor) return unauthorized()
+    const article = mockFeedArticles.find((item) => item.id === params.article_id)
+    if (!article) return HttpResponse.json({ code: 'not_found', title: 'Статья недоступна', status: 404 }, { status: 404 })
+    const is_own = actor.id === article.author.user_id || window.localStorage.getItem('mock_article') === 'own'
+    if (!is_own) return HttpResponse.json({ code: 'forbidden', title: 'Продвигать может только автор', status: 403 }, { status: 403 })
+    promotedIds.add(article.id)
+    const confirmed_at = new Date().toISOString()
+    const until = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    return HttpResponse.json({ article_id: article.id, confirmed_at, until })
+  }),
+
+  http.put('*/v1/feed-seen', async ({ request }) => {
+    const body: unknown = await request.json()
+    const feed_key = typeof body === 'object' && body && 'feed_key' in body ? String(body.feed_key) : ''
+    const article_id = typeof body === 'object' && body && 'article_id' in body ? String(body.article_id) : ''
+    const current = seen_by_key.get(feed_key) ?? []
+    if (!current.includes(article_id)) current.unshift(article_id)
+    seen_by_key.set(feed_key, current.slice(0, 500))
+    return HttpResponse.json({ feed_key, article_id })
+  }),
+
+  http.get('*/v1/feed-seen', ({ request }) => {
+    const feed_key = new URL(request.url).searchParams.get('feed_key') ?? ''
+    return HttpResponse.json({ article_ids: seen_by_key.get(feed_key) ?? [] })
   }),
 ]

@@ -1,7 +1,7 @@
-import { OutboxRelay, connectBroker } from '@blog/broker'
+import { OutboxRelay, connectBroker, sampleQueueDepth, setConsumerMetrics } from '@blog/broker'
 import { registerShutdown } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
-import { createServiceMetrics, startTelemetry } from '@blog/telemetry'
+import { createServiceMetrics, startQueueMetrics, startTelemetry } from '@blog/telemetry'
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
@@ -14,6 +14,8 @@ async function main(): Promise<void> {
   const logger = createLogger({ service: SERVICE, level: env.LOG_LEVEL })
   const telemetry = startTelemetry({ service: SERVICE, otlp_endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT })
   const metrics = createServiceMetrics(SERVICE)
+  setConsumerMetrics(metrics)
+  const queues = startQueueMetrics(metrics, sampleQueueDepth)
 
   const database = openDatabase(env.DATABASE_URL)
   const broker = await connectBroker({ url: env.NATS_URL, name: SERVICE })
@@ -27,6 +29,7 @@ async function main(): Promise<void> {
     app,
     logger,
     stoppers: [
+      () => queues.stop(),
       () => copies.stop(),
       () => relay.stop(),
       () => broker.close(),

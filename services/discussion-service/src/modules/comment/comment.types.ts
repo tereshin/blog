@@ -39,4 +39,7 @@ export type CommentService = {
   create: (input: { viewer: ServiceContext; article_id: string; body: string; parent_id?: string | undefined; idempotency_key: string | null; correlation_id: string }) => Promise<Comment>
   update: (input: { viewer: ServiceContext; comment_id: string; body: string; idempotency_key: string | null; correlation_id: string }) => Promise<Comment>
   remove: (input: { viewer: ServiceContext; comment_id: string; idempotency_key: string | null; correlation_id: string }) => Promise<Comment>
+  hide: (input: { viewer: ServiceContext; comment_id: string; correlation_id: string }) => Promise<Comment>
+  restore: (input: { viewer: ServiceContext; comment_id: string; correlation_id: string }) => Promise<Comment>
+  moderateRemove: (input: { viewer: ServiceContext; comment_id: string; correlation_id: string }) => Promise<Comment>
 }

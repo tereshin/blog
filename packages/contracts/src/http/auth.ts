@@ -28,6 +28,12 @@ export const sessionResponseSchema = z.discriminatedUnion('status', [
 ])
 export type SessionResponse = z.infer<typeof sessionResponseSchema>
 
+/** `PATCH /v1/users/me/appearance`: выбор вида хранится в учётной записи. */
+export const updateAppearanceSchema = z.strictObject({
+  appearance: z.enum(['light', 'dark']),
+})
+export type UpdateAppearance = z.infer<typeof updateAppearanceSchema>
+
 /** Ответ identity gateway на успешный callback: cookie ставит gateway, не сервис. */
 export const authCallbackSuccessSchema = z.strictObject({
   session_id: z.string().min(16),

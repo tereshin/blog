@@ -1,7 +1,8 @@
 import { Component, useCallback } from 'react'
-import type { ReactNode } from 'react'
+import type { ErrorInfo, ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/shared/i18n'
+import { reportClientError } from '@/shared/lib'
 import { ErrorState } from '@/shared/ui'
 
 type CenterErrorBoundaryProps = { children: ReactNode }
@@ -22,6 +23,10 @@ class CenterErrorBoundaryInner extends Component<InnerProps, CenterErrorBoundary
 
   static getDerivedStateFromError(): CenterErrorBoundaryState {
     return { has_error: true }
+  }
+
+  override componentDidCatch(error: Error, info: ErrorInfo): void {
+    reportClientError({ message: error.message, component_stack: info.componentStack })
   }
 
   resetErrorBoundary = (): void => {

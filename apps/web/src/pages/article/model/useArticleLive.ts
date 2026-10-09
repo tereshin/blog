@@ -15,6 +15,7 @@ export function useArticleLive(slug: string, article_id: string | null): void {
   }
   const refresh_comments = () => {
     if (article_id) void queryClient.invalidateQueries({ queryKey: commentKeys.list(article_id) })
+    void queryClient.invalidateQueries({ queryKey: commentKeys.popular() })
   }
 
   useLiveSignals({

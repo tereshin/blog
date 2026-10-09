@@ -29,7 +29,7 @@ function AvatarBlock({ profile }: { profile: Profile }) {
 }
 
 function Actions({ children }: { children?: ReactNode }) {
-  return <div className="flex items-center gap-2">{children}</div>
+  return <div className="flex flex-wrap items-center justify-end gap-2">{children}</div>
 }
 
 function Name({ profile, aside }: { profile: Profile; aside?: ReactNode }) {

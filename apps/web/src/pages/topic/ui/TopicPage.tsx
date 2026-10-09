@@ -3,7 +3,8 @@ import { useParams } from 'react-router'
 import { useTopic } from '@/entities/topic'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState } from '@/shared/ui'
+import { FollowButton } from '@/features/follow'
+import { EmptyState, ErrorState } from '@/shared/ui'
 import { ArticleFeed } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 import { TopicHeader } from '@/widgets/topic-header'
@@ -35,12 +36,10 @@ export default function TopicPage() {
       <TopicHeader
         topic={topic.data}
         follow={
-          <Button variant="primary" isDisabled>
-            {t('profile.follow')}
-          </Button>
+          <FollowButton target_type="topic" target_id={topic.data.id} is_following={topic.data.is_following} is_own={false} />
         }
       />
-      <ArticleFeed mode={`topic:${topic.data.slug}`} />
+      <ArticleFeed mode={`topic:${topic.data.slug}`} feed_key={`topic:${topic.data.id}`} />
     </div>
   )
 }

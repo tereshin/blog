@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { UIEvent } from 'react'
+import { useMessagesUnreadCount, useMessagesUnreadLive } from '@/entities/conversation'
+import { useViewer } from '@/entities/session'
 import { TopicNavItem, useTopics } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
@@ -27,6 +29,11 @@ type LeftNavProps = {
 /** Левая карточка: режимы, затем темы. Прокручивается внутри себя и не отдаёт прокрутку окну. */
 export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const { t } = useT()
+  const { viewer } = useViewer()
+  const is_member = viewer.status === 'member'
+  const unread_messages = useMessagesUnreadCount(is_member)
+  useMessagesUnreadLive(is_member)
+  const show_unread_messages = has_unread_messages || (unread_messages.data ?? 0) > 0
   const { highlighted } = useCurrentSection()
   const topics = useTopics()
   const freshness = useFeedFreshness()
@@ -61,7 +68,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
       <Card.Content data-shell-scroll="left" onScroll={handleScroll} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-2">
         {MODES.map((mode) => {
           const is_fresh = (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
-          const has_unread = (mode.kind === 'messages' && has_unread_messages) || is_fresh
+          const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh
           return (
             <LeftNavItem
               key={mode.to}

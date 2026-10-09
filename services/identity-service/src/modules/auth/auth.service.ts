@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { AuthProviderError } from './auth.errors.ts'
 import { decideAccount, displayNameFromClaims, hintFromEmail, sanitizeReturnTo } from './auth.policy.ts'
 import type { AuthRepository, AuthResult, GoogleClient, MemberSession } from './auth.types.ts'
@@ -18,6 +18,7 @@ export type AuthService = {
   complete: (search: string, correlation_id: string) => Promise<AuthResult>
   logout: (session_id: string | undefined, correlation_id: string) => Promise<void>
   current: (session_id: string | undefined) => Promise<MemberSession | { status: 'guest' }>
+  provisionSuperadmin: (email: string) => Promise<{ created: boolean; user_id: string }>
 }
 
 export function createAuthService(deps: {
@@ -103,6 +104,12 @@ export function createAuthService(deps: {
     async logout(session_id, correlation_id) {
       if (!session_id) return
       await deps.repository.revokeSession(session_id, correlation_id)
+    },
+
+    async provisionSuperadmin(email) {
+      const normalized = email.trim()
+      if (!normalized) throw new Error('SUPERADMIN_EMAIL не задан')
+      return deps.repository.provisionSuperadmin({ email: normalized, correlation_id: randomUUID() })
     },
 
     async current(session_id) {

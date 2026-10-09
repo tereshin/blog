@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { settingsKeys } from '@/entities/settings'
 import { RequireRole } from '@/entities/session'
+import { MemberSearch } from '@/features/manage-members'
 import { SettingsForm, getAdminSettings } from '@/features/update-settings'
 import { ImageUploadButton } from '@/features/upload-media'
 import { useT } from '@/shared/i18n'
@@ -14,10 +15,13 @@ function SettingsScreen() {
   if (settings.isPending) return <p className="text-sm text-muted">{t('common.loading')}</p>
   if (settings.isError || !settings.data) return <ErrorState title={t('admin.settings.error')} onRetry={() => void settings.refetch()} />
   return (
-    <SettingsForm
-      initial={settings.data}
-      upload={(onUploaded) => <ImageUploadButton label={t('admin.settings.logo')} onUploaded={onUploaded} />}
-    />
+    <div className="flex flex-col gap-8 px-4 py-4">
+      <SettingsForm
+        initial={settings.data}
+        upload={(onUploaded) => <ImageUploadButton label={t('admin.settings.logo')} onUploaded={onUploaded} />}
+      />
+      <MemberSearch />
+    </div>
   )
 }
 

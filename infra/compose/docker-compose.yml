@@ -387,6 +387,8 @@ services:
         condition: service_completed_successfully
 
   web:
+    environment:
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/media}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
       interval: 5s

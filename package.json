@@ -12,6 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
+    "test:unit": "pnpm -r --if-present test:unit",
+    "test:integration": "pnpm -r --if-present test:integration",
     "test:contract": "pnpm -r --if-present test:contract",
     "test:e2e": "pnpm --filter web test:e2e",
     "test:infra": "vitest run --root infra/scripts",
@@ -22,6 +24,9 @@
     "local": "pnpm infra:up local && pnpm infra:seed local small"
   },
   "devDependencies": {
+    "@blog/db-kit": "workspace:*",
+    "@blog/logger": "workspace:*",
+    "@blog/seed-data": "workspace:*",
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.4",
     "eslint": "^10.12.0",

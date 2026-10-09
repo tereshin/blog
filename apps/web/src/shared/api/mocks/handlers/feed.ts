@@ -2,6 +2,8 @@ import { HttpResponse, http } from 'msw'
 import { buildFeedFixture } from '../fixtures/feed.ts'
 import type { FeedCardFixture } from '../fixtures/feed.ts'
 import { publishedFeedCards } from './articles-store.ts'
+import { promotedIds } from './engagement-store.ts'
+import { hiddenArticleIds } from './moderation-store.ts'
 import { readMockViewer } from './session.ts'
 
 export const MOCK_FEED_KEY = 'mock_feed'
@@ -17,8 +19,13 @@ export const mockFeedArticles = buildFeedFixture()
 const all = mockFeedArticles
 
 function select(mode: string): FeedCardFixture[] {
-  const source = [...publishedFeedCards(), ...all]
-  if (mode === 'popular') return [...source].sort((a, b) => b.reaction_count + b.comment_count - (a.reaction_count + a.comment_count) || (a.id < b.id ? 1 : -1))
+  const source = [...publishedFeedCards(), ...all].filter((article) => !hiddenArticleIds.has(article.id))
+  if (mode === 'popular') {
+    const ranked = [...source].sort((a, b) => b.reaction_count + b.comment_count - (a.reaction_count + a.comment_count) || (a.id < b.id ? 1 : -1))
+    const pinned = ranked.filter((item) => promotedIds.has(item.id))
+    const rest = ranked.filter((item) => !promotedIds.has(item.id))
+    return [...pinned, ...rest]
+  }
   if (mode.startsWith('topic:')) return source.filter((article) => article.topic.slug === mode.slice('topic:'.length))
   return source
 }

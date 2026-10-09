@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { createTopicSchema, topicListSchema, topicOrderSchema, topicSchema, updateTopicSchema } from '@blog/contracts'
+import { createTopicSchema, topicDetailSchema, topicListSchema, topicOrderSchema, topicSchema, updateTopicSchema } from '@blog/contracts'
 import { topicIdParamsSchema, topicListQuerySchema, topicParamsSchema } from './topic.schema.ts'
 import type { TopicService } from './topic.service.ts'
 
@@ -12,7 +12,7 @@ export function createTopicController(service: TopicService) {
     },
     async get(request: FastifyRequest, reply: FastifyReply) {
       const { slug } = topicParamsSchema.parse(request.params)
-      return reply.send(topicSchema.parse(await service.getBySlug(slug)))
+      return reply.send(topicDetailSchema.parse(await service.getBySlug(request.viewer, slug)))
     },
     async create(request: FastifyRequest, reply: FastifyReply) {
       const body = createTopicSchema.parse(request.body)

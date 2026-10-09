@@ -20,6 +20,6 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 RUN pnpm --filter web build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
-COPY infra/docker/web.nginx.conf /etc/nginx/conf.d/default.conf
+COPY infra/docker/web.nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080

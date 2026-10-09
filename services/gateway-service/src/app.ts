@@ -5,13 +5,17 @@ import rateLimit from '@fastify/rate-limit'
 import Fastify from 'fastify'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import { errorHandler, health, requestContext } from '@blog/http-kit'
+import type { ServiceClient } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import { eventsRoutes } from './modules/events/index.ts'
 import type { EventsService } from './modules/events/index.ts'
+import { prerenderRoutes } from './modules/prerender/index.ts'
 import { proxyRoutes } from './modules/proxy/index.ts'
 import type { ProxyService } from './modules/proxy/index.ts'
+import { contentSecurityPolicy, imageOrigin, newCspNonce } from './modules/security/content-security-policy.ts'
+import { rateLimitForPath } from './modules/security/rate-limit.ts'
 import { authGatewayRoutes, sessionModule } from './modules/session/index.ts'
 import type { ContextSigner, CookieNames, SessionService } from './modules/session/index.ts'
 
@@ -22,11 +26,10 @@ export type AppDeps = {
   sessions: SessionService
   signer: ContextSigner
   proxy: ProxyService
+  content: ServiceClient
   events: EventsService
   is_broker_ready: () => boolean
 }
-
-const RATE_LIMIT_PER_MINUTE = 600
 
 export function cookieNames(env: Env): CookieNames {
   return { session: env.SESSION_COOKIE_NAME, guest: env.GUEST_COOKIE_NAME, csrf: env.CSRF_COOKIE_NAME }
@@ -41,7 +44,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   await app.register(requestContext, { logger })
   await app.register(errorHandler)
-  await app.register(helmet, { global: true })
+  await app.register(helmet, { global: true, contentSecurityPolicy: false })
+  const image_origin = imageOrigin(env.S3_PUBLIC_URL)
+  app.addHook('onRequest', async (_request, reply) => {
+    const nonce = newCspNonce()
+    reply.header('Content-Security-Policy', contentSecurityPolicy({ nonce, image_origin }))
+  })
   await app.register(cors, {
     origin: env.WEB_ORIGIN,
     credentials: true,
@@ -51,7 +59,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   })
   await app.register(cookie)
   await app.register(rateLimit, {
-    max: RATE_LIMIT_PER_MINUTE,
+    max: (request) => rateLimitForPath(request.url),
     timeWindow: '1 minute',
     allowList: (request) => request.routeOptions.config.is_public === true,
   })
@@ -64,6 +72,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // Каждый модуль маршрутов — отдельный контекст: у proxy тело идёт потоком, у events — разбирается как JSON.
   await app.register(eventsRoutes, { events: deps.events })
   await app.register(authGatewayRoutes, { proxy: deps.proxy, cookies, sessions: deps.sessions })
+  await app.register(prerenderRoutes, { content: deps.content })
   await app.register(proxyRoutes, { proxy: deps.proxy, cookies })
 
   return app

@@ -2,7 +2,7 @@ import { cpSync } from 'node:fs'
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/main.ts', 'src/migrate.ts'],
+  entry: ['src/main.ts', 'src/migrate.ts', 'src/seed.ts'],
   format: ['esm'],
   platform: 'node',
   target: 'node22',

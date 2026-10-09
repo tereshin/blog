@@ -26,6 +26,8 @@ export type ArticleCardModel = {
   visibility: ArticleVisibility
   comments_enabled: boolean
   href: string
+  /** Подписка на автора. Появляется после действия; лента с сервера это поле не присылает. */
+  is_following?: boolean
 }
 
 export type FeedPageModel = { items: ArticleCardModel[]; next_cursor: string | null; reason?: 'no_follows' }

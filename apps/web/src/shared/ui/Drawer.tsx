@@ -2,6 +2,7 @@ import { Drawer as HeroDrawer } from '@heroui/react/drawer'
 import type { ComponentProps, ReactNode } from 'react'
 
 type DrawerProps = {
+  id?: string
   is_open: boolean
   onOpenChange: (is_open: boolean) => void
   placement?: ComponentProps<typeof HeroDrawer.Content>['placement']
@@ -11,12 +12,12 @@ type DrawerProps = {
 }
 
 /** Боковая панель: открывается с кнопки, закрывается по Escape, держит фокус внутри. */
-function DrawerRoot({ is_open, onOpenChange, placement = 'left', className, children, ...rest }: DrawerProps) {
+function DrawerRoot({ id, is_open, onOpenChange, placement = 'left', className, children, ...rest }: DrawerProps) {
   return (
     // Управляемая панель без кнопки-триггера внутри: корневой `Drawer` не нужен (он ждал бы триггер).
     <HeroDrawer.Backdrop isOpen={is_open} onOpenChange={onOpenChange}>
       <HeroDrawer.Content placement={placement}>
-        <HeroDrawer.Dialog {...(className ? { className } : {})} aria-label={rest['aria-label']}>
+        <HeroDrawer.Dialog id={id} {...(className ? { className } : {})} aria-label={rest['aria-label']}>
           {children}
         </HeroDrawer.Dialog>
       </HeroDrawer.Content>

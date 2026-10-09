@@ -11,7 +11,8 @@ export function isEnvironment(value: string | undefined): value is Environment {
 }
 
 export function envFilePath(env: Environment): string {
-  return `infra/env/${env}.env`
+  // Тесты подставляют файл с заглушкой, не трогая infra/env/prod.env.
+  return process.env['INFRA_ENV_FILE'] ?? `infra/env/${env}.env`
 }
 
 /** Аргументы `docker compose`: база + файл окружения + env-файл. Запускаются из корня репозитория. */

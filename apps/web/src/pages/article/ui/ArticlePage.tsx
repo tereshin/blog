@@ -3,18 +3,23 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router'
 import { articleKeys, getArticle, useArticleStates } from '@/entities/article'
 import { useViewer } from '@/entities/session'
-import { OwnArticleMenu } from '@/features/manage-article'
+import { FollowButton } from '@/features/follow'
+import { PromoteDialog } from '@/features/promote-article'
 import { ReactionControl } from '@/features/react'
-import { ShareIcon } from '@/shared/ui'
+import { ShareButton } from '@/features/share-article'
+import { useT } from '@/shared/i18n'
+import { readFeedReturn } from '@/shared/lib'
 import { ArticleSkeleton, ArticleUnavailable, ArticleView, ReachBanner } from '@/widgets/article-view'
+import { ArticleOverflowMenu, markSeenArticle } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 import { useArticleLive } from '../model/useArticleLive.ts'
 import { ArticleDiscussion } from './ArticleDiscussion.tsx'
 
 // Страница статьи — композиция: полный текст, реакции и чтение обсуждения внутри того же каркаса.
 export default function ArticlePage() {
+  const { t } = useT()
   const { slug = '' } = useParams()
-  const { viewer } = useViewer()
+  const { viewer, is_admin } = useViewer()
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
   const query = useQuery({
@@ -23,6 +28,12 @@ export default function ArticlePage() {
   })
   const article = query.data?.status === 'ok' ? query.data.article : null
   useArticleLive(slug, article?.id ?? null)
+  useEffect(() => {
+    if (!article) return
+    const saved = readFeedReturn()
+    if (!saved) return
+    void markSeenArticle(saved.feed_key, article.id)
+  }, [article])
   const viewer_states = useArticleStates(article ? [article.id] : [], viewer.status === 'member')
   const mine = article ? viewer_states.get(article.id)?.my_reaction ?? null : null
 
@@ -41,17 +52,26 @@ export default function ArticlePage() {
   }
 
   const loaded = query.data.article
+  if (loaded.status === 'hidden' && !loaded.is_own && !is_admin) {
+    return <ArticleUnavailable status="unavailable" />
+  }
   return (
     <ArticleView article={loaded}>
       {loaded.is_own ? (
         <ArticleView.Reach>
-          <ReachBanner />
+          <ReachBanner action={<PromoteDialog article_id={loaded.id} />} />
         </ArticleView.Reach>
       ) : null}
-      <ArticleView.Byline menu={loaded.is_own ? <OwnArticleMenu article_id={loaded.id} /> : undefined} />
+      <ArticleView.Byline
+        follow={
+          <FollowButton target_type="user" target_id={loaded.author.user_id} is_following={false} is_own={loaded.is_own} />
+        }
+        menu={<ArticleOverflowMenu article_id={loaded.id} slug={loaded.slug} is_own={loaded.is_own} />}
+      />
+      {loaded.status === 'hidden' ? <p className="text-sm text-accent">{t('article.hidden_by_moderator')}</p> : null}
       <ArticleView.Title />
       <ArticleView.Body />
-      <ArticleView.Reactions share={<ShareIcon width={18} height={18} />}>
+      <ArticleView.Reactions share={<ShareButton slug={loaded.slug} />}>
         <ReactionControl
           target_type="article"
           target_id={loaded.id}

@@ -44,6 +44,7 @@ async function main(): Promise<void> {
     sessions,
     signer: createContextSigner(env.SERVICE_JWT_PRIVATE_KEY),
     proxy,
+    content,
     events,
     is_broker_ready: broker.isReady,
   })

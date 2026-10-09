@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useViewer } from '@/entities/session'
+import { AppearanceToggle } from '@/features/toggle-appearance'
 import { EditProfileDialog } from '@/features/edit-profile'
 import { useLoginDialog } from '@/features/login'
 import { LogoutMenuItem } from '@/features/logout'
@@ -20,9 +21,13 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
   if (viewer.status !== 'member') {
     if (viewer.status === 'loading') return null
     return (
-      <Button variant="secondary" shape="pill" onPress={() => openLogin('required')}>
-        {t('header.sign_in')}
-      </Button>
+      <div className="flex items-center gap-2">
+        <AppearanceToggle />
+        {theme}
+        <Button variant="secondary" shape="pill" onPress={() => openLogin('required')}>
+          {t('header.sign_in')}
+        </Button>
+      </div>
     )
   }
 
@@ -48,6 +53,7 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
           <Menu.Item onPress={() => navigate(`/u/${address}`)}>{t('account.my_profile')}</Menu.Item>
           <Menu.Item onPress={() => navigate('/bookmarks')}>{t('account.bookmarks')}</Menu.Item>
           <Menu.Item onPress={() => setEditing(true)}>{t('account.edit_profile')}</Menu.Item>
+          <AppearanceToggle as="item" />
           {theme}
           <Menu.Item onPress={() => navigate('/about')}>{t('account.about')}</Menu.Item>
           <LogoutMenuItem />

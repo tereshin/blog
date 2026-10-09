@@ -30,6 +30,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const openLogin = useLoginDialog((state) => state.open)
   const toast = useToast()
   const navigate = useNavigate()
+  const is_nav_open = useShellStore((state) => state.is_nav_open)
   const setNavOpen = useShellStore((state) => state.setNavOpen)
   const is_search = useShellStore((state) => state.header_center.kind === 'search')
   const openSearch = useShellStore((state) => state.openSearch)
@@ -64,6 +65,8 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
         variant="ghost"
         isIconOnly
         aria-label={t('shell.nav.open')}
+        aria-controls="shell-nav"
+        aria-expanded={is_nav_open}
         className="min-[1200px]:hidden"
         onPress={() => setNavOpen(true)}
       >
@@ -72,15 +75,15 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       <Link to="/" className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4">
         {settings?.logo_url ? <img src={settings.logo_url} alt={brand} className="h-8 w-auto" /> : brand}
       </Link>
-      <div className="flex min-w-0 flex-1 justify-center px-2">{center}</div>
+      <div className="hidden min-w-0 flex-1 justify-center px-2 min-[1200px]:flex">{center}</div>
       <div className="flex shrink-0 items-center gap-1">
         <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch ?? (is_search ? closeSearch : openSearch)}>
           <SearchIcon />
         </Button>
         {notifications}
-        <Button variant="primary" shape="pill" onPress={handleWrite}>
+        <Button variant="primary" shape="pill" aria-label={t('header.write')} onPress={handleWrite}>
           <PenIcon width={16} height={16} />
-          <span className="max-[520px]:sr-only">{t('header.write')}</span>
+          <span className="max-[1199px]:sr-only">{t('header.write')}</span>
         </Button>
         {account ??
           (viewer.status === 'member' ? (

@@ -11,20 +11,25 @@ export type FeedSlots = {
   renderShare?: (article: ArticleCardModel) => ReactNode
   renderFollow?: (article: ArticleCardModel) => ReactNode
   renderMenu?: (article: ArticleCardModel) => ReactNode
-  renderExpand?: (article: ArticleCardModel) => ReactNode
+  renderExpand?: (article: ArticleCardModel, onExpanded: (article_id: string) => void) => ReactNode
 }
 
-type FeedItemProps = { article: ArticleCardModel; viewer_state?: ArticleViewerState; slots: FeedSlots }
+type FeedItemProps = {
+  article: ArticleCardModel
+  viewer_state?: ArticleViewerState
+  slots: FeedSlots
+  onExpanded?: (article_id: string) => void
+}
 
 /** Карточка ленты в порядке FR-060: автор, заголовок, фрагмент, изображение, раскрытие, реакции, действия, комментарий. */
-export function FeedItem({ article, viewer_state = EMPTY_VIEWER_STATE, slots }: FeedItemProps) {
+export function FeedItem({ article, viewer_state = EMPTY_VIEWER_STATE, slots, onExpanded }: FeedItemProps) {
   return (
     <ArticleCard article={article}>
       <ArticleCard.Header follow={slots.renderFollow?.(article)} menu={slots.renderMenu?.(article)} />
       <ArticleCard.Title />
       <ArticleCard.Excerpt />
       <ArticleCard.Image />
-      <ArticleCard.Expand>{slots.renderExpand?.(article)}</ArticleCard.Expand>
+      <ArticleCard.Expand>{slots.renderExpand?.(article, onExpanded ?? (() => undefined))}</ArticleCard.Expand>
       <ArticleCard.Reactions>{slots.renderReactions?.(article, viewer_state)}</ArticleCard.Reactions>
       <ArticleCard.Actions bookmark={slots.renderBookmark?.(article, viewer_state)} share={slots.renderShare?.(article)} />
       <ArticleCard.CommentPeek />

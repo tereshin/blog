@@ -107,7 +107,7 @@ describe('discussion: копии из событий (PostgreSQL в контей
   })
 
   it('неизвестное событие пропускается, невалидное — ошибка (уйдёт в повтор и DLQ)', async () => {
-    await expect(apply(event('content.article.restored', article))).resolves.toBe('ok')
+    await expect(apply(event('content.topic.archived', article))).resolves.toBe('ok')
     await expect(apply(event('content.article.published', { article_id: ARTICLE }))).rejects.toThrow()
   })
 })

@@ -30,3 +30,23 @@ export function loadMigrateEnv(source: Record<string, string | undefined> = proc
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
+
+const seedEnvSchema = baseEnvSchema.extend({
+  DATABASE_URL: z.string().min(1),
+  S3_ENDPOINT: z.url(),
+  S3_BUCKET: z.string().min(1),
+  S3_ACCESS_KEY: z.string().min(1),
+  S3_SECRET_KEY: z.string().min(1),
+  S3_PUBLIC_URL: z.url(),
+  S3_REGION: z.string().min(1).default('us-east-1'),
+  SUPERADMIN_EMAIL: z.email(),
+})
+
+export type SeedEnv = z.infer<typeof seedEnvSchema>
+
+/** Одноразовая задача seed: база, MinIO и те же публичные адреса, что у статей. */
+export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
+  const env = defineEnv(seedEnvSchema, source)
+  rejectPlaceholders(env, ['DATABASE_URL', 'S3_SECRET_KEY', 'S3_ACCESS_KEY'])
+  return env
+}

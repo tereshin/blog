@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { ArticleCountersUpdatedV1, ArticleViewCountedV1, CommentCreatedV1, CommentUpdatedV1, ReactionAddedV1, ReputationUpdatedV1, blocksDocumentSchema } from '../src/index.ts'
+import { ArticleCountersUpdatedV1, ArticleViewCountedV1, CommentCreatedV1, CommentHiddenV1, CommentUpdatedV1, ReactionAddedV1, ReputationUpdatedV1, blocksDocumentSchema } from '../src/index.ts'
 
 const fixtures = dirname(fileURLToPath(import.meta.url))
 
@@ -26,6 +26,7 @@ describe('фикстуры событий обсуждения', () => {
   it('comment.created и comment.updated', () => {
     expect(CommentCreatedV1.parse(read('comment-created.json')).parent_id).toBeNull()
     expect(CommentUpdatedV1.parse(read('comment-updated.json')).status).toBe('visible')
+    expect(CommentHiddenV1.parse(read('comment-hidden.json')).moderator_id).toBe('8a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a88')
   })
 
   it('article_view.counted', () => {

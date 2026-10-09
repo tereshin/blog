@@ -45,6 +45,7 @@ export const eventFieldsSchema = z.looseObject({
   conversation_id: z.uuid().optional(),
   notification_id: z.uuid().optional(),
   recipient_id: z.uuid().optional(),
+  sender_id: z.uuid().optional(),
   participant_ids: z.array(z.uuid()).optional(),
   visibility: z.enum(['public', 'members', 'author']).optional(),
   status: z.enum(['draft', 'published', 'hidden', 'deleted']).optional(),
@@ -55,6 +56,8 @@ export type EventFields = z.infer<typeof eventFieldsSchema>
 export type Connection = {
   id: string
   viewer: ServiceContext
+  /** Служебный JWT последнего `PUT /subscriptions`: им перепроверяется доступ после смены видимости. */
+  viewer_jwt: string | null
   article_ids: Set<string>
   conversation_ids: Set<string>
   feed_key: string | null

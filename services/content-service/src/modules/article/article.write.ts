@@ -54,7 +54,7 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
   }
 
   return {
-    async create(viewer: ServiceContext, input: CreateArticle, _correlation_id: string): Promise<ArticleDraft> {
+    async create(viewer: ServiceContext, input: CreateArticle): Promise<ArticleDraft> {
       const author_id = assertCanPublish(viewer)
       const blocks = await sanitize(author_id, input.blocks)
       const row = await repository.insertDraft({

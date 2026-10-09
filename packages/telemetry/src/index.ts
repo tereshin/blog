@@ -1,4 +1,6 @@
 export { createServiceMetrics, metricPrefix } from './metrics.ts'
 export type { ServiceMetrics } from './metrics.ts'
+export { startQueueMetrics } from './queue-metrics.ts'
+export type { QueueSample } from './queue-metrics.ts'
 export { startTelemetry } from './otel.ts'
 export type { StartTelemetryOptions, TelemetryHandle } from './otel.ts'

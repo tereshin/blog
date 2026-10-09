@@ -8,7 +8,7 @@ import type { Database } from '@blog/broker'
 import { articles_copy, comments, idempotency_keys, reactions, users_copy } from '../../infra/db/schema.ts'
 import { loadArticleCounters } from '../article-snapshot/index.ts'
 import { CommentArticleNotFoundError, CommentNotFoundError, CommentParentInvalidError, CommentsDisabledError } from './comment.errors.ts'
-import { appendCommentCreated, appendCommentUpdated } from './comment.events.ts'
+import { appendCommentCreated, appendCommentHidden, appendCommentUpdated } from './comment.events.ts'
 import { toExcerpt } from './comment.excerpt.ts'
 import { emptyCounts, occupiesThread, toCommentNode, toReplyNode } from './comment.tree.ts'
 import type { CommentRow, CommentStatus } from './comment.tree.ts'
@@ -217,6 +217,39 @@ export function createCommentWriter(db: NodePgDatabase) {
           edited_at: row.edited_at ? row.edited_at.toISOString() : null,
         })
         return remember(database, input.user_id, input.idempotency_key, await present(database, row.id, input.user_id))
+      })
+    },
+
+    async moderate(input: { comment_id: string; status: CommentStatus; correlation_id: string; moderator_id: string }): Promise<Comment> {
+      return db.transaction(async (tx) => {
+        const database = tx as Database
+        const [row] = await database.select().from(comments).where(eq(comments.id, input.comment_id)).limit(1)
+        if (!row) throw new CommentNotFoundError()
+        if (row.status !== input.status) {
+          await database.update(comments).set({ status: input.status }).where(eq(comments.id, row.id))
+          if (row.parent_id) await recountReplies(database, row.parent_id)
+          const occurred_at = new Date().toISOString()
+          const snapshot = await loadArticleCounters(database, row.article_id)
+          await appendCommentUpdated(database, {
+            correlation_id: input.correlation_id,
+            occurred_at,
+            snapshot,
+            comment_id: row.id,
+            status: input.status,
+            edited_at: row.edited_at ? row.edited_at.toISOString() : null,
+          })
+          if (input.status === 'hidden') {
+            await appendCommentHidden(database, {
+              correlation_id: input.correlation_id,
+              occurred_at,
+              comment_id: row.id,
+              article_id: row.article_id,
+              author_id: row.author_id,
+              moderator_id: input.moderator_id,
+            })
+          }
+        }
+        return present(database, row.id, input.moderator_id)
       })
     },
   }

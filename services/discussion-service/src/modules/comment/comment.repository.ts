@@ -1,21 +1,11 @@
 import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { ServiceContext } from '@blog/contracts'
 import { articles_copy, comments, reactions, users_copy } from '../../infra/db/schema.ts'
+import { readableArticleWhere } from '../access/readable-where.ts'
 import type { CommentCursor } from './comment.schema.ts'
 import type { CommentRepository } from './comment.types.ts'
 import type { CommentRow } from './comment.tree.ts'
-
-/** Те же условия, что `canReadArticle` для `status = published` (контракт доступа общий для всех сервисов). */
-function readableArticleWhere(viewer: ServiceContext): SQL {
-  const is_admin = viewer.role === 'admin' || viewer.role === 'superadmin'
-  const conditions: SQL[] = [eq(articles_copy.visibility, 'public')]
-  if (viewer.role !== 'guest') conditions.push(eq(articles_copy.visibility, 'members'))
-  if (is_admin) conditions.push(eq(articles_copy.visibility, 'author'))
-  else if (viewer.user_id) conditions.push(and(eq(articles_copy.visibility, 'author'), eq(articles_copy.author_id, viewer.user_id)) as SQL)
-  return and(eq(articles_copy.status, 'published'), or(...conditions)) as SQL
-}
 
 export function createCommentRepository(db: NodePgDatabase): CommentRepository {
   return {

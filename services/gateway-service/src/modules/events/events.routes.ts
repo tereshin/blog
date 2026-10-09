@@ -40,6 +40,7 @@ export const eventsRoutes: FastifyPluginAsync<EventsRoutesOptions> = async (app,
     const connection: Connection = {
       id: connection_id,
       viewer: request.viewer_session.context,
+      viewer_jwt: null,
       article_ids: new Set(),
       conversation_ids: new Set(),
       feed_key: null,

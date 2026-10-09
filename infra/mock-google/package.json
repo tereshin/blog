@@ -6,7 +6,8 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsup",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run --passWithNoTests --exclude '**/integration/**' --exclude '**/e2e/**'"
   },
   "dependencies": {
     "@blog/seed-data": "workspace:^",

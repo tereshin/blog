@@ -4,8 +4,8 @@ import { AckPolicy, DeliverPolicy } from '@nats-io/jetstream'
 import type { JsMsg } from '@nats-io/jetstream'
 import { eventEnvelopeSchema } from '@blog/contracts'
 import type { Logger } from '@blog/logger'
-import { contextOfEvent, dlqSubject, streamName } from './nats-client.ts'
-import type { BrokerClient } from './nats-client.ts'
+import { contextOfEvent, dlqStreamName, dlqSubject, streamName } from './nats-client.ts'
+import type { BrokerClient, EventContext } from './nats-client.ts'
 import type { Database, OutboxEvent } from './outbox.ts'
 
 /** Таблица идемпотентности: событие обработано потребителем один раз. */
@@ -20,6 +20,51 @@ export const processed_events = pgTable(
 )
 
 export type EventHandler = (tx: Database, event: OutboxEvent) => Promise<void>
+
+export type ConsumerMetricsSink = {
+  consumer_duration: {
+    labels: (labels: { subject: string; outcome: 'ok' | 'duplicate' | 'error' }) => { observe: (seconds: number) => void }
+  }
+}
+
+let metrics_sink: ConsumerMetricsSink | null = null
+
+/** Подключает RED-метрику потребителя на время жизни процесса. */
+export function setConsumerMetrics(sink: ConsumerMetricsSink | null): void {
+  metrics_sink = sink
+}
+
+type RegisteredConsumer = { broker: BrokerClient; stream: string; durable: string; context: EventContext }
+
+const registered: RegisteredConsumer[] = []
+
+/** Лаг зарегистрированных потребителей и глубина их DLQ. Пусто, пока никто не подписался. */
+export async function sampleQueueDepth(): Promise<{
+  lag: { durable: string; pending: number }[]
+  dlq: { stream: string; messages: number }[]
+}> {
+  const lag: { durable: string; pending: number }[] = []
+  const dlq: { stream: string; messages: number }[] = []
+  const seen_dlq = new Set<string>()
+  for (const item of registered) {
+    try {
+      const info = await item.broker.jsm.consumers.info(item.stream, item.durable)
+      lag.push({ durable: item.durable, pending: info.num_pending })
+    } catch {
+      // Потребитель уже остановлен.
+    }
+    const dlq_name = dlqStreamName(item.context)
+    if (seen_dlq.has(dlq_name)) continue
+    seen_dlq.add(dlq_name)
+    try {
+      const stream = await item.broker.jsm.streams.info(dlq_name)
+      dlq.push({ stream: dlq_name, messages: stream.state.messages })
+    } catch {
+      // Поток DLQ ещё не создан.
+    }
+  }
+  return { lag, dlq }
+}
 
 export type IdempotentConsumerOptions = {
   db: Database
@@ -94,17 +139,20 @@ export async function createIdempotentConsumer(options: IdempotentConsumerOption
   })
   const consumer = await broker.js.consumers.get(stream, options.durable)
   const messages = await consumer.consume({ max_messages: options.max_in_flight ?? DEFAULT_MAX_IN_FLIGHT })
+  const registration: RegisteredConsumer = { broker, stream, durable: options.durable, context }
+  registered.push(registration)
 
   const handleMessage = async (msg: JsMsg): Promise<void> => {
     const started = process.hrtime.bigint()
-    const finish = (outcome: 'ok' | 'duplicate' | 'error'): void =>
-      options.on_processed?.({
-        subject: msg.subject,
-        outcome,
-        seconds: Number(process.hrtime.bigint() - started) / 1e9,
-      })
+    let correlation_id: string | undefined
+    const finish = (outcome: 'ok' | 'duplicate' | 'error'): void => {
+      const seconds = Number(process.hrtime.bigint() - started) / 1e9
+      metrics_sink?.consumer_duration.labels({ subject: msg.subject, outcome }).observe(seconds)
+      options.on_processed?.({ subject: msg.subject, outcome, seconds })
+    }
     try {
       const envelope = eventEnvelopeSchema.loose().safeParse(msg.json())
+      correlation_id = envelope.success ? envelope.data.correlation_id : undefined
       if (!envelope.success) {
         // Сообщение, которое никогда не разберётся: в DLQ без повторов.
         await broker.js.publish(dlqSubject(msg.subject), msg.data)
@@ -114,16 +162,17 @@ export async function createIdempotentConsumer(options: IdempotentConsumerOption
       }
       const outcome = await processEvent(options.db, options.durable, envelope.data, options.handler)
       msg.ack()
+      logger.debug({ correlation_id, event_id: envelope.data.event_id, subject: msg.subject }, 'событие обработано')
       finish(outcome)
     } catch (error) {
       finish('error')
       if (msg.info.deliveryCount >= max_deliver) {
-        logger.error({ err: error, subject: msg.subject }, 'потребитель: исчерпаны попытки, событие уходит в DLQ')
+        logger.error({ err: error, subject: msg.subject, correlation_id }, 'потребитель: исчерпаны попытки, событие уходит в DLQ')
         await broker.js.publish(dlqSubject(msg.subject), msg.data)
         msg.term('исчерпаны попытки')
         return
       }
-      logger.warn({ err: error, subject: msg.subject }, 'потребитель: ошибка обработки, повтор')
+      logger.warn({ err: error, subject: msg.subject, correlation_id }, 'потребитель: ошибка обработки, повтор')
       msg.nak(backoffMs(msg.info.deliveryCount))
     }
   }
@@ -136,6 +185,8 @@ export async function createIdempotentConsumer(options: IdempotentConsumerOption
 
   return {
     stop: async () => {
+      const index = registered.indexOf(registration)
+      if (index >= 0) registered.splice(index, 1)
       await messages.close()
       await loop
     },

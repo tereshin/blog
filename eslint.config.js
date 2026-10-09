@@ -141,6 +141,18 @@ export default tseslint.config(
     },
   },
   {
+    // Текст интерфейса — только из словарей. Истории и страницы с default export исключены ниже.
+    files: ['apps/web/src/**/*.tsx'],
+    ignores: ['**/*.stories.tsx', 'apps/web/src/pages/*/ui/*Page.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        { selector: 'ExportDefaultDeclaration', message: 'Default export запрещён: используйте named export.' },
+        { selector: 'JSXText[value=/[A-Za-zА-Яа-яЁё]/]', message: 'Текст интерфейса берётся из словарей i18n, не из литерала в JSX.' },
+      ],
+    },
+  },
+  {
     // React.lazy-страницы — единственное исключение из правила про default export.
     files: ['apps/web/src/pages/*/ui/*Page.tsx'],
     rules: { 'no-restricted-exports': 'off', 'no-restricted-syntax': 'off' },

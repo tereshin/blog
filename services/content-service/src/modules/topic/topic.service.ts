@@ -1,13 +1,17 @@
 import { NotFoundError } from '@blog/errors'
-import type { CreateTopic, ServiceContext, Topic, UpdateTopic } from '@blog/contracts'
+import type { CreateTopic, ServiceContext, Topic, TopicDetail, UpdateTopic } from '@blog/contracts'
 import { requireSuperadmin } from '../access/require-superadmin.ts'
 import { assertMediaUrl } from '../media-url.ts'
 import type { TopicPatch, TopicRepository, TopicRow, TopicWrite } from './topic.repository.ts'
 
+export type TopicFollowLookup = {
+  isFollowingTopic: (viewer: ServiceContext, topic_id: string) => Promise<boolean>
+}
+
 export type TopicService = {
   listActive: () => Promise<Topic[]>
   listAll: (viewer: ServiceContext) => Promise<Topic[]>
-  getBySlug: (slug: string) => Promise<Topic>
+  getBySlug: (viewer: ServiceContext, slug: string) => Promise<TopicDetail>
   create: (viewer: ServiceContext, input: CreateTopic) => Promise<Topic>
   update: (viewer: ServiceContext, id: string, input: UpdateTopic) => Promise<Topic>
   reorder: (viewer: ServiceContext, topic_ids: readonly string[]) => Promise<Topic[]>
@@ -39,17 +43,17 @@ function toPatch(input: UpdateTopic): TopicPatch {
   return patch
 }
 
-export function createTopicService(repository: TopicRepository, options: { media_url: string }): TopicService {
+export function createTopicService(repository: TopicRepository, options: { media_url: string; follows: TopicFollowLookup }): TopicService {
   return {
     listActive: () => repository.listActive(),
     listAll(viewer) {
       requireSuperadmin(viewer)
       return repository.listAll()
     },
-    async getBySlug(slug) {
+    async getBySlug(viewer, slug) {
       const topic = await repository.findBySlug(slug)
       if (!topic) throw new NotFoundError({ message: 'Такой темы нет' })
-      return topic
+      return { ...topic, is_following: await options.follows.isFollowingTopic(viewer, topic.id) }
     },
     async create(viewer, input) {
       requireSuperadmin(viewer)

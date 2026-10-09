@@ -1,6 +1,6 @@
 const KEY = 'feedReturn'
 
-export type FeedReturn = { mode: string; scroll_top: number }
+export type FeedReturn = { mode: string; scroll_top: number; feed_key: string }
 
 function pathOf(mode: string): string {
   if (mode === 'popular') return '/popular'
@@ -22,8 +22,9 @@ export function readFeedReturn(): FeedReturn | null {
     if (!parsed || typeof parsed !== 'object') return null
     const mode = 'mode' in parsed ? parsed.mode : null
     const scroll_top = 'scroll_top' in parsed ? parsed.scroll_top : null
-    if (typeof mode !== 'string' || typeof scroll_top !== 'number' || !Number.isFinite(scroll_top)) return null
-    return { mode, scroll_top }
+    const feed_key = 'feed_key' in parsed && typeof parsed.feed_key === 'string' ? parsed.feed_key : mode
+    if (typeof mode !== 'string' || typeof feed_key !== 'string' || typeof scroll_top !== 'number' || !Number.isFinite(scroll_top)) return null
+    return { mode, scroll_top, feed_key }
   } catch {
     return null
   }

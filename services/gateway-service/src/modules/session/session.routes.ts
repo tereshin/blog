@@ -26,9 +26,16 @@ const callbackBodySchema = z.union([
   z.object({ error: z.string(), return_to: z.string().optional() }),
 ])
 
+function hasControlChar(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    if (value.charCodeAt(index) <= 31) return true
+  }
+  return false
+}
+
 /** Только относительный путь: чужой origin и `//host` ведут на главную. */
 export function safeReturnTo(value: string | undefined): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\') || /[\u0000-\u001f]/.test(value)) return '/'
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\') || hasControlChar(value)) return '/'
   return value
 }
 

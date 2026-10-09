@@ -8,7 +8,7 @@ const ROOT = resolve(import.meta.dirname, '../../..')
 
 describe('seed-plan: порядок и состав', () => {
   it('сервисы идут в порядке контракта', () => {
-    expect(SEED_SERVICES.slice(0, 3)).toEqual(['identity', 'content', 'discussion'])
+    expect(SEED_SERVICES).toEqual(['identity', 'content', 'discussion', 'messaging', 'notification', 'media'])
   })
 
   it('по одному одноразовому контейнеру на сервис, без зависимостей', () => {

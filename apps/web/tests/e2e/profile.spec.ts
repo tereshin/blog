@@ -35,7 +35,7 @@ test.describe('Профиль и рейтинг', () => {
 
   test('чужой профиль предлагает подписаться и не показывает правку', async ({ page }) => {
     await page.goto('/u/anna')
-    await expect(page.getByRole('button', { name: 'Подписаться' })).toBeDisabled({ timeout: 20_000 })
+    await expect(page.getByRole('main').getByRole('button', { name: 'Подписаться' }).first()).toBeEnabled({ timeout: 20_000 })
     await expect(page.getByRole('button', { name: 'Редактировать' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Добавить обложку' })).toHaveCount(0)
     await expect(page.getByText('Купить показы')).toHaveCount(0)

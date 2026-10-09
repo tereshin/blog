@@ -22,7 +22,7 @@ export function createBookmarkService(repository: BookmarkRepository): BookmarkS
           throw new ValidationError({ message: 'Некорректный курсор', cause: error })
         }
       }
-      const rows = await repository.list(viewer.user_id, cursor, query.limit + 1)
+      const rows = await repository.list(viewer, viewer.user_id, cursor, query.limit + 1)
       const page = rows.slice(0, query.limit)
       const last = page.at(-1)
       const next_cursor = rows.length > query.limit && last ? encodeBookmarkCursor({ t: last.created_at.toISOString(), id: last.article_id }) : null

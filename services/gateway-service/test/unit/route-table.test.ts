@@ -8,6 +8,8 @@ describe('resolveRoute', () => {
     ['/v1/feed/popular', 'content'],
     ['/v1/feed-seen', 'discussion'],
     ['/v1/me/article-states', 'discussion'],
+    ['/v1/me/follows?target_type=user', 'content'],
+    ['/v1/follows', 'content'],
     ['/v1/conversations/1', 'messaging'],
     ['/v1/notifications', 'notification'],
     ['/v1/media', 'media'],
@@ -16,6 +18,9 @@ describe('resolveRoute', () => {
     ['/v1/articles/7a1c2d30-1111-4a11-8a11-000000000010/comments?cursor=abc', 'discussion'],
     ['/v1/users/3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22', 'identity'],
     ['/v1/users/3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22/comments', 'discussion'],
+    ['/v1/moderation/articles', 'content'],
+    ['/v1/moderation/comments/3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22', 'discussion'],
+    ['/v1/reports/3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22', 'content'],
   ])('%s → %s', (path, service) => {
     expect(resolveRoute(path)?.service).toBe(service)
   })

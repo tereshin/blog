@@ -1,0 +1,12 @@
+{
+  "event_id": "0b9f6a6e-6f0c-4f64-9d84-6d2f0f8d1c24",
+  "name": "discussion.comment.hidden",
+  "occurred_at": "2026-10-08T12:00:00.000Z",
+  "correlation_id": "c-1",
+  "causation_id": null,
+  "version": 1,
+  "comment_id": "11111111-1111-4111-8111-111111111111",
+  "article_id": "3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22",
+  "author_id": "9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99",
+  "moderator_id": "8a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a88"
+}

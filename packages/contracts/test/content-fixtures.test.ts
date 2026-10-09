@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { ArticleDeletedV1, ArticlePublishedV1, ArticleUpdatedV1 } from '../src/index.ts'
+import { ArticleDeletedV1, ArticleHiddenV1, ArticlePublishedV1, ArticleRestoredV1, ArticleUpdatedV1 } from '../src/index.ts'
 
 const root = dirname(fileURLToPath(import.meta.url))
 
@@ -15,5 +15,7 @@ describe('фикстуры событий статьи', () => {
     expect(ArticlePublishedV1.parse(read('content/article-published.json')).status).toBe('published')
     expect(ArticleUpdatedV1.parse(read('content/article-updated.json')).slug).toBe('zagolovok')
     expect(ArticleDeletedV1.parse(read('content/article-deleted.json')).status).toBe('deleted')
+    expect(ArticleHiddenV1.parse(read('content/article-hidden.json')).status).toBe('hidden')
+    expect(ArticleRestoredV1.parse(read('content/article-restored.json')).status).toBe('published')
   })
 })

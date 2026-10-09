@@ -52,6 +52,7 @@ export function useBookmark(target: BookmarkTarget): { toggle: () => void; is_pe
     },
     onSuccess: (response) => {
       patch(queryClient, target, { count: response.bookmark_count, is_bookmarked: response.is_bookmarked })
+      void queryClient.invalidateQueries({ queryKey: articleKeys.bookmarks() })
     },
   })
 

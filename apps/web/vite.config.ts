@@ -22,5 +22,12 @@ export default defineConfig({
   build: {
     // Sourcemaps в бандл не попадают (session-security.mdc).
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@editorjs') || id.includes('editorjs')) return 'editor'
+        },
+      },
+    },
   },
 })

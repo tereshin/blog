@@ -1,6 +1,6 @@
 import { createIdempotentConsumer } from '@blog/broker'
 import type { BrokerClient, Database, EventHandler, RunningConsumer } from '@blog/broker'
-import { ArticleDeletedV1, ArticleHiddenV1, ArticlePublishedV1, ArticleUpdatedV1, ProfileUpdatedV1, UserCreatedV1, UserRestrictedV1, UserUpdatedV1 } from '@blog/contracts'
+import { ArticleDeletedV1, ArticleHiddenV1, ArticlePublishedV1, ArticleRestoredV1, ArticleUpdatedV1, ProfileUpdatedV1, UserCreatedV1, UserRestrictedV1, UserUpdatedV1 } from '@blog/contracts'
 import type { Logger } from '@blog/logger'
 import { copiesRepository } from './copies.repository.ts'
 import type { ArticleCopy } from './copies.repository.ts'
@@ -12,6 +12,7 @@ const ARTICLE_EVENTS = {
   'content.article.published': ArticlePublishedV1,
   'content.article.updated': ArticleUpdatedV1,
   'content.article.hidden': ArticleHiddenV1,
+  'content.article.restored': ArticleRestoredV1,
   'content.article.deleted': ArticleDeletedV1,
 } as const
 
@@ -37,6 +38,7 @@ export function createCopiesHandler(repository: CopiesRepository = copiesReposit
       case 'content.article.published':
       case 'content.article.updated':
       case 'content.article.hidden':
+      case 'content.article.restored':
       case 'content.article.deleted': {
         const parsed = ARTICLE_EVENTS[event.name].parse(event)
         await repository.upsertArticle(tx, toArticleCopy(parsed))

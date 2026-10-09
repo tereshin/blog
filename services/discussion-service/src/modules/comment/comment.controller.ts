@@ -62,5 +62,20 @@ export function createCommentController(service: CommentService) {
       })
       return reply.send(commentSchema.parse(comment))
     },
+    async hide(request: FastifyRequest, reply: FastifyReply) {
+      const params = commentIdParamsSchema.parse(request.params)
+      const comment = await service.hide({ viewer: request.viewer, comment_id: params.id, correlation_id: request.correlation_id })
+      return reply.send(commentSchema.parse(comment))
+    },
+    async restore(request: FastifyRequest, reply: FastifyReply) {
+      const params = commentIdParamsSchema.parse(request.params)
+      const comment = await service.restore({ viewer: request.viewer, comment_id: params.id, correlation_id: request.correlation_id })
+      return reply.send(commentSchema.parse(comment))
+    },
+    async moderateRemove(request: FastifyRequest, reply: FastifyReply) {
+      const params = commentIdParamsSchema.parse(request.params)
+      const comment = await service.moderateRemove({ viewer: request.viewer, comment_id: params.id, correlation_id: request.correlation_id })
+      return reply.send(commentSchema.parse(comment))
+    },
   }
 }

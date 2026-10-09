@@ -61,6 +61,7 @@ export function toFrame(type: FrameType, event: EventFields): EventFrame {
 export class EventsService {
   readonly registry = new SubscriptionRegistry()
   private readonly access_cache = new LRUCache<string, boolean>({ max: 20_000, ttl: ACCESS_CACHE_TTL_MS })
+  private pending_access: Promise<void>[] = []
 
   constructor(
     private readonly check_access: AccessChecker,
@@ -76,6 +77,7 @@ export class EventsService {
    * (чужой черновик, закрытая статья) — клиент узнаёт об этом по списку принятых.
    */
   async subscribe(connection: Connection, viewer_jwt: string, input: SubscriptionsInput): Promise<{ article_ids: string[] }> {
+    connection.viewer_jwt = viewer_jwt
     const accepted = await this.filterReadable(connection.viewer, viewer_jwt, input.article_ids)
     this.registry.replace(connection, {
       article_ids: accepted,
@@ -95,11 +97,20 @@ export class EventsService {
     if (!type) return 0
 
     const frame = toFrame(type, event)
+    const targets = this.targets(type, event)
     let delivered = 0
-    for (const connection of this.targets(type, event)) {
+    for (const connection of targets) {
       if (connection.write(frame)) delivered += 1
     }
+    if (type === 'article' && event.article_id && (event.visibility !== undefined || event.status !== undefined)) {
+      this.track(this.revokeLostAccess(event.article_id, targets))
+    }
     return delivered
+  }
+
+  /** Дожидается пересчёта доступа после кадров статьи. Нужен тестам и остановке реплики. */
+  async settle(): Promise<void> {
+    await Promise.all(this.pending_access)
   }
 
   /** Подписывается на события брокера; возвращает функцию остановки. */
@@ -129,8 +140,12 @@ export class EventsService {
         return event.recipient_id
           ? this.registry.forUser(event.recipient_id).filter((connection) => connection.notifications)
           : []
-      case 'message':
-        return (event.participant_ids ?? []).flatMap((user_id) => this.registry.forUser(user_id))
+      case 'message': {
+        const user_ids = new Set(event.participant_ids ?? [])
+        if (event.sender_id) user_ids.add(event.sender_id)
+        if (event.recipient_id) user_ids.add(event.recipient_id)
+        return [...user_ids].flatMap((user_id) => this.registry.forUser(user_id))
+      }
       case 'article':
         // Сигнал статьи уходит и тем, у кого доступ сузили: клиент должен убрать текст.
         return event.article_id ? this.registry.forArticle(event.article_id) : []
@@ -141,6 +156,32 @@ export class EventsService {
           .forArticle(event.article_id)
           .filter((connection) => !has_access_fields || canReadFields(connection.viewer, event))
       }
+    }
+  }
+
+  private track(work: Promise<void>): void {
+    const tracked = work.finally(() => {
+      this.pending_access = this.pending_access.filter((item) => item !== tracked)
+    })
+    this.pending_access.push(tracked)
+  }
+
+  /**
+   * Кадр статьи уже ушёл всем, кто её открыл, включая потерявших доступ.
+   * Дальше статья снимается с подписки тех, кому владелец больше её не отдаёт.
+   */
+  private async revokeLostAccess(article_id: string, connections: readonly Connection[]): Promise<void> {
+    for (let index = 0; index < connections.length; index += ACCESS_CONCURRENCY) {
+      const batch = connections.slice(index, index + ACCESS_CONCURRENCY)
+      await Promise.all(batch.map(async (connection) => {
+        const key = `${connection.viewer.viewer_key}:${article_id}`
+        this.access_cache.delete(key)
+        if (!connection.viewer_jwt) return
+        const access = await this.check_access(connection.viewer_jwt, article_id)
+        if (!access) return
+        this.access_cache.set(key, access.can_read)
+        if (!access.can_read) this.registry.dropArticle(connection.id, article_id)
+      }))
     }
   }
 

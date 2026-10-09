@@ -24,8 +24,8 @@ export {
   topicStatusSchema,
 } from './feed.ts'
 export type { FeedCard, FeedMode, FeedPage, ReactionCounts, ReactionKind } from './feed.ts'
-export { TOPIC_SLUG_PATTERN, createTopicSchema, topicListSchema, topicOrderSchema, topicSchema, updateTopicSchema } from './topics.ts'
-export type { CreateTopic, Topic, TopicOrder, UpdateTopic } from './topics.ts'
+export { TOPIC_SLUG_PATTERN, createTopicSchema, topicDetailSchema, topicListSchema, topicOrderSchema, topicSchema, updateTopicSchema } from './topics.ts'
+export type { CreateTopic, Topic, TopicDetail, TopicOrder, UpdateTopic } from './topics.ts'
 export { commentSchema, commentTreePageSchema, createCommentSchema, popularCommentListSchema, popularCommentSchema, updateCommentSchema, userCommentPageSchema, userCommentSchema } from './comments.ts'
 export type { Comment, CommentTreePage, CreateComment, PopularComment, UpdateComment, UserComment, UserCommentPage } from './comments.ts'
 export { recordViewSchema, viewCountSchema } from './views.ts'
@@ -50,7 +50,9 @@ export {
   sessionProfileSchema,
   sessionResponseSchema,
   sessionUserSchema,
+  updateAppearanceSchema,
 } from './auth.ts'
+export type { UpdateAppearance } from './auth.ts'
 export type { AuthCallbackError, SessionProfile, SessionResponse, SessionUser } from './auth.ts'
 export {
   PROFILE_BADGES,
@@ -67,7 +69,28 @@ export {
 export type { Profile, ProfileArticle, ProfileArticlePage, ProfileBadge, ProfileStats, UpdateProfile, UserListItem, UserListPage } from './profiles.ts'
 export { notificationKindSchema, notificationPageSchema, notificationSchema, unreadCountSchema } from './notifications.ts'
 export type { Notification, NotificationKind, NotificationPage, UnreadCount } from './notifications.ts'
+export { conversationPageSchema, conversationPeerSchema, conversationSchema, messagePageSchema, messageSchema, sendMessageSchema } from './messages.ts'
+export type { Conversation, ConversationPage, ConversationPeer, Message, MessagePage, SendMessage } from './messages.ts'
 export { searchResponseSchema } from './search.ts'
 export type { SearchResponse } from './search.ts'
 export { mediaKindSchema, mediaUploadResponseSchema } from './media.ts'
 export type { MediaKind, MediaUploadResponse } from './media.ts'
+export { followSchema, followStateSchema, followStatesSchema, followTargetTypeSchema } from './follows.ts'
+export type { Follow, FollowState, FollowStates, FollowTargetType } from './follows.ts'
+export { confirmPromotionSchema, promotionSchema } from './promotion.ts'
+export type { ConfirmPromotion, Promotion } from './promotion.ts'
+export { feedKeySchema, feedSeenListSchema, feedSeenSchema } from './feed-seen.ts'
+export type { FeedKey, FeedSeen, FeedSeenList } from './feed-seen.ts'
+export { reportSchema, reportStatusSchema } from './reports.ts'
+export type { Report, ReportStatus } from './reports.ts'
+export {
+  adminUserPageSchema,
+  adminUserSchema,
+  moderationArticleSchema,
+  moderationPageSchema,
+  restrictUserSchema,
+  reviewReportSchema,
+  updateUserPublishingSchema,
+  updateUserRoleSchema,
+} from './admin.ts'
+export type { AdminUser, AdminUserPage, ModerationArticle, ModerationPage, RestrictUser, ReviewReport, UpdateUserPublishing, UpdateUserRole } from './admin.ts'

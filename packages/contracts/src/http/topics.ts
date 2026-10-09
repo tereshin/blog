@@ -16,6 +16,12 @@ export const topicSchema = z.strictObject({
 })
 export type Topic = z.infer<typeof topicSchema>
 
+/** `GET /v1/topics/{slug}` — та же тема плюс подписка текущего зрителя. */
+export const topicDetailSchema = topicSchema.extend({
+  is_following: z.boolean(),
+})
+export type TopicDetail = z.infer<typeof topicDetailSchema>
+
 /** `GET /v1/topics` — только активные, по `position`. */
 export const topicListSchema = z.array(topicSchema)
 

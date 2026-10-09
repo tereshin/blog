@@ -15,6 +15,7 @@ const envSchema = baseEnvSchema.extend({
   MESSAGING_URL: z.url(),
   NOTIFICATION_URL: z.url(),
   MEDIA_URL: z.url(),
+  S3_PUBLIC_URL: z.url().optional(),
   NATS_URL: z.string().min(1),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),

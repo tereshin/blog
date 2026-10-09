@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { createIdempotentConsumer } from '@blog/broker'
 import type { BrokerClient, Database, EventHandler, RunningConsumer } from '@blog/broker'
 import {
@@ -7,6 +6,7 @@ import {
   ArticlePublishedV1,
   ArticleUpdatedV1,
   CommentCreatedV1,
+  MessageSentV1,
   ProfileUpdatedV1,
   ReactionAddedV1,
   UserCreatedV1,
@@ -20,13 +20,6 @@ const ARTICLE_EVENTS = {
   'content.article.hidden': ArticleHiddenV1,
   'content.article.deleted': ArticleDeletedV1,
 } as const
-
-const messageSentSchema = z.object({
-  message_id: z.uuid(),
-  conversation_id: z.uuid(),
-  sender_id: z.uuid(),
-  recipient_id: z.uuid(),
-})
 
 /** Применяет одно событие: копии статьи и участника и записи уведомлений. Своё действие запись не создаёт. */
 export function createNotificationHandler(repository: NotificationRepository): EventHandler {
@@ -102,7 +95,7 @@ export function createNotificationHandler(repository: NotificationRepository): E
         return
       }
       case 'messaging.message.sent': {
-        const parsed = messageSentSchema.parse(event)
+        const parsed = MessageSentV1.parse(event)
         if (parsed.sender_id === parsed.recipient_id) return
         await repository.notify(tx, {
           source: event,

@@ -43,6 +43,17 @@ export class SubscriptionRegistry {
     }
   }
 
+  /** Снимает статью с соединения: следующие кадры этой статьи ему не уходят. */
+  dropArticle(connection_id: string, article_id: string): void {
+    const connection = this.connections.get(connection_id)
+    if (!connection) return
+    connection.article_ids.delete(article_id)
+    const ids = this.by_article.get(article_id)
+    if (!ids) return
+    ids.delete(connection_id)
+    if (ids.size === 0) this.by_article.delete(article_id)
+  }
+
   forArticle(article_id: string): Connection[] {
     const ids = this.by_article.get(article_id)
     if (!ids) return []

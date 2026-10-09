@@ -2,10 +2,10 @@ import { isEnvironment, UsageError } from './compose.ts'
 import type { Environment } from './compose.ts'
 
 /**
- * Порядок запуска одноразовых контейнеров seed (contracts/seed.md): `identity`, `content`, `discussion`,
- * затем `messaging`, `notification`, `media`. Последние три добавляются задачами своих разделов.
+ * Порядок запуска одноразовых контейнеров seed (contracts/seed.md):
+ * `identity` → `content` → `discussion` → `messaging` → `notification` → `media`.
  */
-export const SEED_SERVICES: readonly string[] = ['identity', 'content', 'discussion']
+export const SEED_SERVICES: readonly string[] = ['identity', 'content', 'discussion', 'messaging', 'notification', 'media']
 
 export const SEED_PROFILES = ['small', 'large'] as const
 export type SeedProfile = (typeof SEED_PROFILES)[number]

@@ -11,4 +11,5 @@ export const articleKeys = {
   states: (ids: readonly string[]) => [...articleKeys.all, 'states', [...ids].sort()] as const,
   draft: (id: string) => [...articleKeys.all, 'draft', id] as const,
   myDrafts: () => [...articleKeys.all, 'my-drafts'] as const,
+  bookmarks: () => [...articleKeys.all, 'bookmarks'] as const,
 }

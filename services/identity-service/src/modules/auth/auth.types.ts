@@ -87,4 +87,6 @@ export type AuthRepository = {
     correlation_id: string
   }) => Promise<AccountUser>
   revokeSession: (session_id: string, correlation_id: string) => Promise<void>
+  /** Учётная запись суперадминистратора без `google_sub` и без сессии. Повтор не создаёт вторую строку. */
+  provisionSuperadmin: (input: { email: string; correlation_id: string }) => Promise<{ created: boolean; user_id: string }>
 }

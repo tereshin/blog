@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { NotificationCreatedV1 } from '@blog/contracts'
+import { notificationCreatedEvent } from './notification.events.ts'
 import type { NotificationKind } from '@blog/contracts'
 import { appendToOutbox, newEventId } from '@blog/broker'
 import type { Database, OutboxEvent } from '@blog/broker'
@@ -108,13 +108,10 @@ export function createNotificationRepository(db: NodePgDatabase): NotificationRe
       })
       await appendToOutbox(
         tx,
-        NotificationCreatedV1.parse({
-          event_id: newEventId(),
-          name: 'notification.notification.created',
+        notificationCreatedEvent({
           occurred_at: input.source.occurred_at,
           correlation_id: input.source.correlation_id,
           causation_id: input.source.event_id,
-          version: 1,
           notification_id: id,
           user_id: input.user_id,
           kind: input.kind,

@@ -2,9 +2,9 @@ import { useEffect, useId, useRef } from 'react'
 import type { ReactNode, UIEvent } from 'react'
 import { useT } from '@/shared/i18n'
 import { useMediaQuery } from '@/shared/lib'
-import { Drawer } from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
 import { BackToTop } from './BackToTop.tsx'
+import { LeftNavDrawer } from './LeftNavDrawer.tsx'
 
 /** Ширина, с которой появляются три колонки (контракт `shell.md`). */
 export const WIDE_QUERY = '(min-width: 1200px)'
@@ -94,11 +94,9 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
         </aside>
       </div>
       <BackToTop />
-      <Drawer is_open={!is_wide && is_nav_open} onOpenChange={setNavOpen} placement="left" aria-label={t('shell.navigation')}>
-        <Drawer.Body>
-          <nav aria-label={t('shell.navigation')}>{left}</nav>
-        </Drawer.Body>
-      </Drawer>
+      <LeftNavDrawer is_open={!is_wide && is_nav_open} onOpenChange={setNavOpen}>
+        {left}
+      </LeftNavDrawer>
     </div>
   )
 }

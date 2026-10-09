@@ -46,7 +46,7 @@ test.describe('Режимы ленты', () => {
   test('шапка темы стоит над списком, пункт темы выбран', async ({ page }) => {
     await page.goto('/t/tehnologii')
     const main = page.getByRole('main')
-    const follow = main.getByRole('button', { name: 'Подписаться' })
+    const follow = main.getByRole('button', { name: 'Подписаться' }).first()
     const article = main.getByRole('article').first()
     await expect(follow).toBeVisible({ timeout: 15_000 })
     await expect(article).toBeVisible()

@@ -43,3 +43,16 @@ export function loadSeedEnv(source: Record<string, string | undefined> = process
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
+
+const bootstrapEnvSchema = baseEnvSchema.extend({
+  DATABASE_URL: z.string().min(1),
+})
+
+export type BootstrapEnv = z.infer<typeof bootstrapEnvSchema>
+
+/** Окружение `bootstrap`: только база. Тем и статей эта задача не создаёт. */
+export function loadBootstrapEnv(source: Record<string, string | undefined> = process.env): BootstrapEnv {
+  const env = defineEnv(bootstrapEnvSchema, source)
+  rejectPlaceholders(env, ['DATABASE_URL'])
+  return env
+}

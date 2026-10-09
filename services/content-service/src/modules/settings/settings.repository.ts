@@ -25,6 +25,8 @@ const columns = {
 export type SettingsRepository = {
   find: () => Promise<SettingsRow | null>
   save: (input: SettingsRow, correlation_id: string) => Promise<SettingsRow>
+  /** Вставляет строку `id = 1`, если её нет, и публикует событие. Повтор ничего не пишет. */
+  insertIfAbsent: (input: SettingsRow, correlation_id: string) => Promise<SettingsRow | null>
 }
 
 export function createSettingsRepository(db: NodePgDatabase): SettingsRepository {
@@ -32,6 +34,16 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
     async find() {
       const [row] = await db.select(columns).from(settings).where(eq(settings.id, 1)).limit(1)
       return row ?? null
+    },
+
+    async insertIfAbsent(input, correlation_id) {
+      return (db as Database).transaction(async (tx) => {
+        const database = tx as Database
+        const [row] = await database.insert(settings).values({ id: 1, ...input }).onConflictDoNothing().returning(columns)
+        if (!row) return null
+        await appendSettingsUpdated(database, { ...input, correlation_id })
+        return row
+      })
     },
 
     async save(input, correlation_id) {

@@ -1,6 +1,6 @@
 import { REACTION_KINDS, canReadArticle } from '@blog/contracts'
 import type { ReactionCounts, ReactionKind } from '@blog/contracts'
-import { RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
+import { ForbiddenError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
 import { CommentArticleNotFoundError, CommentsDisabledError } from './comment.errors.ts'
 import { toExcerpt } from './comment.excerpt.ts'
 import { POPULAR_COMMENTS_LIMIT, decodeCommentCursor, decodeUserCommentCursor, encodeCommentCursor, encodeUserCommentCursor } from './comment.schema.ts'
@@ -23,6 +23,12 @@ function indexCounts(rows: { target_id: string; kind: ReactionKind; total: numbe
 function requireActor(viewer: Parameters<CommentService['create']>[0]['viewer']): string {
   if (viewer.user_id === undefined) throw new UnauthorizedError()
   if (viewer.is_restricted) throw new RestrictedError()
+  return viewer.user_id
+}
+
+function requireModerator(viewer: Parameters<CommentService['create']>[0]['viewer']): string {
+  if (viewer.user_id === undefined) throw new UnauthorizedError()
+  if (viewer.role !== 'admin' && viewer.role !== 'superadmin') throw new ForbiddenError()
   return viewer.user_id
 }
 
@@ -136,6 +142,21 @@ export function createCommentService(repository: CommentRepository, writer: Comm
         idempotency_key: input.idempotency_key,
         correlation_id: input.correlation_id,
       })
+    },
+
+    async hide(input) {
+      const moderator_id = requireModerator(input.viewer)
+      return writer.moderate({ comment_id: input.comment_id, status: 'hidden', correlation_id: input.correlation_id, moderator_id })
+    },
+
+    async restore(input) {
+      const moderator_id = requireModerator(input.viewer)
+      return writer.moderate({ comment_id: input.comment_id, status: 'visible', correlation_id: input.correlation_id, moderator_id })
+    },
+
+    async moderateRemove(input) {
+      const moderator_id = requireModerator(input.viewer)
+      return writer.moderate({ comment_id: input.comment_id, status: 'deleted', correlation_id: input.correlation_id, moderator_id })
     },
   }
 }
