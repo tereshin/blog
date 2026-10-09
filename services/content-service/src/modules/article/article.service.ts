@@ -4,6 +4,8 @@ import type { Article, ArticleAccessFields, FeedCard, ReactionCounts, ServiceCon
 import { canRead } from '../access/index.ts'
 import { ArticleMembersOnlyError, ArticleUnavailableError } from './article.errors.ts'
 import type { ArticleRepository, ArticleRow, ArticleService } from './article.types.ts'
+import { createArticleWrite } from './article.write.ts'
+import type { ArticleWriteOptions } from './article.write.ts'
 
 const EMPTY_COUNTS: ReactionCounts = { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 const TOP_COMMENT_EXCERPT_LENGTH = 140
@@ -77,8 +79,9 @@ function toCard(row: ArticleRow, profiles_by_id: Map<string, { display_name: str
   }
 }
 
-export function createArticleService(repository: ArticleRepository): ArticleService {
+export function createArticleService(repository: ArticleRepository, options: ArticleWriteOptions): ArticleService {
   return {
+    ...createArticleWrite(repository, options),
     async getBySlug(viewer, slug) {
       const row = await repository.findBySlug(slug)
       if (!row) throw new ArticleUnavailableError()

@@ -9,4 +9,6 @@ export const articleKeys = {
   detail: (slug: string) => [...articleKeys.all, 'detail', slug] as const,
   /** Состояния зрителя (своя реакция, закладка) по набору статей. */
   states: (ids: readonly string[]) => [...articleKeys.all, 'states', [...ids].sort()] as const,
+  draft: (id: string) => [...articleKeys.all, 'draft', id] as const,
+  myDrafts: () => [...articleKeys.all, 'my-drafts'] as const,
 }

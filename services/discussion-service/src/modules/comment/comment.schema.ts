@@ -6,6 +6,7 @@ export const POPULAR_COMMENTS_LIMIT = 10
 export const COMMENT_EXCERPT_LENGTH = 140
 
 export const commentParamsSchema = z.strictObject({ article_id: z.uuid() })
+export const commentIdParamsSchema = z.strictObject({ id: z.uuid() })
 export const commentQuerySchema = pageQuerySchema
 
 const cursorSchema = z.strictObject({ t: z.iso.datetime(), id: z.uuid() })

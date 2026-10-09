@@ -1,21 +1,14 @@
 import { REACTION_KINDS, canReadArticle } from '@blog/contracts'
 import type { ReactionCounts, ReactionKind } from '@blog/contracts'
-import { ValidationError } from '@blog/errors'
-import { CommentArticleNotFoundError } from './comment.errors.ts'
-import { COMMENT_EXCERPT_LENGTH, POPULAR_COMMENTS_LIMIT, decodeCommentCursor, decodeUserCommentCursor, encodeCommentCursor, encodeUserCommentCursor } from './comment.schema.ts'
+import { RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
+import { CommentArticleNotFoundError, CommentsDisabledError } from './comment.errors.ts'
+import { toExcerpt } from './comment.excerpt.ts'
+import { POPULAR_COMMENTS_LIMIT, decodeCommentCursor, decodeUserCommentCursor, encodeCommentCursor, encodeUserCommentCursor } from './comment.schema.ts'
 import type { CommentRepository, CommentService } from './comment.types.ts'
+import type { CommentWriter } from './comment.write.ts'
 import { assembleCommentTree, emptyCounts } from './comment.tree.ts'
 
 const ANONYMOUS_NAME = 'Участник'
-
-/** Фрагмент для правой карточки: пробелы схлопнуты, длинный текст обрезан по границе слова с «…». */
-export function toExcerpt(body: string, max = COMMENT_EXCERPT_LENGTH): string {
-  const text = body.replace(/\s+/g, ' ').trim()
-  if (text.length <= max) return text
-  const cut = text.slice(0, max - 1)
-  const last_space = cut.lastIndexOf(' ')
-  return `${(last_space > max / 2 ? cut.slice(0, last_space) : cut).trimEnd()}…`
-}
 
 function indexCounts(rows: { target_id: string; kind: ReactionKind; total: number }[]): Map<string, ReactionCounts> {
   const facts = new Map<string, ReactionCounts>()
@@ -27,7 +20,13 @@ function indexCounts(rows: { target_id: string; kind: ReactionKind; total: numbe
   return facts
 }
 
-export function createCommentService(repository: CommentRepository): CommentService {
+function requireActor(viewer: Parameters<CommentService['create']>[0]['viewer']): string {
+  if (viewer.user_id === undefined) throw new UnauthorizedError()
+  if (viewer.is_restricted) throw new RestrictedError()
+  return viewer.user_id
+}
+
+export function createCommentService(repository: CommentRepository, writer: CommentWriter): CommentService {
   return {
     async getPopular(viewer) {
       const rows = await repository.findPopular(viewer, POPULAR_COMMENTS_LIMIT)
@@ -101,6 +100,42 @@ export function createCommentService(repository: CommentRepository): CommentServ
               )
             : null,
       }
+    },
+
+    async create(input) {
+      const user_id = requireActor(input.viewer)
+      const article = await repository.findArticle(input.article_id)
+      if (!article || !canReadArticle(input.viewer, article)) throw new CommentArticleNotFoundError()
+      if (!article.comments_enabled) throw new CommentsDisabledError()
+      return writer.insert({
+        user_id,
+        article_id: input.article_id,
+        body: input.body,
+        parent_id: input.parent_id,
+        idempotency_key: input.idempotency_key,
+        correlation_id: input.correlation_id,
+      })
+    },
+
+    async update(input) {
+      const user_id = requireActor(input.viewer)
+      return writer.update({
+        user_id,
+        comment_id: input.comment_id,
+        body: input.body,
+        idempotency_key: input.idempotency_key,
+        correlation_id: input.correlation_id,
+      })
+    },
+
+    async remove(input) {
+      const user_id = requireActor(input.viewer)
+      return writer.remove({
+        user_id,
+        comment_id: input.comment_id,
+        idempotency_key: input.idempotency_key,
+        correlation_id: input.correlation_id,
+      })
     },
   }
 }

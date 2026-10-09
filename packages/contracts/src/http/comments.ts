@@ -68,3 +68,16 @@ export type UserComment = z.infer<typeof userCommentSchema>
 
 export const userCommentPageSchema = pageSchema(userCommentSchema)
 export type UserCommentPage = z.infer<typeof userCommentPageSchema>
+
+/** `POST /v1/articles/{article_id}/comments`. */
+export const createCommentSchema = z.strictObject({
+  body: z.string().min(1).max(5000),
+  parent_id: z.uuid().optional(),
+})
+export type CreateComment = z.infer<typeof createCommentSchema>
+
+/** `PATCH /v1/comments/{id}` — только новый текст. */
+export const updateCommentSchema = z.strictObject({
+  body: z.string().min(1).max(5000),
+})
+export type UpdateComment = z.infer<typeof updateCommentSchema>

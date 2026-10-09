@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw'
 import { buildFeedFixture } from '../fixtures/feed.ts'
 import type { FeedCardFixture } from '../fixtures/feed.ts'
+import { publishedFeedCards } from './articles-store.ts'
 
 export const MOCK_FEED_KEY = 'mock_feed'
 const PAGE_SIZE = 20
@@ -15,9 +16,10 @@ export const mockFeedArticles = buildFeedFixture()
 const all = mockFeedArticles
 
 function select(mode: string): FeedCardFixture[] {
-  if (mode === 'popular') return [...all].sort((a, b) => b.reaction_count + b.comment_count - (a.reaction_count + a.comment_count) || (a.id < b.id ? 1 : -1))
-  if (mode.startsWith('topic:')) return all.filter((article) => article.topic.slug === mode.slice('topic:'.length))
-  return all
+  const source = [...publishedFeedCards(), ...all]
+  if (mode === 'popular') return [...source].sort((a, b) => b.reaction_count + b.comment_count - (a.reaction_count + a.comment_count) || (a.id < b.id ? 1 : -1))
+  if (mode.startsWith('topic:')) return source.filter((article) => article.topic.slug === mode.slice('topic:'.length))
+  return source
 }
 
 export const feedHandlers = [

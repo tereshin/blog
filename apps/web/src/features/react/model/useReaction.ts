@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { articleKeys, mapFeedCards } from '@/entities/article'
 import { commentKeys } from '@/entities/comment'
+import type { CommentNode } from '@/entities/comment'
 import type { ArticleLoad, ArticleViewerState } from '@/entities/article'
 import { applyReactionChange } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
@@ -28,6 +29,25 @@ export type ReactionTarget = {
 
 type ReactionSnapshot = { counts: ReactionCounts; my_reaction: ReactionKind | null; reaction_count: number }
 
+function patchCommentNode(node: CommentNode, comment_id: string, next: ReactionSnapshot): CommentNode {
+  const replies = node.replies.map((reply) => patchCommentNode(reply, comment_id, next))
+  if (node.id !== comment_id) return { ...node, replies }
+  return { ...node, replies, reaction_counts: next.counts, reaction_count: next.reaction_count, my_reaction: next.my_reaction }
+}
+
+function patchCommentCache(data: unknown, comment_id: string, next: ReactionSnapshot): unknown {
+  if (!data || typeof data !== 'object' || !('pages' in data)) return data
+  const cache = data as { pages: { comments: CommentNode[] }[] }
+  if (!Array.isArray(cache.pages)) return data
+  return {
+    ...cache,
+    pages: cache.pages.map((page) => ({
+      ...page,
+      comments: page.comments.map((comment) => patchCommentNode(comment, comment_id, next)),
+    })),
+  }
+}
+
 function patchCaches(queryClient: QueryClient, target: ReactionTarget, next: ReactionSnapshot): void {
   queryClient.setQueriesData({ queryKey: articleKeys.lists() }, (data) =>
     mapFeedCards(data, (card) => (card.id === target.target_id ? { ...card, reaction_counts: next.counts, reaction_count: next.reaction_count } : card)),
@@ -41,6 +61,9 @@ function patchCaches(queryClient: QueryClient, target: ReactionTarget, next: Rea
     const current = data[target.target_id]
     return { ...data, [target.target_id]: { my_reaction: next.my_reaction, is_bookmarked: current?.is_bookmarked ?? false } }
   })
+  if (target.target_type === 'comment') {
+    queryClient.setQueriesData({ queryKey: commentKeys.all }, (data) => patchCommentCache(data, target.target_id, next))
+  }
 }
 
 /** Мутация реакции: мгновенно меняет числа в ленте и откатывает их, если сервер отказал. */
@@ -54,12 +77,15 @@ export function useReaction(target: ReactionTarget): { react: (kind: ReactionKin
       http.post('/v1/reactions', responseSchema, { body: { target_type: target.target_type, target_id: target.target_id, kind } }),
     onMutate: async (kind) => {
       await queryClient.cancelQueries({ queryKey: articleKeys.all })
+      await queryClient.cancelQueries({ queryKey: commentKeys.all })
       const previous = queryClient.getQueriesData({ queryKey: articleKeys.all })
+      const previous_comments = queryClient.getQueriesData({ queryKey: commentKeys.all })
       patchCaches(queryClient, target, applyReactionChange(target.counts, target.my_reaction, kind))
-      return { previous }
+      return { previous, previous_comments }
     },
     onError: (error, _kind, context) => {
       for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data)
+      for (const [key, data] of context?.previous_comments ?? []) queryClient.setQueryData(key, data)
       const restricted = error instanceof ApiError && error.code === 'restricted'
       toast.error(restricted ? t('reaction.restricted') : t('reaction.failed'))
     },

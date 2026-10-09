@@ -2,13 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useParams } from 'react-router'
 import { articleKeys, getArticle, useArticleStates } from '@/entities/article'
-import { CommentThread, useComments } from '@/entities/comment'
 import { useViewer } from '@/entities/session'
+import { OwnArticleMenu } from '@/features/manage-article'
 import { ReactionControl } from '@/features/react'
 import { ShareIcon } from '@/shared/ui'
 import { ArticleSkeleton, ArticleUnavailable, ArticleView, ReachBanner } from '@/widgets/article-view'
 import { useShellStore } from '@/widgets/shell'
 import { useArticleLive } from '../model/useArticleLive.ts'
+import { ArticleDiscussion } from './ArticleDiscussion.tsx'
 
 // Страница статьи — композиция: полный текст, реакции и чтение обсуждения внутри того же каркаса.
 export default function ArticlePage() {
@@ -22,7 +23,6 @@ export default function ArticlePage() {
   })
   const article = query.data?.status === 'ok' ? query.data.article : null
   useArticleLive(slug, article?.id ?? null)
-  const comments = useComments(article?.id ?? null)
   const viewer_states = useArticleStates(article ? [article.id] : [], viewer.status === 'member')
   const mine = article ? viewer_states.get(article.id)?.my_reaction ?? null : null
 
@@ -48,7 +48,7 @@ export default function ArticlePage() {
           <ReachBanner />
         </ArticleView.Reach>
       ) : null}
-      <ArticleView.Byline />
+      <ArticleView.Byline menu={loaded.is_own ? <OwnArticleMenu article_id={loaded.id} /> : undefined} />
       <ArticleView.Title />
       <ArticleView.Body />
       <ArticleView.Reactions share={<ShareIcon width={18} height={18} />}>
@@ -61,18 +61,7 @@ export default function ArticlePage() {
         />
       </ArticleView.Reactions>
       <ArticleView.Discussion>
-        <CommentThread
-          state={comments}
-          renderReactions={(comment) => (
-            <ReactionControl
-              target_type="comment"
-              target_id={comment.id}
-              slug={loaded.slug}
-              counts={comment.reaction_counts}
-              my_reaction={comment.my_reaction}
-            />
-          )}
-        />
+        <ArticleDiscussion article={loaded} />
       </ArticleView.Discussion>
     </ArticleView>
   )

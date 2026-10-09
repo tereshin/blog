@@ -8,6 +8,7 @@ import { commentKeys, getUserComments } from '@/entities/comment'
 import { getProfileArticles, profileKeys, useProfile } from '@/entities/profile'
 import type { ProfileArticleDto, ProfileArticleStatus } from '@/entities/profile'
 import { useUpdateProfile } from '@/features/edit-profile'
+import { OwnArticleMenu } from '@/features/manage-article'
 import { ImageUploadButton } from '@/features/upload-media'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
@@ -119,7 +120,7 @@ export default function ProfilePage() {
                 <div key={article.id} className="flex flex-col gap-2">
                   {article.status !== 'published' ? <p className="text-xs text-muted">{t(`profile.status.${article.status}`)}</p> : null}
                   <ArticleCard article={article}>
-                    <ArticleCard.Header />
+                    <ArticleCard.Header menu={profile.is_own ? <OwnArticleMenu article_id={article.id} /> : undefined} />
                     <ArticleCard.Title />
                     <ArticleCard.Excerpt />
                     <ArticleCard.Image />

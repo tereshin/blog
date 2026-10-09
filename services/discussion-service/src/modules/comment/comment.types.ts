@@ -1,4 +1,4 @@
-import type { ArticleAccessFields, CommentTreePage, PageQuery, PopularComment, ReactionKind, ServiceContext, UserCommentPage } from '@blog/contracts'
+import type { ArticleAccessFields, Comment, CommentTreePage, PageQuery, PopularComment, ReactionKind, ServiceContext, UserCommentPage } from '@blog/contracts'
 import type { CommentCursor, UserCommentCursor } from './comment.schema.ts'
 import type { CommentRow } from './comment.tree.ts'
 
@@ -18,7 +18,7 @@ export type UserCommentRow = PopularCommentRow & { created_at: Date }
 export type CommentRepository = {
   /** Видимые комментарии опубликованных статей, доступных зрителю, по убыванию реакций. */
   findPopular: (viewer: ServiceContext, limit: number) => Promise<PopularCommentRow[]>
-  findArticle: (article_id: string) => Promise<ArticleAccessFields | null>
+  findArticle: (article_id: string) => Promise<(ArticleAccessFields & { comments_enabled: boolean }) | null>
   listRoots: (article_id: string, cursor: CommentCursor | null, limit: number) => Promise<CommentRow[]>
   listReplies: (root_ids: readonly string[]) => Promise<CommentRow[]>
   countReactions: (comment_ids: readonly string[]) => Promise<{ target_id: string; kind: ReactionKind; total: number }[]>
@@ -36,4 +36,7 @@ export type CommentService = {
   getPopular: (viewer: ServiceContext) => Promise<PopularComment[]>
   listForArticle: (viewer: ServiceContext, article_id: string, query: PageQuery) => Promise<CommentTreePage>
   listByAuthor: (viewer: ServiceContext, author_id: string, sort: 'fresh' | 'popular', query: PageQuery) => Promise<UserCommentPage>
+  create: (input: { viewer: ServiceContext; article_id: string; body: string; parent_id?: string | undefined; idempotency_key: string | null; correlation_id: string }) => Promise<Comment>
+  update: (input: { viewer: ServiceContext; comment_id: string; body: string; idempotency_key: string | null; correlation_id: string }) => Promise<Comment>
+  remove: (input: { viewer: ServiceContext; comment_id: string; idempotency_key: string | null; correlation_id: string }) => Promise<Comment>
 }

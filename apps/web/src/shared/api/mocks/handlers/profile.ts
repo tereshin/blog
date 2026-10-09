@@ -124,6 +124,12 @@ export const profileHandlers = [
     return HttpResponse.json(profile)
   }),
   http.post('*/v1/media', () =>
-    HttpResponse.json({ id: '11111111-1111-4111-8111-111111111111', url: 'http://files.test/media/a.png', kind: 'image', mime: 'image/png', byte_size: 10 }),
+    HttpResponse.json({
+      id: '11111111-1111-4111-8111-111111111111',
+      url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      kind: 'image',
+      mime: 'image/png',
+      byte_size: 70,
+    }),
   ),
 ]

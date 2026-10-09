@@ -99,7 +99,9 @@ describe('discussion: копии из событий (PostgreSQL в контей
     await apply(event('content.article.hidden', { ...article, status: 'hidden' }))
     expect((await readArticle())?.status).toBe('hidden')
 
-    await apply(event('content.article.deleted', { ...article, status: 'deleted' }))
+    const deleted = event('content.article.deleted', { ...article, status: 'deleted' })
+    expect(await apply(deleted)).toBe('ok')
+    expect(await apply(deleted)).toBe('duplicate')
     expect((await readArticle())?.status).toBe('deleted')
     expect(await database.db.select().from(articles_copy)).toHaveLength(1)
   })

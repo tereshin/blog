@@ -1,10 +1,11 @@
 import Fastify from 'fastify'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
-import { errorHandler, health, requestContext, serviceContext } from '@blog/http-kit'
+import { createServiceClient, errorHandler, health, requestContext, serviceContext } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
+import { lookupMediaFile } from './infra/http/media-files.ts'
 import { accessRoutes } from './modules/access/index.ts'
 import { articleRoutes } from './modules/article/index.ts'
 import { feedRoutes } from './modules/feed/index.ts'
@@ -37,11 +38,20 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // Служебный контекст проверяется на каждом маршруте без `config: { is_public: true }`.
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
 
+  const media = createServiceClient({ name: 'media', base_url: env.MEDIA_URL })
+  app.addHook('onClose', async () => {
+    await media.close()
+  })
+
   await app.register(accessRoutes, { database: deps.database })
   await app.register(topicRoutes, { database: deps.database, media_url: env.MEDIA_URL })
   await app.register(settingsRoutes, { database: deps.database, media_url: env.MEDIA_URL })
   await app.register(feedRoutes, { database: deps.database })
-  await app.register(articleRoutes, { database: deps.database })
+  await app.register(articleRoutes, {
+    database: deps.database,
+    media_urls: [env.MEDIA_URL],
+    lookupFile: (url) => lookupMediaFile(media, url),
+  })
   await app.register(profileRoutes, { database: deps.database, media_url: env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN })
 
   return app

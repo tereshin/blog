@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -10,7 +11,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles_copy, comments, users_copy } from '../../src/infra/db/schema.ts'
+import { articles_copy, comments, outbox, users_copy } from '../../src/infra/db/schema.ts'
 import { commentRoutes, toExcerpt } from '../../src/modules/comment/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -22,6 +23,7 @@ const viewers: Record<string, ServiceContext> = {
   member: { user_id: OTHER, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${OTHER}` },
   author: { user_id: AUTHOR, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${AUTHOR}` },
   admin: { user_id: ADMIN, role: 'admin', is_restricted: false, can_publish: true, viewer_key: `user:${ADMIN}` },
+  restricted: { user_id: '6b1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a66', role: 'member', is_restricted: true, can_publish: false, viewer_key: 'user:restricted' },
 }
 
 function id(index: number): string {
@@ -139,5 +141,135 @@ describe('discussion: GET /v1/comments/popular', () => {
     expect(slugs).not.toContain('members')
     expect(slugs).not.toContain('hidden')
     expect(slugs).not.toContain('draft')
+  })
+
+  it('выключенные комментарии отклоняют новый, уже написанный остаётся в обсуждении', async () => {
+    await database.db.insert(articles_copy).values({
+      article_id: id(6),
+      author_id: AUTHOR,
+      title: 'Без обсуждения',
+      slug: 'quiet',
+      visibility: 'public',
+      status: 'published',
+      comments_enabled: false,
+      published_at: new Date(),
+    })
+    await database.db.insert(comments).values({ id: id(400), article_id: id(6), author_id: AUTHOR, body: 'Уже написан' })
+    const denied = await app.inject({
+      method: 'POST',
+      url: `/v1/articles/${id(6)}/comments`,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'member' },
+      payload: { body: 'Новый' },
+    })
+    expect(denied.statusCode).toBe(403)
+    expect(denied.json()).toMatchObject({ code: 'comments_disabled' })
+    const list = await app.inject({ method: 'GET', url: `/v1/articles/${id(6)}/comments`, headers: { 'x-test-viewer': 'guest' } })
+    expect(list.statusCode).toBe(200)
+    expect((list.json() as { comments: { id: string }[] }).comments.map((item) => item.id)).toEqual([id(400)])
+  })
+
+  it('гость и ограниченный не пишут, тот же ключ не создаёт второй комментарий', async () => {
+    const url = `/v1/articles/${id(1)}/comments`
+    const guest = await app.inject({
+      method: 'POST',
+      url,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'guest' },
+      payload: { body: 'Нет' },
+    })
+    expect(guest.statusCode).toBe(401)
+    const restricted = await app.inject({
+      method: 'POST',
+      url,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'restricted' },
+      payload: { body: 'Нет' },
+    })
+    expect(restricted.statusCode).toBe(403)
+    expect(restricted.json()).toMatchObject({ code: 'restricted' })
+
+    const send = () =>
+      app.inject({
+        method: 'POST',
+        url,
+        headers: { 'content-type': 'application/json', 'x-test-viewer': 'member', 'x-idempotency-key': 'once' },
+        payload: { body: 'Один раз' },
+      })
+    const first = await send()
+    const second = await send()
+    expect(first.statusCode).toBe(201)
+    expect(second.statusCode).toBe(201)
+    expect(second.json()).toMatchObject({ id: first.json().id, body: 'Один раз' })
+    const stored = await database.db.select().from(comments).where(eq(comments.body, 'Один раз'))
+    expect(stored).toHaveLength(1)
+    const names = (await database.db.select({ name: outbox.name }).from(outbox)).map((row) => row.name)
+    expect(names).toContain('discussion.comment.created')
+    expect(names).toContain('discussion.article_counters.updated')
+  })
+
+  it('удаление с ответами оставляет заглушку, без ответов комментарий исчезает, чужая статья не родитель', async () => {
+    const article = `/v1/articles/${id(1)}/comments`
+    const root = await app.inject({
+      method: 'POST',
+      url: article,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'author' },
+      payload: { body: 'Корень' },
+    })
+    expect(root.statusCode).toBe(201)
+    const root_id = (root.json() as { id: string }).id
+    const reply = await app.inject({
+      method: 'POST',
+      url: article,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'member' },
+      payload: { body: 'Ответ', parent_id: root_id },
+    })
+    expect(reply.statusCode).toBe(201)
+    const removed = await app.inject({
+      method: 'DELETE',
+      url: `/v1/comments/${root_id}`,
+      headers: { 'x-test-viewer': 'author' },
+    })
+    expect(removed.statusCode).toBe(200)
+    expect(removed.json()).toMatchObject({ id: root_id, status: 'deleted', body: null })
+    const listed = await app.inject({ method: 'GET', url: `${article}?limit=100`, headers: { 'x-test-viewer': 'guest' } })
+    const tree = (listed.json() as { comments: { id: string; status: string; body: string | null; replies: { body: string | null }[] }[] }).comments
+    const stub = tree.find((item) => item.id === root_id)
+    expect(stub).toMatchObject({ status: 'deleted', body: null })
+    expect(stub?.replies.map((item) => item.body)).toEqual(['Ответ'])
+
+    const alone = await app.inject({
+      method: 'POST',
+      url: article,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'author' },
+      payload: { body: 'Без ответов' },
+    })
+    const alone_id = (alone.json() as { id: string }).id
+    expect((await app.inject({ method: 'DELETE', url: `/v1/comments/${alone_id}`, headers: { 'x-test-viewer': 'author' } })).statusCode).toBe(200)
+    const after = await app.inject({ method: 'GET', url: `${article}?limit=100`, headers: { 'x-test-viewer': 'guest' } })
+    expect((after.json() as { comments: { id: string }[] }).comments.map((item) => item.id)).not.toContain(alone_id)
+
+    const foreign = await app.inject({
+      method: 'POST',
+      url: article,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'member' },
+      payload: { body: 'Чужой родитель', parent_id: id(400) },
+    })
+    expect(foreign.statusCode).toBe(422)
+    expect(foreign.json()).toMatchObject({ code: 'validation_failed', errors: { reason: 'parent' } })
+
+    const edited = await app.inject({
+      method: 'PATCH',
+      url: `/v1/comments/${(reply.json() as { id: string }).id}`,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'member' },
+      payload: { body: 'Ответ исправлен' },
+    })
+    expect(edited.statusCode).toBe(200)
+    expect(edited.json()).toMatchObject({ body: 'Ответ исправлен', status: 'visible' })
+    expect((edited.json() as { edited_at: string | null }).edited_at).not.toBeNull()
+    const stranger = await app.inject({
+      method: 'PATCH',
+      url: `/v1/comments/${(reply.json() as { id: string }).id}`,
+      headers: { 'content-type': 'application/json', 'x-test-viewer': 'author' },
+      payload: { body: 'Не мой' },
+    })
+    expect(stranger.statusCode).toBe(404)
   })
 })

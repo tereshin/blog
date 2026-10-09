@@ -2,6 +2,11 @@ import { z } from 'zod'
 
 export const articleParamsSchema = z.strictObject({ slug: z.string().min(1) })
 
+export const articleIdParamsSchema = z.strictObject({ id: z.uuid() })
+
+/** Пока отдаём только черновики автора. Другой статус — отказ схемы, а не чужой список. */
+export const myArticlesQuerySchema = z.strictObject({ status: z.literal('draft') })
+
 export const articleIdsQuerySchema = z.object({
   ids: z
     .string()

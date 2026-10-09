@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { canReadArticle } from '@blog/contracts'
 import type { PageQuery, ServiceContext } from '@blog/contracts'
 import { createCommentService } from '../../src/modules/comment/index.ts'
+import type { CommentWriter } from '../../src/modules/comment/comment.write.ts'
 import { assembleCommentTree } from '../../src/modules/comment/comment.tree.ts'
 import type { CommentRow } from '../../src/modules/comment/comment.tree.ts'
 import type { CommentRepository } from '../../src/modules/comment/comment.types.ts'
@@ -49,7 +50,7 @@ describe('listForArticle', () => {
   const query: PageQuery = { limit: 20 }
   const repository: CommentRepository = {
     findPopular: async () => [],
-    findArticle: async () => ({ author_id: AUTHOR, visibility: 'members', status: 'published' }),
+    findArticle: async () => ({ author_id: AUTHOR, visibility: 'members', status: 'published', comments_enabled: true }),
     listRoots: async () => [],
     listReplies: async () => [],
     countReactions: async () => [],
@@ -58,7 +59,12 @@ describe('listForArticle', () => {
   }
 
   it('гость не читает обсуждение статьи только для участников', async () => {
-    const service = createCommentService(repository)
+    const writer: CommentWriter = {
+      insert: async () => { throw new Error('unused') },
+      update: async () => { throw new Error('unused') },
+      remove: async () => { throw new Error('unused') },
+    }
+    const service = createCommentService(repository, writer)
     await expect(service.listForArticle(guest, '7a1c2d30-1111-4a11-8a11-000000000099', query)).rejects.toMatchObject({ http_status: 404 })
     expect(canReadArticle(guest, { author_id: AUTHOR, visibility: 'members', status: 'published' })).toBe(false)
   })

@@ -67,6 +67,8 @@ export const views = pgTable(
     article_id: uuid('article_id').notNull(),
     viewer_key: text('viewer_key').notNull(),
     counted_at: timestamp('counted_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Сколько раз этот зритель был засчитан. Повтор внутри 30 минут строку не меняет. */
+    times: integer('times').notNull().default(1),
   },
   (table) => [primaryKey({ columns: [table.article_id, table.viewer_key] })],
 )

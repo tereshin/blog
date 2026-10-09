@@ -45,6 +45,7 @@ export function createCommentRepository(db: NodePgDatabase): CommentRepository {
           author_id: articles_copy.author_id,
           visibility: articles_copy.visibility,
           status: articles_copy.status,
+          comments_enabled: articles_copy.comments_enabled,
         })
         .from(articles_copy)
         .where(eq(articles_copy.article_id, article_id))

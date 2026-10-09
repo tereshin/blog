@@ -8,8 +8,18 @@ export class ApiError extends Error {
   readonly detail: string | undefined
   readonly request_id: string | undefined
   readonly reason: string | undefined
+  /** Несколько причин отказа, например `not_publishable` → `title` / `topic` / `content`. */
+  readonly reasons: readonly string[]
 
-  constructor(input: { code: string; status: number; message: string; detail?: string; request_id?: string; reason?: string }) {
+  constructor(input: {
+    code: string
+    status: number
+    message: string
+    detail?: string
+    request_id?: string
+    reason?: string
+    reasons?: readonly string[]
+  }) {
     super(input.message)
     this.name = 'ApiError'
     this.code = input.code
@@ -17,6 +27,7 @@ export class ApiError extends Error {
     this.detail = input.detail
     this.request_id = input.request_id
     this.reason = input.reason
+    this.reasons = input.reasons ?? []
   }
 }
 
@@ -25,7 +36,12 @@ const problemSchema = z.looseObject({
   title: z.string().optional(),
   detail: z.string().optional(),
   request_id: z.string().optional(),
-  errors: z.looseObject({ reason: z.string().optional() }).optional(),
+  errors: z
+    .looseObject({
+      reason: z.string().optional(),
+      reasons: z.array(z.string()).optional(),
+    })
+    .optional(),
 })
 
 export type QueryValue = string | number | boolean | null | undefined
@@ -73,6 +89,7 @@ async function toApiError(response: Response): Promise<ApiError> {
     ...(problem.detail ? { detail: problem.detail } : {}),
     ...(problem.request_id ? { request_id: problem.request_id } : {}),
     ...(problem.errors?.reason ? { reason: problem.errors.reason } : {}),
+    ...(problem.errors?.reasons ? { reasons: problem.errors.reasons } : {}),
   })
 }
 

@@ -80,6 +80,12 @@ export const articleDraftSchema = z.strictObject({
 })
 export type ArticleDraft = z.infer<typeof articleDraftSchema>
 
+/** Черновики автора: `GET /v1/me/articles?status=draft`. */
+export const articleDraftListSchema = z.strictObject({
+  items: z.array(articleDraftSchema),
+})
+export type ArticleDraftList = z.infer<typeof articleDraftListSchema>
+
 /** `GET /v1/articles?ids=` — карточки в порядке запроса, без недоступных зрителю. */
 export const articleCardsSchema = z.strictObject({
   items: z.array(feedCardSchema),

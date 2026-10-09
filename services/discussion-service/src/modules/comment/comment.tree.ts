@@ -33,7 +33,7 @@ function countsOf(facts: ReadonlyMap<string, ReactionCounts>, id: string): React
   return facts.get(id) ?? emptyCounts()
 }
 
-function toNode(
+export function toCommentNode(
   row: CommentRow,
   facts: ReadonlyMap<string, ReactionCounts>,
   mine: ReadonlyMap<string, ReactionKind>,
@@ -58,6 +58,26 @@ function toNode(
   }
 }
 
+/** Ответ в выдаче не содержит собственного списка ответов: вложенность глубже одного уровня не передаётся. */
+export function toReplyNode(
+  row: CommentRow,
+  facts: ReadonlyMap<string, ReactionCounts>,
+  mine: ReadonlyMap<string, ReactionKind>,
+): Comment['replies'][number] {
+  const node = toCommentNode(row, facts, mine, [])
+  return {
+    id: node.id,
+    author: node.author,
+    body: node.body,
+    status: node.status,
+    edited_at: node.edited_at,
+    reaction_counts: node.reaction_counts,
+    reaction_count: node.reaction_count,
+    my_reaction: node.my_reaction,
+    created_at: node.created_at,
+  }
+}
+
 /** Собирает страницу корней: ответы лежат внутри своего корня, заглушка не отдаёт текст. */
 export function assembleCommentTree(
   roots: readonly CommentRow[],
@@ -73,7 +93,7 @@ export function assembleCommentTree(
     by_parent.set(reply.parent_id, list)
   }
   return roots.filter(occupiesThread).map((root) => {
-    const children = (by_parent.get(root.id) ?? []).map((reply) => toNode(reply, facts, mine, []))
-    return toNode(root, facts, mine, children)
+    const children = (by_parent.get(root.id) ?? []).map((reply) => toReplyNode(reply, facts, mine))
+    return toCommentNode(root, facts, mine, children)
   })
 }

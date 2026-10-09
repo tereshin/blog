@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useSettings } from '@/entities/settings'
 import { useViewer } from '@/entities/session'
 import { useLoginDialog } from '@/features/login'
 import { useT } from '@/shared/i18n'
-import { Avatar, Button, ChevronDownIcon, MenuIcon, PenIcon, SearchIcon } from '@/shared/ui'
+import { Avatar, Button, ChevronDownIcon, MenuIcon, PenIcon, SearchIcon, useToast } from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
 
 type SiteHeaderProps = {
@@ -13,7 +13,7 @@ type SiteHeaderProps = {
   /** Колокольчик уведомлений (появляется вместе со сценарием уведомлений). */
   notifications?: ReactNode
   onSearch?: () => void
-  /** Поведение «Написать»: гость сначала видит просьбу войти. */
+  /** Поведение «Написать», если у участника уже есть право публиковать. */
   onWrite?: () => void
   /** Меню учётной записи вместо значка аватара. */
   account?: ReactNode
@@ -28,11 +28,29 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const { data: settings } = useSettings()
   const { viewer } = useViewer()
   const openLogin = useLoginDialog((state) => state.open)
+  const toast = useToast()
+  const navigate = useNavigate()
   const setNavOpen = useShellStore((state) => state.setNavOpen)
 
   const handleWrite = () => {
-    if (viewer.status !== 'member') openLogin('required')
-    else onWrite?.()
+    if (viewer.status === 'loading') return
+    if (viewer.status !== 'member') {
+      openLogin('required')
+      return
+    }
+    if (viewer.user.is_restricted) {
+      toast.error(t('error.restricted'))
+      return
+    }
+    if (!viewer.user.can_publish) {
+      toast.error(t('editor.cannot_publish'))
+      return
+    }
+    if (onWrite) {
+      onWrite()
+      return
+    }
+    navigate('/write')
   }
 
   const brand = settings?.name || t('common.site_name_fallback')

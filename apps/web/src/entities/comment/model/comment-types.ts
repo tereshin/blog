@@ -1,7 +1,7 @@
 export type ReactionKind = 'laugh' | 'heart' | 'thumb' | 'fire'
 export type ReactionCounts = Record<ReactionKind, number>
 
-export type CommentStatus = 'visible' | 'deleted' | 'hidden'
+export type CommentStatus = 'visible' | 'deleted' | 'hidden' | 'pending'
 
 export type CommentNode = {
   id: string
@@ -18,3 +18,6 @@ export type CommentNode = {
 }
 
 export type CommentPage = { comments: CommentNode[]; next_cursor: string | null }
+
+/** `root_id` задан у ответа: новый ответ цепляется к корню, а не ко второму уровню. */
+export type CommentPlacement = { root_id: string | null }

@@ -1,0 +1,12 @@
+{
+  "event_id": "0b9f6a6e-6f0c-4f64-9d84-6d2f0f8d1c22",
+  "name": "discussion.comment.updated",
+  "occurred_at": "2026-10-08T12:05:00.000Z",
+  "correlation_id": "c-1",
+  "causation_id": null,
+  "version": 1,
+  "comment_id": "4a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a31",
+  "article_id": "3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22",
+  "status": "visible",
+  "edited_at": "2026-10-08T12:05:00.000Z"
+}

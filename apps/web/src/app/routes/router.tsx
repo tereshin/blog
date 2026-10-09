@@ -3,6 +3,7 @@ import { AboutPage } from '@/pages/about'
 import { AdminSettingsPage } from '@/pages/admin-settings'
 import { AdminTopicsPage } from '@/pages/admin-topics'
 import { ArticlePage } from '@/pages/article'
+import { EditorPage } from '@/pages/editor'
 import { FollowersPage } from '@/pages/followers'
 import { FollowingPage } from '@/pages/following'
 import { FreshFeedPage } from '@/pages/fresh-feed'
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: 'u/:slug/following', element: <FollowingPage /> },
       { path: 'rating', element: <RatingPage /> },
       { path: 'about', element: <AboutPage /> },
+      { path: 'write/:id?', element: <EditorPage /> },
       { path: 'admin/settings', element: <AdminSettingsPage /> },
       { path: 'admin/topics', element: <AdminTopicsPage /> },
       // Адреса, которых ещё нет в приложении, остаются внутри каркаса.

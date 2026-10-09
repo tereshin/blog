@@ -1,4 +1,4 @@
-import type { Article, ArticleCards, ServiceContext } from '@blog/contracts'
+import type { Article, ArticleCards, ArticleDraft, BlocksDocument, CreateArticle, ServiceContext, UpdateArticle } from '@blog/contracts'
 
 export type ArticleRow = {
   id: string
@@ -28,13 +28,64 @@ export type ArticleRow = {
   top_comment: unknown
 }
 
+export type StoredArticle = {
+  id: string
+  author_id: string
+  topic_id: string
+  title: string
+  slug: string
+  blocks: unknown
+  visibility: 'public' | 'members' | 'author'
+  comments_enabled: boolean
+  status: 'draft' | 'published' | 'hidden' | 'deleted'
+  published_at: Date | null
+  excerpt: string
+  first_image_url: string | null
+}
+
+export type NewArticle = {
+  author_id: string
+  title: string
+  topic_id: string
+  blocks: BlocksDocument
+  visibility: 'public' | 'members' | 'author'
+  comments_enabled: boolean
+  excerpt: string
+  first_image_url: string | null
+  slug?: string
+}
+
+export type ArticleSave = {
+  title: string
+  topic_id: string
+  blocks: BlocksDocument
+  visibility: 'public' | 'members' | 'author'
+  comments_enabled: boolean
+  excerpt: string
+  first_image_url: string | null
+  slug?: string
+  correlation_id: string
+}
+
 export type ArticleRepository = {
   findBySlug: (slug: string) => Promise<ArticleRow | null>
   findVisibleByIds: (viewer: ServiceContext, ids: readonly string[]) => Promise<ArticleRow[]>
   findProfiles: (user_ids: readonly string[]) => Promise<Map<string, { display_name: string; avatar_url: string | null }>>
+  findForAuthor: (id: string, author_id: string) => Promise<StoredArticle | null>
+  listDrafts: (author_id: string) => Promise<StoredArticle[]>
+  insertDraft: (input: NewArticle) => Promise<StoredArticle>
+  save: (id: string, author_id: string, input: ArticleSave) => Promise<StoredArticle | null>
+  publish: (id: string, author_id: string, input: { has_content: boolean; search_text: string; correlation_id: string }) => Promise<StoredArticle | null>
+  remove: (id: string, author_id: string, correlation_id: string) => Promise<StoredArticle | null>
 }
 
 export type ArticleService = {
   getBySlug: (viewer: ServiceContext, slug: string) => Promise<Article>
   getByIds: (viewer: ServiceContext, ids: readonly string[]) => Promise<ArticleCards>
+  create: (viewer: ServiceContext, input: CreateArticle, correlation_id: string) => Promise<ArticleDraft>
+  update: (viewer: ServiceContext, id: string, input: UpdateArticle, correlation_id: string) => Promise<ArticleDraft>
+  publish: (viewer: ServiceContext, id: string, correlation_id: string) => Promise<ArticleDraft>
+  remove: (viewer: ServiceContext, id: string, correlation_id: string) => Promise<void>
+  getDraft: (viewer: ServiceContext, id: string) => Promise<ArticleDraft>
+  listDrafts: (viewer: ServiceContext) => Promise<ArticleDraft[]>
 }

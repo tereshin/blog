@@ -14,11 +14,20 @@ function emptyCounts(): ReactionCounts {
   return { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 }
 
-async function countOf(tx: Database, table: typeof views | typeof bookmarks, article_id: string): Promise<number> {
+async function countOf(tx: Database, table: typeof bookmarks, article_id: string): Promise<number> {
   const [row] = await tx
     .select({ total: sql<number>`count(*)::int` })
     .from(table)
     .where(eq(table.article_id, article_id))
+  return Number(row?.total ?? 0)
+}
+
+/** Сумма `times`: одна строка зрителя может дать больше одного просмотра, если окно 30 минут истекло. */
+async function viewTotal(tx: Database, article_id: string): Promise<number> {
+  const [row] = await tx
+    .select({ total: sql<number>`coalesce(sum(${views.times}), 0)::int` })
+    .from(views)
+    .where(eq(views.article_id, article_id))
   return Number(row?.total ?? 0)
 }
 
@@ -69,7 +78,7 @@ export async function loadArticleCounters(tx: Database, article_id: string): Pro
     reaction_counts,
     reaction_count,
     comment_count: Number(comment_row?.total ?? 0),
-    view_count: await countOf(tx, views, article_id),
+    view_count: await viewTotal(tx, article_id),
     bookmark_count: await countOf(tx, bookmarks, article_id),
     top_comment: top
       ? { id: top.id, author_id: top.author_id, body: top.body, reaction_count: top.reaction_count, reply_count: top.reply_count }

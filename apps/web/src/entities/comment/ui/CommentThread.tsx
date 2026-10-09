@@ -3,13 +3,13 @@ import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import type { CommentsState } from '../model/useComments.ts'
-import type { CommentNode } from '../model/comment-types.ts'
+import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
 import { CommentItem } from './CommentItem.tsx'
 
 type CommentThreadProps = {
   state: CommentsState
   renderReactions?: (comment: CommentNode) => ReactNode
-  renderActions?: (comment: CommentNode) => ReactNode
+  renderActions?: (comment: CommentNode, placement: CommentPlacement) => ReactNode
 }
 
 function scrollToHash(): void {
@@ -41,7 +41,7 @@ export function CommentThread({ state, renderReactions, renderActions }: Comment
   return (
     <div>
       {state.comments.map((comment) => (
-        <CommentItem key={comment.id} comment={comment} renderReactions={renderReactions} renderActions={renderActions} />
+        <CommentItem key={comment.id} comment={comment} placement={{ root_id: null }} renderReactions={renderReactions} renderActions={renderActions} />
       ))}
       {state.has_next ? (
         <Button variant="ghost" onPress={state.fetchNext}>

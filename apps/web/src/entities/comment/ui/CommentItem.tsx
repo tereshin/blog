@@ -1,16 +1,17 @@
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { Avatar } from '@/shared/ui'
-import type { CommentNode } from '../model/comment-types.ts'
+import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
 
 type CommentItemProps = {
   comment: CommentNode
+  placement?: CommentPlacement
   renderReactions?: (comment: CommentNode) => ReactNode
-  renderActions?: (comment: CommentNode) => ReactNode
+  renderActions?: (comment: CommentNode, placement: CommentPlacement) => ReactNode
 }
 
 /** Одна реплика: автор, время, текст или заглушка, слоты реакций и действий. */
-export function CommentItem({ comment, renderReactions, renderActions }: CommentItemProps) {
+export function CommentItem({ comment, placement = { root_id: null }, renderReactions, renderActions }: CommentItemProps) {
   const { t } = useT()
   const stub = comment.status === 'deleted' ? t('comment.deleted') : comment.status === 'hidden' ? t('comment.hidden') : null
   return (
@@ -22,19 +23,26 @@ export function CommentItem({ comment, renderReactions, renderActions }: Comment
           <time dateTime={comment.created_at} className="text-muted">
             {comment.time_label}
           </time>
+          {comment.status === 'pending' ? <span className="text-muted">{t('comment.pending')}</span> : null}
           {comment.edited_at && !stub ? <span className="text-muted">{t('comment.edited')}</span> : null}
         </div>
         {stub ? <p className="mt-1 text-sm text-muted">{stub}</p> : <p className="mt-1 whitespace-pre-line break-words text-sm">{comment.body}</p>}
         {renderReactions || renderActions ? (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {renderReactions?.(comment)}
-            {renderActions?.(comment)}
+            {renderActions?.(comment, placement)}
           </div>
         ) : null}
         {comment.replies.length > 0 ? (
           <div className="mt-1 border-l border-separator pl-3">
             {comment.replies.map((reply) => (
-              <CommentItem key={reply.id} comment={reply} renderReactions={renderReactions} renderActions={renderActions} />
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                placement={{ root_id: comment.id }}
+                renderReactions={renderReactions}
+                renderActions={renderActions}
+              />
             ))}
           </div>
         ) : null}

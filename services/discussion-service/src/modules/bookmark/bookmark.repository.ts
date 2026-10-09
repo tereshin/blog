@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, ne, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { ArticleCountersUpdatedV1 } from '@blog/contracts'
 import { appendToOutbox, newEventId } from '@blog/broker'
@@ -58,7 +58,8 @@ export function createBookmarkRepository(db: NodePgDatabase): BookmarkRepository
       return db
         .select({ article_id: bookmarks.article_id, created_at: bookmarks.created_at })
         .from(bookmarks)
-        .where(and(eq(bookmarks.user_id, user_id), after))
+        .innerJoin(articles_copy, eq(articles_copy.article_id, bookmarks.article_id))
+        .where(and(eq(bookmarks.user_id, user_id), ne(articles_copy.status, 'deleted'), after))
         .orderBy(desc(bookmarks.created_at), desc(bookmarks.article_id))
         .limit(limit)
     },

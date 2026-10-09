@@ -1,0 +1,5 @@
+export { useEditorDocument } from './model/useEditorDocument.ts'
+export type { BlockEditorHandle } from './model/useEditorDocument.ts'
+export { BlockEditor } from './ui/BlockEditor.tsx'
+export { EditorSkeleton } from './ui/EditorSkeleton.tsx'
+export { InvalidEditorDocumentError } from './lib/normalize-document.ts'

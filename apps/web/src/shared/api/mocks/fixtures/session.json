@@ -14,5 +14,20 @@
     "status": "member",
     "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000003", "public_number": 1, "role": "superadmin", "can_publish": true, "is_restricted": false, "appearance": "dark" },
     "profile": { "display_name": "Саша Владельцева", "avatar_url": null, "slug": "owner" }
+  },
+  "no_publish": {
+    "status": "member",
+    "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000006", "public_number": 6, "role": "member", "can_publish": false, "is_restricted": false, "appearance": "dark" },
+    "profile": { "display_name": "Тихий Зритель", "avatar_url": null, "slug": "silent" }
+  },
+  "author": {
+    "status": "member",
+    "user": { "id": "a1000000-0000-4000-8000-000000000001", "public_number": 7, "role": "member", "can_publish": true, "is_restricted": false, "appearance": "dark" },
+    "profile": { "display_name": "Анна Авторова", "avatar_url": null, "slug": "anna" }
+  },
+  "restricted": {
+    "status": "member",
+    "user": { "id": "0b3a4c50-3333-4c33-8c33-000000000007", "public_number": 8, "role": "member", "can_publish": true, "is_restricted": true, "appearance": "dark" },
+    "profile": { "display_name": "Рита Ограничева", "avatar_url": null, "slug": "rita" }
   }
 }

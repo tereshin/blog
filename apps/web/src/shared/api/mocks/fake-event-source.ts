@@ -39,17 +39,24 @@ export class FakeEventSource {
   }
 }
 
+const live_channel = new BroadcastChannel('blog-mock-live')
+
 export const mockEvents = {
-  /** Рассылает кадр всем открытым потокам. */
+  /** Рассылает кадр всем открытым потокам этой вкладки и другим вкладкам того же браузера. */
   emit(frame: { type: string; occurred_at?: string; [key: string]: unknown }): void {
     const complete = { occurred_at: new Date().toISOString(), ...frame }
     for (const source of [...open_sources]) source.dispatch(complete)
+    live_channel.postMessage(complete)
   },
   /** Имитирует обрыв: клиент переподключится с backoff. */
   drop(): void {
     for (const source of [...open_sources]) source.onerror?.()
   },
 }
+
+live_channel.addEventListener('message', (event: MessageEvent<object>) => {
+  for (const source of [...open_sources]) source.dispatch(event.data)
+})
 
 export function installFakeEventSource(): void {
   Object.defineProperty(window, 'EventSource', { value: FakeEventSource, configurable: true, writable: true })
