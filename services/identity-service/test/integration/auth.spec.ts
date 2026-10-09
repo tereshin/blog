@@ -1,5 +1,3 @@
-import { createServer } from 'node:net'
-import type { AddressInfo } from 'node:net'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
@@ -8,171 +6,233 @@ import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
-import { buildApp as buildMockGoogle } from '../../../../infra/mock-google/src/app.ts'
-import { loadEnv as loadMockEnv } from '../../../../infra/mock-google/src/config/env.ts'
+import type { Env } from '../../src/config/env.ts'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { outbox, sessions, settings_copy, users } from '../../src/infra/db/schema.ts'
+import { auth_identities, outbox, settings_copy, users } from '../../src/infra/db/schema.ts'
 import { authRoutes } from '../../src/modules/auth/index.ts'
-import { sessionRoutes } from '../../src/modules/session/index.ts'
-import type { Env } from '../../src/config/env.ts'
+import type { FirebaseGateway, VerifiedToken } from '../../src/modules/auth/firebase-admin.ts'
 
-const CLIENT_ID = 'test-client'
-const CLIENT_SECRET = 'test-secret'
-const SUPERADMIN_EMAIL = 'root@example.test'
-const REDIRECT_URI = 'http://identity.test/v1/auth/google/callback'
+type FakeUser = { uid: string; email: string; password: string; email_verified: boolean }
 
-async function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createServer()
-    server.once('error', reject)
-    server.listen(0, '127.0.0.1', () => {
-      const { port } = server.address() as AddressInfo
-      server.close(() => resolve(port))
-    })
-  })
+function fakeFirebase(): FirebaseGateway & { users: Map<string, FakeUser>; codes: Map<string, string> } {
+  const users = new Map<string, FakeUser>()
+  const codes = new Map<string, string>()
+  let seq = 0
+  const gateway: FirebaseGateway & { users: Map<string, FakeUser>; codes: Map<string, string> } = {
+    users,
+    codes,
+    async verifyIdToken(id_token) {
+      const user = [...users.values()].find((row) => row.uid === id_token)
+      if (!user) throw new Error('bad token')
+      return { firebase_uid: user.uid, email: user.email, email_verified: user.email_verified, name: null, provider_id: 'google.com' }
+    },
+    async createUser(input) {
+      if ([...users.values()].some((row) => row.email === input.email)) throw new Error('EMAIL_EXISTS')
+      const uid = `uid-${++seq}`
+      users.set(uid, { uid, email: input.email, password: input.password, email_verified: false })
+      return { uid: uid } as never
+    },
+    async deleteUser(firebase_uid) {
+      users.delete(firebase_uid)
+    },
+    async signInWithPassword(input) {
+      const user = [...users.values()].find((row) => row.email === input.email && row.password === input.password)
+      if (!user) return null
+      const token: VerifiedToken = {
+        firebase_uid: user.uid,
+        email: user.email,
+        email_verified: user.email_verified,
+        name: null,
+        provider_id: 'password',
+      }
+      return token
+    },
+    async sendEmailVerification(firebase_uid) {
+      const user = users.get(firebase_uid)
+      if (!user) return false
+      codes.set(`verify-${user.email}`, firebase_uid)
+      return true
+    },
+    async confirmEmailVerification(oob_code) {
+      const firebase_uid = codes.get(oob_code) ?? null
+      if (!firebase_uid) return null
+      const user = users.get(firebase_uid)
+      if (user) user.email_verified = true
+      return { firebase_uid }
+    },
+    async sendPasswordReset(email) {
+      const user = [...users.values()].find((row) => row.email === email)
+      if (user) codes.set(`reset-${email}`, user.uid)
+    },
+    async confirmPasswordReset(input) {
+      const firebase_uid = [...codes.entries()].find(([code]) => code === input.oob_code)?.[1]
+      if (!firebase_uid) return false
+      const user = users.get(firebase_uid)
+      if (!user) return false
+      user.password = input.password
+      return true
+    },
+    async listProviders() {
+      return [{ id: 'password' }, { id: 'google.com' }, { id: 'github.com' }]
+    },
+  }
+  // createUser return type uses firebase_uid
+  gateway.createUser = async (input) => {
+    if ([...users.values()].some((row) => row.email === input.email)) {
+      const error = new Error('адрес уже есть в Firebase')
+      error.name = 'FirebaseEmailExistsError'
+      throw error
+    }
+    const firebase_uid = `uid-${++seq}`
+    users.set(firebase_uid, { uid: firebase_uid, email: input.email, password: input.password, email_verified: false })
+    return { firebase_uid }
+  }
+  return gateway
 }
 
-async function pickParticipant(authorize_url: URL, participant: string): Promise<URL> {
-  const form = new URLSearchParams([...authorize_url.searchParams.entries(), ['participant', participant]])
-  const picked = await fetch(authorize_url.origin + '/authorize', { method: 'POST', body: form, redirect: 'manual' })
-  expect(picked.status).toBe(302)
-  return new URL(picked.headers.get('location') ?? '')
-}
-
-describe('identity: вход через mock-google', () => {
+describe('identity: вход через Firebase', () => {
   let postgres: TestPostgres
   let database: DbHandle
   let app: FastifyInstance
-  let google: FastifyInstance
+  let firebase: ReturnType<typeof fakeFirebase>
 
   beforeAll(async () => {
     postgres = await startPostgres()
     database = openDatabase(postgres.url)
     await migrate(database.pool)
-    await database.db.insert(settings_copy).values({ id: 1, registration_open: false, new_members_can_publish: false })
-
-    const port = await freePort()
-    const issuer = `http://127.0.0.1:${port}`
-    google = await buildMockGoogle(
-      loadMockEnv({
-        APP_ENV: 'local',
-        HTTP_PORT: String(port),
-        ISSUER_URL: issuer,
-        CLIENT_ID,
-        CLIENT_SECRET,
-        REDIRECT_URI,
-        SUPERADMIN_EMAIL,
-      }),
-      { quiet: true },
-    )
-    await google.listen({ host: '127.0.0.1', port })
-
-    const env = {
-      APP_ENV: 'local',
-      GOOGLE_ISSUER_URL: issuer,
-      GOOGLE_CLIENT_ID: CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: CLIENT_SECRET,
-      GOOGLE_REDIRECT_URI: REDIRECT_URI,
-      SUPERADMIN_EMAIL,
-      SESSION_TTL_DAYS: 30,
-    } as Env
-
+    await database.db.insert(settings_copy).values({ id: 1, registration_open: true, new_members_can_publish: true })
+    firebase = fakeFirebase()
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'identity-test', level: 'silent' }) })
     await app.register(errorHandler)
-    await app.register(sessionRoutes, { database })
-    await app.register(authRoutes, { database, env })
+    await app.register(authRoutes, {
+      database,
+      firebase,
+      env: {
+        APP_ENV: 'local',
+        SUPERADMIN_EMAIL: 'root@example.test',
+        SESSION_TTL_DAYS: 30,
+        FIREBASE_PROJECT_ID: 'demo-blog',
+        FIREBASE_AUTH_DOMAIN: 'demo.test',
+        FIREBASE_WEB_API_KEY: 'web',
+        FIREBASE_SERVER_API_KEY: 'server',
+        FIREBASE_CLIENT_EMAIL: 'a@b.c',
+        FIREBASE_PRIVATE_KEY: 'key',
+        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+        SEED_AUTH_PASSWORD: 'seed-password',
+      } as Env,
+    })
   }, 120_000)
 
   afterAll(async () => {
     await app.close()
-    await google.close()
     await database.close()
     await postgres.stop()
   })
 
-  async function login(participant: string, return_to = '/feed') {
-    const start = await app.inject({ method: 'GET', url: `/v1/auth/google?return_to=${encodeURIComponent(return_to)}` })
-    expect(start.statusCode).toBe(302)
-    const callback = await pickParticipant(new URL(start.headers.location ?? ''), participant)
-    return app.inject({ method: 'GET', url: `${callback.pathname}${callback.search}` })
-  }
-
-  it('закрытая регистрация отклоняет новую почту и не создаёт участника', async () => {
-    const response = await login('newcomer')
-    expect(response.statusCode).toBe(403)
-    expect(response.json()).toMatchObject({ error: 'registration_closed', return_to: '/feed' })
-    const rows = await database.db.select().from(users)
-    expect(rows).toHaveLength(0)
-  })
-
-  it('почта суперадминистратора входит при закрытой регистрации', async () => {
-    const response = await login('superadmin', '/admin')
-    expect(response.statusCode).toBe(200)
-    const body = response.json<{ session_id: string; return_to: string }>()
-    expect(body.return_to).toBe('/admin')
-    const [row] = await database.db.select().from(users).where(eq(users.email, SUPERADMIN_EMAIL))
-    expect(row).toMatchObject({ role: 'superadmin', google_sub: 'seed-sub-superadmin', can_publish: true })
-    const session = await app.inject({ method: 'GET', url: `/internal/sessions/${body.session_id}` })
-    expect(session.statusCode).toBe(200)
-  })
-
-  it('привязывает sub к строке без google_sub и поднимает суперадминистратора', async () => {
-    await database.db.delete(sessions)
-    await database.db.delete(users)
-    await database.db.insert(users).values({
-      id: '33333333-3333-4333-8333-333333333333',
-      email: SUPERADMIN_EMAIL,
-      role: 'member',
-      can_publish: false,
-      google_sub: null,
+  it('открытая регистрация отвечает pending без cookie и создаёт неподтверждённую строку', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/registrations',
+      headers: { 'x-idempotency-key': 'reg-1' },
+      payload: { email: 'Anna@blog.test', password: 'password1' },
     })
-    const response = await login('superadmin', '/back')
     expect(response.statusCode).toBe(200)
-    const [row] = await database.db.select().from(users).where(eq(users.id, '33333333-3333-4333-8333-333333333333'))
-    expect(row).toMatchObject({ google_sub: 'seed-sub-superadmin', role: 'superadmin', can_publish: true })
+    expect(response.json()).toEqual({ status: 'pending' })
+    expect(response.headers['set-cookie']).toBeUndefined()
+    expect(response.headers['x-set-session']).toBeUndefined()
+    const [row] = await database.db.select().from(users).where(eq(users.email, 'anna@blog.test'))
+    expect(row?.email_verified).toBe(false)
+    const created = await database.db.select().from(outbox)
+    expect(created[0]?.payload).toMatchObject({ display_name: 'anna' })
   })
 
-  it('повторный вход по sub обновляет почту и не плодит учётные записи', async () => {
-    await database.db.update(settings_copy).set({ registration_open: true, new_members_can_publish: true })
-    const first = await login('reader', '/u/1')
-    expect(first.statusCode).toBe(200)
-    const before = await database.db.select().from(users).where(eq(users.google_sub, 'seed-sub-reader'))
-    expect(before).toHaveLength(1)
-    await database.db.update(users).set({ email: 'old-reader@blog.test' }).where(eq(users.google_sub, 'seed-sub-reader'))
-
-    const second = await login('reader')
-    expect(second.statusCode).toBe(200)
-    const after = await database.db.select().from(users).where(eq(users.google_sub, 'seed-sub-reader'))
-    expect(after).toHaveLength(1)
-    expect(after[0]?.email).toBe('reader@blog.test')
+  it('короткий пароль и адрес без @ не создают строку', async () => {
+    const before = await database.db.select().from(users)
+    const short = await app.inject({ method: 'POST', url: '/v1/auth/registrations', payload: { email: 'short@blog.test', password: '1234567' } })
+    const bad = await app.inject({ method: 'POST', url: '/v1/auth/registrations', payload: { email: 'not-an-email', password: 'password1' } })
+    expect(short.statusCode).toBe(422)
+    expect(bad.statusCode).toBe(422)
+    expect(await database.db.select().from(users)).toHaveLength(before.length)
+    expect(firebase.users.size).toBe(1)
   })
 
-  it('выход отзывает сессию и пишет событие', async () => {
-    const response = await login('reader')
-    const session_id = response.json<{ session_id: string }>().session_id
-    const logout = await app.inject({ method: 'POST', url: '/v1/auth/logout', headers: { 'x-session-id': session_id } })
-    expect(logout.statusCode).toBe(204)
-    const again = await app.inject({ method: 'GET', url: `/internal/sessions/${session_id}` })
-    expect(again.statusCode).toBe(404)
-    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.session.revoked'))
-    expect(events.length).toBeGreaterThan(0)
-    const [row] = await database.db.select().from(sessions).where(eq(sessions.id, session_id))
-    expect(row?.revoked_at).toBeInstanceOf(Date)
-  })
-
-  it('ограниченный участник не получает сессию', async () => {
-    await database.db.insert(users).values({
-      id: '44444444-4444-4444-8444-444444444444',
-      email: 'restricted@blog.test',
-      google_sub: 'seed-sub-restricted',
-      role: 'member',
-      restricted_at: new Date(),
+  it('занятый адрес отвечает тем же pending и не создаёт вторую строку', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/registrations',
+      payload: { email: 'anna@blog.test', password: 'password1' },
     })
-    const response = await login('restricted')
-    expect(response.statusCode).toBe(403)
-    expect(response.json()).toMatchObject({ error: 'restricted' })
+    expect(response.json()).toEqual({ status: 'pending' })
+    expect(await database.db.select().from(users)).toHaveLength(1)
+  })
+
+  it('повтор с тем же ключом не создаёт вторую строку', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/registrations',
+      headers: { 'x-idempotency-key': 'reg-1' },
+      payload: { email: 'other@blog.test', password: 'password1' },
+    })
+    expect(await database.db.select().from(users)).toHaveLength(1)
+  })
+
+  it('пароль неподтверждённой почты открывает сессию, неверный пароль — один отказ', async () => {
+    const ok = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sessions',
+      payload: { method: 'password', email: 'anna@blog.test', password: 'password1' },
+    })
+    expect(ok.statusCode).toBe(204)
+    expect(ok.headers['x-set-session']).toEqual(expect.any(String))
+    const session_id = String(ok.headers['x-set-session'])
+    const current = await app.inject({ method: 'GET', url: '/v1/auth/session', headers: { 'x-session-id': session_id } })
+    expect(current.json().user).toMatchObject({ email: 'anna@blog.test', email_verified: false })
+    const bad = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sessions',
+      payload: { method: 'password', email: 'missing@blog.test', password: 'password1' },
+    })
+    expect(bad.statusCode).toBe(401)
+    expect(bad.json().code).toBe('invalid_credentials')
+  })
+
+  it('код подтверждения ставит email_verified и сам сессию не открывает', async () => {
+    const code = 'verify-anna@blog.test'
+    const response = await app.inject({ method: 'POST', url: '/v1/auth/email-verification-confirmations', payload: { oob_code: code } })
+    expect(response.statusCode).toBe(200)
+    expect(response.headers['x-set-session']).toBeUndefined()
+    const [row] = await database.db.select().from(users).where(eq(users.email, 'anna@blog.test'))
+    expect(row?.email_verified).toBe(true)
+  })
+
+  it('сброс на отсутствующий адрес отвечает тем же успехом, короткий пароль не сохраняется', async () => {
+    const missing = await app.inject({ method: 'POST', url: '/v1/auth/password-resets', payload: { email: 'nobody@blog.test' } })
+    const known = await app.inject({ method: 'POST', url: '/v1/auth/password-resets', payload: { email: 'anna@blog.test' } })
+    expect(missing.json()).toEqual(known.json())
+    const short = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/password-reset-confirmations',
+      payload: { oob_code: 'reset-anna@blog.test', password: 'short' },
+    })
+    expect(short.statusCode).toBe(422)
+    expect(firebase.users.get('uid-1')?.password).toBe('password1')
+  })
+
+  it('маршрутов Google больше нет', async () => {
+    expect((await app.inject({ method: 'GET', url: '/v1/auth/google' })).statusCode).toBe(404)
+    expect((await app.inject({ method: 'GET', url: '/v1/auth/google/callback' })).statusCode).toBe(404)
+  })
+
+  it('закрытая регистрация отвечает одним отказом и новому, и занятому адресу', async () => {
+    await database.db.update(settings_copy).set({ registration_open: false }).where(eq(settings_copy.id, 1))
+    const fresh = await app.inject({ method: 'POST', url: '/v1/auth/registrations', payload: { email: 'new@blog.test', password: 'password1' } })
+    const taken = await app.inject({ method: 'POST', url: '/v1/auth/registrations', payload: { email: 'anna@blog.test', password: 'password1' } })
+    expect(fresh.json().code).toBe('registration_closed')
+    expect(taken.json().code).toBe('registration_closed')
+    expect(await database.db.select().from(users)).toHaveLength(1)
+    expect(await database.db.select().from(auth_identities)).toHaveLength(1)
   })
 })

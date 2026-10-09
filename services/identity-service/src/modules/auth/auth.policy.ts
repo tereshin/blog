@@ -1,65 +1,97 @@
-import type { AccountDecision, AccountSettings, AccountUser, GoogleClaims } from './auth.types.ts'
+const OPEN_SETTINGS = { registration_open: true, new_members_can_publish: true }
 
-const OPEN_SETTINGS: AccountSettings = { registration_open: true, new_members_can_publish: true }
+export type SignInUser = {
+  id: string
+  email: string
+  email_verified: boolean
+  role: 'member' | 'admin' | 'superadmin'
+  can_publish: boolean
+  restricted_at: Date | null
+}
+
+export type SignInToken = {
+  firebase_uid: string
+  email: string | null
+  email_verified: boolean
+  name: string | null
+}
+
+export type SignInDecision =
+  | { action: 'login'; user: SignInUser; attach_uid: boolean }
+  | {
+      action: 'create'
+      email: string | null
+      email_verified: boolean
+      role: 'member'
+      can_publish: boolean
+      display_name: string
+    }
+  | { action: 'reject'; error: 'registration_closed' }
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
-/** Имя профиля: имя у издателя, иначе часть почты до `@`. Не длиннее 50 символов. */
-export function displayNameFromClaims(claims: GoogleClaims): string {
-  const from_name = claims.name?.trim()
-  const local = normalizeEmail(claims.email).split('@')[0] ?? ''
+/** Адрес похож на почту: есть `@`, части по сторонам не пустые, без пробелов. */
+export function looksLikeEmail(value: string): boolean {
+  const email = value.trim()
+  const at = email.indexOf('@')
+  if (at <= 0 || at !== email.lastIndexOf('@') || at === email.length - 1) return false
+  if (email.includes(' ') || email.includes('\t')) return false
+  return true
+}
+
+/** Имя профиля: имя поставщика, иначе часть адреса до `@`. Не длиннее 50 символов. */
+export function displayNameFromToken(token: { email: string | null; name: string | null }): string {
+  const from_name = token.name?.trim()
+  const local = token.email ? normalizeEmail(token.email).split('@')[0] ?? '' : ''
   const raw = from_name && from_name.length > 0 ? from_name : local
   const trimmed = raw.slice(0, 50).trim()
   return trimmed.length > 0 ? trimmed : 'Участник'
 }
 
-export function hintFromEmail(email: string): string {
-  return displayNameFromClaims({ sub: '', email, email_verified: true, name: null })
+export function displayNameFromEmail(email: string): string {
+  return displayNameFromToken({ email, name: null })
 }
 
 /**
- * Решает, что делать с подтверждённым `id_token`, не трогая базу.
- * Почта суперадминистратора входит даже при закрытой регистрации.
- * Привязка `sub` к строке без `google_sub` — только при `email_verified`.
+ * Решает вход по ID-токену до любой записи.
+ * Регистрация почтой сюда не входит: у неё нет уже известного uid.
  */
-export function decideAccount(input: {
-  claims: GoogleClaims
-  by_sub: AccountUser | null
-  by_email: AccountUser | null
-  settings?: AccountSettings
-  superadmin_email: string
-}): AccountDecision {
+export function decideSignIn(input: {
+  token: SignInToken
+  by_uid: SignInUser | null
+  by_email: SignInUser | null
+  settings?: { registration_open: boolean; new_members_can_publish: boolean }
+}): SignInDecision {
   const settings = input.settings ?? OPEN_SETTINGS
-  const email = normalizeEmail(input.claims.email)
-  const is_super = email === normalizeEmail(input.superadmin_email)
-  const { by_sub, by_email, claims } = input
+  const { by_uid, by_email, token } = input
 
-  if (by_sub) {
-    if (by_sub.restricted_at) return { action: 'reject', error: 'restricted' }
-    const taken_by_other = by_email !== null && by_email.id !== by_sub.id
-    const next_email = claims.email_verified && email !== normalizeEmail(by_sub.email) && !taken_by_other ? email : null
-    return { action: 'login', user: by_sub, next_email }
-  }
+  if (by_uid) return { action: 'login', user: by_uid, attach_uid: false }
 
-  if (by_email?.google_sub && by_email.google_sub !== claims.sub) return { action: 'reject', error: 'email_taken' }
-
-  if (is_super && by_email && !by_email.google_sub) {
-    if (!claims.email_verified) return { action: 'reject', error: 'email_unverified' }
-    if (by_email.restricted_at) return { action: 'reject', error: 'restricted' }
-    return { action: 'bind', user: by_email }
-  }
-
-  if (is_super) {
-    if (!claims.email_verified) return { action: 'reject', error: 'email_unverified' }
-    return { action: 'create', role: 'superadmin', can_publish: true }
-  }
+  if (token.email_verified && by_email) return { action: 'login', user: by_email, attach_uid: true }
 
   if (!settings.registration_open) return { action: 'reject', error: 'registration_closed' }
-  if (!claims.email_verified) return { action: 'reject', error: 'email_unverified' }
-  if (by_email) return { action: 'reject', error: 'email_taken' }
-  return { action: 'create', role: 'member', can_publish: settings.new_members_can_publish }
+
+  if (token.email_verified && token.email) {
+    return {
+      action: 'create',
+      email: normalizeEmail(token.email),
+      email_verified: true,
+      role: 'member',
+      can_publish: settings.new_members_can_publish,
+      display_name: displayNameFromToken(token),
+    }
+  }
+
+  return {
+    action: 'create',
+    email: null,
+    email_verified: false,
+    role: 'member',
+    can_publish: settings.new_members_can_publish,
+    display_name: displayNameFromToken(token),
+  }
 }
 
 function hasControlChar(value: string): boolean {

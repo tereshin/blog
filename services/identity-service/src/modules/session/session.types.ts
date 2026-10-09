@@ -4,6 +4,7 @@ export type ActiveSession = {
   role: 'member' | 'admin' | 'superadmin'
   is_restricted: boolean
   can_publish: boolean
+  email_verified: boolean
 }
 
 export type SessionRepository = {

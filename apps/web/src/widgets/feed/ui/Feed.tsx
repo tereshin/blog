@@ -60,7 +60,9 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
     const saved = readFeedReturn()
     if (!is_ready || !saved || saved.mode !== mode) return
     const frame = requestAnimationFrame(() => {
-      findScrollParent(root_ref.current)?.scrollTo({ top: saved.scroll_top })
+      const scroller = findScrollParent(root_ref.current)
+      if (scroller) scroller.scrollTo({ top: saved.scroll_top })
+      else window.scrollTo({ top: saved.scroll_top })
     })
     return () => cancelAnimationFrame(frame)
   }, [mode, is_ready])
@@ -69,7 +71,8 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
     const link = event.target instanceof Element ? event.target.closest('a') : null
     const href = link?.getAttribute('href') ?? ''
     if (!href.startsWith('/p/') || href.includes('#')) return
-    saveFeedReturn({ mode, feed_key, scroll_top: findScrollParent(root_ref.current)?.scrollTop ?? 0 })
+    const scroller = findScrollParent(root_ref.current)
+    saveFeedReturn({ mode, feed_key, scroll_top: scroller?.scrollTop ?? window.scrollY })
   }
 
   if (state.status === 'loading' || state.status === 'idle') return <FeedSkeletons count={SKELETON_COUNT} />

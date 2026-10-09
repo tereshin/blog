@@ -1,12 +1,11 @@
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { SERVICE_CONTEXT_HEADER, profileSchema, sessionResponseSchema, sessionUserSchema } from '@blog/contracts'
 import { CORRELATION_ID_HEADER, IDEMPOTENCY_KEY_HEADER, REQUEST_ID_HEADER } from '@blog/http-kit'
 import type { ProxyService } from '../proxy/index.ts'
 import { resolveRoute } from '../proxy/route-table.ts'
-import { clearSessionCookie, setSessionCookie } from './session.cookies.ts'
+import { clearSessionCookie } from './session.cookies.ts'
 import type { CookieNames } from './session.cookies.ts'
-import { SET_SESSION_MAX_AGE_HEADER } from './session.constants.ts'
 import type { SessionService } from './session.service.ts'
 
 export type AuthGatewayOptions = {
@@ -20,11 +19,6 @@ const identityMemberSchema = z.object({
   user: sessionUserSchema,
   display_name_hint: z.string(),
 })
-
-const callbackBodySchema = z.union([
-  z.object({ session_id: z.string().min(16), return_to: z.string() }),
-  z.object({ error: z.string(), return_to: z.string().optional() }),
-])
 
 function hasControlChar(value: string): boolean {
   for (let index = 0; index < value.length; index += 1) {
@@ -74,16 +68,9 @@ async function forward(proxy: ProxyService, request: FastifyRequest, url: string
   })
 }
 
-const AUTH_ERRORS = new Set(['registration_closed', 'restricted'])
-
-function redirectAuthError(reply: FastifyReply, error: string | undefined): FastifyReply {
-  const code = error && AUTH_ERRORS.has(error) ? error : 'unknown'
-  return reply.redirect(`/?auth_error=${code}`)
-}
-
 /**
- * Особые маршруты входа. Остальной `/v1/auth/*` (старт Google) идёт общим прокси:
- * identity отвечает 302 на издателя, gateway только передаёт его браузеру.
+ * Сессия и выход. `POST /v1/auth/sessions` идёт общим прокси: identity просит cookie
+ * заголовком `x-set-session`, gateway ставит её и не отдаёт `session_id` браузеру.
  */
 export const authGatewayRoutes: FastifyPluginAsync<AuthGatewayOptions> = async (app, options) => {
   app.get('/v1/auth/session', async (request, reply) => {
@@ -112,18 +99,6 @@ export const authGatewayRoutes: FastifyPluginAsync<AuthGatewayOptions> = async (
       }
     }
     return reply.send(sessionResponseSchema.parse({ status: 'member', user: parsed.data.user, profile }))
-  })
-
-  app.get('/v1/auth/google/callback', async (request, reply) => {
-    const upstream = await forward(options.proxy, request, request.raw.url ?? request.url)
-    if (!upstream) return redirectAuthError(reply, 'unknown')
-    const body = callbackBodySchema.safeParse(await readJson(upstream.body))
-    if (!body.success || upstream.status >= 400 || 'error' in body.data) {
-      return redirectAuthError(reply, body.success && 'error' in body.data ? body.data.error : 'unknown')
-    }
-    const max_age = Number(first(upstream.headers[SET_SESSION_MAX_AGE_HEADER]))
-    setSessionCookie(reply, options.cookies, body.data.session_id, Number.isFinite(max_age) && max_age > 0 ? max_age : undefined)
-    return reply.redirect(safeReturnTo(body.data.return_to))
   })
 
   app.post('/v1/auth/logout', async (request, reply) => {

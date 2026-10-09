@@ -1,14 +1,8 @@
-import type { AuthCallbackError } from '@blog/contracts'
+import type { SignInUser } from './auth.policy.ts'
 
 export type AccountRole = 'member' | 'admin' | 'superadmin'
 
-export type AccountUser = {
-  id: string
-  email: string
-  google_sub: string | null
-  role: AccountRole
-  can_publish: boolean
-  restricted_at: Date | null
+export type AccountUser = SignInUser & {
   public_number: number
   appearance: 'light' | 'dark' | null
   created_at: Date
@@ -19,23 +13,6 @@ export type AccountSettings = {
   new_members_can_publish: boolean
 }
 
-export type GoogleClaims = {
-  sub: string
-  email: string
-  email_verified: boolean
-  name: string | null
-}
-
-export type AccountDecision =
-  | { action: 'reject'; error: AuthCallbackError['error'] }
-  | { action: 'login'; user: AccountUser; next_email: string | null }
-  | { action: 'bind'; user: AccountUser }
-  | { action: 'create'; role: 'member' | 'superadmin'; can_publish: boolean }
-
-export type AuthResult =
-  | { ok: true; session_id: string; return_to: string; max_age_seconds: number }
-  | { ok: false; error: AuthCallbackError['error']; return_to: string }
-
 export type MemberSession = {
   status: 'member'
   user: {
@@ -45,48 +22,36 @@ export type MemberSession = {
     can_publish: boolean
     is_restricted: boolean
     appearance: 'light' | 'dark' | null
+    email: string | null
+    email_verified: boolean
   }
   display_name_hint: string
 }
 
-export type GoogleBegin = {
-  redirect_to: URL
-  state: string
-  nonce: string
-  code_verifier: string
-}
-
-export type GoogleClient = {
-  begin: () => Promise<GoogleBegin>
-  exchange: (input: { callback_url: URL; code_verifier: string; expected_state: string; expected_nonce: string }) => Promise<GoogleClaims>
-}
-
 export type AuthRepository = {
-  saveState: (row: { state: string; code_verifier: string; nonce: string; return_to: string }) => Promise<void>
-  takeState: (state: string) => Promise<{ code_verifier: string; nonce: string; return_to: string } | null>
   readSettings: () => Promise<AccountSettings>
-  findBySub: (sub: string) => Promise<AccountUser | null>
+  findByUid: (firebase_uid: string) => Promise<AccountUser | null>
   findByEmail: (email: string) => Promise<AccountUser | null>
+  findIdentityUserId: (firebase_uid: string) => Promise<string | null>
+  findUidForUser: (user_id: string) => Promise<string | null>
   findBySession: (session_id: string, now: Date) => Promise<AccountUser | null>
-  loginExisting: (input: { user: AccountUser; next_email: string | null; session_id: string; expires_at: Date; correlation_id: string }) => Promise<void>
-  bindSuperadmin: (input: {
-    user: AccountUser
-    google_sub: string
-    display_name: string
-    session_id: string
-    expires_at: Date
-    correlation_id: string
-  }) => Promise<AccountUser>
-  createUser: (input: {
-    claims: GoogleClaims
-    display_name: string
-    role: 'member' | 'superadmin'
+  openSession: (input: { user_id: string; session_id: string; expires_at: Date }) => Promise<void>
+  attachUid: (input: { user_id: string; firebase_uid: string; provider_id: string; email_verified: boolean }) => Promise<void>
+  createMember: (input: {
+    email: string
+    email_verified: boolean
+    firebase_uid: string
+    provider_id: string
+    role: AccountRole
     can_publish: boolean
-    session_id: string
-    expires_at: Date
+    display_name: string
+    session_id: string | null
+    expires_at: Date | null
     correlation_id: string
   }) => Promise<AccountUser>
+  setEmail: (input: { user_id: string; email: string }) => Promise<void>
+  markEmailVerified: (firebase_uid: string) => Promise<boolean>
+  claimIdempotency: (scope: string, key: string) => Promise<boolean>
   revokeSession: (session_id: string, correlation_id: string) => Promise<void>
-  /** Учётная запись суперадминистратора без `google_sub` и без сессии. Повтор не создаёт вторую строку. */
   provisionSuperadmin: (input: { email: string; correlation_id: string }) => Promise<{ created: boolean; user_id: string }>
 }

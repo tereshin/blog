@@ -18,6 +18,7 @@ const sessionInfoSchema = z.object({
   role: z.enum(['member', 'admin', 'superadmin']),
   is_restricted: z.boolean(),
   can_publish: z.boolean(),
+  email_verified: z.boolean().default(true),
 })
 
 /** Идентификатор в cookie попадает в путь запроса к identity: принимаем только безопасный алфавит. */
@@ -26,7 +27,7 @@ export function isValidSessionId(value: string): boolean {
 }
 
 export function guestContext(guest_id: string): ServiceContext {
-  return { role: 'guest', is_restricted: false, can_publish: false, viewer_key: `guest:${guest_id}` }
+  return { role: 'guest', is_restricted: false, can_publish: false, viewer_key: `guest:${guest_id}`, email_verified: true }
 }
 
 export function memberContext(info: SessionInfo): ServiceContext {
@@ -37,6 +38,7 @@ export function memberContext(info: SessionInfo): ServiceContext {
     is_restricted: info.is_restricted,
     can_publish: info.can_publish,
     viewer_key: `user:${info.user_id}`,
+    email_verified: info.email_verified,
   })
 }
 

@@ -22,10 +22,16 @@ export const REDACT_PATHS = [
   'req.headers.cookie',
   'res.headers["set-cookie"]',
   'req.body.password',
+  'req.body.id_token',
+  'req.body.oob_code',
+  '*.password',
+  '*.oob_code',
   '*.token',
   '*.access_token',
   '*.refresh_token',
   '*.id_token',
+  // Тела /v1/auth/* целиком: пароль, id_token и oob_code.
+  'req.body',
 ] as const
 
 /** Корневой логгер сервиса: JSON, в каждой записи `service`. */

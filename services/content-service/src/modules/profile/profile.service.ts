@@ -1,5 +1,6 @@
-import { NotFoundError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
+import { requireVerifiedEmail } from '@blog/contracts'
 import type { Profile, ProfileBadge, ServiceContext, UpdateProfile } from '@blog/contracts'
+import { EmailUnverifiedError, NotFoundError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
 import type { ProfileRecord, ProfileRepository, ProfileService } from './profile.types.ts'
 
 const PUBLIC_NUMBER = /^[1-9]\d*$/
@@ -62,6 +63,7 @@ export function createProfileService(
     async updateMe(viewer, input: UpdateProfile, correlation_id) {
       if (!viewer.user_id) throw new UnauthorizedError()
       if (viewer.is_restricted) throw new RestrictedError()
+      if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
       const bio = input.bio === '' ? null : input.bio
       const next = { ...input, bio }
       assertOwnedUrl(next.avatar_url, options.media_bases, 'avatar_url')

@@ -1,6 +1,6 @@
-import { REACTION_KINDS, canReadArticle } from '@blog/contracts'
+import { REACTION_KINDS, canReadArticle, requireVerifiedEmail } from '@blog/contracts'
 import type { ReactionCounts, ReactionKind } from '@blog/contracts'
-import { ForbiddenError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
+import { EmailUnverifiedError, ForbiddenError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
 import { CommentArticleNotFoundError, CommentsDisabledError } from './comment.errors.ts'
 import { toExcerpt } from './comment.excerpt.ts'
 import { POPULAR_COMMENTS_LIMIT, decodeCommentCursor, decodeUserCommentCursor, encodeCommentCursor, encodeUserCommentCursor } from './comment.schema.ts'
@@ -23,6 +23,7 @@ function indexCounts(rows: { target_id: string; kind: ReactionKind; total: numbe
 function requireActor(viewer: Parameters<CommentService['create']>[0]['viewer']): string {
   if (viewer.user_id === undefined) throw new UnauthorizedError()
   if (viewer.is_restricted) throw new RestrictedError()
+  if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
   return viewer.user_id
 }
 

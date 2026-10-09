@@ -1,7 +1,19 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { authCallbackErrorSchema, authCallbackSuccessSchema } from '@blog/contracts'
 import { SESSION_ID_HEADER } from '@blog/contracts'
-import { guestSessionSchema, identityMemberSessionSchema, startQuerySchema } from './auth.schema.ts'
+import { SET_SESSION_HEADER, SET_SESSION_MAX_AGE_HEADER } from './auth.constants.ts'
+import {
+  authConfigSchema,
+  authOkSchema,
+  createSessionBodySchema,
+  emailClaimBodySchema,
+  emailVerificationConfirmBodySchema,
+  guestSessionSchema,
+  identityMemberSessionSchema,
+  passwordResetBodySchema,
+  passwordResetConfirmBodySchema,
+  pendingAuthSchema,
+  registrationBodySchema,
+} from './auth.schema.ts'
 import type { AuthService } from './auth.service.ts'
 
 function sessionId(request: FastifyRequest): string | undefined {
@@ -9,22 +21,65 @@ function sessionId(request: FastifyRequest): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined
 }
 
+function idempotencyKey(request: FastifyRequest): string | null {
+  const value = request.headers['x-idempotency-key']
+  return typeof value === 'string' && value.length > 0 ? value : null
+}
+
 export function createAuthController(service: AuthService) {
   return {
-    async start(request: FastifyRequest, reply: FastifyReply) {
-      const query = startQuerySchema.parse(request.query)
-      const redirect_to = await service.start(query.return_to)
-      return reply.redirect(redirect_to.toString())
+    async config(_request: FastifyRequest, reply: FastifyReply) {
+      return reply.send(authConfigSchema.parse(await service.config()))
     },
 
-    async callback(request: FastifyRequest, reply: FastifyReply) {
-      const search = new URL(request.raw.url ?? request.url, 'http://identity.local').search
-      const result = await service.complete(search, request.correlation_id)
-      if (!result.ok) return reply.code(403).send(authCallbackErrorSchema.parse({ error: result.error, return_to: result.return_to }))
+    async register(request: FastifyRequest, reply: FastifyReply) {
+      const body = registrationBodySchema.parse(request.body)
+      const result = await service.register({
+        email: body.email,
+        password: body.password,
+        idempotency_key: idempotencyKey(request),
+        correlation_id: request.correlation_id,
+      })
+      return reply.code(200).send(pendingAuthSchema.parse(result))
+    },
+
+    async signIn(request: FastifyRequest, reply: FastifyReply) {
+      const body = createSessionBodySchema.parse(request.body)
+      const result = await service.signIn({ body, correlation_id: request.correlation_id })
       return reply
-        .header('x-set-session', result.session_id)
-        .header('x-set-session-max-age', String(result.max_age_seconds))
-        .send(authCallbackSuccessSchema.parse({ session_id: result.session_id, return_to: result.return_to }))
+        .header(SET_SESSION_HEADER, result.session_id)
+        .header(SET_SESSION_MAX_AGE_HEADER, String(result.max_age_seconds))
+        .code(204)
+        .send()
+    },
+
+    async claimEmail(request: FastifyRequest, reply: FastifyReply) {
+      const body = emailClaimBodySchema.parse(request.body)
+      const result = await service.claimEmail({
+        session_id: sessionId(request),
+        email: body.email,
+        idempotency_key: idempotencyKey(request),
+      })
+      return reply.code(200).send(pendingAuthSchema.parse(result))
+    },
+
+    async sendVerification(request: FastifyRequest, reply: FastifyReply) {
+      return reply.send(authOkSchema.parse(await service.sendVerification(sessionId(request))))
+    },
+
+    async confirmVerification(request: FastifyRequest, reply: FastifyReply) {
+      const body = emailVerificationConfirmBodySchema.parse(request.body)
+      return reply.send(authOkSchema.parse(await service.confirmVerification(body.oob_code)))
+    },
+
+    async requestPasswordReset(request: FastifyRequest, reply: FastifyReply) {
+      const body = passwordResetBodySchema.parse(request.body)
+      return reply.send(authOkSchema.parse(await service.requestPasswordReset(body.email)))
+    },
+
+    async confirmPasswordReset(request: FastifyRequest, reply: FastifyReply) {
+      const body = passwordResetConfirmBodySchema.parse(request.body)
+      return reply.send(authOkSchema.parse(await service.confirmPasswordReset(body)))
     },
 
     async logout(request: FastifyRequest, reply: FastifyReply) {

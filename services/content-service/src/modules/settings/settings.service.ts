@@ -1,3 +1,4 @@
+import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
 import type { AdminSettings, PublicSettings, ServiceContext, UpdateSettings } from '@blog/contracts'
 import { requireSuperadmin } from '../access/require-superadmin.ts'
 import { assertMediaUrl } from '../media-url.ts'
@@ -10,10 +11,25 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   about: '',
   registration_open: true,
   new_members_can_publish: true,
+  reaction_appearances: DEFAULT_REACTION_APPEARANCES,
 }
 
 function toPublic(row: SettingsRow): PublicSettings {
-  return { name: row.name, logo_url: row.logo_url, locale: row.locale, about: row.about }
+  return {
+    name: row.name,
+    logo_url: row.logo_url,
+    locale: row.locale,
+    about: row.about,
+    reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  }
+}
+
+function toAdmin(row: SettingsRow): AdminSettings {
+  return {
+    ...toPublic(row),
+    registration_open: row.registration_open,
+    new_members_can_publish: row.new_members_can_publish,
+  }
 }
 
 /** Настройки пустой площадки: регистрация закрыта, публиковать новым участникам можно. */
@@ -42,13 +58,25 @@ export function createSettingsService(repository: SettingsRepository, options: {
 
     async getAdmin(viewer) {
       requireSuperadmin(viewer)
-      return (await repository.find()) ?? DEFAULT_SETTINGS
+      const row = await repository.find()
+      return row ? toAdmin(row) : DEFAULT_SETTINGS
     },
 
     async update(viewer, input, correlation_id) {
       requireSuperadmin(viewer)
       assertMediaUrl(input.logo_url, options.media_url, 'logo_url')
-      return repository.save(input, correlation_id)
+      const saved = await repository.save(
+        {
+          name: input.name,
+          logo_url: input.logo_url,
+          locale: input.locale,
+          about: input.about,
+          registration_open: input.registration_open,
+          new_members_can_publish: input.new_members_can_publish,
+        },
+        correlation_id,
+      )
+      return { ...toAdmin(saved), reaction_appearances: input.reaction_appearances }
     },
 
     async ensureDefaults(correlation_id) {

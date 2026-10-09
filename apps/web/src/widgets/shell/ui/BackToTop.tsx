@@ -2,12 +2,8 @@ import { useT } from '@/shared/i18n'
 import { ArrowUpIcon, Button } from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
 
-const WIDE_QUERY = '(min-width: 1200px)'
-
 function scrollShellToTop(): void {
-  const wide = window.matchMedia(WIDE_QUERY).matches
-  const selector = wide ? '[data-shell-scroll="center"]' : '[data-shell-scroll="column"]'
-  document.querySelector(selector)?.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 /**

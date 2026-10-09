@@ -9,4 +9,5 @@ export const activeSessionSchema = z.strictObject({
   role: z.enum(['member', 'admin', 'superadmin']),
   is_restricted: z.boolean(),
   can_publish: z.boolean(),
+  email_verified: z.boolean(),
 })

@@ -11,3 +11,6 @@ specs
 apps
 docs
 *.log
+*.log*
+Dockerfile*
+.dockerignore

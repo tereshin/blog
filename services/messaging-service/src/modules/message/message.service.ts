@@ -1,5 +1,6 @@
 import type { Message, MessagePage, ServiceContext } from '@blog/contracts'
-import { RestrictedError, UnauthorizedError } from '@blog/errors'
+import { requireVerifiedEmail } from '@blog/contracts'
+import { EmailUnverifiedError, RestrictedError, UnauthorizedError } from '@blog/errors'
 import { MessageConversationNotFoundError, SelfMessageError } from './message.errors.ts'
 import type { MessageRepository, MessageRow } from './message.repository.ts'
 import { decodeMessageCursor, encodeMessageCursor } from './message.schema.ts'
@@ -55,6 +56,7 @@ export function createMessageService(repository: MessageRepository): MessageServ
     async send(input) {
       const sender_id = requireUser(input.viewer)
       if (input.viewer.is_restricted) throw new RestrictedError()
+      if (!requireVerifiedEmail(input.viewer).allowed) throw new EmailUnverifiedError()
       if (input.peer_user_id === sender_id) throw new SelfMessageError()
       return repository.send({
         sender_id,

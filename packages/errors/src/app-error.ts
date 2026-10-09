@@ -62,3 +62,15 @@ export class RestrictedError extends AppError {
     super({ code: 'restricted', http_status: 403, message: 'Действие недоступно: участник ограничен', ...options })
   }
 }
+
+/** Почта участника не подтверждена: чтение разрешено, мутации — нет. */
+export class EmailUnverifiedError extends AppError {
+  constructor(options: SubErrorOptions = {}) {
+    super({
+      code: 'email_unverified',
+      http_status: 403,
+      message: 'Подтвердите почту, чтобы выполнить это действие',
+      ...options,
+    })
+  }
+}

@@ -1,5 +1,5 @@
-import { canReadArticle } from '@blog/contracts'
-import { RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
+import { canReadArticle, requireVerifiedEmail } from '@blog/contracts'
+import { EmailUnverifiedError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
 import { BookmarkNotAllowedError } from './bookmark.errors.ts'
 import { decodeBookmarkCursor, encodeBookmarkCursor } from './bookmark.schema.ts'
 import type { BookmarkRepository, BookmarkService } from './bookmark.types.ts'
@@ -40,6 +40,7 @@ async function change(
 ) {
   if (viewer.user_id === undefined) throw new UnauthorizedError()
   if (viewer.is_restricted) throw new RestrictedError()
+  if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
   const article = await repository.findArticle(article_id)
   // Черновик, скрытая и закрытая от зрителя статья в закладки не попадают.
   if (!article || article.status !== 'published' || !canReadArticle(viewer, article)) throw new BookmarkNotAllowedError()

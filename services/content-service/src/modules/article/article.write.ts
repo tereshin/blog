@@ -1,6 +1,6 @@
-import { blocksDocumentSchema } from '@blog/contracts'
+import { blocksDocumentSchema, requireVerifiedEmail } from '@blog/contracts'
 import type { ArticleDraft, BlocksDocument, CreateArticle, ServiceContext, UpdateArticle } from '@blog/contracts'
-import { RestrictedError, UnauthorizedError } from '@blog/errors'
+import { EmailUnverifiedError, RestrictedError, UnauthorizedError } from '@blog/errors'
 import { ArticleUnavailableError, CannotPublishError, InvalidBlockError } from './article.errors.ts'
 import type { ArticleRepository, StoredArticle } from './article.types.ts'
 import { deriveExcerpt, deriveFirstImage, searchText } from './lib/slugify.ts'
@@ -20,6 +20,7 @@ function requireUser(viewer: ServiceContext): string {
 function assertCanChange(viewer: ServiceContext): string {
   const user_id = requireUser(viewer)
   if (viewer.is_restricted) throw new RestrictedError()
+  if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
   return user_id
 }
 

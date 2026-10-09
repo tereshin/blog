@@ -6,6 +6,7 @@ export type SessionInfo = {
   role: Exclude<Role, 'guest'>
   is_restricted: boolean
   can_publish: boolean
+  email_verified: boolean
 }
 
 /** Поиск сессии у владельца; `null` — сессия отозвана, истекла или не существует. */

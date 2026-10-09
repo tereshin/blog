@@ -95,7 +95,7 @@ describe('повторный seed не меняет строки', () => {
       }
       await once()
       await identity.pool.query(
-        "insert into users (id, email, google_sub) values ('00000000-0000-4000-8000-000000000099', 'foreign@blog.test', 'foreign-sub')",
+        "insert into users (id, email, email_verified) values ('00000000-0000-4000-8000-000000000099', 'foreign@blog.test', true)",
       )
       const object_count = objects.size
       const hashes = {

@@ -30,8 +30,15 @@ export { commentSchema, commentTreePageSchema, createCommentSchema, popularComme
 export type { Comment, CommentTreePage, CreateComment, PopularComment, UpdateComment, UserComment, UserCommentPage } from './comments.ts'
 export { recordViewSchema, viewCountSchema } from './views.ts'
 export type { RecordView, ViewCount } from './views.ts'
-export { adminSettingsSchema, localeSchema, publicSettingsSchema, updateSettingsSchema } from './settings.ts'
-export type { AdminSettings, PublicSettings, UpdateSettings } from './settings.ts'
+export {
+  DEFAULT_REACTION_APPEARANCES,
+  adminSettingsSchema,
+  localeSchema,
+  publicSettingsSchema,
+  reactionAppearancesSchema,
+  updateSettingsSchema,
+} from './settings.ts'
+export type { AdminSettings, PublicSettings, ReactionAppearance, ReactionAppearances, UpdateSettings } from './settings.ts'
 export { EMBED_SERVICES, blocksDocumentSchema, editorBlockSchema, embedServiceSchema, listItemSchema } from './blocks.ts'
 export type { BlocksDocument, EditorBlock, ListItem } from './blocks.ts'
 export { articleCardsSchema, articleDraftListSchema, articleDraftSchema, articleSchema, articleStatusSchema, articleUnavailableSchema, createArticleSchema, updateArticleSchema } from './articles.ts'
@@ -43,17 +50,38 @@ export type { BookmarkPage, BookmarkState } from './bookmarks.ts'
 export { articleStatesSchema } from './article-states.ts'
 export type { ArticleStates, ArticleViewerState } from './article-states.ts'
 export {
-  AUTH_CALLBACK_ERRORS,
   SESSION_ID_HEADER,
-  authCallbackErrorSchema,
-  authCallbackSuccessSchema,
+  authConfigSchema,
+  authOkSchema,
+  createSessionBodySchema,
+  emailClaimBodySchema,
+  emailVerificationConfirmBodySchema,
+  passwordResetBodySchema,
+  passwordResetConfirmBodySchema,
+  pendingAuthSchema,
+  registrationBodySchema,
+  sessionCreatedSchema,
   sessionProfileSchema,
   sessionResponseSchema,
   sessionUserSchema,
   updateAppearanceSchema,
 } from './auth.ts'
 export type { UpdateAppearance } from './auth.ts'
-export type { AuthCallbackError, SessionProfile, SessionResponse, SessionUser } from './auth.ts'
+export type {
+  AuthConfig,
+  AuthOk,
+  CreateSessionBody,
+  EmailClaimBody,
+  EmailVerificationConfirmBody,
+  PasswordResetBody,
+  PasswordResetConfirmBody,
+  PendingAuth,
+  RegistrationBody,
+  SessionCreated,
+  SessionProfile,
+  SessionResponse,
+  SessionUser,
+} from './auth.ts'
 export {
   PROFILE_BADGES,
   PROFILE_SLUG_PATTERN,

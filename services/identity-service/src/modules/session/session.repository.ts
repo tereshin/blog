@@ -12,6 +12,7 @@ export function createSessionRepository(db: NodePgDatabase): SessionRepository {
           role: users.role,
           restricted_at: users.restricted_at,
           can_publish: users.can_publish,
+          email_verified: users.email_verified,
         })
         .from(sessions)
         .innerJoin(users, eq(users.id, sessions.user_id))
@@ -23,6 +24,7 @@ export function createSessionRepository(db: NodePgDatabase): SessionRepository {
         role: row.role,
         is_restricted: row.restricted_at !== null,
         can_publish: row.can_publish,
+        email_verified: row.email_verified,
       }
     },
   }

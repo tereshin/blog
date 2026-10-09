@@ -1,9 +1,28 @@
 import { z } from 'zod'
-import { sessionUserSchema } from '@blog/contracts'
+import {
+  authConfigSchema,
+  authOkSchema,
+  createSessionBodySchema,
+  emailClaimBodySchema,
+  emailVerificationConfirmBodySchema,
+  passwordResetBodySchema,
+  passwordResetConfirmBodySchema,
+  pendingAuthSchema,
+  registrationBodySchema,
+  sessionUserSchema,
+} from '@blog/contracts'
 
-export const startQuerySchema = z.object({
-  return_to: z.string().optional(),
-})
+export {
+  authConfigSchema,
+  authOkSchema,
+  createSessionBodySchema,
+  emailClaimBodySchema,
+  emailVerificationConfirmBodySchema,
+  passwordResetBodySchema,
+  passwordResetConfirmBodySchema,
+  pendingAuthSchema,
+  registrationBodySchema,
+}
 
 /** Ответ identity на `GET /v1/auth/session` для вошедшего. Профиль подставляет gateway. */
 export const identityMemberSessionSchema = z.strictObject({

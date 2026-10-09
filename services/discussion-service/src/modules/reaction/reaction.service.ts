@@ -1,6 +1,6 @@
-import { canReadArticle } from '@blog/contracts'
+import { canReadArticle, requireVerifiedEmail } from '@blog/contracts'
 import type { ReactionResponse } from '@blog/contracts'
-import { RestrictedError, UnauthorizedError } from '@blog/errors'
+import { EmailUnverifiedError, RestrictedError, UnauthorizedError } from '@blog/errors'
 import { ReactionTargetNotFoundError } from './reaction.errors.ts'
 import type { ReactInput, ReactionRepository } from './reaction.types.ts'
 
@@ -14,6 +14,7 @@ export function createReactionService(repository: ReactionRepository): ReactionS
       const { viewer, body } = input
       if (viewer.user_id === undefined) throw new UnauthorizedError()
       if (viewer.is_restricted) throw new RestrictedError()
+      if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
 
       const target = await repository.findTarget(body.target_type, body.target_id)
       if (!target || !canReadArticle(viewer, target.access)) throw new ReactionTargetNotFoundError()

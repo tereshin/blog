@@ -1,87 +1,135 @@
 import { describe, expect, it } from 'vitest'
-import { decideAccount, sanitizeReturnTo } from '../../src/modules/auth/index.ts'
-import type { AccountUser, GoogleClaims } from '../../src/modules/auth/auth.types.ts'
+import { decideSignIn, displayNameFromEmail, sanitizeReturnTo } from '../../src/modules/auth/auth.policy.ts'
+import type { SignInUser } from '../../src/modules/auth/auth.policy.ts'
 
-const claims = (patch: Partial<GoogleClaims> = {}): GoogleClaims => ({
-  sub: 'sub-new',
-  email: 'new@blog.test',
-  email_verified: true,
-  name: 'Новый',
-  ...patch,
-})
+const USER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
+const OTHER = '4a2e4d0f-2c1b-4b66-9a3c-7a7e6e4a8b33'
 
-function user(patch: Partial<AccountUser> = {}): AccountUser {
+function person(patch: Partial<SignInUser> = {}): SignInUser {
   return {
-    id: '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22',
-    email: 'root@blog.test',
-    google_sub: null,
-    role: 'superadmin',
+    id: USER,
+    email: 'anna@blog.test',
+    email_verified: true,
+    role: 'member',
     can_publish: true,
     restricted_at: null,
-    public_number: 1,
-    appearance: null,
-    created_at: new Date('2026-01-01T00:00:00.000Z'),
     ...patch,
   }
 }
 
 const closed = { registration_open: false, new_members_can_publish: false }
+const open = { registration_open: true, new_members_can_publish: true }
 
-describe('decideAccount', () => {
-  it('закрытая регистрация не создаёт нового участника', () => {
-    expect(decideAccount({ claims: claims(), by_sub: null, by_email: null, settings: closed, superadmin_email: 'root@blog.test' })).toEqual({
-      action: 'reject',
-      error: 'registration_closed',
-    })
-  })
-
-  it('почта суперадминистратора создаёт учётную запись при закрытой регистрации', () => {
+describe('decideSignIn', () => {
+  it('uid и подтверждённая почта того же участника — вход, почта не подменяется', () => {
+    const user = person()
     expect(
-      decideAccount({ claims: claims({ email: 'Root@blog.test' }), by_sub: null, by_email: null, settings: closed, superadmin_email: 'root@blog.test' }),
-    ).toEqual({ action: 'create', role: 'superadmin', can_publish: true })
-  })
-
-  it('привязывает sub к строке без google_sub только при подтверждённой почте', () => {
-    const existing = user()
-    expect(
-      decideAccount({ claims: claims({ email: 'root@blog.test', email_verified: false }), by_sub: null, by_email: existing, settings: closed, superadmin_email: 'root@blog.test' }),
-    ).toEqual({ action: 'reject', error: 'email_unverified' })
-    expect(
-      decideAccount({ claims: claims({ email: 'root@blog.test', sub: 'google-sub' }), by_sub: null, by_email: existing, settings: closed, superadmin_email: 'root@blog.test' }),
-    ).toEqual({ action: 'bind', user: existing })
-  })
-
-  it('повторный вход идёт по sub, даже если почта у издателя сменилась', () => {
-    const existing = user({ google_sub: 'sub-new', email: 'old@blog.test', role: 'member' })
-    expect(
-      decideAccount({
-        claims: claims({ email: 'new@blog.test' }),
-        by_sub: existing,
-        by_email: null,
+      decideSignIn({
+        token: { firebase_uid: 'uid-1', email: 'anna@blog.test', email_verified: true, name: 'Чужое' },
+        by_uid: user,
+        by_email: user,
         settings: closed,
-        superadmin_email: 'root@blog.test',
       }),
-    ).toEqual({ action: 'login', user: existing, next_email: 'new@blog.test' })
+    ).toEqual({ action: 'login', user, attach_uid: false })
   })
 
-  it('ограниченный участник не входит', () => {
-    const existing = user({ google_sub: 'sub-new', restricted_at: new Date(), role: 'member', email: 'new@blog.test' })
-    expect(decideAccount({ claims: claims(), by_sub: existing, by_email: existing, superadmin_email: 'root@blog.test' })).toEqual({
-      action: 'reject',
-      error: 'restricted',
-    })
-  })
-
-  it('новый участник получает право публикации из копии настроек', () => {
+  it('uid уже привязан, подтверждённая почта указывает на другого — вход в учётку uid', () => {
+    const owner = person()
+    const other = person({ id: OTHER, email: 'other@blog.test' })
     expect(
-      decideAccount({
-        claims: claims(),
-        by_sub: null,
+      decideSignIn({
+        token: { firebase_uid: 'uid-1', email: 'other@blog.test', email_verified: true, name: null },
+        by_uid: owner,
+        by_email: other,
+        settings: open,
+      }),
+    ).toEqual({ action: 'login', user: owner, attach_uid: false })
+  })
+
+  it('нет uid, подтверждённая почта совпала — вход и дописывание uid, даже при закрытой регистрации', () => {
+    const existing = person({ role: 'superadmin', restricted_at: new Date('2026-01-02T00:00:00.000Z') })
+    expect(
+      decideSignIn({
+        token: { firebase_uid: 'uid-new', email: 'anna@blog.test', email_verified: true, name: 'Анна' },
+        by_uid: null,
+        by_email: existing,
+        settings: closed,
+      }),
+    ).toEqual({ action: 'login', user: existing, attach_uid: true })
+  })
+
+  it('нет uid, почта подтверждена и ничья, регистрация открыта — новый участник', () => {
+    expect(
+      decideSignIn({
+        token: { firebase_uid: 'uid-new', email: 'new@blog.test', email_verified: true, name: 'Новый Участник С Очень Длинным Именем Которое Не Поместится' },
+        by_uid: null,
         by_email: null,
         settings: { registration_open: true, new_members_can_publish: false },
-        superadmin_email: 'root@blog.test',
       }),
-    ).toEqual({ action: 'create', role: 'member', can_publish: false })
+    ).toEqual({
+      action: 'create',
+      email: 'new@blog.test',
+      email_verified: true,
+      role: 'member',
+      can_publish: false,
+      display_name: 'Новый Участник С Очень Длинным Именем Которое Не П',
+    })
+  })
+
+  it('нет uid и регистрация закрыта — отказ и для подтверждённой ничьей почты, и без почты', () => {
+    expect(
+      decideSignIn({
+        token: { firebase_uid: 'uid-new', email: 'new@blog.test', email_verified: true, name: null },
+        by_uid: null,
+        by_email: null,
+        settings: closed,
+      }),
+    ).toEqual({ action: 'reject', error: 'registration_closed' })
+    expect(
+      decideSignIn({
+        token: { firebase_uid: 'uid-new', email: null, email_verified: false, name: null },
+        by_uid: null,
+        by_email: null,
+        settings: closed,
+      }),
+    ).toEqual({ action: 'reject', error: 'registration_closed' })
+  })
+
+  it('нет uid, почта не подтверждена, регистрация открыта — новая учётка без адреса', () => {
+    expect(
+      decideSignIn({
+        token: { firebase_uid: 'uid-new', email: 'hidden@blog.test', email_verified: false, name: null },
+        by_uid: null,
+        by_email: null,
+        settings: open,
+      }),
+    ).toEqual({
+      action: 'create',
+      email: null,
+      email_verified: false,
+      role: 'member',
+      can_publish: true,
+      display_name: 'hidden',
+    })
+  })
+
+  it('неподтверждённый адрес не открывает чужую учётку, даже если почта совпала бы', () => {
+    const existing = person({ email: 'hidden@blog.test' })
+    expect(
+      decideSignIn({
+        token: { firebase_uid: 'uid-new', email: 'hidden@blog.test', email_verified: false, name: null },
+        by_uid: null,
+        by_email: existing,
+        settings: open,
+      }).action,
+    ).toBe('create')
+  })
+})
+
+describe('displayNameFromEmail', () => {
+  it('берёт часть до @ и обрезает до 50', () => {
+    expect(displayNameFromEmail('anna@blog.test')).toBe('anna')
+    expect(displayNameFromEmail(`${'a'.repeat(80)}@blog.test`)).toHaveLength(50)
   })
 })
 

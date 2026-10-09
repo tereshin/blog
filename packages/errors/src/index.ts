@@ -3,6 +3,7 @@ export {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  EmailUnverifiedError,
   RestrictedError,
   UnauthorizedError,
   ValidationError,

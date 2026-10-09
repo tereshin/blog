@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { FollowTargetType, ServiceContext } from '@blog/contracts'
-import { NotFoundError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
+import { requireVerifiedEmail } from '@blog/contracts'
+import { EmailUnverifiedError, NotFoundError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
 import { SelfFollowError } from './follow.errors.ts'
 import type { FollowQuery } from './follow.schema.ts'
 import type { FollowRepository, FollowService } from './follow.types.ts'
@@ -11,6 +12,7 @@ const targetIdsSchema = z.array(z.uuid()).max(MAX_TARGET_IDS)
 function requireActor(viewer: ServiceContext): string {
   if (viewer.user_id === undefined) throw new UnauthorizedError()
   if (viewer.is_restricted) throw new RestrictedError()
+  if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
   return viewer.user_id
 }
 

@@ -62,7 +62,7 @@ describe('identity: seed (PostgreSQL в контейнере)', () => {
 
   it('следующий новый участник получает номер после последнего seed-участника', async () => {
     const { rows } = await database.pool.query<{ public_number: number }>(
-      "insert into users (id, email, google_sub) values (gen_random_uuid(), 'new@blog.test', 'sub-new') returning public_number",
+      "insert into users (id, email, email_verified) values (gen_random_uuid(), 'new@blog.test', true) returning public_number",
     )
     expect(rows[0]?.public_number).toBe(9)
     await database.pool.query("delete from users where email = 'new@blog.test'")
@@ -96,10 +96,10 @@ describe('identity: seed (PostgreSQL в контейнере)', () => {
     const foreign = openDatabase(other.url)
     try {
       await migrate(foreign.pool)
-      await foreign.pool.query("insert into users (id, public_number, email, google_sub, role) values (gen_random_uuid(), 999, 'READER@blog.test', 'real-google-sub', 'member')")
+      await foreign.pool.query("insert into users (id, public_number, email, email_verified, role) values (gen_random_uuid(), 999, 'READER@blog.test', true, 'member')")
       await runSeed({ handle: foreign, profile: 'small', anchor_flag: ANCHOR, logger, write: (context) => seedIdentity({ ...context, profile: 'small', env, logger }) })
-      const { rows } = await foreign.pool.query<{ email: string; google_sub: string }>("select email, google_sub from users where lower(email) = 'reader@blog.test'")
-      expect(rows).toEqual([{ email: 'READER@blog.test', google_sub: 'real-google-sub' }])
+      const { rows } = await foreign.pool.query<{ email: string }>("select email from users where lower(email) = 'reader@blog.test'")
+      expect(rows).toEqual([{ email: 'READER@blog.test' }])
       expect(Number((await foreign.pool.query<{ n: string }>('select count(*) as n from users')).rows[0]?.n)).toBe(8) // чужой + семь seed-участников
     } finally {
       await foreign.close()

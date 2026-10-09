@@ -26,8 +26,8 @@ describe('identity: миграция и GET /internal/sessions/{id} (PostgreSQL 
     await migrate(database.pool)
 
     await database.db.insert(users).values([
-      { id: MEMBER, email: 'member@blog.test', google_sub: 'sub-member', role: 'member', can_publish: true },
-      { id: RESTRICTED, email: 'restricted@blog.test', google_sub: 'sub-restricted', role: 'admin', can_publish: false, restricted_at: new Date() },
+      { id: MEMBER, email: 'member@blog.test', email_verified: true, role: 'member', can_publish: true },
+      { id: RESTRICTED, email: 'restricted@blog.test', email_verified: true, role: 'admin', can_publish: false, restricted_at: new Date() },
     ])
     const now = Date.now()
     await database.db.insert(sessions).values([
@@ -56,7 +56,7 @@ describe('identity: миграция и GET /internal/sessions/{id} (PostgreSQL 
       "select table_name from information_schema.tables where table_schema = 'public' order by table_name",
     )
     expect(rows.map((row) => row.table_name)).toEqual(
-      expect.arrayContaining(['users', 'sessions', 'settings_copy', 'outbox', 'processed_events', 'seed_runs', 'schema_migrations']),
+      expect.arrayContaining(['users', 'sessions', 'settings_copy', 'outbox', 'processed_events', 'seed_runs', 'auth_identities', 'schema_migrations']),
     )
   })
 
@@ -68,12 +68,12 @@ describe('identity: миграция и GET /internal/sessions/{id} (PostgreSQL 
   it('действующая сессия отдаёт участника', async () => {
     const response = await app.inject({ method: 'GET', url: '/internal/sessions/active_session_00000001' })
     expect(response.statusCode).toBe(200)
-    expect(response.json()).toEqual({ user_id: MEMBER, role: 'member', is_restricted: false, can_publish: true })
+    expect(response.json()).toEqual({ user_id: MEMBER, role: 'member', is_restricted: false, can_publish: true, email_verified: true })
   })
 
   it('ограниченный участник отдаётся с is_restricted', async () => {
     const response = await app.inject({ method: 'GET', url: '/internal/sessions/restricted_session_00001' })
-    expect(response.json()).toEqual({ user_id: RESTRICTED, role: 'admin', is_restricted: true, can_publish: false })
+    expect(response.json()).toEqual({ user_id: RESTRICTED, role: 'admin', is_restricted: true, can_publish: false, email_verified: true })
   })
 
   it.each(['expired_session_0000001', 'revoked_session_0000001', 'unknown_session_000000001'])('сессия %s — 404', async (id) => {

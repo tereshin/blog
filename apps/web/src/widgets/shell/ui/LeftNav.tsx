@@ -5,7 +5,7 @@ import { useViewer } from '@/entities/session'
 import { TopicNavItem, useTopics } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
-import { Button, Card, ErrorState, Skeleton } from '@/shared/ui'
+import { Button, ErrorState, Skeleton } from '@/shared/ui'
 import { useCurrentSection } from '../model/useCurrentSection.ts'
 import { useFeedFreshness } from '../model/useFeedFreshness.ts'
 import { useShellStore } from '../model/useShellStore.ts'
@@ -64,8 +64,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const has_hidden = active_topics.length > VISIBLE_TOPICS
 
   return (
-    <Card className="flex h-full max-h-full min-h-0 flex-col overflow-hidden">
-      <Card.Content data-shell-scroll="left" onScroll={handleScroll} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-2">
+    <div onScroll={handleScroll} className="flex flex-col gap-1 p-2">
         {MODES.map((mode) => {
           const is_fresh = (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
           const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh
@@ -108,7 +107,6 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
             ) : null}
           </>
         )}
-      </Card.Content>
-    </Card>
+    </div>
   )
 }
