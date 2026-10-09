@@ -3,11 +3,14 @@ import { Card, Skeleton } from '@/shared/ui'
 
 const PLACEHOLDER_KEYS = ['a', 'b', 'c'] as const
 
-/** Серые заготовки формы карточек той же ширины, что и настоящие. */
-export function CenterSkeleton() {
-  const { t } = useT()
+/** Заготовка центра зависит от раздела: лента, статья или две карточки профиля. */
+export type CenterSkeletonKind = 'feed' | 'article' | 'profile'
+
+type CenterSkeletonProps = { kind?: CenterSkeletonKind }
+
+function FeedSkeleton() {
   return (
-    <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 px-4 py-4 min-[1200px]:px-0 min-[1200px]:pt-0">
+    <>
       {PLACEHOLDER_KEYS.map((key) => (
         <Card key={key}>
           <Card.Content className="flex flex-col gap-3">
@@ -20,6 +23,52 @@ export function CenterSkeleton() {
           </Card.Content>
         </Card>
       ))}
+    </>
+  )
+}
+
+function ArticleSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 px-1">
+      <Skeleton shape="line" className="h-8 w-2/3" />
+      <Skeleton shape="line" className="w-full" />
+      <Skeleton shape="line" className="w-11/12" />
+      <Skeleton shape="line" className="w-full" />
+      <Skeleton shape="line" className="w-4/5" />
+      <Skeleton shape="line" className="w-full" />
+    </div>
+  )
+}
+
+function ProfileSkeleton() {
+  return (
+    <>
+      <Card>
+        <Skeleton shape="block" className="h-36 w-full rounded-none" />
+        <Card.Content className="flex flex-col gap-3">
+          <Skeleton shape="circle" className="size-16" />
+          <Skeleton shape="line" className="h-6 w-40" />
+          <Skeleton shape="line" className="w-2/3" />
+        </Card.Content>
+      </Card>
+      <Card>
+        <Card.Content className="flex flex-col gap-3">
+          <Skeleton shape="line" className="h-5 w-1/2" />
+          <Skeleton shape="block" />
+        </Card.Content>
+      </Card>
+    </>
+  )
+}
+
+/** Серые заготовки той же ширины, что и содержимое раздела. */
+export function CenterSkeleton({ kind = 'feed' }: CenterSkeletonProps) {
+  const { t } = useT()
+  return (
+    <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 px-4 py-4 min-[1200px]:px-0 min-[1200px]:pt-0">
+      {kind === 'article' ? <ArticleSkeleton /> : null}
+      {kind === 'profile' ? <ProfileSkeleton /> : null}
+      {kind === 'feed' ? <FeedSkeleton /> : null}
     </div>
   )
 }

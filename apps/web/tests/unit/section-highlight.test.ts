@@ -40,6 +40,11 @@ describe('getHighlightedItem', () => {
     expect(getHighlightedItem({ kind: 'article', topic_id: 'archived' }, ACTIVE)).toBeNull()
   })
 
+  it('прямой адрес профиля после ленты никого не подсвечивает', () => {
+    expect(getHighlightedItem({ kind: 'fresh' }, ACTIVE)).toEqual({ kind: 'fresh' })
+    expect(getHighlightedItem({ kind: 'profile' }, ACTIVE)).toBeNull()
+  })
+
   it('статья без темы и неизвестная тема никого не подсвечивают', () => {
     expect(getHighlightedItem({ kind: 'article', topic_id: null }, ACTIVE)).toBeNull()
     expect(getHighlightedItem({ kind: 'topic', topic_id: 'unknown' }, ACTIVE)).toBeNull()

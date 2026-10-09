@@ -18,6 +18,7 @@ export { ToastProvider, useToast } from './Toast.tsx'
 export type { ToastApi } from './Toast.tsx'
 export { Tooltip } from './Tooltip.tsx'
 export {
+  AlertIcon,
   ArrowLeftIcon,
   ArrowUpIcon,
   BellIcon,
@@ -25,6 +26,7 @@ export {
   ChevronDownIcon,
   CommentIcon,
   EyeIcon,
+  InboxIcon,
   MenuIcon,
   MoreIcon,
   PenIcon,

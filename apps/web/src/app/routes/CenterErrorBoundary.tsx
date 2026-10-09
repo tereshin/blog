@@ -1,10 +1,12 @@
-import { Component } from 'react'
+import { Component, useCallback } from 'react'
 import type { ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useT } from '@/shared/i18n'
 import { ErrorState } from '@/shared/ui'
 
 type CenterErrorBoundaryProps = { children: ReactNode }
 type CenterErrorBoundaryState = { has_error: boolean }
+type InnerProps = { children: ReactNode; refetch: () => void }
 
 function CenterError({ onRetry }: { onRetry: () => void }) {
   const { t } = useT()
@@ -15,15 +17,32 @@ function CenterError({ onRetry }: { onRetry: () => void }) {
  * Ошибка раздела остаётся в центре: шапка и обе карточки не затрагиваются.
  * Переход на другой адрес сбрасывает ошибку: `ShellLayout` задаёт границе `key` по адресу.
  */
-export class CenterErrorBoundary extends Component<CenterErrorBoundaryProps, CenterErrorBoundaryState> {
+class CenterErrorBoundaryInner extends Component<InnerProps, CenterErrorBoundaryState> {
   override state: CenterErrorBoundaryState = { has_error: false }
 
   static getDerivedStateFromError(): CenterErrorBoundaryState {
     return { has_error: true }
   }
 
+  resetErrorBoundary = (): void => {
+    this.setState({ has_error: false })
+  }
+
+  retry = (): void => {
+    this.resetErrorBoundary()
+    this.props.refetch()
+  }
+
   override render(): ReactNode {
-    if (this.state.has_error) return <CenterError onRetry={() => this.setState({ has_error: false })} />
+    if (this.state.has_error) return <CenterError onRetry={this.retry} />
     return this.props.children
   }
+}
+
+export function CenterErrorBoundary({ children }: CenterErrorBoundaryProps) {
+  const query_client = useQueryClient()
+  const refetch = useCallback(() => {
+    void query_client.refetchQueries()
+  }, [query_client])
+  return <CenterErrorBoundaryInner refetch={refetch}>{children}</CenterErrorBoundaryInner>
 }

@@ -58,5 +58,8 @@ export const feedCardSchema = z.strictObject({
 })
 export type FeedCard = z.infer<typeof feedCardSchema>
 
-export const feedPageSchema = pageSchema(feedCardSchema)
+export const feedPageSchema = pageSchema(feedCardSchema).extend({
+  /** Пустая «Моя лента» участника, у которого нет подписок. */
+  reason: z.enum(['no_follows']).optional(),
+})
 export type FeedPage = z.infer<typeof feedPageSchema>

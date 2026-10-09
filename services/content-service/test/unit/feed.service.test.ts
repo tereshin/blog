@@ -92,8 +92,16 @@ function row(index: number, partial: Partial<FeedRow> = {}): FeedRow {
   }
 }
 
-function repositoryOf(rows: FeedRow[], profiles = new Map<string, { display_name: string; avatar_url: string | null }>()): FeedRepository {
-  return { findPage: async ({ limit }) => rows.slice(0, limit), findProfiles: async () => profiles }
+function repositoryOf(
+  rows: FeedRow[],
+  profiles = new Map<string, { display_name: string; avatar_url: string | null }>(),
+  follows: { user_ids: string[]; topic_ids: string[] } = { user_ids: [], topic_ids: [] },
+): FeedRepository {
+  return {
+    findPage: async ({ limit }) => rows.slice(0, limit),
+    findProfiles: async () => profiles,
+    listFollows: async () => follows,
+  }
 }
 
 describe('feed.service', () => {
@@ -116,8 +124,26 @@ describe('feed.service', () => {
     expect(page.items[0]?.author.slug).toBe('3')
   })
 
-  it('«Моя лента» пока отвечает 501', async () => {
-    await expect(createFeedService(repositoryOf([])).getPage(viewer, { mode: 'mine', limit: 20 }, NOW)).rejects.toMatchObject({ http_status: 501 })
+  it('гость на «Моей ленте» получает 401, без подписок — причину без чтения статей', async () => {
+    await expect(createFeedService(repositoryOf([])).getPage(viewer, { mode: 'mine', limit: 20 }, NOW)).rejects.toMatchObject({ http_status: 401 })
+    let read = false
+    const repository = repositoryOf([])
+    repository.findPage = async () => {
+      read = true
+      return []
+    }
+    const member: ServiceContext = { ...viewer, role: 'member', user_id: '11111111-1111-4111-8111-111111111111' }
+    const empty = await createFeedService(repository).getPage(member, { mode: 'mine', limit: 20 }, NOW)
+    expect(empty).toEqual({ items: [], next_cursor: null, reason: 'no_follows' })
+    expect(read).toBe(false)
+
+    const followed = await createFeedService(repositoryOf([row(1)], new Map(), { user_ids: [member.user_id ?? ''], topic_ids: [] })).getPage(
+      member,
+      { mode: 'mine', limit: 20 },
+      NOW,
+    )
+    expect(followed.items).toHaveLength(1)
+    expect(followed.reason).toBeUndefined()
   })
 
   it('самый обсуждаемый комментарий собирается из профиля автора', async () => {

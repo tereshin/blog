@@ -61,6 +61,24 @@ function textOf(block: EditorBlock): string | null {
   }
 }
 
+/** Заголовок и текст блоков для `search_vector`: без обрезки фрагмента карточки. */
+export function searchText(title: string, blocks: readonly EditorBlock[]): string {
+  const parts = [title]
+  for (const block of blocks) {
+    const text = textOf(block)
+    if (text) parts.push(text)
+    if (block.type === 'table') parts.push(block.data.content.flat().join(' '))
+    if (block.type === 'image' && block.data.caption) parts.push(block.data.caption)
+    if (block.type === 'attaches') parts.push(block.data.title)
+    if (block.type === 'personality') parts.push(`${block.data.name} ${block.data.description ?? ''}`)
+  }
+  return parts
+    .join(' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** Первые текстовые блоки без разметки, около 300 символов. */
 export function deriveExcerpt(blocks: readonly EditorBlock[]): string {
   const plain = blocks

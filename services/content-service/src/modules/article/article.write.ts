@@ -3,7 +3,7 @@ import type { ArticleDraft, BlocksDocument, CreateArticle, ServiceContext, Updat
 import { RestrictedError, UnauthorizedError } from '@blog/errors'
 import { ArticleUnavailableError, CannotPublishError, InvalidBlockError } from './article.errors.ts'
 import type { ArticleRepository, StoredArticle } from './article.types.ts'
-import { deriveExcerpt, deriveFirstImage } from './lib/slugify.ts'
+import { deriveExcerpt, deriveFirstImage, searchText } from './lib/slugify.ts'
 import { hasContentBlock, sanitizeDocument } from './article.sanitizer.ts'
 import type { FileOwner } from './article.sanitizer.ts'
 
@@ -84,6 +84,7 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
         comments_enabled: input.comments_enabled ?? current.comments_enabled,
         excerpt: deriveExcerpt(blocks.blocks),
         first_image_url: deriveFirstImage(blocks.blocks),
+        search_text: searchText(input.title ?? current.title, blocks.blocks),
         ...(input.slug === undefined ? {} : { slug: input.slug }),
         correlation_id,
       })
@@ -98,7 +99,7 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
       const blocks = parseBlocks(current.blocks)
       const saved = await repository.publish(id, author_id, {
         has_content: hasContentBlock(blocks.blocks),
-        search_text: `${current.title}\n${deriveExcerpt(blocks.blocks)}`,
+        search_text: searchText(current.title, blocks.blocks),
         correlation_id,
       })
       if (!saved) throw new ArticleUnavailableError()

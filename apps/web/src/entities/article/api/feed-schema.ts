@@ -28,6 +28,7 @@ export const feedCardDtoSchema = z.object({
 export const feedPageDtoSchema = z.object({
   items: z.array(feedCardDtoSchema),
   next_cursor: z.string().nullable(),
+  reason: z.enum(['no_follows']).optional(),
 })
 
 type FeedCardDto = z.infer<typeof feedCardDtoSchema>
@@ -44,5 +45,9 @@ export function toArticleCard(dto: FeedCardDto, now: Date = new Date()): Article
 }
 
 export function toFeedPage(dto: FeedPageDto, now: Date = new Date()): FeedPageModel {
-  return { items: dto.items.map((item) => toArticleCard(item, now)), next_cursor: dto.next_cursor }
+  return {
+    items: dto.items.map((item) => toArticleCard(item, now)),
+    next_cursor: dto.next_cursor,
+    ...(dto.reason ? { reason: dto.reason } : {}),
+  }
 }

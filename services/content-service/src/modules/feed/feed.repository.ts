@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, gte, inArray, or, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { articles, profiles, promotions, topics, users_copy } from '../../infra/db/schema.ts'
+import { articles, follows, profiles, promotions, topics, users_copy } from '../../infra/db/schema.ts'
 import { visibleArticlesWhere } from '../access/index.ts'
 import { POPULAR_WINDOW_MS } from './feed.rules.ts'
 import type { FeedRepository } from './feed.types.ts'
@@ -58,16 +58,35 @@ export function createFeedRepository(db: NodePgDatabase): FeedRepository {
       const after = selection.cursor
         ? sql`(${articles.published_at}, ${articles.id}) < (${new Date(selection.cursor.t)}, ${selection.cursor.id})`
         : undefined
+      const followed =
+        selection.kind === 'mine'
+          ? selection.user_ids.length > 0 && selection.topic_ids.length > 0
+            ? or(inArray(articles.author_id, selection.user_ids), inArray(articles.topic_id, selection.topic_ids))
+            : selection.user_ids.length > 0
+              ? inArray(articles.author_id, selection.user_ids)
+              : inArray(articles.topic_id, selection.topic_ids)
+          : undefined
       const rows = await db
         .select(card_columns)
         .from(articles)
         .innerJoin(topics, eq(topics.id, articles.topic_id))
         .leftJoin(profiles, eq(profiles.user_id, articles.author_id))
         .leftJoin(users_copy, eq(users_copy.user_id, articles.author_id))
-        .where(and(base, selection.topic_slug ? eq(topics.slug, selection.topic_slug) : undefined, after))
+        .where(and(base, selection.kind === 'fresh' && selection.topic_slug ? eq(topics.slug, selection.topic_slug) : undefined, followed, after))
         .orderBy(desc(articles.published_at), desc(articles.id))
         .limit(limit)
       return rows.map((row) => ({ ...row, published_at: row.published_at as Date }))
+    },
+
+    async listFollows(user_id) {
+      const rows = await db
+        .select({ target_type: follows.target_type, target_id: follows.target_id })
+        .from(follows)
+        .where(eq(follows.follower_id, user_id))
+      return {
+        user_ids: rows.filter((row) => row.target_type === 'user').map((row) => row.target_id),
+        topic_ids: rows.filter((row) => row.target_type === 'topic').map((row) => row.target_id),
+      }
     },
 
     async findProfiles(user_ids) {

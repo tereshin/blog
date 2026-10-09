@@ -116,6 +116,25 @@ export function EyeIcon(props: IconProps) {
   )
 }
 
+export function InboxIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z" />
+    </Svg>
+  )
+}
+
+export function AlertIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <path d="M12 16h.01" />
+    </Svg>
+  )
+}
+
 export function MoreIcon(props: IconProps) {
   return (
     <Svg {...props}>

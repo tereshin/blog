@@ -1,4 +1,5 @@
-import { Link } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { useFirstArticle } from '@/entities/article'
 import { useT } from '@/shared/i18n'
 import { ArrowLeftIcon } from '@/shared/ui'
@@ -15,7 +16,8 @@ function HeaderPill() {
   return (
     <Link
       to={article.href}
-      className="block min-w-0 max-w-md truncate rounded-pill bg-surface-secondary px-4 py-1.5 text-sm text-muted outline-offset-2 hover:text-foreground"
+      title={article.title}
+      className="block min-w-0 max-w-full truncate rounded-pill bg-surface-secondary px-4 py-1.5 text-sm text-muted outline-offset-2 hover:text-foreground"
     >
       {article.title}
     </Link>
@@ -35,19 +37,60 @@ function HeaderBack({ title }: { title: string }) {
       >
         <ArrowLeftIcon width={18} height={18} />
       </Link>
-      <span className="min-w-0 truncate text-sm font-medium">{title}</span>
+      <span title={title} className="min-w-0 truncate text-sm font-medium">
+        {title}
+      </span>
     </div>
   )
 }
 
-/** Центр шапки по режиму из стора. Поиск подключается своим сценарием. */
+/** Поле вместо пилюли: Enter открывает `/search`, Escape и закрытие возвращают прежний центр. */
+function HeaderSearch() {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const closeSearch = useShellStore((state) => state.closeSearch)
+  const input_ref = useRef<HTMLInputElement>(null)
+  const [value, setValue] = useState('')
+
+  useEffect(() => {
+    input_ref.current?.focus()
+  }, [])
+
+  return (
+    <form
+      className="flex min-w-0 max-w-xl flex-1 items-center gap-1"
+      onSubmit={(event) => {
+        event.preventDefault()
+        const q = value.trim()
+        if (q.length < 2) return
+        navigate(`/search?q=${encodeURIComponent(q)}`)
+      }}
+    >
+      <input
+        ref={input_ref}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') closeSearch()
+        }}
+        aria-label={t('header.search')}
+        className="min-w-0 flex-1 rounded-pill bg-surface-secondary px-4 py-1.5 text-sm text-foreground outline-offset-2"
+      />
+      <button type="button" aria-label={t('common.close')} className="shrink-0 rounded-md px-2 py-1 text-sm text-muted" onClick={closeSearch}>
+        {t('common.close')}
+      </button>
+    </form>
+  )
+}
+
+/** Центр шапки по режиму из стора. */
 export function HeaderCenter() {
   const header_center = useShellStore((state) => state.header_center)
   switch (header_center.kind) {
     case 'pill':
       return <HeaderPill />
     case 'search':
-      return null
+      return <HeaderSearch />
     case 'back':
       return <HeaderBack title={header_center.title} />
   }

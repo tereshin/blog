@@ -1,4 +1,5 @@
 export { CenterSkeleton } from './ui/CenterSkeleton.tsx'
+export type { CenterSkeletonKind } from './ui/CenterSkeleton.tsx'
 export { HeaderCenter } from './ui/HeaderCenter.tsx'
 export { LeftNav } from './ui/LeftNav.tsx'
 export { RightRail } from './ui/RightRail.tsx'

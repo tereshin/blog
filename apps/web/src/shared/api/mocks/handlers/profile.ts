@@ -1,4 +1,4 @@
-import { HttpResponse, http } from 'msw'
+import { delay, HttpResponse, http } from 'msw'
 
 type ProfileBody = {
   display_name: string
@@ -106,7 +106,8 @@ export const profileHandlers = [
   ),
   http.get('*/v1/profiles/:slug/following', () => HttpResponse.json({ items: [], next_cursor: null })),
   http.get('*/v1/users/:user_id/comments', () => HttpResponse.json({ items: [comment], next_cursor: null })),
-  http.get('*/v1/profiles/:slug', ({ params }) => {
+  http.get('*/v1/profiles/:slug', async ({ params }) => {
+    if (window.localStorage.getItem('mock_profile_delay') === '1') await delay(2000)
     const found = profileOf(String(params.slug))
     if (!found) return HttpResponse.json({ code: 'not_found', title: 'Профиль не найден', status: 404 }, { status: 404 })
     return HttpResponse.json(found)

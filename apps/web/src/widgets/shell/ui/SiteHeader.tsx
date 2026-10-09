@@ -31,6 +31,9 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const toast = useToast()
   const navigate = useNavigate()
   const setNavOpen = useShellStore((state) => state.setNavOpen)
+  const is_search = useShellStore((state) => state.header_center.kind === 'search')
+  const openSearch = useShellStore((state) => state.openSearch)
+  const closeSearch = useShellStore((state) => state.closeSearch)
 
   const handleWrite = () => {
     if (viewer.status === 'loading') return
@@ -71,7 +74,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       </Link>
       <div className="flex min-w-0 flex-1 justify-center px-2">{center}</div>
       <div className="flex shrink-0 items-center gap-1">
-        <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch}>
+        <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch ?? (is_search ? closeSearch : openSearch)}>
           <SearchIcon />
         </Button>
         {notifications}

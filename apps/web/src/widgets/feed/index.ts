@@ -1,3 +1,4 @@
+export { ArticleFeed } from './ui/ArticleFeed.tsx'
 export { Feed } from './ui/Feed.tsx'
 export type { FeedSlots } from './ui/FeedItem.tsx'
 export { useFeed } from './model/useFeed.ts'

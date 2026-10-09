@@ -2,6 +2,7 @@ import { HttpResponse, http } from 'msw'
 import { buildFeedFixture } from '../fixtures/feed.ts'
 import type { FeedCardFixture } from '../fixtures/feed.ts'
 import { publishedFeedCards } from './articles-store.ts'
+import { readMockViewer } from './session.ts'
 
 export const MOCK_FEED_KEY = 'mock_feed'
 const PAGE_SIZE = 20
@@ -29,7 +30,14 @@ export const feedHandlers = [
     if (scenario === 'empty') return HttpResponse.json({ items: [], next_cursor: null })
 
     const url = new URL(request.url)
-    const items = select(url.searchParams.get('mode') ?? 'fresh')
+    const mode = url.searchParams.get('mode') ?? 'fresh'
+    if (mode === 'mine') {
+      if (readMockViewer() === 'guest') return HttpResponse.json({ code: 'unauthorized', title: 'Требуется вход' }, { status: 401 })
+      if (window.localStorage.getItem('mock_follows') !== '1') {
+        return HttpResponse.json({ items: [], next_cursor: null, reason: 'no_follows' })
+      }
+    }
+    const items = select(mode)
     const offset = Number(url.searchParams.get('cursor') ?? 0) || 0
     const page = items.slice(offset, offset + PAGE_SIZE)
     const next = offset + PAGE_SIZE

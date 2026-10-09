@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import type { ReactNode, UIEvent } from 'react'
 import { useT } from '@/shared/i18n'
 import { useMediaQuery } from '@/shared/lib'
 import { Drawer } from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
+import { BackToTop } from './BackToTop.tsx'
 
 /** Ширина, с которой появляются три колонки (контракт `shell.md`). */
 export const WIDE_QUERY = '(min-width: 1200px)'
@@ -33,6 +34,12 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
   const center_ref = useRef<HTMLElement>(null)
   const frame_ref = useRef<number | null>(null)
   const latest_top_ref = useRef(0)
+  const mount_id = useId()
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('shell-lock', is_wide)
+    return () => document.documentElement.classList.remove('shell-lock')
+  }, [is_wide])
 
   // Положение центра пишется в стор не чаще кадра: прокрутка не вызывает ре-рендер на каждый пиксель.
   const handleScroll = (event: UIEvent<HTMLElement>) => {
@@ -59,29 +66,37 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
 
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
-      <header className="shrink-0">{header}</header>
+      <header role="banner" data-mount-id={mount_id} className="shrink-0">
+        {header}
+      </header>
       <div
         ref={column_ref}
+        data-shell-scroll="column"
         onScroll={handleScroll}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain min-[1200px]:grid min-[1200px]:grid-cols-[16rem_minmax(0,1fr)_21rem] min-[1200px]:gap-4 min-[1200px]:overflow-hidden min-[1200px]:px-4 min-[1200px]:pb-4"
       >
-        <nav aria-label={t('shell.nav.label')} className="hidden min-h-0 min-[1200px]:block">
+        <nav aria-label={t('shell.navigation')} className="hidden h-full min-h-0 min-[1200px]:block">
           {is_wide ? left : null}
         </nav>
         <main
           ref={center_ref}
+          data-shell-scroll="center"
           onScroll={handleScroll}
           className="min-w-0 min-[1200px]:min-h-0 min-[1200px]:overflow-y-auto min-[1200px]:overscroll-contain"
         >
           {center}
         </main>
-        <aside aria-label={t('shell.rail.title')} className="min-w-0 px-4 pb-4 min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1200px]:p-0">
+        <aside
+          aria-label={t('shell.popular_comments')}
+          className="min-w-0 px-4 pb-4 min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:max-h-full min-[1200px]:flex-col min-[1200px]:p-0"
+        >
           {right}
         </aside>
       </div>
-      <Drawer is_open={!is_wide && is_nav_open} onOpenChange={setNavOpen} placement="left" aria-label={t('shell.nav.label')}>
+      <BackToTop />
+      <Drawer is_open={!is_wide && is_nav_open} onOpenChange={setNavOpen} placement="left" aria-label={t('shell.navigation')}>
         <Drawer.Body>
-          <nav aria-label={t('shell.nav.label')}>{left}</nav>
+          <nav aria-label={t('shell.navigation')}>{left}</nav>
         </Drawer.Body>
       </Drawer>
     </div>

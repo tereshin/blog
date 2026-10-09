@@ -49,6 +49,19 @@ function publicSettings(settings: SiteSettings) {
   return { name: settings.name, logo_url: settings.logo_url, locale: settings.locale, about: settings.about }
 }
 
+function longTopics(): SiteTopic[] {
+  return Array.from({ length: 20 }, (_, index) => ({
+    id: `5f0f6a52-0d8b-4f6e-a8b1-${String(index + 20).padStart(12, '0')}`,
+    slug: `dlinnaya-${index + 1}`,
+    title: `Длинная тема ${index + 1}`,
+    description: null,
+    avatar_url: null,
+    cover_url: null,
+    status: 'active' as const,
+    position: 50 + index,
+  }))
+}
+
 function forbidden() {
   return HttpResponse.json({ code: 'forbidden', title: 'Раздел доступен только администратору площадки', status: 403 }, { status: 403 })
 }
@@ -72,7 +85,14 @@ export const shellHandlers = [
     const include_archived = new URL(request.url).searchParams.get('include_archived') === '1'
     if (include_archived && readMockViewer() !== 'superadmin') return forbidden()
     const topics = readSite().topics.filter((topic) => include_archived || topic.status === 'active')
-    return HttpResponse.json([...topics].sort((a, b) => a.position - b.position))
+    const listed = window.localStorage.getItem('mock_topics') === 'long' ? [...topics, ...longTopics()] : topics
+    return HttpResponse.json([...listed].sort((a, b) => a.position - b.position))
+  }),
+  http.get('*/v1/topics/:slug', ({ params }) => {
+    const listed = window.localStorage.getItem('mock_topics') === 'long' ? [...readSite().topics, ...longTopics()] : readSite().topics
+    const topic = listed.find((item) => item.slug === params.slug)
+    if (!topic) return HttpResponse.json({ code: 'not_found', title: 'Такой темы нет' }, { status: 404 })
+    return HttpResponse.json(topic)
   }),
   http.post('*/v1/topics', async ({ request }) => {
     if (readMockViewer() !== 'superadmin') return forbidden()
@@ -116,6 +136,11 @@ export const shellHandlers = [
     writeSite(state)
     return HttpResponse.json([...state.topics].sort((a, b) => a.position - b.position))
   }),
-  http.get('*/v1/comments/popular', () => HttpResponse.json(popular_comments)),
+  http.get('*/v1/comments/popular', () => {
+    const mode = window.localStorage.getItem('mock_rail')
+    if (mode === 'empty') return HttpResponse.json([])
+    if (mode === 'error') return HttpResponse.json({ code: 'unavailable', title: 'Не удалось загрузить комментарии', status: 500 }, { status: 500 })
+    return HttpResponse.json(popular_comments)
+  }),
   http.put('*/v1/events/subscriptions', () => HttpResponse.json({ article_ids: [] })),
 ]

@@ -69,7 +69,7 @@ export function Feed({ mode, banner, ...slots }: FeedProps) {
     saveFeedReturn({ mode, scroll_top: findScrollParent(root_ref.current)?.scrollTop ?? 0 })
   }
 
-  if (state.status === 'loading') return <FeedSkeletons count={SKELETON_COUNT} />
+  if (state.status === 'loading' || state.status === 'idle') return <FeedSkeletons count={SKELETON_COUNT} />
   if (state.status === 'error') return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
   if (state.article_ids.length === 0) return <FeedEmpty />
 

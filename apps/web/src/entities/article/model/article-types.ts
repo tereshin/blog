@@ -28,7 +28,7 @@ export type ArticleCardModel = {
   href: string
 }
 
-export type FeedPageModel = { items: ArticleCardModel[]; next_cursor: string | null }
+export type FeedPageModel = { items: ArticleCardModel[]; next_cursor: string | null; reason?: 'no_follows' }
 
 export type ArticleBlock = { id?: string; type: string; data?: Record<string, unknown> }
 

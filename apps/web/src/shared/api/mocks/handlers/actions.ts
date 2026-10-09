@@ -4,7 +4,9 @@ import type { FeedCardFixture } from '../fixtures/feed.ts'
 import { currentMockAuthor } from './articles-store.ts'
 import { commentTree, commentsForArticle, mockViewerId, patchStoredComment, readStoredComments, recordMockView, saveComment } from './discussion-store.ts'
 import type { StoredComment } from './discussion-store.ts'
+import { addMockNotification } from './notifications-store.ts'
 import { readMockViewer } from './session.ts'
+import session_fixtures from '../fixtures/session.json'
 
 const KINDS = ['laugh', 'heart', 'thumb', 'fire'] as const
 type Kind = (typeof KINDS)[number]
@@ -30,9 +32,17 @@ function restricted() {
   return HttpResponse.json({ code: 'restricted', title: 'Действие недоступно: участник ограничен', status: 403 }, { status: 403 })
 }
 
-function emitLive(type: string, article_id: string): void {
-  const events = (window as Window & { mockEvents?: { emit: (frame: { type: string; article_id: string }) => void } }).mockEvents
-  events?.emit({ type, article_id })
+function emitLive(type: string, fields: { article_id?: string; notification_id?: string; comment_id?: string }): void {
+  const events = (window as Window & { mockEvents?: { emit: (frame: { type: string }) => void } }).mockEvents
+  events?.emit({ type, ...fields })
+}
+
+function actorOf(request: Request) {
+  if (request.headers.get('x-mock-actor') === 'member') {
+    const session = session_fixtures.member
+    return { id: session.user.id, can_publish: session.user.can_publish, is_restricted: session.user.is_restricted, display_name: session.profile.display_name, slug: session.profile.slug }
+  }
+  return currentMockAuthor()
 }
 
 function emptyCounts(): Record<Kind, number> {
@@ -65,18 +75,21 @@ export const actionHandlers = [
         { status: 404 },
       )
     }
-    return HttpResponse.json({
-      ...article,
-      blocks: {
-        time: 1,
-        version: '2.30.0',
-        blocks: [
+    const long = window.localStorage.getItem('mock_article_length') === 'long'
+    const blocks = long
+      ? Array.from({ length: 40 }, (_, index) => ({
+          type: 'paragraph',
+          data: { text: `Абзац ${index + 1}. Длинный текст статьи, чтобы центр можно было прокрутить до кнопки возврата наверх.` },
+        }))
+      : [
           { type: 'paragraph', data: { text: article.excerpt } },
           { type: 'paragraph', data: { text: 'Полный текст статьи для проверки раскрытия.' } },
           { type: 'image', data: { file: { url: 'https://example.com/cover-1.png' }, caption: 'Первое изображение' } },
           { type: 'image', data: { file: { url: 'https://example.com/cover-2.png' }, caption: 'Второе изображение' } },
-        ],
-      },
+        ]
+    return HttpResponse.json({
+      ...article,
+      blocks: { time: 1, version: '2.30.0', blocks },
       status: 'published',
       is_own: window.localStorage.getItem('mock_article') === 'own',
     })
@@ -91,7 +104,7 @@ export const actionHandlers = [
   }),
 
   http.post('*/v1/articles/:article_id/comments', async ({ params, request }) => {
-    const actor = currentMockAuthor()
+    const actor = actorOf(request)
     if (!actor) return unauthorized()
     if (actor.is_restricted) return restricted()
     const article = mockFeedArticles.find((item) => item.id === params.article_id)
@@ -122,7 +135,24 @@ export const actionHandlers = [
       created_at: new Date().toISOString(),
     }
     saveComment(row)
-    emitLive('comment', article.id)
+    emitLive('comment', { article_id: article.id })
+    if (actor.id !== article.author.user_id) {
+      const notification_id = crypto.randomUUID()
+      addMockNotification({
+        id: notification_id,
+        user_id: article.author.user_id,
+        kind: parent_id ? 'reply' : 'comment',
+        article_id: article.id,
+        article_slug: article.slug,
+        article_title: article.title,
+        comment_id: row.id,
+        conversation_id: null,
+        actor: { display_name: actor.display_name, avatar_url: null },
+        read_at: null,
+        created_at: new Date().toISOString(),
+      })
+      emitLive('notification', { notification_id, article_id: article.id, comment_id: row.id })
+    }
     return HttpResponse.json(presentStored(row, actor.id), { status: 201 })
   }),
 
@@ -136,7 +166,7 @@ export const actionHandlers = [
     if (!current || body.length < 1) return HttpResponse.json({ code: 'not_found', title: 'Комментарий недоступен', status: 404 }, { status: 404 })
     const next = patchStoredComment(current.id, { body, edited_at: new Date().toISOString() })
     if (!next) return HttpResponse.json({ code: 'not_found', title: 'Комментарий недоступен', status: 404 }, { status: 404 })
-    emitLive('comment', next.article_id)
+    emitLive('comment', { article_id: next.article_id })
     return HttpResponse.json(presentStored(next, actor.id))
   }),
 
@@ -148,7 +178,7 @@ export const actionHandlers = [
     if (!current) return HttpResponse.json({ code: 'not_found', title: 'Комментарий недоступен', status: 404 }, { status: 404 })
     const next = patchStoredComment(current.id, { status: 'deleted' })
     if (!next) return HttpResponse.json({ code: 'not_found', title: 'Комментарий недоступен', status: 404 }, { status: 404 })
-    emitLive('comment', next.article_id)
+    emitLive('comment', { article_id: next.article_id })
     return HttpResponse.json(presentStored(next, actor.id))
   }),
 
@@ -162,7 +192,7 @@ export const actionHandlers = [
     const is_moderation = context === 'moderation' && (readMockViewer() === 'admin' || readMockViewer() === 'superadmin')
     const viewer_key = actor ? `user:${actor.id}` : 'guest:mock'
     const result = recordMockView(article, viewer_key, is_author, is_moderation)
-    if (result.counted) emitLive('view', article.id)
+    if (result.counted) emitLive('view', { article_id: article.id })
     return HttpResponse.json(result)
   }),
 
@@ -201,7 +231,7 @@ export const actionHandlers = [
       }
       if (next) reactions[actor.id] = next
       const saved = patchStoredComment(comment.id, { reaction_counts: counts, reactions })
-      emitLive('reaction', comment.article_id)
+      emitLive('reaction', { article_id: comment.article_id })
       const reaction_count = KINDS.reduce((sum, item) => sum + counts[item], 0)
       return HttpResponse.json({ reaction_counts: saved?.reaction_counts ?? counts, reaction_count, my_reaction: next })
     }

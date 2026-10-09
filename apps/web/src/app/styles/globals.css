@@ -59,6 +59,13 @@ body {
   color: var(--foreground);
 }
 
+/* От 1200px прокручивается только центр каркаса: окно само не скроллится. */
+html.shell-lock,
+html.shell-lock body {
+  overflow: hidden;
+  height: 100%;
+}
+
 /* Прокручиваемая область не передаёт прокрутку окну (центр, левая и правая карточки). */
 @utility scroll-contain {
   overflow-y: auto;

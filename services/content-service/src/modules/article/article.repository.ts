@@ -172,9 +172,7 @@ export function createArticleRepository(db: NodePgDatabase): ArticleRepository {
             excerpt: input.excerpt,
             first_image_url: input.first_image_url,
             ...(input.slug === undefined ? {} : { slug: input.slug }),
-            ...(current.status === 'published'
-              ? { search_vector: sql`to_tsvector('simple', ${`${input.title}\n${input.excerpt}`})` }
-              : {}),
+            ...(current.status === 'published' ? { search_vector: sql`to_tsvector('simple', ${input.search_text})` } : {}),
             updated_at: new Date(),
           })
           .where(and(eq(articles.id, id), eq(articles.author_id, author_id), ne(articles.status, 'deleted')))

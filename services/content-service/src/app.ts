@@ -10,6 +10,7 @@ import { accessRoutes } from './modules/access/index.ts'
 import { articleRoutes } from './modules/article/index.ts'
 import { feedRoutes } from './modules/feed/index.ts'
 import { profileRoutes } from './modules/profile/index.ts'
+import { searchRoutes } from './modules/search/index.ts'
 import { settingsRoutes } from './modules/settings/index.ts'
 import { topicRoutes } from './modules/topic/index.ts'
 
@@ -47,6 +48,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(topicRoutes, { database: deps.database, media_url: env.MEDIA_URL })
   await app.register(settingsRoutes, { database: deps.database, media_url: env.MEDIA_URL })
   await app.register(feedRoutes, { database: deps.database })
+  await app.register(searchRoutes, { database: deps.database })
   await app.register(articleRoutes, {
     database: deps.database,
     media_urls: [env.MEDIA_URL],

@@ -65,5 +65,9 @@ export {
   userListPageSchema,
 } from './profiles.ts'
 export type { Profile, ProfileArticle, ProfileArticlePage, ProfileBadge, ProfileStats, UpdateProfile, UserListItem, UserListPage } from './profiles.ts'
+export { notificationKindSchema, notificationPageSchema, notificationSchema, unreadCountSchema } from './notifications.ts'
+export type { Notification, NotificationKind, NotificationPage, UnreadCount } from './notifications.ts'
+export { searchResponseSchema } from './search.ts'
+export type { SearchResponse } from './search.ts'
 export { mediaKindSchema, mediaUploadResponseSchema } from './media.ts'
 export type { MediaKind, MediaUploadResponse } from './media.ts'

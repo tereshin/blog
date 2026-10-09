@@ -11,7 +11,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles, profiles, promotions, settings, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { articles, follows, profiles, promotions, settings, topics, users_copy } from '../../src/infra/db/schema.ts'
 import { accessRoutes } from '../../src/modules/access/index.ts'
 import { feedRoutes } from '../../src/modules/feed/index.ts'
 import { settingsRoutes } from '../../src/modules/settings/index.ts'
@@ -22,12 +22,14 @@ const OTHER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
 const TOPIC = '5c9d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a01'
 const ARCHIVED_TOPIC = '5c9d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a02'
 const COMMENTER = '7b1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a33'
+const LONELY = '11111111-1111-4111-8111-111111111111'
 const DAY = 24 * 60 * 60 * 1000
 
 const viewers: Record<string, ServiceContext> = {
   guest: { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' },
   member: { user_id: OTHER, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${OTHER}` },
   author: { user_id: AUTHOR, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${AUTHOR}` },
+  lonely: { user_id: LONELY, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${LONELY}` },
 }
 
 function id(index: number): string {
@@ -203,8 +205,25 @@ describe('content: лента, темы и настройки на PostgreSQL', 
     expect(card?.top_comment).toMatchObject({ author_name: 'Борис', excerpt: 'Хороший разбор' })
   })
 
-  it('«Моя лента» отвечает 501, мусорный курсор — 422', async () => {
-    expect((await app.inject({ method: 'GET', url: '/v1/feed?mode=mine' })).statusCode).toBe(501)
+  it('«Моя лента»: гость получает 401, без подписок — причину, с подписками — статьи авторов и тем', async () => {
+    expect((await app.inject({ method: 'GET', url: '/v1/feed?mode=mine' })).statusCode).toBe(401)
+    const empty = await feed('mode=mine', 'lonely')
+    expect(empty).toMatchObject({ items: [], next_cursor: null, reason: 'no_follows' })
+
+    await database.db.insert(follows).values({ follower_id: OTHER, target_type: 'topic', target_id: ARCHIVED_TOPIC })
+    const by_topic = await feed('mode=mine', 'member')
+    expect(by_topic.items.map((item) => item.title)).toEqual(['В архивной теме'])
+    expect(by_topic.reason).toBeUndefined()
+
+    await database.db.insert(follows).values({ follower_id: OTHER, target_type: 'user', target_id: AUTHOR })
+    const by_author = await feed('mode=mine&limit=5', 'member')
+    expect(by_author.items.length).toBeGreaterThan(1)
+    expect(by_author.items.every((item) => item.author.user_id === AUTHOR)).toBe(true)
+    expect(by_author.items.map((item) => item.title)).not.toContain('Только автор')
+    expect(by_author.items.map((item) => item.title)).not.toContain('Черновик')
+  })
+
+  it('мусорный курсор — 422', async () => {
     expect((await app.inject({ method: 'GET', url: '/v1/feed?mode=fresh&cursor=junk' })).statusCode).toBe(422)
   })
 

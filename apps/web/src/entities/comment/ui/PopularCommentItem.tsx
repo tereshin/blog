@@ -18,8 +18,10 @@ export function PopularCommentItem({ comment }: PopularCommentItemProps) {
         <Avatar src={comment.author_avatar_url} name={comment.author_name} size="sm" className="mt-0.5 shrink-0" />
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-sm font-medium">{comment.author_name}</span>
-          <span className="truncate text-xs text-muted">
-            {t('comment.in_post')} «{comment.article_title}»
+          <span className="flex min-w-0 text-xs text-muted">
+            <span className="shrink-0">{t('comment.in_post')} «</span>
+            <span className="min-w-0 truncate">{comment.article_title}</span>
+            <span className="shrink-0">»</span>
           </span>
           <span className="line-clamp-3 text-sm">{comment.excerpt}</span>
           <span className="text-xs text-muted">

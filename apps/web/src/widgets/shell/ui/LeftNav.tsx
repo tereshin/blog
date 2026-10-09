@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
+import type { UIEvent } from 'react'
 import { TopicNavItem, useTopics } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
 import { Button, Card, ErrorState, Skeleton } from '@/shared/ui'
 import { useCurrentSection } from '../model/useCurrentSection.ts'
+import { useFeedFreshness } from '../model/useFeedFreshness.ts'
+import { useShellStore } from '../model/useShellStore.ts'
 import { LeftNavItem } from './LeftNavItem.tsx'
 
 const MODES: ReadonlyArray<{ to: string; kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'rating'; label: MessageKey }> = [
@@ -26,26 +29,51 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const { t } = useT()
   const { highlighted } = useCurrentSection()
   const topics = useTopics()
-  const [is_expanded, setExpanded] = useState(false)
+  const freshness = useFeedFreshness()
+  const is_expanded = useShellStore((state) => state.is_topics_expanded)
+  const setTopicsExpanded = useShellStore((state) => state.setTopicsExpanded)
+  const setLeftScrollTop = useShellStore((state) => state.setLeftScrollTop)
+  const frame_ref = useRef<number | null>(null)
+  const latest_top_ref = useRef(0)
+
+  const handleScroll = (event: UIEvent<HTMLElement>) => {
+    latest_top_ref.current = event.currentTarget.scrollTop
+    if (frame_ref.current !== null) return
+    frame_ref.current = requestAnimationFrame(() => {
+      frame_ref.current = null
+      setLeftScrollTop(latest_top_ref.current)
+    })
+  }
+
+  useEffect(
+    () => () => {
+      if (frame_ref.current !== null) cancelAnimationFrame(frame_ref.current)
+    },
+    [],
+  )
 
   const active_topics = (topics.data ?? []).filter((topic) => topic.status === 'active')
   const shown_topics = is_expanded ? active_topics : active_topics.slice(0, VISIBLE_TOPICS)
   const has_hidden = active_topics.length > VISIBLE_TOPICS
 
   return (
-    <Card className="max-h-full overflow-y-auto overscroll-contain">
-      <Card.Content className="flex flex-col gap-1 p-2">
-        {MODES.map((mode) => (
-          <LeftNavItem
-            key={mode.to}
-            to={mode.to}
-            is_selected={highlighted?.kind === mode.kind}
-            has_unread={mode.kind === 'messages' && has_unread_messages}
-            unread_label={t('shell.nav.unread')}
-          >
-            {t(mode.label)}
-          </LeftNavItem>
-        ))}
+    <Card className="flex h-full max-h-full min-h-0 flex-col overflow-hidden">
+      <Card.Content data-shell-scroll="left" onScroll={handleScroll} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-2">
+        {MODES.map((mode) => {
+          const is_fresh = (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
+          const has_unread = (mode.kind === 'messages' && has_unread_messages) || is_fresh
+          return (
+            <LeftNavItem
+              key={mode.to}
+              to={mode.to}
+              is_selected={highlighted?.kind === mode.kind}
+              has_unread={has_unread}
+              unread_label={mode.kind === 'messages' ? t('shell.nav.unread') : t('shell.nav.freshness')}
+            >
+              {t(mode.label)}
+            </LeftNavItem>
+          )
+        })}
         <h2 className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-muted">{t('shell.nav.topics')}</h2>
         {topics.isPending ? (
           <div className="flex flex-col gap-2 px-3 py-1" role="status" aria-label={t('common.loading')}>
@@ -67,7 +95,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
               />
             ))}
             {has_hidden ? (
-              <Button variant="ghost" size="sm" className="self-start" onPress={() => setExpanded(!is_expanded)}>
+              <Button variant="ghost" size="sm" className="self-start" onPress={() => setTopicsExpanded(!is_expanded)}>
                 {is_expanded ? t('common.collapse') : t('common.show_all')}
               </Button>
             ) : null}

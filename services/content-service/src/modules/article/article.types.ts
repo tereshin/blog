@@ -63,6 +63,8 @@ export type ArticleSave = {
   comments_enabled: boolean
   excerpt: string
   first_image_url: string | null
+  /** Заголовок и текст блоков: пишется в `search_vector`, пока статья опубликована. */
+  search_text: string
   slug?: string
   correlation_id: string
 }

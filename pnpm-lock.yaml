@@ -72,8 +72,8 @@ importers:
         specifier: ^2.31.7
         version: 2.31.7
       '@editorjs/embed':
-        specifier: ^2.8.0
-        version: 2.8.0
+        specifier: 2.7.7
+        version: 2.7.7
       '@editorjs/header':
         specifier: ^2.8.9
         version: 2.8.9
@@ -585,6 +585,45 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
 
+  services/notification-service:
+    dependencies:
+      '@blog/broker':
+        specifier: workspace:^
+        version: link:../../packages/broker
+      '@blog/config':
+        specifier: workspace:^
+        version: link:../../packages/config
+      '@blog/contracts':
+        specifier: workspace:^
+        version: link:../../packages/contracts
+      '@blog/db-kit':
+        specifier: workspace:^
+        version: link:../../packages/db-kit
+      '@blog/errors':
+        specifier: workspace:^
+        version: link:../../packages/errors
+      '@blog/http-kit':
+        specifier: workspace:^
+        version: link:../../packages/http-kit
+      '@blog/logger':
+        specifier: workspace:^
+        version: link:../../packages/logger
+      '@blog/telemetry':
+        specifier: workspace:^
+        version: link:../../packages/telemetry
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@opentelemetry/api@1.9.1)(@types/pg@8.23.1)(pg@8.23.1)
+      fastify:
+        specifier: ^5.12.5
+        version: 5.12.5
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
+
 packages:
 
   '@adobe/css-tools@4.5.0':
@@ -849,9 +888,8 @@ packages:
   '@editorjs/editorjs@2.31.7':
     resolution: {integrity: sha512-te4wI1heK3B8s0pz1asyRPEmOglfkb9ex5nvvCN5OUVDLSnohTszI+yyLI73qOIuUWxenIvJYkOuGHzh/a47Hw==}
 
-  '@editorjs/embed@2.8.0':
-    resolution: {integrity: sha512-GkgL07M1GmRXq+vtYPkP9RLoij19mIMeyr5GrNo/0Km2XHmvDz2h6KHsDbiHXbq/5hZ5UgWi86kr+/aK165OBg==}
-    engines: {node: '>=24.0.0'}
+  '@editorjs/embed@2.7.7':
+    resolution: {integrity: sha512-2IFBdYmiKnJImCW4XajOcsymKIncdcQ1J+RVJ+eXHoaOZ4d1R35GQbhr/OnGeCrVxFbOKgm21653AUz4J418tw==}
 
   '@editorjs/header@2.8.9':
     resolution: {integrity: sha512-eBL9/PLDKiE9ADZycmgps3PLz9Lw8w6rPFXr0mfHuhHQI/ynP/q1vLpyruBrRCflTLD2Dlj5nYPoJjL5mP/MFw==}
@@ -5739,7 +5777,7 @@ snapshots:
       codex-notifier: 1.1.2
       codex-tooltip: 1.0.6
 
-  '@editorjs/embed@2.8.0':
+  '@editorjs/embed@2.7.7':
     dependencies:
       '@editorjs/editorjs': 2.31.7
 

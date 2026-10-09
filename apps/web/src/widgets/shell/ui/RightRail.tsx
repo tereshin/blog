@@ -30,8 +30,8 @@ export function RightRail() {
   const items = comments.data ?? []
 
   return (
-    <Card className="min-h-0 flex-1 min-[1200px]:max-h-full">
-      <Card.Header>
+    <Card className="flex min-h-0 flex-1 flex-col min-[1200px]:max-h-full min-[1200px]:overflow-hidden">
+      <Card.Header className="sticky top-0 z-10 shrink-0 bg-surface">
         <Card.Title className="text-base">{t('shell.rail.title')}</Card.Title>
       </Card.Header>
       <Card.Content className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
