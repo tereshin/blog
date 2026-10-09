@@ -107,6 +107,14 @@ export function useReaction(target: ReactionTarget): { react: (kind: ReactionKin
         return
       }
       if (viewer.status !== 'member') return
+      if (viewer.user.is_restricted) {
+        toast.error(t('reaction.restricted'))
+        return
+      }
+      if (!viewer.user.email_verified) {
+        toast.error(t('login.email_unverified'))
+        return
+      }
       mutation.mutate(kind)
     },
   }

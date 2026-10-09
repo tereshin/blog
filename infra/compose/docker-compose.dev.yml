@@ -9,6 +9,7 @@ services:
       - "3000:3000"
     environment:
       NODE_OPTIONS: "--max-old-space-size=768"
+      FIREBASE_AUTH_EMULATOR_HOST: "${FIREBASE_AUTH_EMULATOR_HOST:?}"
 
   identity:
     image: ${REGISTRY:?}/identity:${IMAGE_TAG:?}
@@ -17,6 +18,11 @@ services:
     mem_limit: 1024m
     environment:
       NODE_OPTIONS: "--max-old-space-size=768"
+      FIREBASE_AUTH_EMULATOR_HOST: "${FIREBASE_AUTH_EMULATOR_HOST:?}"
+      SEED_AUTH_PASSWORD: "${SEED_AUTH_PASSWORD:?}"
+    depends_on:
+      firebase-auth:
+        condition: service_healthy
 
   content:
     image: ${REGISTRY:?}/content:${IMAGE_TAG:?}
@@ -114,29 +120,27 @@ services:
     mem_limit: 128m
     ports:
       - "8080:8080"
-
-  mock-google:
-    image: ${REGISTRY:?}/mock-google:${IMAGE_TAG:?}
-    restart: unless-stopped
-    mem_limit: 256m
     environment:
-      APP_ENV: "${APP_ENV:?}"
-      HTTP_PORT: "8081"
-      ISSUER_URL: "${GOOGLE_ISSUER_URL:?}"
-      CLIENT_ID: "${GOOGLE_CLIENT_ID:?}"
-      CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:?}"
-      REDIRECT_URI: "${GOOGLE_REDIRECT_URI:?}"
-      SUPERADMIN_EMAIL: "${SUPERADMIN_EMAIL:?}"
-      S3_PUBLIC_URL: "${S3_PUBLIC_URL:-}"
+      CSP_EMULATOR_ORIGIN: "http://${FIREBASE_AUTH_EMULATOR_HOST:?}"
+      CSP_API_ORIGIN: "${VITE_API_BASE_URL:-}"
+
+  firebase-auth:
+    image: ${REGISTRY:?}/firebase-auth:${IMAGE_TAG:?}
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:?}"
+      FIREBASE_AUTH_EMULATOR_HOST: "${FIREBASE_AUTH_EMULATOR_HOST:?}"
     ports:
-      - "8081:8081"
+      - "9099:9099"
     networks:
       default:
         aliases:
-          - "${MOCK_GOOGLE_HOST:?}"
+          - firebase-auth.localhost
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/.well-known/openid-configuration').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9099/').then((r) => process.exit(r.status < 500 ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
+      start_period: 20s
 

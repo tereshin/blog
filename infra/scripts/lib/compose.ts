@@ -41,9 +41,12 @@ export function findPlaceholder(env_text: string): string | null {
   return null
 }
 
-/** `mock-google` в составе `prod` запрещён: проверяется по выводу `docker compose config --services`. */
-export function hasMockGoogle(services_output: string): boolean {
-  return services_output.split(/\s+/).includes('mock-google')
+const FORBIDDEN_IN_PROD = ['mock-google', 'firebase-auth'] as const
+
+/** `mock-google` и `firebase-auth` в составе `prod` запрещены: проверяется по выводу `docker compose config --services`. */
+export function hasForbiddenAuthEmulator(services_output: string): boolean {
+  const names = new Set(services_output.split(/\s+/).filter(Boolean))
+  return FORBIDDEN_IN_PROD.some((name) => names.has(name))
 }
 
 function isServiceWithDb(name: string): name is (typeof SERVICES_WITH_DB)[number] {

@@ -1,3 +1,5 @@
+export { confirmEmailVerification, confirmPasswordReset } from './api/auth-api.ts'
+export { credentialFieldError } from './lib/credentials.ts'
 export { LoginDialog } from './ui/LoginDialog.tsx'
 export { useLoginDialog } from './model/useLoginDialog.ts'
 export type { LoginReason } from './model/useLoginDialog.ts'

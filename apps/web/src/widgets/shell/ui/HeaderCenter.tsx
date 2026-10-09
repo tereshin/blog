@@ -17,7 +17,7 @@ function HeaderPill() {
     <Link
       to={article.href}
       title={article.title}
-      className="block min-w-0 max-w-full truncate rounded-pill bg-surface-secondary px-4 py-1.5 text-sm text-muted outline-offset-2 hover:text-foreground"
+      className="block min-w-0 w-full max-w-full truncate rounded-pill bg-surface-secondary px-4 py-1.5 text-sm text-muted outline-offset-2 hover:text-foreground"
     >
       {article.title}
     </Link>
@@ -29,7 +29,7 @@ function HeaderBack({ title }: { title: string }) {
   const { t } = useT()
   const target = getReturnTarget()
   return (
-    <div className="flex min-w-0 max-w-xl items-center gap-1">
+    <div className="flex min-w-0 w-full max-w-xl items-center gap-1">
       <Link
         to={target.path}
         aria-label={t('header.back')}
@@ -58,7 +58,7 @@ function HeaderSearch() {
 
   return (
     <form
-      className="flex min-w-0 max-w-xl flex-1 items-center gap-1"
+      className="flex min-w-0 w-full max-w-xl flex-1 items-center gap-1"
       onSubmit={(event) => {
         event.preventDefault()
         const q = value.trim()

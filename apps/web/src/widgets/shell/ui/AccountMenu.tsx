@@ -53,6 +53,7 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
           <Menu.Item onPress={() => navigate(`/u/${address}`)}>{t('account.my_profile')}</Menu.Item>
           <Menu.Item onPress={() => navigate('/bookmarks')}>{t('account.bookmarks')}</Menu.Item>
           <Menu.Item onPress={() => setEditing(true)}>{t('account.edit_profile')}</Menu.Item>
+          {viewer.user.email_verified ? null : <Menu.Item onPress={() => openLogin('required')}>{t('login.confirm_email')}</Menu.Item>}
           <AppearanceToggle as="item" />
           {theme}
           <Menu.Item onPress={() => navigate('/about')}>{t('account.about')}</Menu.Item>

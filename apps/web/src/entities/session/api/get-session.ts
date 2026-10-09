@@ -8,6 +8,8 @@ const userSchema = z.object({
   can_publish: z.boolean(),
   is_restricted: z.boolean(),
   appearance: z.enum(['light', 'dark']).nullable(),
+  email: z.string().nullable(),
+  email_verified: z.boolean(),
 })
 
 const profileSchema = z.object({

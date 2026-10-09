@@ -36,4 +36,30 @@ export const sessionHandlers = [
     window.localStorage.removeItem(MOCK_VIEWER_KEY)
     return new HttpResponse(null, { status: 204 })
   }),
+  http.get('*/v1/auth/config', () =>
+    HttpResponse.json({
+      api_key: 'demo-web-key',
+      auth_domain: 'demo-blog.firebaseapp.com',
+      project_id: 'demo-blog',
+      providers: [{ id: 'password' }, { id: 'google.com' }, { id: 'github.com' }],
+      emulator_host: '127.0.0.1:9099',
+      test_participants: [{ email: 'reader@blog.test', label: 'Роман Читаев' }],
+      test_password: 'password-ok',
+    }),
+  ),
+  http.post('*/v1/auth/registrations', () => HttpResponse.json({ status: 'pending' })),
+  http.post('*/v1/auth/sessions', async ({ request }) => {
+    const body = (await request.json()) as { method?: string }
+    if (body.method === 'password') {
+      window.localStorage.setItem(MOCK_VIEWER_KEY, 'member')
+      return new HttpResponse(null, { status: 204 })
+    }
+    return HttpResponse.json({ code: 'invalid_credentials', title: 'Неверная почта или пароль' }, { status: 401 })
+  }),
+  http.post('*/v1/auth/email-claims', () => HttpResponse.json({ status: 'pending' })),
+  http.post('*/v1/auth/email-verifications', () => HttpResponse.json({ status: 'ok' })),
+  http.post('*/v1/auth/email-verification-confirmations', () => HttpResponse.json({ status: 'ok' })),
+  http.post('*/v1/auth/password-resets', () => HttpResponse.json({ status: 'ok' })),
+  http.post('*/v1/auth/password-reset-confirmations', () => HttpResponse.json({ status: 'ok' })),
+  http.post('*/v1/auth/dev-login', () => new HttpResponse(null, { status: 404 })),
 ]

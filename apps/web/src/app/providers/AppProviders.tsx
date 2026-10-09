@@ -1,7 +1,9 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { useSettings } from '@/entities/settings'
+import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
+import { CommentReactionGlyphsProvider } from '@/entities/comment'
+import { useSettings, useSettingsLive } from '@/entities/settings'
 import { LoginDialog, useSessionExpiredListener } from '@/features/login'
 import { useSessionBroadcast } from '@/features/logout'
 import { createQueryClient } from '@/shared/api'
@@ -12,7 +14,12 @@ import { ThemeProvider } from './ThemeProvider.tsx'
 /** Язык интерфейса — из настроек площадки; пока они грузятся, русский. */
 function LocaleProvider({ children }: { children: ReactNode }) {
   const { data } = useSettings()
-  return <I18nProvider locale={data?.locale ?? 'ru'}>{children}</I18nProvider>
+  useSettingsLive()
+  return (
+    <CommentReactionGlyphsProvider appearances={data?.reaction_appearances ?? DEFAULT_REACTION_APPEARANCES}>
+      <I18nProvider locale={data?.locale ?? 'ru'}>{children}</I18nProvider>
+    </CommentReactionGlyphsProvider>
+  )
 }
 
 function SessionExpiredListener() {

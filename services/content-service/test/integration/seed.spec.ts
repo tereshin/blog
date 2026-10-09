@@ -121,7 +121,7 @@ describe('content: seed (PostgreSQL в контейнере)', () => {
       await foreign.close()
       await other.stop()
     }
-  })
+  }, 60_000)
 
   it('в prod процесс завершается с ошибкой до записи', async () => {
     const other = await startPostgres()

@@ -22,8 +22,14 @@ function toUser(row: typeof users.$inferSelect): AccountUser {
   }
 }
 
+/** Postgres `23505` иногда вложен в `cause`: гонка уникального индекса не должна стать 500. */
 export function isUniqueViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === '23505'
+  let current: unknown = error
+  for (let depth = 0; current && typeof current === 'object' && depth < 5; depth += 1) {
+    if ('code' in current && (current as { code: unknown }).code === '23505') return true
+    current = 'cause' in current ? (current as { cause: unknown }).cause : null
+  }
+  return false
 }
 
 export function createAuthRepository(db: NodePgDatabase): AuthRepository {

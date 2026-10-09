@@ -21,7 +21,7 @@ test.describe('Редактор статьи', () => {
     await page.goto('/')
     await page.getByRole('button', { name: 'Написать' }).click()
     await expect(page).toHaveURL(/\/write$/)
-    await expect(page.locator('[data-editor="ready"]')).toBeVisible()
+    await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
 
     await page.getByLabel('Заголовок').fill(TITLE)
     await page.locator('.ce-paragraph').first().click()

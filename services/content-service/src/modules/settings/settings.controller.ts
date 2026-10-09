@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { adminSettingsSchema, publicSettingsSchema, updateSettingsSchema } from '@blog/contracts'
+import { adminSettingsSchema, publicSettingsSchema, updateSettingsSchema } from './settings.schema.ts'
 import type { SettingsService } from './settings.service.ts'
 
 export function createSettingsController(service: SettingsService) {

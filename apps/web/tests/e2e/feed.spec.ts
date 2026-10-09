@@ -2,18 +2,23 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
 // Режим мока (VITE_API_MOCK=1): гость, 45 статей в ленте, постраничная подгрузка по 20.
-const WIDE = 1200
+const THREE_COLUMNS = 1280
+const LEFT_COLUMN = 768
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasThreeColumns(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= THREE_COLUMNS
+}
+
+function hasLeftColumn(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= LEFT_COLUMN
 }
 
 test.describe('Лента «Свежее»: каркас и карточки', () => {
   test('гость на / видит шапку, навигацию, ленту от новых к старым и правую карточку', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('banner')).toBeVisible()
-    if (isWide(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
 
     const main = page.getByRole('main')
     const cards = main.getByRole('article')
@@ -24,7 +29,9 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     expect(times.every((value) => !Number.isNaN(value))).toBe(true)
     expect(times).toEqual([...times].sort((a, b) => b - a))
 
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' }).getByRole('listitem').first()).toBeVisible()
+    if (hasThreeColumns(page)) {
+      await expect(page.getByRole('complementary', { name: 'Популярные комментарии' }).getByRole('listitem').first()).toBeVisible()
+    }
   })
 
   test('в карточке чужой статьи элементы идут сверху вниз по порядку FR-060', async ({ page }) => {
@@ -53,7 +60,7 @@ test.describe('Лента «Свежее»: каркас и карточки', (
   })
 
   test('прокрутка центра не двигает шапку и боковые карточки', async ({ page }) => {
-    test.skip(!isWide(page), 'Боковые карточки закреплены только от 1200px')
+    test.skip(!hasThreeColumns(page), 'Боковые столбцы закреплены только от 1280px')
     await page.goto('/')
     const main = page.getByRole('main')
     await expect(main.getByRole('article').first()).toBeVisible()
@@ -89,8 +96,8 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     await page.goto('/')
     await expect(page.getByRole('main').getByText('Здесь пока нет статей')).toBeVisible()
     await expect(page.getByRole('main').getByRole('article')).toHaveCount(0)
-    if (isWide(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
 
   test('«Показать полностью» раскрывает остаток в карточке и не меняет адрес', async ({ page }) => {
@@ -153,6 +160,6 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     await page.goto('/')
     await expect(page.getByRole('main').getByRole('alert')).toContainText('Не удалось загрузить ленту')
     await expect(page.getByRole('main').getByRole('button', { name: 'Повторить' })).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
 })

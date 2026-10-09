@@ -1,4 +1,4 @@
-import { ALL_SERVICES, UsageError, expandServices, findPlaceholder, hasMockGoogle, parseArgs } from './lib/compose.ts'
+import { ALL_SERVICES, UsageError, expandServices, findPlaceholder, hasForbiddenAuthEmulator, parseArgs } from './lib/compose.ts'
 import { CommandError, compose, readEnvFile, waitForHttp } from './lib/run.ts'
 
 const WAIT_TIMEOUT_MS = 180_000
@@ -14,15 +14,15 @@ async function main(): Promise<void> {
     }
     const listing = compose(env, ['config', '--services'], { capture: true })
     if (listing.code !== 0) throw new CommandError('Не удалось собрать конфигурацию Compose для prod', listing.code)
-    if (hasMockGoogle(listing.stdout)) {
-      throw new CommandError('Собранная конфигурация prod содержит mock-google: запуск запрещён (FR-132).')
+    if (hasForbiddenAuthEmulator(listing.stdout)) {
+      throw new CommandError('Собранная конфигурация prod содержит mock-google или firebase-auth: запуск запрещён.')
     }
   }
 
   const up_args = ['up', '-d', '--wait']
   if (env === 'local') up_args.push('--build')
   if (services) {
-    const unknown = services.filter((name) => ![...ALL_SERVICES, 'web', 'mock-google'].includes(name))
+    const unknown = services.filter((name) => ![...ALL_SERVICES, 'web', 'firebase-auth'].includes(name))
     if (unknown.length > 0) throw new UsageError(`Неизвестные сервисы: ${unknown.join(', ')}`)
     up_args.push('--no-deps', ...expandServices(services))
   }

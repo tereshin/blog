@@ -15,7 +15,7 @@ import { prerenderRoutes } from './modules/prerender/index.ts'
 import { proxyRoutes } from './modules/proxy/index.ts'
 import type { ProxyService } from './modules/proxy/index.ts'
 import { contentSecurityPolicy, imageOrigin, newCspNonce } from './modules/security/content-security-policy.ts'
-import { rateLimitForPath } from './modules/security/rate-limit.ts'
+import { rateLimitForPath, rateLimitGroup } from './modules/security/rate-limit.ts'
 import { authGatewayRoutes, sessionModule } from './modules/session/index.ts'
 import type { ContextSigner, CookieNames, SessionService } from './modules/session/index.ts'
 
@@ -48,7 +48,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const image_origin = imageOrigin(env.S3_PUBLIC_URL)
   app.addHook('onRequest', async (_request, reply) => {
     const nonce = newCspNonce()
-    reply.header('Content-Security-Policy', contentSecurityPolicy({ nonce, image_origin }))
+    const emulator_host = env.APP_ENV === 'local' || env.APP_ENV === 'dev' ? env.FIREBASE_AUTH_EMULATOR_HOST : null
+    reply.header(
+      'Content-Security-Policy',
+      contentSecurityPolicy({ nonce, image_origin, auth_domain: env.FIREBASE_AUTH_DOMAIN, emulator_host }),
+    )
   })
   await app.register(cors, {
     origin: env.WEB_ORIGIN,
@@ -60,6 +64,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(cookie)
   await app.register(rateLimit, {
     max: (request) => rateLimitForPath(request.url),
+    // Ключ плагина по умолчанию — только IP, а потолок разный. Без группы один счётчик
+    // сравнивается с самым низким потолком, и чтение сессии получает 429 после обычной загрузки страницы.
+    keyGenerator: (request) => `${request.ip}:${rateLimitGroup(request.url)}`,
     timeWindow: '1 minute',
     allowList: (request) => request.routeOptions.config.is_public === true,
   })

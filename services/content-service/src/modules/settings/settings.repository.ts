@@ -1,5 +1,7 @@
 import { eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { reactionAppearancesSchema } from '@blog/contracts'
+import type { ReactionAppearances } from '@blog/contracts'
 import type { Database } from '@blog/broker'
 import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
@@ -11,6 +13,7 @@ export type SettingsRow = {
   about: string
   registration_open: boolean
   new_members_can_publish: boolean
+  reaction_appearances: ReactionAppearances
 }
 
 const columns = {
@@ -20,6 +23,11 @@ const columns = {
   about: settings.about,
   registration_open: settings.registration_open,
   new_members_can_publish: settings.new_members_can_publish,
+  reaction_appearances: settings.reaction_appearances,
+}
+
+function readRow(row: Omit<SettingsRow, 'reaction_appearances'> & { reaction_appearances: ReactionAppearances }): SettingsRow {
+  return { ...row, reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances) }
 }
 
 export type SettingsRepository = {
@@ -33,7 +41,7 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
   return {
     async find() {
       const [row] = await db.select(columns).from(settings).where(eq(settings.id, 1)).limit(1)
-      return row ?? null
+      return row ? readRow(row) : null
     },
 
     async insertIfAbsent(input, correlation_id) {
@@ -42,7 +50,7 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
         const [row] = await database.insert(settings).values({ id: 1, ...input }).onConflictDoNothing().returning(columns)
         if (!row) return null
         await appendSettingsUpdated(database, { ...input, correlation_id })
-        return row
+        return readRow(row)
       })
     },
 
@@ -56,7 +64,7 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
           .returning(columns)
         if (!row) throw new Error('settings row was not written')
         await appendSettingsUpdated(database, { ...input, correlation_id })
-        return row
+        return readRow(row)
       })
     },
   }

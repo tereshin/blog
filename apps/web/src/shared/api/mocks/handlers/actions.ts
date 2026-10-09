@@ -1,4 +1,4 @@
-import { HttpResponse, http } from 'msw'
+import { HttpResponse, delay, http } from 'msw'
 import { promotedIds } from './engagement-store.ts'
 import { hiddenArticleIds } from './moderation-store.ts'
 import { mockFeedArticles } from './feed.ts'
@@ -71,8 +71,27 @@ function presentStored(row: StoredComment, viewer_id: string) {
   return { ...node(row), replies: row.parent_id ? [] : replies }
 }
 
+/** `hold` ждёт, пока тест снимет флаг; `1` — короткая пауза. */
+async function waitForArticleDelay(): Promise<void> {
+  const flag = window.localStorage.getItem('mock_article_delay')
+  if (flag === '1') {
+    await delay(2000)
+    return
+  }
+  if (flag !== 'hold') return
+  await new Promise<void>((resolve) => {
+    const timer = window.setInterval(() => {
+      if (window.localStorage.getItem('mock_article_delay') !== 'hold') {
+        window.clearInterval(timer)
+        resolve()
+      }
+    }, 40)
+  })
+}
+
 export const actionHandlers = [
-  http.get('*/v1/articles/:slug', ({ params }) => {
+  http.get('*/v1/articles/:slug', async ({ params }) => {
+    await waitForArticleDelay()
     const stored = readMockArticles().find((item) => item.slug === params.slug && item.status === 'published')
     if (stored) {
       const viewer = currentMockAuthor()

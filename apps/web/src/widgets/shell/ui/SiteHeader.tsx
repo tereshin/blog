@@ -20,7 +20,7 @@ type SiteHeaderProps = {
 }
 
 /**
- * Шапка на всю ширину вне прокрутки. Слева — кнопка панели (только ниже 1200px) и название площадки;
+ * Шапка на всю ширину вне прокрутки. Слева — кнопка панели (только ниже 768px) и название площадки;
  * справа слева направо: поиск, колокольчик, «Написать», учётная запись или «Войти».
  */
 export function SiteHeader({ center, notifications, onSearch, onWrite, account }: SiteHeaderProps) {
@@ -32,9 +32,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const navigate = useNavigate()
   const is_nav_open = useShellStore((state) => state.is_nav_open)
   const setNavOpen = useShellStore((state) => state.setNavOpen)
-  const is_search = useShellStore((state) => state.header_center.kind === 'search')
   const openSearch = useShellStore((state) => state.openSearch)
-  const closeSearch = useShellStore((state) => state.closeSearch)
 
   const handleWrite = () => {
     if (viewer.status === 'loading') return
@@ -44,6 +42,10 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
     }
     if (viewer.user.is_restricted) {
       toast.error(t('error.restricted'))
+      return
+    }
+    if (!viewer.user.email_verified) {
+      toast.error(t('login.email_unverified'))
       return
     }
     if (!viewer.user.can_publish) {
@@ -75,9 +77,9 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       <Link to="/" className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4">
         {settings?.logo_url ? <img src={settings.logo_url} alt={brand} className="h-8 w-auto" /> : brand}
       </Link>
-      <div className="flex min-w-0 flex-1 items-center px-2">{center}</div>
+      <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">{center}</div>
       <div className="flex shrink-0 items-center gap-1">
-        <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch ?? (is_search ? closeSearch : openSearch)}>
+        <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch ?? openSearch}>
           <SearchIcon />
         </Button>
         {notifications}

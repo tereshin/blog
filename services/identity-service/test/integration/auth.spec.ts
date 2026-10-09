@@ -16,13 +16,15 @@ import type { FirebaseGateway, VerifiedToken } from '../../src/modules/auth/fire
 
 type FakeUser = { uid: string; email: string; password: string; email_verified: boolean }
 
-function fakeFirebase(): FirebaseGateway & { users: Map<string, FakeUser>; codes: Map<string, string> } {
+function fakeFirebase(): FirebaseGateway & { users: Map<string, FakeUser>; codes: Map<string, string>; sent_verification: string[] } {
   const users = new Map<string, FakeUser>()
   const codes = new Map<string, string>()
+  const sent_verification: string[] = []
   let seq = 0
-  const gateway: FirebaseGateway & { users: Map<string, FakeUser>; codes: Map<string, string> } = {
+  const gateway: FirebaseGateway & { users: Map<string, FakeUser>; codes: Map<string, string>; sent_verification: string[] } = {
     users,
     codes,
+    sent_verification,
     async verifyIdToken(id_token) {
       const user = [...users.values()].find((row) => row.uid === id_token)
       if (!user) throw new Error('bad token')
@@ -53,6 +55,7 @@ function fakeFirebase(): FirebaseGateway & { users: Map<string, FakeUser>; codes
       const user = users.get(firebase_uid)
       if (!user) return false
       codes.set(`verify-${user.email}`, firebase_uid)
+      sent_verification.push(firebase_uid)
       return true
     },
     async confirmEmailVerification(oob_code) {
@@ -130,7 +133,7 @@ describe('identity: вход через Firebase', () => {
     await app.close()
     await database.close()
     await postgres.stop()
-  })
+  }, 120_000)
 
   it('открытая регистрация отвечает pending без cookie и создаёт неподтверждённую строку', async () => {
     const response = await app.inject({
@@ -234,5 +237,116 @@ describe('identity: вход через Firebase', () => {
     expect(taken.json().code).toBe('registration_closed')
     expect(await database.db.select().from(users)).toHaveLength(1)
     expect(await database.db.select().from(auth_identities)).toHaveLength(1)
+  })
+
+  it('два входа с одной подтверждённой почтой оставляют одну строку и оба uid', async () => {
+    await database.db.update(settings_copy).set({ registration_open: true }).where(eq(settings_copy.id, 1))
+    firebase.users.set('uid-merge-a', { uid: 'uid-merge-a', email: 'merge@blog.test', password: 'x', email_verified: true })
+    firebase.users.set('uid-merge-b', { uid: 'uid-merge-b', email: 'merge@blog.test', password: 'x', email_verified: true })
+    const [first, second] = await Promise.all([
+      app.inject({ method: 'POST', url: '/v1/auth/sessions', payload: { method: 'id_token', id_token: 'uid-merge-a' } }),
+      app.inject({ method: 'POST', url: '/v1/auth/sessions', payload: { method: 'id_token', id_token: 'uid-merge-b' } }),
+    ])
+    expect(first.statusCode).toBe(204)
+    expect(second.statusCode).toBe(204)
+    const rows = await database.db.select().from(users).where(eq(users.email, 'merge@blog.test'))
+    expect(rows).toHaveLength(1)
+    const links = await database.db.select().from(auth_identities).where(eq(auth_identities.user_id, rows[0]!.id))
+    expect(links.map((link) => link.firebase_uid).sort()).toEqual(['uid-merge-a', 'uid-merge-b'])
+  })
+
+  it('подтверждённая почта существующего участника дописывает uid и не создаёт вторую строку', async () => {
+    const before = await database.db.select().from(users)
+    const [anna] = await database.db.select().from(users).where(eq(users.email, 'anna@blog.test'))
+    firebase.users.set('uid-anna-google', { uid: 'uid-anna-google', email: 'anna@blog.test', password: 'x', email_verified: true })
+    const created_before = (await database.db.select().from(outbox)).length
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sessions',
+      payload: { method: 'id_token', id_token: 'uid-anna-google' },
+    })
+    expect(response.statusCode).toBe(204)
+    expect(await database.db.select().from(users)).toHaveLength(before.length)
+    const [same] = await database.db.select().from(users).where(eq(users.email, 'anna@blog.test'))
+    expect(same?.role).toBe(anna?.role)
+    expect(same?.restricted_at).toEqual(anna?.restricted_at ?? null)
+    const links = await database.db.select().from(auth_identities).where(eq(auth_identities.firebase_uid, 'uid-anna-google'))
+    expect(links[0]?.user_id).toBe(anna?.id)
+    expect((await database.db.select().from(outbox)).length).toBe(created_before)
+  })
+
+  it('uid чужой учётки не переносит почту с токена', async () => {
+    firebase.users.set('uid-cross', { uid: 'uid-cross', email: 'cross@blog.test', password: 'x', email_verified: true })
+    await app.inject({ method: 'POST', url: '/v1/auth/sessions', payload: { method: 'id_token', id_token: 'uid-cross' } })
+    firebase.users.set('uid-cross', { uid: 'uid-cross', email: 'anna@blog.test', password: 'x', email_verified: true })
+    const response = await app.inject({ method: 'POST', url: '/v1/auth/sessions', payload: { method: 'id_token', id_token: 'uid-cross' } })
+    expect(response.statusCode).toBe(204)
+    const [cross] = await database.db.select().from(users).where(eq(users.email, 'cross@blog.test'))
+    const [anna] = await database.db.select().from(users).where(eq(users.email, 'anna@blog.test'))
+    expect(cross?.email).toBe('cross@blog.test')
+    expect(anna?.email).toBe('anna@blog.test')
+    const link = await database.db.select().from(auth_identities).where(eq(auth_identities.firebase_uid, 'uid-cross'))
+    expect(link[0]?.user_id).toBe(cross?.id)
+  })
+
+  it('неподтверждённый адрес из токена не пишет users.email и чужую учётку не открывает', async () => {
+    const before = await database.db.select().from(users)
+    firebase.users.set('uid-hidden', { uid: 'uid-hidden', email: 'anna@blog.test', password: 'x', email_verified: false })
+    const response = await app.inject({ method: 'POST', url: '/v1/auth/sessions', payload: { method: 'id_token', id_token: 'uid-hidden' } })
+    expect(response.statusCode).toBe(204)
+    const session_id = String(response.headers['x-set-session'])
+    const current = await app.inject({ method: 'GET', url: '/v1/auth/session', headers: { 'x-session-id': session_id } })
+    expect(current.json().user.email).toBeNull()
+    expect(current.json().user.email_verified).toBe(false)
+    expect(await database.db.select().from(users).where(eq(users.email, 'anna@blog.test'))).toHaveLength(1)
+    expect((await database.db.select().from(users)).length).toBe(before.length + 1)
+  })
+
+  it('указание почты: свободный адрес пишется, чужой — нет, повтор своего только шлёт письмо', async () => {
+    const hidden = await app.inject({ method: 'POST', url: '/v1/auth/sessions', payload: { method: 'id_token', id_token: 'uid-hidden' } })
+    const session_id = String(hidden.headers['x-set-session'])
+    const headers = { 'x-session-id': session_id, 'x-idempotency-key': 'claim-1' }
+    const free = await app.inject({ method: 'POST', url: '/v1/auth/email-claims', headers, payload: { email: 'fresh@blog.test' } })
+    expect(free.json()).toEqual({ status: 'pending' })
+    const mine = await app.inject({ method: 'GET', url: '/v1/auth/session', headers: { 'x-session-id': session_id } })
+    expect(mine.json().user).toMatchObject({ email: 'fresh@blog.test', email_verified: false })
+    expect(firebase.sent_verification).toContain('uid-hidden')
+
+    const taken = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/email-claims',
+      headers: { 'x-session-id': session_id, 'x-idempotency-key': 'claim-taken' },
+      payload: { email: 'anna@blog.test' },
+    })
+    expect(taken.json()).toEqual({ status: 'pending' })
+    const still = await app.inject({ method: 'GET', url: '/v1/auth/session', headers: { 'x-session-id': session_id } })
+    expect(still.json().user.email).toBe('fresh@blog.test')
+
+    const again = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/email-claims',
+      headers: { 'x-session-id': session_id, 'x-idempotency-key': 'claim-again' },
+      payload: { email: 'fresh@blog.test' },
+    })
+    expect(again.json()).toEqual({ status: 'pending' })
+    expect(still.json().user.email_verified).toBe(false)
+
+    const bad = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/email-claims',
+      headers: { 'x-session-id': session_id },
+      payload: { email: 'not-an-email' },
+    })
+    expect(bad.statusCode).toBe(422)
+    expect((await app.inject({ method: 'GET', url: '/v1/auth/session', headers: { 'x-session-id': session_id } })).json().user.email).toBe('fresh@blog.test')
+
+    const replay = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/email-claims',
+      headers,
+      payload: { email: 'anna@blog.test' },
+    })
+    expect(replay.json()).toEqual({ status: 'pending' })
+    expect((await app.inject({ method: 'GET', url: '/v1/auth/session', headers: { 'x-session-id': session_id } })).json().user.email).toBe('fresh@blog.test')
   })
 })

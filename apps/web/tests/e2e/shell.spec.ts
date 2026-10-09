@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-const WIDE = 1200
+const THREE_COLUMNS = 1280
 
 const GUEST_SECTIONS = [
   '/',
@@ -19,8 +19,8 @@ const GUEST_SECTIONS = [
   '/about',
 ]
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasThreeColumns(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= THREE_COLUMNS
 }
 
 async function clientNavigate(page: Page, path: string): Promise<void> {
@@ -43,7 +43,7 @@ async function expectFrame(page: Page): Promise<void> {
 
 test.describe('Каркас на всех разделах', () => {
   test.beforeEach(({ page }) => {
-    test.skip(!isWide(page), 'Три колонки проверяются от 1200px')
+    test.skip(!hasThreeColumns(page), 'Три столбца проверяются от 1280px')
   })
 
   test('гость проходит публичные адреса, шапка не размонтируется', async ({ page }) => {
@@ -121,15 +121,13 @@ test.describe('Каркас на всех разделах', () => {
   test('«Наверх» возвращает длинную статью к началу', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_article_length', 'long'))
     await page.goto('/p/statya-1')
-    const main = page.getByRole('main')
-    await expect(main.getByText(/Абзац 40/)).toBeAttached()
-    await main.evaluate((element) => {
-      element.scrollTop = 900
-    })
+    await expect(page.getByRole('main').getByText(/Абзац 40/)).toBeAttached()
+    await page.evaluate(() => window.scrollTo(0, 900))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(400)
     const back = page.getByRole('button', { name: 'Наверх' })
     await expect(back).toBeVisible()
     await back.click()
-    await expect.poll(async () => main.evaluate((element) => element.scrollTop), { timeout: 5_000 }).toBeLessThan(8)
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 5_000 }).toBeLessThan(8)
   })
 
   test('диалог входа не меняет адрес и оставляет обе карточки', async ({ page }) => {

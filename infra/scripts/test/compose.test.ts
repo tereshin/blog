@@ -8,7 +8,7 @@ import {
   buildComposeArgs,
   expandServices,
   findPlaceholder,
-  hasMockGoogle,
+  hasForbiddenAuthEmulator,
   parseArgs,
 } from '../lib/compose.ts'
 
@@ -97,15 +97,18 @@ describe('состав окружений (docker compose config)', () => {
     'identity-migrate', 'content-migrate', 'discussion-migrate', 'messaging-migrate', 'notification-migrate', 'media-migrate',
   ]
 
-  it('prod без mock-google и без лишнего сверх FR-126', () => {
+  it('prod без mock-google, без firebase-auth и без лишнего сверх FR-126', () => {
     const output = services('prod')
-    expect(hasMockGoogle(output)).toBe(false)
+    expect(hasForbiddenAuthEmulator(output)).toBe(false)
     expect(output.split(/\s+/).filter(Boolean).sort()).toEqual([...COMMON].sort())
   })
 
-  it('local и dev добавляют только mock-google', () => {
+  it('local и dev добавляют только firebase-auth и не содержат mock-google', () => {
     for (const env of ['local', 'dev'] as const) {
-      expect(services(env).split(/\s+/).filter(Boolean).sort()).toEqual([...COMMON, 'mock-google'].sort())
+      const names = services(env).split(/\s+/).filter(Boolean)
+      expect(names).not.toContain('mock-google')
+      expect(hasForbiddenAuthEmulator(names.join(' '))).toBe(true)
+      expect(names.sort()).toEqual([...COMMON, 'firebase-auth'].sort())
     }
   })
 })

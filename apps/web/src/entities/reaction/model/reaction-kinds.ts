@@ -1,3 +1,4 @@
+import { reactionAppearancesSchema } from '@blog/contracts'
 import type { MessageKey } from '@/shared/i18n'
 
 export const REACTION_KINDS = ['laugh', 'heart', 'thumb', 'fire'] as const
@@ -10,6 +11,11 @@ export const REACTION_EMOJI: Record<ReactionKind, string> = {
   thumb: '👍',
   fire: '🔥',
 }
+
+/** Запасной вид, пока публичные настройки ещё не загрузились. */
+export const FALLBACK_REACTION_APPEARANCES = reactionAppearancesSchema.parse(
+  REACTION_KINDS.map((kind) => ({ kind, presentation: 'emoji', emoji: REACTION_EMOJI[kind] })),
+)
 
 export const REACTION_LABEL: Record<ReactionKind, MessageKey> = {
   laugh: 'reaction.laugh',

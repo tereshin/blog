@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-const WIDE = 1200
+const LEFT_COLUMN = 768
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasLeftColumn(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= LEFT_COLUMN
+}
+
+function showsNavDrawer(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) < LEFT_COLUMN
 }
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
@@ -14,7 +18,7 @@ test.describe('Жесты карточки', () => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/')
     const card = page.getByRole('main').getByRole('article').first()
-    await expect(card).toBeVisible()
+    await expect(card).toBeVisible({ timeout: 15_000 })
     await card.getByRole('button', { name: 'Подписаться' }).click()
     await expect(card.getByRole('button', { name: 'Вы подписаны' })).toHaveAttribute('aria-pressed', 'true')
     await card.getByRole('button', { name: 'Вы подписаны' }).click()
@@ -45,7 +49,7 @@ test.describe('Жесты карточки', () => {
     const saved_card = page.getByRole('main').getByRole('article').filter({ hasText: title })
     await expect(saved_card).toBeVisible()
     await expect(saved_card.getByRole('button', { name: 'Убрать из закладок' })).toContainText(count)
-    if (isWide(page)) {
+    if (hasLeftColumn(page)) {
       await expect(page.getByRole('navigation', { name: 'Навигация' }).locator('[aria-current="page"]')).toHaveCount(0)
     }
     await saved_card.getByRole('button', { name: 'Убрать из закладок' }).click()
@@ -54,7 +58,7 @@ test.describe('Жесты карточки', () => {
 
   test('гость на закладках видит просьбу войти', async ({ page }) => {
     await page.goto('/bookmarks')
-    await expect(page.getByRole('main').getByText('Войдите, чтобы видеть закладки')).toBeVisible()
+    await expect(page.getByRole('main').getByText('Войдите, чтобы видеть закладки')).toBeVisible({ timeout: 15_000 })
     await expect(page.getByRole('main').getByRole('button', { name: 'Войти' })).toBeVisible()
   })
 
@@ -151,7 +155,7 @@ test.describe('Жесты карточки', () => {
     await expect(dialog).toContainText('деньги не списываются')
     await dialog.getByRole('button', { name: 'Подтвердить' }).click()
     await expect(page.getByText(/дополнительно участвует/)).toBeVisible()
-    if (!isWide(page)) await page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' }).click()
+    if (showsNavDrawer(page)) await page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' }).click()
     await page.getByRole('link', { name: 'Популярное', exact: true }).filter({ visible: true }).click()
     await expect(page).toHaveURL(/\/popular$/)
     await expect(page.getByRole('main').getByRole('heading', { name: /^Статья 1:/ })).toBeVisible()

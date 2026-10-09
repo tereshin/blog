@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { feedPageSchema, topicListSchema } from '@blog/contracts'
+import { DEFAULT_REACTION_APPEARANCES, feedPageSchema, topicListSchema } from '@blog/contracts'
 import type { FeedPage, ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -235,8 +235,20 @@ describe('content: лента, темы и настройки на PostgreSQL', 
   })
 
   it('настройки: значения по умолчанию, затем заданные', async () => {
-    expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({ name: 'Блог', logo_url: null, locale: 'ru', about: '' })
-    await database.db.insert(settings).values({ id: 1, name: 'Мой блог', locale: 'sr', about: 'О нас' })
-    expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({ name: 'Мой блог', logo_url: null, locale: 'sr', about: 'О нас' })
+    expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      name: 'Блог',
+      logo_url: null,
+      locale: 'ru',
+      about: '',
+      reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+    })
+    await database.db.insert(settings).values({ id: 1, name: 'Мой блог', locale: 'sr', about: 'О нас', reaction_appearances: DEFAULT_REACTION_APPEARANCES })
+    expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      name: 'Мой блог',
+      logo_url: null,
+      locale: 'sr',
+      about: 'О нас',
+      reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+    })
   })
 })

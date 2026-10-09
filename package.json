@@ -44,7 +44,9 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/pg": "8.23.1"
+      "@types/pg": "8.23.1",
+      "@firebase/app": "0.16.2",
+      "@firebase/app-compat": "0.5.18"
     }
   }
 }

@@ -19,6 +19,7 @@ import { SubscriptionRegistry } from './subscription-registry.ts'
 /** События брокера → тип кадра. Не из списка — кадра нет. */
 const FRAME_BY_PREFIX: readonly { prefix: string; type: FrameType }[] = [
   { prefix: 'content.article.', type: 'article' },
+  { prefix: 'content.settings.', type: 'settings' },
   { prefix: 'discussion.comment.', type: 'comment' },
   { prefix: 'discussion.reaction.', type: 'reaction' },
   { prefix: 'discussion.bookmark.', type: 'bookmark' },
@@ -149,6 +150,8 @@ export class EventsService {
       case 'article':
         // Сигнал статьи уходит и тем, у кого доступ сузили: клиент должен убрать текст.
         return event.article_id ? this.registry.forArticle(event.article_id) : []
+      case 'settings':
+        return this.registry.all()
       default: {
         if (!event.article_id) return []
         const has_access_fields = event.status !== undefined || event.visibility !== undefined

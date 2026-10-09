@@ -61,5 +61,12 @@ describe('discussion: реакции (PostgreSQL в контейнере)', () =
     const replay = await service.react({ viewer: viewer(BORIS), body, idempotency_key: 'boris-1', correlation_id: 'c' })
     expect(replay.my_reaction).toBe('laugh')
     expect(await count()).toBe(1)
+
+    const [row] = await database.db.select().from(reactions).where(eq(reactions.target_id, ARTICLE))
+    expect(row).toMatchObject({ user_id: BORIS, target_type: 'article', target_id: ARTICLE, kind: 'laugh' })
+    expect(row).not.toHaveProperty('emoji')
+    expect(row).not.toHaveProperty('image_url')
+    expect(row).not.toHaveProperty('presentation')
+    expect(Object.keys(replay).sort()).toEqual(['my_reaction', 'reaction_count', 'reaction_counts'])
   })
 })

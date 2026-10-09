@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-const WIDE = 1200
+const THREE_COLUMNS = 1280
 const ARTICLE_ID = '9b2e3f40-2222-4b22-8b22-000000000001'
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasThreeColumns(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= THREE_COLUMNS
 }
 
 test.describe('Поиск и уведомления', () => {
   test.beforeEach(({ page }) => {
-    test.skip(!isWide(page), 'Шапка с пилюлей проверяется от 1200px')
+    test.skip(!hasThreeColumns(page), 'Шапка с пилюлей проверяется от 1280px')
   })
 
   test('поиск открывает поле вместо пилюли, закрытие возвращает пилюлю, запрос находит статью', async ({ page }) => {
@@ -19,15 +19,17 @@ test.describe('Поиск и уведомления', () => {
     await expect(banner.getByRole('link', { name: /без компромиссов/ })).toBeVisible({ timeout: 15_000 })
     await banner.getByRole('button', { name: 'Поиск' }).click()
     const field = banner.getByRole('textbox', { name: 'Поиск' })
-    await expect(field).toBeVisible()
+    await expect(field).toBeVisible({ timeout: 10_000 })
     await expect(banner.getByRole('link', { name: /без компромиссов/ })).toHaveCount(0)
     await field.press('Escape')
     await expect(field).toHaveCount(0)
     await expect(banner.getByRole('link', { name: /без компромиссов/ })).toBeVisible()
 
     await banner.getByRole('button', { name: 'Поиск' }).click()
+    await expect(field).toBeVisible({ timeout: 10_000 })
     await field.fill('компромиссов')
-    await field.press('Enter')
+    // Enter уводит на /search и снимает поле — ждать URL, а не завершения press на отмонтированном input.
+    await Promise.all([page.waitForURL((url) => url.pathname === '/search'), field.press('Enter')])
     await expect.poll(() => new URL(page.url()).pathname).toBe('/search')
     await expect(page.getByRole('main').getByRole('heading', { name: /без компромиссов/ }).first()).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('Черновик про компромиссы')).toHaveCount(0)

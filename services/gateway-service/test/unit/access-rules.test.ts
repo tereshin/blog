@@ -35,6 +35,7 @@ describe('canReadFields', () => {
 describe('кадры', () => {
   it('тип кадра по имени события', () => {
     expect(frameTypeOf('content.article.updated')).toBe('article')
+    expect(frameTypeOf('content.settings.updated')).toBe('settings')
     expect(frameTypeOf('discussion.comment.created')).toBe('comment')
     expect(frameTypeOf('messaging.message.sent')).toBe('message')
     expect(frameTypeOf('identity.user.created')).toBeNull()

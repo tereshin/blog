@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { env } from '@/shared/config'
 import { http } from './http-client.ts'
 
-export const FRAME_TYPES = ['article', 'comment', 'reaction', 'bookmark', 'view', 'notification', 'message'] as const
+export const FRAME_TYPES = ['article', 'comment', 'reaction', 'bookmark', 'view', 'notification', 'message', 'settings'] as const
 export type FrameType = (typeof FRAME_TYPES)[number]
 
 const frameSchema = z.union([

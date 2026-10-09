@@ -16,6 +16,10 @@ const envSchema = baseEnvSchema.extend({
   NOTIFICATION_URL: z.url(),
   MEDIA_URL: z.url(),
   S3_PUBLIC_URL: z.url().optional(),
+  /** Домен обработчика Firebase для `frame-src`. Не секрет. */
+  FIREBASE_AUTH_DOMAIN: z.string().min(1).optional(),
+  /** Адрес эмулятора `host:port`. В prod не передаётся и в CSP не попадает. */
+  FIREBASE_AUTH_EMULATOR_HOST: z.string().min(1).optional(),
   NATS_URL: z.string().min(1),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),

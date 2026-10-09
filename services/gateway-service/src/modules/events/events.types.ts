@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { ServiceContext } from '@blog/contracts'
 
-export const FRAME_TYPES = ['article', 'comment', 'reaction', 'bookmark', 'view', 'notification', 'message'] as const
+export const FRAME_TYPES = ['article', 'comment', 'reaction', 'bookmark', 'view', 'notification', 'message', 'settings'] as const
 export type FrameType = (typeof FRAME_TYPES)[number]
 
 /** Кадр потока: только тип и идентификаторы, без текста статьи (contracts/realtime.md). */

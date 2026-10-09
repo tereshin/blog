@@ -9,9 +9,10 @@ describe('i18n', () => {
     expect(translate('ru', 'article.comments', { count: 21 })).toBe('21 комментарий')
   })
 
-  it('для языка без каталога берёт русский текст', () => {
-    expect(translate('en', 'header.write')).toBe('Написать')
-    expect(translate('sr', 'common.retry')).toBe('Повторить')
+  it('берёт строку своего каталога, а не запасной русский текст', () => {
+    expect(translate('en', 'header.write')).toBe('Write')
+    expect(translate('sr', 'common.retry')).toBe('Pokušaj ponovo')
+    expect(translate('ru', 'header.write')).toBe('Написать')
   })
 
   it('подставляет параметры и оставляет неизвестные плейсхолдеры как есть', () => {

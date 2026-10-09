@@ -1,16 +1,3 @@
-<!--
-Sync Impact Report
-- Version change: 1.0.0 → 2.0.0
-- Modified principles:
-  - III. Сессия и секреты: вход только Google OIDC → Firebase Authentication проекта площадки
-  - V. Один каркас: порог 1200px и одна колонка → полоса 1280px, пороги 768 и 1280, прокрутка страницы
-- Added sections: none
-- Removed sections: none
-- Follow-up TODOs:
-  - .cursor/rules/session-security.mdc приведён к тому же смыслу входа
-  - Complexity Tracking в specs/002-firebase-auth-layout/plan.md остаётся, пока ревью не примет поправку
--->
-
 # Конституция платформы публикаций
 
 ## Core Principles

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router'
 import { articleKeys, getArticleDraft } from '@/entities/article'
 import type { ArticleDraft } from '@/entities/article'
-import { useViewer } from '@/entities/session'
+import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useTopics } from '@/entities/topic'
 import { useLoginDialog } from '@/features/login'
 import { PublishPanel, UnsavedChangesDialog, usePublishArticle } from '@/features/publish-article'
@@ -81,15 +81,17 @@ export default function EditorPage() {
     },
   })
 
-  const can_write = viewer.status === 'member' && viewer.user.can_publish && !viewer.user.is_restricted
+  const block = memberMutationBlock(viewer)
+  const can_write = viewer.status === 'member' && viewer.user.can_publish && block === null
   const waiting = viewer.status === 'loading' || (can_write && (topics.isPending || (Boolean(id) && !draft && draft_query.isPending)))
 
   return (
     <div className="flex flex-col gap-4 p-4">
       {waiting ? <EditorSkeleton /> : null}
       {viewer.status === 'guest' ? <EmptyState title={t('editor.guest')} /> : null}
-      {viewer.status === 'member' && viewer.user.is_restricted ? <EmptyState title={t('editor.restricted')} /> : null}
-      {viewer.status === 'member' && !viewer.user.is_restricted && !viewer.user.can_publish ? (
+      {block === 'restricted' ? <EmptyState title={t('editor.restricted')} /> : null}
+      {block === 'email_unverified' ? <EmptyState title={t('login.email_unverified')} /> : null}
+      {viewer.status === 'member' && block === null && !viewer.user.can_publish ? (
         <EmptyState title={t('editor.cannot_publish')} />
       ) : null}
       {can_write && id && !draft && draft_query.isError ? <EmptyState title={t('editor.not_found')} /> : null}

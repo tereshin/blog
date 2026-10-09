@@ -18,7 +18,7 @@ function SettingsScreen() {
     <div className="flex flex-col gap-8 px-4 py-4">
       <SettingsForm
         initial={settings.data}
-        upload={(onUploaded) => <ImageUploadButton label={t('admin.settings.logo')} onUploaded={onUploaded} />}
+        upload={({ label, onUploaded }) => <ImageUploadButton label={label} onUploaded={onUploaded} />}
       />
       <MemberSearch />
     </div>

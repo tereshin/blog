@@ -1,4 +1,4 @@
-import { useViewer } from '@/entities/session'
+import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { Button } from '@/shared/ui'
 import { useCommentDrafts } from '../model/useCommentDrafts.ts'
@@ -27,13 +27,14 @@ export function CommentForm({ article_id, comments_enabled, parent, onCancelRepl
     if (sent_parent) onSent()
   })
   if (!comments_enabled) return null
-  if (viewer.status === 'member' && viewer.user.is_restricted) {
+  const block = memberMutationBlock(viewer)
+  if (block === 'restricted') {
     return <p className="py-4 text-sm text-muted">{t('comment.restricted')}</p>
   }
 
   const submit = () => {
     const body = draft.text.trim()
-    if (!body || send.is_pending) return
+    if (!body || send.is_pending || block === 'email_unverified') return
     requireSession(() => {
       send.send(body, parent?.id ?? null)
     })
@@ -67,6 +68,7 @@ export function CommentForm({ article_id, comments_enabled, parent, onCancelRepl
           onChange={(event) => draft.update(event.target.value)}
         />
       </label>
+      {block === 'email_unverified' ? <p className="text-sm text-muted">{t('login.email_unverified')}</p> : null}
       {send.error ? <p className="text-sm text-danger">{send.error}</p> : null}
       <div className="flex gap-2">
         <Button type="submit" variant="primary" isDisabled={draft.text.trim().length === 0 || send.is_pending}>

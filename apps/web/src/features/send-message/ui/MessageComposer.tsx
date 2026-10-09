@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { MessageModel } from '@/entities/conversation'
-import { useViewer } from '@/entities/session'
+import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { Button } from '@/shared/ui'
 import { useSendMessage } from '../model/useSendMessage.ts'
@@ -29,17 +29,18 @@ export function MessageComposer({ conversation_id, peer_user_id, requireSession,
     },
   })
 
-  if (viewer.status === 'member' && viewer.user.is_restricted) {
+  const block = memberMutationBlock(viewer)
+  if (block === 'restricted') {
     return <p className="py-3 text-sm text-muted">{t('messages.restricted')}</p>
   }
 
   const submit = () => {
     const body = text.trim()
-    if (!body || send.is_pending || !peer_user_id) return
+    if (!body || send.is_pending || !peer_user_id || block === 'email_unverified') return
     requireSession(() => send.send(body))
   }
 
-  const error_text = send.error_code === 'restricted' ? t('messages.peer_restricted') : send.error
+  const error_text = block === 'email_unverified' ? t('login.email_unverified') : send.error_code === 'restricted' ? t('messages.peer_restricted') : send.error
 
   return (
     <form

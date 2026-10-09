@@ -4,10 +4,15 @@ import type { Page } from '@playwright/test'
 const base_url = process.env['E2E_BASE_URL']
 if (base_url) test.use({ baseURL: base_url })
 
-const WIDE = 1200
+const THREE_COLUMNS = 1280
+const LEFT_COLUMN = 768
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasThreeColumns(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= THREE_COLUMNS
+}
+
+function hasLeftColumn(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= LEFT_COLUMN
 }
 
 test.describe('Профиль и рейтинг', () => {
@@ -29,8 +34,8 @@ test.describe('Профиль и рейтинг', () => {
     await expect(page.getByRole('button', { name: 'Свежее' })).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByText('Купить показы')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Как устроена лента' })).toBeVisible()
-    if (isWide(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
 
   test('чужой профиль предлагает подписаться и не показывает правку', async ({ page }) => {
@@ -39,8 +44,8 @@ test.describe('Профиль и рейтинг', () => {
     await expect(page.getByRole('button', { name: 'Редактировать' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Добавить обложку' })).toHaveCount(0)
     await expect(page.getByText('Купить показы')).toHaveCount(0)
-    if (isWide(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
 
   test('вкладка «Комментарии» показывает фрагмент, название и дату', async ({ page }) => {
@@ -53,7 +58,7 @@ test.describe('Профиль и рейтинг', () => {
   })
 
   test('рейтинг подсвечивает пункт «Рейтинг»', async ({ page }) => {
-    test.skip(!isWide(page), 'Левая карточка закреплена только от 1200px')
+    test.skip(!hasLeftColumn(page), 'Левый столбец виден от 768px')
     await page.goto('/rating')
     await expect(page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Рейтинг' })).toHaveAttribute('aria-current', 'page', { timeout: 20_000 })
     await expect(page.getByRole('heading', { name: 'Рейтинг' })).toBeVisible()

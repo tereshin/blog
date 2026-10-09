@@ -1,4 +1,6 @@
 import { boolean, customType, index, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
+import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
+import type { ReactionAppearances } from '@blog/contracts'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -119,6 +121,7 @@ export const settings = pgTable('settings', {
   about: text('about').notNull().default(''),
   registration_open: boolean('registration_open').notNull().default(true),
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
+  reaction_appearances: jsonb('reaction_appearances').$type<ReactionAppearances>().notNull().default(DEFAULT_REACTION_APPEARANCES),
 })
 
 export const reports = pgTable(

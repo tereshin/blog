@@ -2,5 +2,11 @@
   "name": "Блог",
   "logo_url": null,
   "locale": "ru",
-  "about": "Площадка для статей и обсуждений."
+  "about": "Площадка для статей и обсуждений.",
+  "reaction_appearances": [
+    { "kind": "laugh", "presentation": "emoji", "emoji": "😄" },
+    { "kind": "heart", "presentation": "emoji", "emoji": "❤️" },
+    { "kind": "thumb", "presentation": "emoji", "emoji": "👍" },
+    { "kind": "fire", "presentation": "emoji", "emoji": "🔥" }
+  ]
 }

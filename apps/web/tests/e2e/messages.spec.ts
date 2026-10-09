@@ -3,10 +3,10 @@ import type { Page } from '@playwright/test'
 
 const ANNA = 'a1000000-0000-4000-8000-000000000001'
 const ROMAN = '0b3a4c50-3333-4c33-8c33-000000000005'
-const WIDE = 1200
+const LEFT_COLUMN = 768
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasLeftColumn(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= LEFT_COLUMN
 }
 
 test.describe('Сообщения', () => {
@@ -42,7 +42,7 @@ test.describe('Сообщения', () => {
   })
 
   test('признак у «Сообщений» исчезает после открытия диалога', async ({ page }) => {
-    test.skip(!isWide(page), 'Левая карточка видна от 1200px')
+    test.skip(!hasLeftColumn(page), 'Левый столбец виден от 768px')
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/')
     await expect(page.getByRole('link', { name: 'Сообщения' })).toBeVisible()

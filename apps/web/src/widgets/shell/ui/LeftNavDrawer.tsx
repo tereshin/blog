@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
+import { useMediaQuery } from '@/shared/lib'
 import { Drawer } from '@/shared/ui'
 
 type LeftNavDrawerProps = {
@@ -8,9 +10,19 @@ type LeftNavDrawerProps = {
   children: ReactNode
 }
 
-/** Левая навигация ниже 1200px: та же колонка, фокус и Escape — у панели HeroUI. */
+const DRAWER_QUERY = '(max-width: 767px)'
+
+/** Левая навигация ниже 768px. От 768px столбец виден на месте, панель не монтируется. */
 export function LeftNavDrawer({ is_open, onOpenChange, children }: LeftNavDrawerProps) {
   const { t } = useT()
+  const is_drawer = useMediaQuery(DRAWER_QUERY)
+
+  useEffect(() => {
+    if (!is_drawer && is_open) onOpenChange(false)
+  }, [is_drawer, is_open, onOpenChange])
+
+  if (!is_drawer) return null
+
   return (
     <Drawer id="shell-nav" is_open={is_open} onOpenChange={onOpenChange} placement="left" aria-label={t('shell.navigation')}>
       <Drawer.Body>

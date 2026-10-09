@@ -12,7 +12,7 @@ import { useShellStore } from '@/widgets/shell'
 const ConversationList = lazy(() => import('@/widgets/conversation').then((module) => ({ default: module.ConversationList })))
 const ConversationThread = lazy(() => import('@/widgets/conversation').then((module) => ({ default: module.ConversationThread })))
 
-const WIDE_QUERY = '(min-width: 1200px)'
+const SPLIT_QUERY = '(min-width: 768px)'
 
 type PeerState = { user_id: string; display_name: string }
 
@@ -29,7 +29,7 @@ export default function MessagesPage() {
   const { viewer } = useViewer()
   const openLogin = useLoginDialog((state) => state.open)
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
-  const is_wide = useMediaQuery(WIDE_QUERY)
+  const is_split = useMediaQuery(SPLIT_QUERY)
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
@@ -77,11 +77,11 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-5.5rem)] min-h-0 flex-col gap-4 p-4 min-[1200px]:grid min-[1200px]:grid-cols-[18rem_minmax(0,1fr)] min-[1200px]:p-0">
-      {is_wide || !show_thread ? <ConversationList selected_id={conversation_id} /> : null}
-      {is_wide || show_thread ? (
+    <div className="flex h-[calc(100dvh-5.5rem)] min-h-0 flex-col gap-4 p-4 min-[768px]:grid min-[768px]:grid-cols-[18rem_minmax(0,1fr)] min-[768px]:p-0">
+      {is_split || !show_thread ? <ConversationList selected_id={conversation_id} /> : null}
+      {is_split || show_thread ? (
         show_thread && peer ? (
-          <ConversationThread conversation_id={conversation_id} peer={peer} show_back={!is_wide} />
+          <ConversationThread conversation_id={conversation_id} peer={peer} show_back={!is_split} />
         ) : (
           <EmptyState title={t('messages.pick')} className="py-16" />
         )

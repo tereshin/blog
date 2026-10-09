@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
 import { AboutPage } from '@/pages/about'
+import { AuthActionPage } from '@/pages/auth-action'
 import { AdminModerationPage } from '@/pages/admin-moderation'
 import { AdminSettingsPage } from '@/pages/admin-settings'
 import { AdminTopicsPage } from '@/pages/admin-topics'
@@ -50,6 +51,7 @@ export const shellRoute: RouteObject = {
     child('bookmarks', <BookmarksPage />, 'feed'),
     child('search', <SearchPage />, 'feed'),
     child('about', <AboutPage />, 'article'),
+    child('auth/action', <AuthActionPage />, 'article'),
     child('write', <EditorPage />, 'article'),
     child('write/:id', <EditorPage />, 'article'),
     child('admin/moderation', <AdminModerationPage />, 'feed'),

@@ -12,6 +12,7 @@ const member = {
   is_restricted: false,
   can_publish: true,
   viewer_key: 'user:3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22',
+  email_verified: true,
 } as const
 
 describe('служебный контекст', () => {
@@ -26,6 +27,15 @@ describe('служебный контекст', () => {
     const context = claimsToContext(serviceJwtClaimsSchema.parse(contextToClaims(guest, 1_000)))
     expect(context.user_id).toBeUndefined()
     expect(context.viewer_key).toBe('guest:abc')
+  })
+
+  it('старый JWT без email_verified читается как подтверждённый', () => {
+    const claims = contextToClaims(member, 1_000)
+    const legacy = { ...claims }
+    delete legacy.email_verified
+    const parsed = serviceJwtClaimsSchema.parse(legacy)
+    expect(parsed.email_verified).toBe(true)
+    expect(claimsToContext(parsed).email_verified).toBe(true)
   })
 
   it('TTL больше 60 с отвергается', () => {

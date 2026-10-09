@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { DEFAULT_REACTION_APPEARANCES, SettingsUpdatedV1 } from '@blog/contracts'
 import type { ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -29,6 +30,7 @@ const body = {
   about: 'О проекте',
   registration_open: false,
   new_members_can_publish: false,
+  reaction_appearances: DEFAULT_REACTION_APPEARANCES,
 }
 
 describe('content: настройки площадки', () => {
@@ -59,7 +61,13 @@ describe('content: настройки площадки', () => {
   it('пока строка не задана, публичные настройки — значения по умолчанию', async () => {
     const response = await app.inject({ method: 'GET', url: '/v1/settings' })
     expect(response.statusCode).toBe(200)
-    expect(response.json()).toEqual({ name: 'Блог', logo_url: null, locale: 'ru', about: '' })
+    expect(response.json()).toEqual({
+      name: 'Блог',
+      logo_url: null,
+      locale: 'ru',
+      about: '',
+      reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+    })
   })
 
   it('администратор не сохраняет настройки и событие не появляется', async () => {
@@ -99,6 +107,7 @@ describe('content: настройки площадки', () => {
       logo_url: `${MEDIA}/logo.png`,
       locale: 'en',
       about: 'О проекте',
+      reaction_appearances: DEFAULT_REACTION_APPEARANCES,
     })
     const events = await database.db.select().from(outbox).where(eq(outbox.name, 'content.settings.updated'))
     expect(events).toHaveLength(1)
@@ -116,5 +125,128 @@ describe('content: настройки площадки', () => {
     const allowed = await app.inject({ method: 'GET', url: '/v1/settings/admin', headers: { 'x-test-viewer': 'superadmin' } })
     expect(allowed.statusCode).toBe(200)
     expect(allowed.json()).toMatchObject({ registration_open: false, new_members_can_publish: false })
+  })
+
+  it('администратор не меняет вид реакций, строка настроек остаётся прежней', async () => {
+    const before_rows = await database.db.select().from(settings)
+    const before_events = await database.db.select().from(outbox)
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'admin', 'content-type': 'application/json' },
+      payload: {
+        ...body,
+        name: 'Чужая',
+        reaction_appearances: [
+          { kind: 'laugh', presentation: 'emoji', emoji: '🎉' },
+          DEFAULT_REACTION_APPEARANCES[1],
+          DEFAULT_REACTION_APPEARANCES[2],
+          DEFAULT_REACTION_APPEARANCES[3],
+        ],
+      },
+    })
+    expect(response.statusCode).toBe(403)
+    expect(await database.db.select().from(settings)).toEqual(before_rows)
+    expect(await database.db.select().from(outbox)).toEqual(before_events)
+  })
+
+  it('чужой адрес картинки реакции отвергается так же, как чужой логотип, прежние четыре вида остаются', async () => {
+    const before_rows = await database.db.select().from(settings)
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: {
+        ...body,
+        reaction_appearances: [
+          { kind: 'laugh', presentation: 'image', image_url: 'https://evil.test/laugh.png' },
+          DEFAULT_REACTION_APPEARANCES[1],
+          DEFAULT_REACTION_APPEARANCES[2],
+          DEFAULT_REACTION_APPEARANCES[3],
+        ],
+      },
+    })
+    expect(response.statusCode).toBe(422)
+    expect(response.json()).toMatchObject({ code: 'validation_failed' })
+    expect(await database.db.select().from(settings)).toEqual(before_rows)
+  })
+
+  it('пустой эмодзи, две графемы и слово не затирают сохранённые виды', async () => {
+    const before_rows = await database.db.select().from(settings)
+    for (const emoji of ['', '😄😄', 'hello']) {
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/v1/settings',
+        headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+        payload: {
+          ...body,
+          reaction_appearances: [
+            { kind: 'laugh', presentation: 'emoji', emoji },
+            DEFAULT_REACTION_APPEARANCES[1],
+            DEFAULT_REACTION_APPEARANCES[2],
+            DEFAULT_REACTION_APPEARANCES[3],
+          ],
+        },
+      })
+      expect(response.statusCode).toBe(422)
+      expect(response.json()).toMatchObject({ code: 'validation_failed' })
+    }
+    expect(await database.db.select().from(settings)).toEqual(before_rows)
+  })
+
+  it('частичное тело по-прежнему отвергается, строка не меняется', async () => {
+    const before_rows = await database.db.select().from(settings)
+    const partial = {
+      name: body.name,
+      logo_url: body.logo_url,
+      locale: body.locale,
+      about: body.about,
+      registration_open: body.registration_open,
+      new_members_can_publish: body.new_members_can_publish,
+    }
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: partial,
+    })
+    expect(response.statusCode).toBe(422)
+    expect(await database.db.select().from(settings)).toEqual(before_rows)
+  })
+
+  it('успех публикует событие с необязательным полем, гость читает вид', async () => {
+    const saved_appearances = [
+      { kind: 'laugh' as const, presentation: 'emoji' as const, emoji: '🎉' },
+      { kind: 'heart' as const, presentation: 'emoji' as const, emoji: '❤️' },
+      { kind: 'thumb' as const, presentation: 'image' as const, image_url: `${MEDIA}/thumb.png` },
+      { kind: 'fire' as const, presentation: 'emoji' as const, emoji: '🔥' },
+    ]
+    const before_count = (await database.db.select().from(outbox).where(eq(outbox.name, 'content.settings.updated'))).length
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: { ...body, reaction_appearances: saved_appearances },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({ reaction_appearances: saved_appearances })
+
+    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'content.settings.updated'))
+    expect(events).toHaveLength(before_count + 1)
+    const parsed = events
+      .map((event) => SettingsUpdatedV1.parse(event.payload))
+      .find((event) => {
+        const first = event.reaction_appearances?.[0]
+        return first?.presentation === 'emoji' && first.emoji === '🎉'
+      })
+    expect(parsed?.reaction_appearances).toEqual(saved_appearances)
+    const without_appearances = { ...parsed }
+    delete without_appearances.reaction_appearances
+    expect(SettingsUpdatedV1.parse(without_appearances).site_name).toBe('Площадка')
+
+    const guest = await app.inject({ method: 'GET', url: '/v1/settings', headers: { 'x-test-viewer': 'guest' } })
+    expect(guest.statusCode).toBe(200)
+    expect(guest.json()).toMatchObject({ reaction_appearances: saved_appearances })
+    expect(guest.json()).not.toHaveProperty('registration_open')
   })
 })

@@ -1,4 +1,6 @@
 import { HttpResponse, http } from 'msw'
+import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
+import type { ReactionAppearances } from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
 import settings_fixture from '../fixtures/settings.json'
 import topics_fixture from '../fixtures/topics.json'
@@ -13,6 +15,7 @@ type SiteSettings = {
   about: string
   registration_open: boolean
   new_members_can_publish: boolean
+  reaction_appearances: ReactionAppearances
 }
 
 type SiteTopic = {
@@ -30,7 +33,13 @@ type SiteState = { settings: SiteSettings; topics: SiteTopic[] }
 
 function initialState(): SiteState {
   return {
-    settings: { ...settings_fixture, locale: settings_fixture.locale as SiteSettings['locale'], registration_open: true, new_members_can_publish: true },
+    settings: {
+      ...settings_fixture,
+      locale: settings_fixture.locale as SiteSettings['locale'],
+      registration_open: true,
+      new_members_can_publish: true,
+      reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+    },
     topics: topics_fixture.map((topic) => ({ ...topic, status: topic.status as SiteTopic['status'] })),
   }
 }
@@ -38,7 +47,8 @@ function initialState(): SiteState {
 function readSite(): SiteState {
   const raw = window.sessionStorage.getItem(SITE_KEY)
   if (!raw) return initialState()
-  return JSON.parse(raw) as SiteState
+  const parsed = JSON.parse(raw) as SiteState
+  return { ...parsed, settings: { ...initialState().settings, ...parsed.settings } }
 }
 
 function writeSite(state: SiteState): void {
@@ -46,7 +56,13 @@ function writeSite(state: SiteState): void {
 }
 
 function publicSettings(settings: SiteSettings) {
-  return { name: settings.name, logo_url: settings.logo_url, locale: settings.locale, about: settings.about }
+  return {
+    name: settings.name,
+    logo_url: settings.logo_url,
+    locale: settings.locale,
+    about: settings.about,
+    reaction_appearances: settings.reaction_appearances,
+  }
 }
 
 function longTopics(): SiteTopic[] {

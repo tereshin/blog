@@ -16,7 +16,7 @@ import { seedIdentity } from '../../src/seed/seed.ts'
 const run = promisify(execFile)
 const logger = createLogger({ service: 'identity-seed-test', level: 'silent' })
 const ANCHOR = '2026-10-08T00:00:00Z'
-const TABLES = ['users', 'settings_copy', 'sessions', 'outbox']
+const TABLES = ['users', 'auth_identities', 'settings_copy', 'sessions', 'outbox']
 
 const env: SeedEnv = { APP_ENV: 'local', DATABASE_URL: 'unused', SUPERADMIN_EMAIL: 'superadmin@blog.test', S3_PUBLIC_URL: 'http://localhost:9000/media' }
 
@@ -42,6 +42,7 @@ describe('identity: seed (PostgreSQL в контейнере)', () => {
   it('small создаёт восемь участников и настройки, без сессий и outbox', async () => {
     await seed('small', ANCHOR)
     expect(await count('users')).toBe(8)
+    expect(await count('auth_identities')).toBe(8)
     expect(await count('settings_copy')).toBe(1)
     expect(await count('sessions')).toBe(0)
     expect(await count('outbox')).toBe(0)
@@ -84,6 +85,9 @@ describe('identity: seed (PostgreSQL в контейнере)', () => {
 
   it('оборванный запуск доделывается: finished_at пусто → заполняется', async () => {
     await database.pool.query("update seed_runs set finished_at = null where profile = 'small'")
+    await database.pool.query(
+      "delete from auth_identities where user_id in (select id from users where role = 'member' and email like 'newcomer%')",
+    )
     await database.pool.query("delete from users where role = 'member' and email like 'newcomer%'")
     await seed('small')
     expect(await count('users')).toBe(8 + 72)
@@ -105,7 +109,7 @@ describe('identity: seed (PostgreSQL в контейнере)', () => {
       await foreign.close()
       await other.stop()
     }
-  })
+  }, 60_000)
 
   it('в prod процесс завершается с ошибкой до записи: seed_runs пуст, число строк не меняется', async () => {
     const other = await startPostgres()

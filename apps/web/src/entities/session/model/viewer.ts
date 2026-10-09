@@ -21,6 +21,14 @@ export function toViewer(input: { session: Session | undefined; is_error: boolea
   return { status: 'loading' }
 }
 
+/** Ограничение важнее неподтверждённой почты: текст отказа — про ограничение. */
+export function memberMutationBlock(viewer: Viewer): 'restricted' | 'email_unverified' | null {
+  if (viewer.status !== 'member') return null
+  if (viewer.user.is_restricted) return 'restricted'
+  if (!viewer.user.email_verified) return 'email_unverified'
+  return null
+}
+
 export function deriveViewerHelpers(viewer: Viewer): ViewerHelpers {
   const role = viewer.status === 'member' ? viewer.user.role : null
   return {

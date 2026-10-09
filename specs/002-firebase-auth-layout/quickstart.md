@@ -28,9 +28,10 @@ pnpm test:infra
 pnpm -r test
 pnpm -r test:contract
 pnpm --filter web test:e2e
+E2E_TARGET=local pnpm --filter web test:e2e
 ```
 
-`test:infra` проверяет, что в `prod` нет ни `mock-google`, ни `firebase-auth`. Unit-тесты identity включают таблицу `decideSignIn` и гонку одной почты. Unit-тест content отвергает пустой эмодзи, две графемы и слово. E2E против `local` покрывает сценарии ниже, кроме отдельной пометки «ручная проверка боевого проекта».
+`test:infra` проверяет, что в `prod` нет ни `mock-google`, ни `firebase-auth`. Unit-тесты identity включают таблицу `decideSignIn` и гонку одной почты. Unit-тест content отвергает пустой эмодзи, две графемы и слово. Первый `test:e2e` — фикстурный gateway (Vite). Второй — Compose: нужны `WEB_ORIGIN`/`PUBLIC_ORIGIN`, совпадающие с origin браузера (`http://localhost:8080` или ваш `E2E_BASE_URL`/`PUBLIC_ORIGIN`), и в CSP веб-контейнера — `CSP_API_ORIGIN` на gateway. E2E против `local` покрывает сценарии ниже, кроме отдельной пометки «ручная проверка боевого проекта».
 
 Письмо эмулятора читается так: `GET` списка `oobCodes` эмулятора проекта `demo-blog`, из ответа берётся код, им завершается сценарий на `/auth/action`. Наружу письмо не уходит.
 

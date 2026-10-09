@@ -1,20 +1,19 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-const WIDE = 1200
+const THREE_COLUMNS = 1280
+const LEFT_COLUMN = 768
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasThreeColumns(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= THREE_COLUMNS
+}
+
+function hasLeftColumn(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= LEFT_COLUMN
 }
 
 async function centerScroll(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const main = document.querySelector('main')
-    if (!main) return 0
-    const wide = window.matchMedia('(min-width: 1200px)').matches
-    const scroller = wide ? main : main.parentElement
-    return scroller?.scrollTop ?? 0
-  })
+  return page.evaluate(() => window.scrollY)
 }
 
 test.describe('Страница статьи', () => {
@@ -22,7 +21,7 @@ test.describe('Страница статьи', () => {
     await page.goto('/')
     const card = page.getByRole('main').getByRole('article').nth(4)
     await expect(card).toBeVisible()
-    if (isWide(page)) {
+    if (hasThreeColumns(page)) {
       await page.getByRole('main').hover()
       await page.mouse.wheel(0, 700)
       await expect.poll(() => centerScroll(page)).toBeGreaterThan(150)
@@ -38,12 +37,12 @@ test.describe('Страница статьи', () => {
     await expect(images).toHaveCount(2)
     const alts = await images.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('alt')))
     expect(alts).toEqual(['Первое изображение', 'Второе изображение'])
-    if (isWide(page)) {
+    if (hasLeftColumn(page)) {
       await expect(page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Технологии' })).toHaveAttribute('aria-current', 'page')
     }
     await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
     await expect(page).toHaveURL(/\/$/)
-    if (isWide(page) && before > 150) {
+    if (hasThreeColumns(page) && before > 150) {
       await expect.poll(() => centerScroll(page)).toBeGreaterThan(before - 80)
     }
   })
@@ -51,7 +50,7 @@ test.describe('Страница статьи', () => {
   test('прямая ссылка показывает каркас сразу, а возврат открывает свежее', async ({ page }) => {
     await page.goto('/p/statya-1')
     await expect(page.getByRole('banner')).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Статья 1')
     await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
     await expect(page).toHaveURL(/\/$/)
@@ -70,7 +69,7 @@ test.describe('Страница статьи', () => {
   test('несуществующая статья объясняется в центре, карточки остаются', async ({ page }) => {
     await page.goto('/p/net-takoy')
     await expect(page.getByRole('main').getByText('Такой статьи нет')).toBeVisible()
-    if (isWide(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
 })

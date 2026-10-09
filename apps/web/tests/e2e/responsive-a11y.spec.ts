@@ -20,7 +20,7 @@ test.describe('Вид и узкий экран', () => {
   })
 
   test('на узком экране навигация открывается панелью, а «Написать» остаётся пером', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 1200px')
+    test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 768px')
     await page.goto('/')
     const open = page.getByRole('button', { name: 'Открыть навигацию' })
     await expect(open).toBeVisible()
@@ -30,7 +30,7 @@ test.describe('Вид и узкий экран', () => {
   })
 
   test('бургер открывает одну панель на разных разделах, Escape её закрывает', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 1200px')
+    test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 768px')
     for (const path of ['/', '/about', '/messages', '/rating', '/p/statya-1', '/u/anna']) {
       await page.goto(path)
       const open = page.getByRole('button', { name: 'Открыть навигацию' })

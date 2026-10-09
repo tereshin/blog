@@ -48,7 +48,14 @@ export const useShellStore = create<ShellState>((set) => ({
   setNavOpen: (is_nav_open) => set({ is_nav_open }),
   setCenterScrollTop: (center_scroll_top) => set({ center_scroll_top }),
   setLeftScrollTop: (left_scroll_top) => set({ left_scroll_top }),
-  setHeaderCenter: (header_center) => set({ header_center }),
+  setHeaderCenter: (header_center) =>
+    set((state) => {
+      // Эффект страницы («вернуть пилюлю») не должен сбрасывать открытый поиск.
+      if (state.header_center.kind === 'search' && header_center.kind !== 'search') {
+        return { previous_center: header_center }
+      }
+      return { header_center }
+    }),
   openSearch: () =>
     set((state) => ({
       previous_center: state.header_center.kind === 'search' ? state.previous_center : state.header_center,

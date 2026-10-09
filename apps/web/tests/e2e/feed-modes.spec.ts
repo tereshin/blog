@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-const WIDE = 1200
+const THREE_COLUMNS = 1280
 
-function isWide(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= WIDE
+function hasThreeColumns(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= THREE_COLUMNS
 }
 
 test.describe('Режимы ленты', () => {
   test.beforeEach(({ page }) => {
-    test.skip(!isWide(page), 'Подсветка и три колонки проверяются от 1200px')
+    test.skip(!hasThreeColumns(page), 'Подсветка и три столбца проверяются от 1280px')
   })
 
   test('популярное, свежее и тема меняют центр и подсветку, шапка и карточки остаются', async ({ page }) => {

@@ -1,7 +1,8 @@
-import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
-import type { AdminSettings, PublicSettings, ServiceContext, UpdateSettings } from '@blog/contracts'
+import { reactionAppearancesSchema } from '@blog/contracts'
+import type { AdminSettings, PublicSettings, ReactionAppearances, ServiceContext, UpdateSettings } from '@blog/contracts'
 import { requireSuperadmin } from '../access/require-superadmin.ts'
 import { assertMediaUrl } from '../media-url.ts'
+import { DEFAULT_REACTION_APPEARANCES, assertSingleEmoji } from './reaction-appearance.ts'
 import type { SettingsRepository, SettingsRow } from './settings.repository.ts'
 
 export const DEFAULT_SETTINGS: AdminSettings = {
@@ -14,13 +15,17 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
 }
 
+function appearancesOf(value: ReactionAppearances): ReactionAppearances {
+  return reactionAppearancesSchema.parse(value)
+}
+
 function toPublic(row: SettingsRow): PublicSettings {
   return {
     name: row.name,
     logo_url: row.logo_url,
     locale: row.locale,
     about: row.about,
-    reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+    reaction_appearances: appearancesOf(row.reaction_appearances),
   }
 }
 
@@ -40,6 +45,7 @@ export const BOOTSTRAP_SETTINGS: SettingsRow = {
   about: '',
   registration_open: false,
   new_members_can_publish: true,
+  reaction_appearances: DEFAULT_REACTION_APPEARANCES,
 }
 
 export type SettingsService = {
@@ -47,6 +53,17 @@ export type SettingsService = {
   getAdmin: (viewer: ServiceContext) => Promise<AdminSettings>
   update: (viewer: ServiceContext, input: UpdateSettings, correlation_id: string) => Promise<AdminSettings>
   ensureDefaults: (correlation_id: string) => Promise<SettingsRow>
+}
+
+function assertAppearances(appearances: ReactionAppearances, media_url: string): void {
+  for (const appearance of appearances) {
+    const field = `reaction_appearances.${appearance.kind}`
+    if (appearance.presentation === 'emoji') {
+      assertSingleEmoji(appearance.emoji, `${field}.emoji`)
+      continue
+    }
+    assertMediaUrl(appearance.image_url, media_url, `${field}.image_url`)
+  }
 }
 
 export function createSettingsService(repository: SettingsRepository, options: { media_url: string }): SettingsService {
@@ -65,6 +82,7 @@ export function createSettingsService(repository: SettingsRepository, options: {
     async update(viewer, input, correlation_id) {
       requireSuperadmin(viewer)
       assertMediaUrl(input.logo_url, options.media_url, 'logo_url')
+      assertAppearances(input.reaction_appearances, options.media_url)
       const saved = await repository.save(
         {
           name: input.name,
@@ -73,10 +91,11 @@ export function createSettingsService(repository: SettingsRepository, options: {
           about: input.about,
           registration_open: input.registration_open,
           new_members_can_publish: input.new_members_can_publish,
+          reaction_appearances: input.reaction_appearances,
         },
         correlation_id,
       )
-      return { ...toAdmin(saved), reaction_appearances: input.reaction_appearances }
+      return toAdmin(saved)
     },
 
     async ensureDefaults(correlation_id) {
