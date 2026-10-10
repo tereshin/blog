@@ -10,20 +10,20 @@ function hasThreeColumns(page: Page): boolean {
 
 test.describe('Поиск и уведомления', () => {
   test.beforeEach(({ page }) => {
-    test.skip(!hasThreeColumns(page), 'Шапка с пилюлей проверяется от 1280px')
+    test.skip(!hasThreeColumns(page), 'Поиск в шапке проверяется от 1280px')
   })
 
-  test('поиск открывает поле вместо пилюли, закрытие возвращает пилюлю, запрос находит статью', async ({ page }) => {
+  test('поиск открывает поле, закрытие убирает его, запрос находит статью', async ({ page }) => {
     await page.goto('/')
     const banner = page.getByRole('banner')
-    await expect(banner.getByRole('link', { name: /без компромиссов/ })).toBeVisible({ timeout: 15_000 })
+    await expect(banner.getByRole('button', { name: 'Поиск' })).toBeVisible({ timeout: 15_000 })
+    await expect(banner.locator('a[href^="/p/"]')).toHaveCount(0)
     await banner.getByRole('button', { name: 'Поиск' }).click()
     const field = banner.getByRole('textbox', { name: 'Поиск' })
     await expect(field).toBeVisible({ timeout: 10_000 })
-    await expect(banner.getByRole('link', { name: /без компромиссов/ })).toHaveCount(0)
     await field.press('Escape')
     await expect(field).toHaveCount(0)
-    await expect(banner.getByRole('link', { name: /без компромиссов/ })).toBeVisible()
+    await expect(banner.locator('a[href^="/p/"]')).toHaveCount(0)
 
     await banner.getByRole('button', { name: 'Поиск' }).click()
     await expect(field).toBeVisible({ timeout: 10_000 })

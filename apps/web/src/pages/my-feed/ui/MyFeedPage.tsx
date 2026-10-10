@@ -17,7 +17,7 @@ export default function MyFeedPage() {
   const feed = useFeed('mine', is_member)
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
     if (is_member) markFeedSeen('mine')
   }, [is_member, markFeedSeen, setHeaderCenter])
 

@@ -57,7 +57,7 @@ export default function MessagesPage() {
     to && conversations.status === 'ok' ? conversations.items.find((item) => item.peer.user_id === to)?.id : undefined
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
 
   useEffect(() => {

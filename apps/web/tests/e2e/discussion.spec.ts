@@ -32,13 +32,14 @@ test.describe('обсуждение на фикстурном gateway', () => {
     await expect(root).toBeVisible()
 
     await root.getByRole('button', { name: 'Ответить' }).first().click()
-    await page.getByLabel('Написать комментарий').fill('Текст ответа, который нельзя потерять')
+    const reply = page.getByRole('textbox', { name: /Ответ для/ })
+    await reply.fill('Текст ответа, который нельзя потерять')
     await page.evaluate(() => {
       const events = (window as Window & { mockEvents?: { emit: (frame: { type: string; article_id: string }) => void } }).mockEvents
       events?.emit({ type: 'article', article_id: '9b2e3f40-2222-4b22-8b22-000000000001' })
     })
-    await expect(page.getByLabel('Написать комментарий')).toHaveValue('Текст ответа, который нельзя потерять')
-    await page.getByRole('button', { name: 'Отправить' }).click()
+    await expect(reply).toHaveValue('Текст ответа, который нельзя потерять')
+    await reply.locator('xpath=ancestor::form').getByRole('button', { name: 'Отправить' }).click()
     await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
 
     await root.getByRole('button', { name: 'Удалить' }).first().click()
@@ -94,11 +95,12 @@ test.describe('обсуждение на локальном стеке', () => {
     await expect(author.getByText('Комментарий Бориса')).toBeVisible({ timeout: 2000 })
 
     await author.getByRole('button', { name: 'Ответить' }).click()
-    await author.getByLabel('Написать комментарий').fill('Черновик ответа')
+    const reply = author.getByRole('textbox', { name: /Ответ для/ })
+    await reply.fill('Черновик ответа')
     const title = await author.getByRole('heading', { level: 1 }).innerText()
     await reader.getByRole('button', { name: 'Редактировать' }).click()
     await expect(author.getByRole('heading', { level: 1 })).not.toHaveText(title, { timeout: 2000 }).catch(() => undefined)
-    await expect(author.getByLabel('Написать комментарий')).toHaveValue('Черновик ответа')
+    await expect(reply).toHaveValue('Черновик ответа')
 
     await anna.close()
     await boris.close()

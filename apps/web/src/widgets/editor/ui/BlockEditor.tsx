@@ -8,6 +8,7 @@ import { loadEditor } from '../lib/load-editor.ts'
 import { parseEditorOutput } from '../lib/normalize-document.ts'
 import type { BlockEditorHandle } from '../model/useEditorDocument.ts'
 import { EditorSkeleton } from './EditorSkeleton.tsx'
+import '../styles/editorjs.css'
 
 type BlockEditorProps = {
   initial: BlocksDocument | null
@@ -16,18 +17,6 @@ type BlockEditorProps = {
   onDirty: () => void
   onReady: () => void
 }
-
-const EDITOR_CSS = `
-.editor-holder .ce-block__content,
-.editor-holder .ce-toolbar__content { max-width: none; }
-.editor-holder .ce-paragraph,
-.editor-holder .ce-header,
-.editor-holder .cdx-block { color: inherit; }
-.editor-holder .ce-popover,
-.editor-holder .ce-inline-toolbar,
-.editor-holder .ce-settings { color: #1a1a1a; }
-.editor-holder .codex-editor { padding-left: 2.75rem; }
-`
 
 /**
  * Редактор блоков. Сам Editor.js и инструменты грузятся динамически после монтирования,
@@ -109,7 +98,6 @@ export function BlockEditor({ initial, placeholder, handle_ref, onDirty, onReady
 
   return (
     <div className="editor-holder relative min-h-48" data-editor={phase}>
-      <style>{EDITOR_CSS}</style>
       {phase === 'loading' ? <EditorSkeleton /> : null}
       {phase === 'failed' ? <p className="text-sm text-danger">{t('error.unknown')}</p> : null}
       <div ref={holder_ref} />

@@ -4,15 +4,18 @@ import { BlockRenderer } from '@/entities/article'
 import type { ArticleModel } from '@/entities/article'
 import { useT } from '@/shared/i18n'
 import { formatTime } from '@/shared/lib'
-import { Avatar } from '@/shared/ui'
+import { Avatar, Card } from '@/shared/ui'
 import { ArticleViewContext, useArticleViewModel } from './article-view-context.ts'
 
 type ArticleViewRootProps = { article: ArticleModel; children: ReactNode }
 
+/** Карточка текста. Обсуждение — соседняя карточка `ArticleView.Discussion`, не внутри этой. */
 function ArticleViewRoot({ article, children }: ArticleViewRootProps) {
   return (
     <ArticleViewContext value={article}>
-      <article className="flex flex-col gap-4 px-4 py-4">{children}</article>
+      <Card className="gap-0">
+        <article className="flex flex-col gap-3 px-5 py-4">{children}</article>
+      </Card>
     </ArticleViewContext>
   )
 }
@@ -32,7 +35,7 @@ function Byline({ follow, menu }: BylineProps) {
         <Avatar src={article.author.avatar_url} name={article.author.display_name} size="md" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Link to={article.author.href} className="truncate text-sm font-medium outline-offset-2 hover:underline">
+        <Link to={article.author.href} className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline">
           {article.author.display_name}
         </Link>
         <div className="flex min-w-0 items-center gap-1 text-xs text-muted">
@@ -55,12 +58,16 @@ function Byline({ follow, menu }: BylineProps) {
 
 function Title() {
   const article = useArticleViewModel()
-  return <h1 className="text-2xl font-semibold leading-snug">{article.title}</h1>
+  return <h1 className="text-xl font-bold leading-snug tracking-tight">{article.title}</h1>
 }
 
 function Body() {
   const article = useArticleViewModel()
-  return <BlockRenderer blocks={article.blocks} />
+  return (
+    <div className="text-[15px] leading-6 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
+      <BlockRenderer blocks={article.blocks} />
+    </div>
+  )
 }
 
 type ReactionsProps = { children?: ReactNode; share?: ReactNode }
@@ -68,7 +75,7 @@ type ReactionsProps = { children?: ReactNode; share?: ReactNode }
 function Reactions({ children, share }: ReactionsProps) {
   const { t } = useT()
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-separator pt-3">
+    <div className="flex items-center justify-between gap-3 pt-1">
       <div className="min-w-0">{children}</div>
       <div className="shrink-0" aria-label={t('article.share')}>
         {share}
@@ -77,9 +84,16 @@ function Reactions({ children, share }: ReactionsProps) {
   )
 }
 
+/** Отдельная карточка обсуждения под текстом. Якорь `#comments` для ссылок из ленты. */
 function Discussion({ children }: { children?: ReactNode }) {
   if (!children) return null
-  return <div className="border-t border-separator pt-2">{children}</div>
+  return (
+    <section id="comments" className="scroll-mt-16">
+      <Card className="gap-0">
+        <div className="px-5 py-4">{children}</div>
+      </Card>
+    </section>
+  )
 }
 
 export const ArticleView = Object.assign(ArticleViewRoot, { Reach, Byline, Title, Body, Reactions, Discussion })

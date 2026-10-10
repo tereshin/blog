@@ -41,7 +41,7 @@ export default function ArticlePage() {
     setHeaderCenter({ kind: 'back', title: article?.title ?? '' })
     setArticleTopicId(article?.topic.id ?? null)
     return () => {
-      setHeaderCenter({ kind: 'pill' })
+      setHeaderCenter({ kind: 'empty' })
       setArticleTopicId(null)
     }
   }, [article, setHeaderCenter, setArticleTopicId])
@@ -56,33 +56,35 @@ export default function ArticlePage() {
     return <ArticleUnavailable status="unavailable" />
   }
   return (
-    <ArticleView article={loaded}>
-      {loaded.is_own ? (
-        <ArticleView.Reach>
-          <ReachBanner action={<PromoteDialog article_id={loaded.id} />} />
-        </ArticleView.Reach>
-      ) : null}
-      <ArticleView.Byline
-        follow={
-          <FollowButton target_type="user" target_id={loaded.author.user_id} is_following={false} is_own={loaded.is_own} />
-        }
-        menu={<ArticleOverflowMenu article_id={loaded.id} slug={loaded.slug} is_own={loaded.is_own} />}
-      />
-      {loaded.status === 'hidden' ? <p className="text-sm text-accent">{t('article.hidden_by_moderator')}</p> : null}
-      <ArticleView.Title />
-      <ArticleView.Body />
-      <ArticleView.Reactions share={<ShareButton slug={loaded.slug} />}>
-        <ReactionControl
-          target_type="article"
-          target_id={loaded.id}
-          slug={loaded.slug}
-          counts={loaded.reaction_counts}
-          my_reaction={mine}
+    <div className="flex flex-col gap-4">
+      <ArticleView article={loaded}>
+        {loaded.is_own ? (
+          <ArticleView.Reach>
+            <ReachBanner action={<PromoteDialog article_id={loaded.id} />} />
+          </ArticleView.Reach>
+        ) : null}
+        <ArticleView.Byline
+          follow={
+            <FollowButton target_type="user" target_id={loaded.author.user_id} is_following={false} is_own={loaded.is_own} />
+          }
+          menu={<ArticleOverflowMenu article_id={loaded.id} slug={loaded.slug} is_own={loaded.is_own} />}
         />
-      </ArticleView.Reactions>
+        {loaded.status === 'hidden' ? <p className="text-sm text-accent">{t('article.hidden_by_moderator')}</p> : null}
+        <ArticleView.Title />
+        <ArticleView.Body />
+        <ArticleView.Reactions share={<ShareButton slug={loaded.slug} />}>
+          <ReactionControl
+            target_type="article"
+            target_id={loaded.id}
+            slug={loaded.slug}
+            counts={loaded.reaction_counts}
+            my_reaction={mine}
+          />
+        </ArticleView.Reactions>
+      </ArticleView>
       <ArticleView.Discussion>
         <ArticleDiscussion article={loaded} />
       </ArticleView.Discussion>
-    </ArticleView>
+    </div>
   )
 }

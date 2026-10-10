@@ -12,7 +12,7 @@ export function FollowButton({ is_own, ...target }: FollowButtonProps) {
   if (is_own) return null
   return (
     <Button
-      variant={follow.is_following ? 'secondary' : 'primary'}
+      variant="secondary"
       shape="pill"
       size="sm"
       aria-pressed={follow.is_following}

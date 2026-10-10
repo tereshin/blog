@@ -6,11 +6,13 @@ import { Button, Dialog } from '@/shared/ui'
 import { useDeleteComment } from '../model/useDeleteComment.ts'
 import { useEditComment } from '../model/useEditComment.ts'
 
+type ReplyTarget = { id: string; name: string; anchor_id: string }
+
 type CommentActionsProps = {
   comment: CommentNode
   placement: CommentPlacement
   article_id: string
-  onReply: (target: { id: string; name: string }) => void
+  onReply: (target: ReplyTarget) => void
 }
 
 /** Ответ, правка и удаление своей реплики. Заглушка и ещё не доехавший комментарий действий не имеют. */
@@ -61,7 +63,13 @@ export function CommentActions({ comment, placement, article_id, onReply }: Comm
       <Button
         variant="ghost"
         size="sm"
-        onPress={() => onReply({ id: placement.root_id ?? comment.id, name: comment.author.display_name })}
+        onPress={() =>
+          onReply({
+            id: placement.root_id ?? comment.id,
+            name: comment.author.display_name,
+            anchor_id: comment.id,
+          })
+        }
       >
         {t('comment.reply')}
       </Button>

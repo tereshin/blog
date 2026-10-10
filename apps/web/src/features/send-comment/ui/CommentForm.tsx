@@ -28,9 +28,12 @@ export function CommentForm({ article_id, comments_enabled, parent, onCancelRepl
   })
   if (!comments_enabled) return null
   const block = memberMutationBlock(viewer)
+  // Предупреждение об ограничении одно — у корневого поля. Ответ под репликой его не повторяет.
   if (block === 'restricted') {
-    return <p className="py-4 text-sm text-muted">{t('comment.restricted')}</p>
+    return parent ? null : <p className="text-sm text-muted">{t('comment.restricted')}</p>
   }
+
+  const field_label = parent ? t('comment.reply_to', { name: parent.name }) : t('comment.placeholder')
 
   const submit = () => {
     const body = draft.text.trim()
@@ -42,36 +45,37 @@ export function CommentForm({ article_id, comments_enabled, parent, onCancelRepl
 
   return (
     <form
-      className="flex flex-col gap-2 py-4"
+      className="flex flex-col gap-2"
       onSubmit={(event) => {
         event.preventDefault()
         submit()
       }}
     >
       {parent ? (
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <span>{t('comment.reply_to', { name: parent.name })}</span>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span>{field_label}</span>
           <Button type="button" variant="ghost" size="sm" onPress={onCancelReply}>
             {t('comment.cancel_reply')}
           </Button>
         </div>
       ) : null}
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-muted">{t('comment.counter', { count: draft.text.length })}</span>
         <textarea
           value={draft.text}
           maxLength={5000}
-          rows={3}
+          rows={parent ? 3 : 2}
+          autoFocus={Boolean(parent)}
           placeholder={t('comment.placeholder')}
-          aria-label={t('comment.placeholder')}
-          className="rounded-lg border border-separator bg-background px-3 py-2"
+          aria-label={field_label}
+          className="w-full resize-y rounded-2xl border border-border bg-surface-secondary px-4 py-2.5 text-sm text-foreground placeholder:text-muted"
           onChange={(event) => draft.update(event.target.value)}
         />
+        <span className="text-xs text-muted">{t('comment.counter', { count: draft.text.length })}</span>
       </label>
       {block === 'email_unverified' ? <p className="text-sm text-muted">{t('login.email_unverified')}</p> : null}
       {send.error ? <p className="text-sm text-danger">{send.error}</p> : null}
       <div className="flex gap-2">
-        <Button type="submit" variant="primary" isDisabled={draft.text.trim().length === 0 || send.is_pending}>
+        <Button type="submit" variant="primary" size={parent ? 'sm' : undefined} isDisabled={draft.text.trim().length === 0 || send.is_pending}>
           {send.error ? t('comment.retry') : t('comment.send')}
         </Button>
       </div>

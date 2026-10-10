@@ -8,12 +8,16 @@ type CommentItemProps = {
   placement?: CommentPlacement
   renderReactions?: (comment: CommentNode) => ReactNode
   renderActions?: (comment: CommentNode, placement: CommentPlacement) => ReactNode
+  /** Форма ответа под этой репликой. `null` — поле закрыто. */
+  renderReply?: (comment: CommentNode) => ReactNode
 }
 
 /** Одна реплика: автор, время, текст или заглушка, слоты реакций и действий. */
-export function CommentItem({ comment, placement = { root_id: null }, renderReactions, renderActions }: CommentItemProps) {
+export function CommentItem({ comment, placement = { root_id: null }, renderReactions, renderActions, renderReply }: CommentItemProps) {
   const { t } = useT()
   const stub = comment.status === 'deleted' ? t('comment.deleted') : comment.status === 'hidden' ? t('comment.hidden') : null
+  const reply_form = renderReply?.(comment) ?? null
+  const has_thread = comment.replies.length > 0 || reply_form !== null
   return (
     <article id={`comment-${comment.id}`} className="flex gap-3 py-3" aria-label={comment.author.display_name}>
       <Avatar src={comment.author.avatar_url} name={comment.author.display_name} size="sm" />
@@ -33,15 +37,17 @@ export function CommentItem({ comment, placement = { root_id: null }, renderReac
             {renderActions?.(comment, placement)}
           </div>
         ) : null}
-        {comment.replies.length > 0 ? (
+        {has_thread ? (
           <div className="mt-1 border-l border-separator pl-3">
+            {reply_form}
             {comment.replies.map((reply) => (
               <CommentItem
                 key={reply.id}
                 comment={reply}
-                placement={{ root_id: comment.id }}
+                placement={{ root_id: placement.root_id ?? comment.id }}
                 renderReactions={renderReactions}
                 renderActions={renderActions}
+                renderReply={renderReply}
               />
             ))}
           </div>

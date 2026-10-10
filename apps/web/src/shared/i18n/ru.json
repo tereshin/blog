@@ -36,6 +36,9 @@
   "shell.center.error_hint": "Боковые карточки на месте. Повторите загрузку.",
 
   "header.search": "Поиск",
+  "header.search_recent": "Последние запросы",
+  "header.search_clear": "Очистить",
+  "header.search_recent_empty": "Запросов пока нет",
   "search.articles": "Статьи",
   "search.people": "Люди",
   "search.topics": "Темы",
@@ -403,5 +406,12 @@
   "editor.menu": "Действия со статьёй",
   "editor.delete_title": "Удалить статью?",
   "editor.delete_body": "Статья пропадёт из ленты и с адреса.",
-  "editor.placeholder": "Текст статьи"
+  "editor.placeholder": "Текст статьи",
+  "editor.no_topic": "Без темы",
+  "editor.saved": "Сохранено",
+  "editor.comments_who": "Кто может комментировать пост",
+  "editor.comments_all": "Все",
+  "editor.comments_none": "Никто",
+  "editor.comments_default": "По умолчанию",
+  "editor.settings": "Параметры статьи"
 }

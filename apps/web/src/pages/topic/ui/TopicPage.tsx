@@ -17,7 +17,7 @@ export default function TopicPage() {
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
     setArticleTopicId(null)
   }, [setArticleTopicId, setHeaderCenter])
 

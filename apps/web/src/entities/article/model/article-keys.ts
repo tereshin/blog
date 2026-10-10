@@ -4,8 +4,6 @@ export const articleKeys = {
   all: ['articles'] as const,
   lists: () => [...articleKeys.all, 'list'] as const,
   list: (mode: FeedMode) => [...articleKeys.lists(), mode] as const,
-  /** Только первая порция режима (для пилюли в шапке): отдельный ключ, чтобы не мешать данным бесконечного списка. */
-  first: (mode: FeedMode) => [...articleKeys.list(mode), 'first'] as const,
   detail: (slug: string) => [...articleKeys.all, 'detail', slug] as const,
   /** Состояния зрителя (своя реакция, закладка) по набору статей. */
   states: (ids: readonly string[]) => [...articleKeys.all, 'states', [...ids].sort()] as const,

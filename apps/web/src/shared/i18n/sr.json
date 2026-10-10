@@ -34,6 +34,9 @@
   "shell.center.error_title": "Odeljak nije otvoren",
   "shell.center.error_hint": "Bočne kartice su na mestu. Pokušajte ponovo.",
   "header.search": "Pretraga",
+  "header.search_recent": "Skorašnje pretrage",
+  "header.search_clear": "Obriši",
+  "header.search_recent_empty": "Nema skorašnjih pretraga",
   "search.articles": "Članci",
   "search.people": "Ljudi",
   "search.topics": "Teme",
@@ -387,5 +390,12 @@
   "editor.menu": "Radnje sa člankom",
   "editor.delete_title": "Obrisati članak?",
   "editor.delete_body": "Članak će nestati iz trake i sa adrese.",
-  "editor.placeholder": "Tekst članka"
+  "editor.placeholder": "Tekst članka",
+  "editor.no_topic": "Bez teme",
+  "editor.saved": "Sačuvano",
+  "editor.comments_who": "Ko može da komentariše",
+  "editor.comments_all": "Svi",
+  "editor.comments_none": "Niko",
+  "editor.comments_default": "Podrazumevano",
+  "editor.settings": "Podešavanja članka"
 }

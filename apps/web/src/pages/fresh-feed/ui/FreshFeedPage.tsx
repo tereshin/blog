@@ -7,7 +7,7 @@ export default function FreshFeedPage() {
   const markFeedSeen = useShellStore((state) => state.markFeedSeen)
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
     markFeedSeen('fresh')
   }, [markFeedSeen, setHeaderCenter])
 

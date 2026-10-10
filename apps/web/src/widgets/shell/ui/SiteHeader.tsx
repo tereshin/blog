@@ -8,7 +8,7 @@ import { Avatar, Button, ChevronDownIcon, MenuIcon, PenIcon, SearchIcon, useToas
 import { useShellStore } from '../model/useShellStore.ts'
 
 type SiteHeaderProps = {
-  /** Центр шапки: пилюля с первой карточкой, поле поиска или «назад» (`HeaderCenter`). */
+  /** Центр шапки: поле поиска, «назад» или пусто (`HeaderCenter`). */
   center?: ReactNode
   /** Колокольчик уведомлений (появляется вместе со сценарием уведомлений). */
   notifications?: ReactNode
@@ -33,6 +33,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const is_nav_open = useShellStore((state) => state.is_nav_open)
   const setNavOpen = useShellStore((state) => state.setNavOpen)
   const openSearch = useShellStore((state) => state.openSearch)
+  const closeSearch = useShellStore((state) => state.closeSearch)
 
   const handleWrite = () => {
     if (viewer.status === 'loading') return
@@ -56,13 +57,14 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       onWrite()
       return
     }
+    closeSearch()
     navigate('/write')
   }
 
   const brand = settings?.name || t('common.site_name_fallback')
 
   return (
-    <div className="flex h-14 items-center gap-2 border-b border-separator bg-background px-4">
+    <div className="flex h-14 items-center gap-2 border-b border-separator bg-background px-4 max-w-[1280px] mx-auto">
       <Button
         variant="ghost"
         isIconOnly
@@ -77,13 +79,13 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       <Link to="/" className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4">
         {settings?.logo_url ? <img src={settings.logo_url} alt={brand} className="h-8 w-auto" /> : brand}
       </Link>
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden px-2">{center}</div>
+      <div className="flex min-w-0 flex-1 items-center px-2">{center}</div>
       <div className="flex shrink-0 items-center gap-1">
         <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch ?? openSearch}>
           <SearchIcon />
         </Button>
         {notifications}
-        <Button variant="primary" shape="pill" aria-label={t('header.write')} onPress={handleWrite}>
+        <Button variant="secondary" shape="pill" aria-label={t('header.write')} onPress={handleWrite}>
           <PenIcon width={16} height={16} />
           <span className="max-[767px]:sr-only">{t('header.write')}</span>
         </Button>

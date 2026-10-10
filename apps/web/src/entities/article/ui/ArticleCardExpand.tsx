@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useT } from '@/shared/i18n'
-import { Button, Skeleton } from '@/shared/ui'
+import { Button, ChevronDownIcon, Skeleton } from '@/shared/ui'
 import { getArticle } from '../api/get-article.ts'
 import { articleKeys } from '../model/article-keys.ts'
 import { BlockRenderer } from './BlockRenderer.tsx'
@@ -31,8 +31,9 @@ export function ArticleCardExpand({ slug, onExpanded }: ArticleCardExpandProps) 
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onPress={toggle} aria-expanded={is_open}>
+      <Button variant="ghost" size="sm" className="h-auto min-h-0 gap-1 px-0 text-accent" onPress={toggle} aria-expanded={is_open}>
         {t(is_open ? 'article.collapse' : 'article.expand')}
+        <ChevronDownIcon width={16} height={16} className={is_open ? 'rotate-180' : undefined} />
       </Button>
       {is_open && query.isPending ? (
         <div className="mt-3 flex flex-col gap-2" aria-busy="true" aria-label={t('article.expand_loading')}>

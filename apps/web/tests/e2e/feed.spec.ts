@@ -50,11 +50,11 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     expect(ys).toEqual([...ys].sort((a, b) => a - b))
   })
 
-  test('пилюля в центре шапки — ссылка на статью, а не поле ввода', async ({ page }) => {
+  test('в центре шапки нет ссылки на статью и поля поиска', async ({ page }) => {
     await page.goto('/')
     const banner = page.getByRole('banner')
-    const pill = banner.locator('a[href^="/p/"]')
-    await expect(pill).toBeVisible()
+    await expect(banner.getByRole('button', { name: 'Поиск' })).toBeVisible()
+    await expect(banner.locator('a[href^="/p/"]')).toHaveCount(0)
     await expect(banner.getByRole('textbox')).toHaveCount(0)
     await expect(banner.getByRole('searchbox')).toHaveCount(0)
   })

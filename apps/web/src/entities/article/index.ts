@@ -31,4 +31,3 @@ export type {
 export { ArticleCard } from './ui/ArticleCard.tsx'
 export { ArticleCardExpand } from './ui/ArticleCardExpand.tsx'
 export { BlockRenderer } from './ui/BlockRenderer.tsx'
-export { useFirstArticle } from './model/useFirstArticle.ts'

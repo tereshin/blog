@@ -20,7 +20,7 @@ export default function AuthActionPage() {
   const oob_code = action.oob_code
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
 
   useEffect(() => {

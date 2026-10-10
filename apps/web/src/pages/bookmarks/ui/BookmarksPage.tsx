@@ -29,7 +29,7 @@ export default function BookmarksPage() {
   const visible = articles.filter((article) => states.get(article.id)?.is_bookmarked !== false)
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
 
   if (viewer.status === 'guest') {

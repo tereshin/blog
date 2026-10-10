@@ -10,6 +10,7 @@ type CommentThreadProps = {
   state: CommentsState
   renderReactions?: (comment: CommentNode) => ReactNode
   renderActions?: (comment: CommentNode, placement: CommentPlacement) => ReactNode
+  renderReply?: (comment: CommentNode) => ReactNode
 }
 
 function scrollToHash(): void {
@@ -19,7 +20,7 @@ function scrollToHash(): void {
 }
 
 /** Список корней и ответов. Загрузка, пустота и ошибка остаются в обсуждении, не на всю колонку. */
-export function CommentThread({ state, renderReactions, renderActions }: CommentThreadProps) {
+export function CommentThread({ state, renderReactions, renderActions, renderReply }: CommentThreadProps) {
   const { t } = useT()
   const ready = state.status === 'ok'
 
@@ -41,7 +42,14 @@ export function CommentThread({ state, renderReactions, renderActions }: Comment
   return (
     <div>
       {state.comments.map((comment) => (
-        <CommentItem key={comment.id} comment={comment} placement={{ root_id: null }} renderReactions={renderReactions} renderActions={renderActions} />
+        <CommentItem
+          key={comment.id}
+          comment={comment}
+          placement={{ root_id: null }}
+          renderReactions={renderReactions}
+          renderActions={renderActions}
+          renderReply={renderReply}
+        />
       ))}
       {state.has_next ? (
         <Button variant="ghost" onPress={state.fetchNext}>

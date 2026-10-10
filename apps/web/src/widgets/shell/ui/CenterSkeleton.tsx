@@ -29,14 +29,22 @@ function FeedSkeleton() {
 
 function ArticleSkeleton() {
   return (
-    <div className="flex flex-col gap-3 px-1">
-      <Skeleton shape="line" className="h-8 w-2/3" />
-      <Skeleton shape="line" className="w-full" />
-      <Skeleton shape="line" className="w-11/12" />
-      <Skeleton shape="line" className="w-full" />
-      <Skeleton shape="line" className="w-4/5" />
-      <Skeleton shape="line" className="w-full" />
-    </div>
+    <>
+      <Card>
+        <Card.Content className="flex flex-col gap-3">
+          <Skeleton shape="line" className="h-8 w-2/3" />
+          <Skeleton shape="line" className="w-full" />
+          <Skeleton shape="line" className="w-11/12" />
+          <Skeleton shape="block" />
+        </Card.Content>
+      </Card>
+      <Card>
+        <Card.Content className="flex flex-col gap-3">
+          <Skeleton shape="line" className="h-11 w-full" />
+          <Skeleton shape="line" className="w-full" />
+        </Card.Content>
+      </Card>
+    </>
   )
 }
 

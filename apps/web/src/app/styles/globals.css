@@ -57,6 +57,8 @@ html,
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 :focus-visible {
@@ -74,4 +76,10 @@ body {
 @utility scroll-contain {
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+@layer components {
+  .card {
+    padding: 0;
+  }
 }

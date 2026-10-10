@@ -39,7 +39,7 @@ export default function ProfilePage() {
   const update = useUpdateProfile()
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
     setArticleTopicId(null)
   }, [setHeaderCenter, setArticleTopicId])
 

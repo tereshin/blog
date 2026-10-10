@@ -50,7 +50,7 @@ test.describe('Редактор статьи', () => {
     await page.goto(write_url)
     await expect(page.getByLabel('Заголовок')).toHaveValue(TITLE)
     await page.getByRole('button', { name: 'Опубликовать' }).click()
-    await expect(page.getByText('Сохранено')).toBeVisible()
+    await expect(page.getByText('Сохранено').first()).toBeVisible()
     await page.goto('/')
     const link = page.getByRole('link', { name: TITLE })
     await expect(link).toBeVisible()
@@ -59,7 +59,7 @@ test.describe('Редактор статьи', () => {
     await page.goto(write_url)
     await page.getByLabel('Заголовок').fill(RENAMED)
     await page.getByRole('button', { name: 'Сохранить черновик' }).click()
-    await expect(page.getByText('Сохранено')).toBeVisible()
+    await expect(page.getByText('Сохранено').first()).toBeVisible()
     await page.goto('/')
     await expect(page.getByRole('link', { name: RENAMED })).toHaveAttribute('href', href ?? '')
 

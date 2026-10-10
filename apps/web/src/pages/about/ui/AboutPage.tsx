@@ -11,7 +11,7 @@ export default function AboutPage() {
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
     setArticleTopicId(null)
   }, [setHeaderCenter, setArticleTopicId])
 

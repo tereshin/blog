@@ -31,7 +31,7 @@ export default function SearchPage() {
   const states = useArticleStates(articles.map((item) => item.id), viewer.status === 'member')
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
 
   const nothing = search.data && search.data.articles.length === 0 && search.data.people.length === 0 && search.data.topics.length === 0

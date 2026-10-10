@@ -29,12 +29,12 @@ type HeaderProps = {
 function Header({ follow, menu }: HeaderProps) {
   const article = useArticleCardModel()
   return (
-    <Card.Header className="flex flex-row items-center gap-3">
+    <Card.Header className="flex flex-row items-center gap-3 px-5 pt-4">
       <Link to={article.author.href} className="shrink-0 rounded-avatar outline-offset-2" aria-label={article.author.display_name}>
         <Avatar src={article.author.avatar_url} name={article.author.display_name} size="md" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Link to={article.author.href} className="truncate text-sm font-medium text-foreground outline-offset-2 hover:underline">
+        <Link to={article.author.href} className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline">
           {article.author.display_name}
         </Link>
         <div className="flex min-w-0 items-center gap-1 text-xs text-muted">
@@ -56,8 +56,8 @@ function Header({ follow, menu }: HeaderProps) {
 function Title() {
   const article = useArticleCardModel()
   return (
-    <Card.Content className="pb-0">
-      <h2 id={`article-title-${article.id}`} className="text-lg font-semibold leading-snug">
+    <Card.Content className="px-5 pb-0 pt-3">
+      <h2 id={`article-title-${article.id}`} className="text-xl font-bold leading-snug tracking-tight">
         <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
           {article.title}
         </Link>
@@ -70,8 +70,8 @@ function Excerpt() {
   const article = useArticleCardModel()
   if (!article.excerpt) return null
   return (
-    <Card.Content className="pb-0 pt-2">
-      <p className="whitespace-pre-line break-words text-sm text-foreground">{article.excerpt}</p>
+    <Card.Content className="px-5 pb-0 pt-2">
+      <p className="whitespace-pre-line break-words text-[15px] leading-6 text-foreground">{article.excerpt}</p>
     </Card.Content>
   )
 }
@@ -81,7 +81,7 @@ function Image() {
   const article = useArticleCardModel()
   if (!article.first_image_url) return null
   return (
-    <Card.Content className="pb-0">
+    <Card.Content className="px-5 pb-0 pt-3">
       <img
         src={article.first_image_url}
         alt=""
@@ -89,7 +89,7 @@ function Image() {
         decoding="async"
         width={720}
         height={405}
-        className="aspect-video w-full rounded-xl bg-surface-secondary object-cover"
+        className="aspect-video w-full rounded-2xl bg-surface-secondary object-cover"
       />
     </Card.Content>
   )
@@ -98,13 +98,13 @@ function Image() {
 /** Слот «Показать полностью» / «Свернуть» и области раскрытого текста. */
 function Expand({ children }: { children?: ReactNode }) {
   if (!children) return null
-  return <Card.Content className="pb-0 pt-2">{children}</Card.Content>
+  return <Card.Content className="px-5 pb-0 pt-2">{children}</Card.Content>
 }
 
 /** Слот ряда реакций. */
 function Reactions({ children }: { children?: ReactNode }) {
   if (!children) return null
-  return <Card.Content className="pb-0 pt-2">{children}</Card.Content>
+  return <Card.Content className="px-5 pb-0 pt-3">{children}</Card.Content>
 }
 
 type ActionsProps = {
@@ -117,7 +117,7 @@ function Actions({ bookmark, share }: ActionsProps) {
   const { t, locale } = useT()
   const article = useArticleCardModel()
   return (
-    <Card.Content className="flex items-center gap-4 pb-3 pt-2 text-sm text-muted">
+    <Card.Content className="flex flex-row items-center gap-5 px-5 pb-3 pt-2 text-sm text-muted">
       <Link
         to={`${article.href}#comments`}
         aria-label={t('article.comments', { count: article.comment_count, value: formatCount(article.comment_count, locale) })}
@@ -151,7 +151,7 @@ function CommentPeek() {
   const comment = article.top_comment
   if (!comment) return null
   return (
-    <Card.Footer className="border-t border-separator pt-3">
+    <Card.Footer className="border-t border-separator px-5 pt-3">
       <Link
         to={`${article.href}#comments`}
         aria-label={t('article.top_comment')}

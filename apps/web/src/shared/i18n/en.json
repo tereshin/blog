@@ -34,6 +34,9 @@
   "shell.center.error_title": "Could not open this section",
   "shell.center.error_hint": "The side cards are still here. Try again.",
   "header.search": "Search",
+  "header.search_recent": "Recent searches",
+  "header.search_clear": "Clear",
+  "header.search_recent_empty": "No recent searches",
   "search.articles": "Articles",
   "search.people": "People",
   "search.topics": "Topics",
@@ -386,5 +389,12 @@
   "editor.menu": "Article actions",
   "editor.delete_title": "Delete this article?",
   "editor.delete_body": "The article will disappear from the feed and its address.",
-  "editor.placeholder": "Article text"
+  "editor.placeholder": "Article text",
+  "editor.no_topic": "No topic",
+  "editor.saved": "Saved",
+  "editor.comments_who": "Who can comment",
+  "editor.comments_all": "Everyone",
+  "editor.comments_none": "No one",
+  "editor.comments_default": "Default",
+  "editor.settings": "Article settings"
 }

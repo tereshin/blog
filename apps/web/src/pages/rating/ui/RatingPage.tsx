@@ -16,7 +16,7 @@ export default function RatingPage() {
   })
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
 
   const items = (rating.data?.pages ?? []).flatMap((page) => page.items)

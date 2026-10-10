@@ -6,7 +6,7 @@ export default function PopularFeedPage() {
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'pill' })
+    setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
 
   return <ArticleFeed mode="popular" />
