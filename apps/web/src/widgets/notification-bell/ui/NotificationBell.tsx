@@ -33,7 +33,7 @@ export function NotificationBell() {
   if (!is_member) {
     return (
       <Button variant="ghost" isIconOnly aria-label={t('notification.bell')} onPress={() => openLogin('required')}>
-        <BellIcon />
+        <BellIcon className="size-6" />
       </Button>
     )
   }
@@ -42,7 +42,7 @@ export function NotificationBell() {
   return (
     <Popover>
       <Button variant="ghost" isIconOnly aria-label={t('notification.bell')} className="relative">
-        <BellIcon />
+        <BellIcon className="size-6" />
         {has_unread ? <span role="img" aria-label={t('notification.unread')} className="absolute right-1 top-1 size-2 rounded-avatar bg-accent" /> : null}
       </Button>
       <Popover.Content>

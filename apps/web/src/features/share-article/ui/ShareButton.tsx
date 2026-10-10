@@ -10,7 +10,7 @@ export function ShareButton({ slug }: ShareButtonProps) {
   const share = useShareArticle(slug)
   return (
     <Button variant="ghost" size="sm" isIconOnly aria-label={t('article.share')} onPress={share}>
-      <ShareIcon width={18} height={18} />
+      <ShareIcon className="size-5" />
     </Button>
   )
 }

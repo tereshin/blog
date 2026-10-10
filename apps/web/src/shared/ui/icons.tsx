@@ -41,7 +41,7 @@ export function BookmarkIcon({ style, ...props }: IconProps) {
 }
 
 export function ShareIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="upload" style="line" size={20} {...props} svg_style={style} />
+  return <BaseIcon name="forward_2" style="line" size={20} {...props} svg_style={style} />
 }
 
 export function EyeIcon({ style, ...props }: IconProps) {

@@ -20,7 +20,7 @@ export function ArticleMenu({ article_id, is_own, onCopyLink, onReport, report_d
     <>
       <Menu>
         <Button variant="ghost" isIconOnly aria-label={t('editor.menu')}>
-          <MoreIcon width={18} height={18} />
+          <MoreIcon className="size-6" />
         </Button>
         <Menu.Content>
           <Menu.Item onPress={onCopyLink}>{t('article.copy_link')}</Menu.Item>

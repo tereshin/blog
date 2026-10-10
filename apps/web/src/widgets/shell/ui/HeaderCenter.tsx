@@ -15,7 +15,7 @@ function HeaderBack({ title }: { title: string }) {
         aria-label={t('header.back')}
         className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-foreground outline-offset-2 hover:bg-surface-secondary"
       >
-        <ArrowLeftIcon width={18} height={18} />
+        <ArrowLeftIcon className="size-6" />
       </Link>
       <span title={title} className="min-w-0 truncate text-sm font-medium">
         {title}

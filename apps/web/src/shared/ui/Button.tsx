@@ -13,7 +13,7 @@ const button_variants = cva('', {
 })
 
 export type ButtonProps = Omit<HeroButtonProps, 'variant'> &
-  VariantProps<typeof button_variants> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }
+  VariantProps<typeof button_variants> & { variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger' }
 
 export function Button({ variant = 'secondary', shape, className, ...rest }: ButtonProps) {
   return <HeroButton variant={variant} className={cn(button_variants({ shape }), className as string | undefined)} {...rest} />

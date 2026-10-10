@@ -220,7 +220,7 @@ export function PublishPanel({
         </Button>
         <Popover>
           <Button variant="ghost" isIconOnly aria-label={t('editor.settings')}>
-            <MoreIcon width={18} height={18} />
+            <MoreIcon className="size-6" />
           </Button>
           <Popover.Content>
             <div className="flex w-72 flex-col gap-3 p-1">

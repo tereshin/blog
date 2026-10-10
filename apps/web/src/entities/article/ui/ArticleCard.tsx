@@ -129,21 +129,21 @@ function Actions({ bookmark, share }: ActionsProps) {
         aria-label={t('article.comments', { count: article.comment_count, value: formatCount(article.comment_count, locale) })}
         className="flex items-center gap-1.5 rounded-md outline-offset-2 hover:text-foreground"
       >
-        <CommentIcon width={18} height={18} />
+        <CommentIcon className="size-5" />
         <span>{formatCount(article.comment_count, locale)}</span>
       </Link>
       {bookmark ?? (
         <span className="flex items-center gap-1.5">
-          <BookmarkIcon width={18} height={18} />
+          <BookmarkIcon className="size-5" />
           <span>{formatCount(article.bookmark_count, locale)}</span>
         </span>
       )}
-      {share ?? <ShareIcon width={18} height={18} />}
+      {share ?? <ShareIcon className="size-5" />}
       <span
         className="ml-auto flex items-center gap-1.5"
         aria-label={t('article.views', { count: article.view_count, value: formatCount(article.view_count, locale) })}
       >
-        <EyeIcon width={18} height={18} />
+        <EyeIcon className="size-5" />
         <span>{formatCount(article.view_count, locale)}</span>
       </span>
     </Card.Content>

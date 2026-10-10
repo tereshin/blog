@@ -12,7 +12,7 @@ function FullCard({ article, is_own = false }: Props) {
     <div className="mx-auto max-w-2xl p-4">
       <ArticleCard article={article}>
         <ArticleCard.Header
-          {...(is_own ? {} : { follow: <Button variant="secondary" size="sm">Подписаться</Button> })}
+          {...(is_own ? {} : { follow: <Button variant="tertiary" size="sm">Подписаться</Button> })}
           menu={
             <Button variant="ghost" isIconOnly aria-label="Ещё">
               <MoreIcon />

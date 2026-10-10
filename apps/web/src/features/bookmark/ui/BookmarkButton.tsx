@@ -21,7 +21,7 @@ export function BookmarkButton({ count, is_bookmarked, onToggle, is_pending = fa
       isDisabled={is_pending}
       onPress={onToggle}
     >
-      <BookmarkIcon width={18} height={18} />
+      <BookmarkIcon className="size-5" />
       <span>{formatCount(count, locale)}</span>
     </Button>
   )

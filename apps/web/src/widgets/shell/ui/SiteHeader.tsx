@@ -98,26 +98,28 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
         )}
       </Link>
       <div className="flex min-w-0 flex-1 items-center sm:px-2">{center}</div>
-      <div className="flex shrink-0 items-center sm:gap-1">
+      <div className="flex shrink-0 items-center sm:gap-3">
         <Button
           variant="ghost"
           isIconOnly
+          size="lg"
           aria-label={t('header.search')}
           aria-haspopup="dialog"
           aria-expanded={is_search_open}
           onPress={onSearch ?? openSearch}
         >
-          <SearchIcon />
+          <SearchIcon className="size-6" />
         </Button>
         {notifications}
         <Button
-          variant="secondary"
+          variant="tertiary"
           shape="pill"
+          size="lg"
           className="max-sm:size-9 max-sm:min-w-9 max-sm:p-0"
           aria-label={t('header.write')}
           onPress={handleWrite}
         >
-          <PenIcon width={16} height={16} />
+          <PenIcon className="size-6" />
           <span className="max-[767px]:sr-only">{t('header.write')}</span>
         </Button>
         {account ??

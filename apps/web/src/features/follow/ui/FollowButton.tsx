@@ -13,7 +13,7 @@ type FollowButtonProps = FollowTarget & {
 /** Пилюля «Подписаться» / «Вы подписаны». На своей карточке и своём профиле не показывается. */
 export function FollowButton({
   is_own,
-  variant = 'secondary',
+  variant = 'tertiary',
   size = 'sm',
   ...target
 }: FollowButtonProps) {
@@ -22,7 +22,7 @@ export function FollowButton({
   if (is_own) return null
   return (
     <Button
-      variant={follow.is_following ? 'secondary' : variant}
+      variant={follow.is_following ? 'tertiary' : variant}
       shape="pill"
       size={size}
       aria-pressed={follow.is_following}

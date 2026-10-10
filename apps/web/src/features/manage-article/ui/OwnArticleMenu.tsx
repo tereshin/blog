@@ -34,7 +34,7 @@ export function OwnArticleMenu({ article_id }: OwnArticleMenuProps) {
     <>
       <Menu>
         <Button variant="ghost" isIconOnly aria-label={t('editor.menu')}>
-          <MoreIcon width={18} height={18} />
+          <MoreIcon className="size-6" />
         </Button>
         <Menu.Content>
           <Menu.Item onPress={() => navigate(`/write/${article_id}`, { state: { editor_return_to: pathname + search + hash } })}>{t('common.edit')}</Menu.Item>

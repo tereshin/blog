@@ -18,8 +18,8 @@ export function LeftNavItem({ to, is_selected, has_unread = false, unread_label,
       to={to}
       aria-current={is_selected ? 'page' : undefined}
       className={cn(
-        'flex items-center justify-between gap-2 rounded-pill px-3 py-2 text-sm text-foreground outline-offset-2 hover:bg-surface-secondary',
-        is_selected && 'bg-surface-tertiary font-medium',
+        'flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-base text-foreground outline-offset-2 hover:bg-surface-secondary',
+        is_selected && 'bg-surface-tertiary',
       )}
     >
       <span className="min-w-0 truncate">{children}</span>
