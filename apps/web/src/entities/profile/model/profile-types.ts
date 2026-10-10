@@ -8,6 +8,7 @@ export type Profile = {
   bio: string | null
   avatar_url: string | null
   cover_url: string | null
+  status_icon_id: string | null
   slug: string | null
   reputation: number
   created_at: string
@@ -18,10 +19,6 @@ export type Profile = {
   is_following: boolean
 }
 
-export type ProfileUpdate = {
-  display_name: string
-  bio: string | null
-  avatar_url: string | null
-  cover_url: string | null
-  slug: string | null
-}
+export type ProfileUpdate = Partial<Pick<Profile,
+  'display_name' | 'bio' | 'avatar_url' | 'cover_url' | 'slug' | 'status_icon_id'
+>>

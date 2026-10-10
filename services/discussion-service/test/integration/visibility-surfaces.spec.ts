@@ -9,7 +9,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles_copy, bookmarks, comments, users_copy } from '../../src/infra/db/schema.ts'
+import { articles_copy, bookmarks, comments, reactions, users_copy } from '../../src/infra/db/schema.ts'
 import { bookmarkRoutes } from '../../src/modules/bookmark/index.ts'
 import { commentRoutes } from '../../src/modules/comment/index.ts'
 import { reactionRoutes } from '../../src/modules/reaction/index.ts'
@@ -62,6 +62,10 @@ describe('discussion: видимость комментариев, заклад�
       { id: '10000000-0000-4000-8000-000000000002', article_id: MEMBERS_ID, author_id: OTHER, body: 'фрагмент-участникам', reaction_count: 2 },
       { id: '10000000-0000-4000-8000-000000000003', article_id: AUTHOR_ID, author_id: OTHER, body: 'фрагмент-автора', reaction_count: 1 },
     ])
+    await db.insert(reactions).values([1, 2, 3].map((index) => ({
+      user_id: AUTHOR, target_type: 'comment' as const,
+      target_id: `10000000-0000-4000-8000-00000000000${index}`, kind: 'heart' as const,
+    })))
     await db.insert(bookmarks).values([
       { user_id: OTHER, article_id: PUBLIC_ID, created_at: new Date('2026-10-03T00:00:00Z') },
       { user_id: OTHER, article_id: MEMBERS_ID, created_at: new Date('2026-10-02T00:00:00Z') },
@@ -94,7 +98,9 @@ describe('discussion: видимость комментариев, заклад�
   }
 
   it.each(['guest', 'member', 'author', 'admin'])('%s видит комментарии только доступных статей', async (viewer) => {
-    expect(await popular(viewer)).toEqual(excerpts[viewer])
+    const popular_excerpts = await popular(viewer)
+    expect(popular_excerpts).toHaveLength(Math.min(2, excerpts[viewer]?.length ?? 0))
+    expect(popular_excerpts.every((excerpt) => excerpts[viewer]?.includes(excerpt))).toBe(true)
     const by_author = await app.inject({ method: 'GET', url: `/v1/users/${OTHER}/comments`, headers: { 'x-test-viewer': viewer } })
     expect(by_author.statusCode).toBe(200)
     const excerpts_by_author = (by_author.json() as { items: { excerpt: string }[] }).items.map((item) => item.excerpt).sort()

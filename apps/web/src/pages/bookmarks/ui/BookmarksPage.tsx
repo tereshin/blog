@@ -7,7 +7,7 @@ import { useLoginDialog } from '@/features/login'
 import { SavedComments } from '@/features/send-comment'
 import { ShareButton } from '@/features/share-article'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState, Tabs } from '@/shared/ui'
+import { BookmarkIcon, Button, EmptyState, ErrorState, Tabs } from '@/shared/ui'
 import { ArticleOverflowMenu } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 
@@ -30,7 +30,7 @@ function SavedArticles() {
 
   if (viewer.status === 'guest') {
     return (
-      <EmptyState title={t('bookmarks.guest')} className="py-16">
+      <EmptyState title={t('bookmarks.guest')} description={t('bookmarks.guest_hint')} icon={<BookmarkIcon width={28} height={28} />} className="py-16">
         <Button variant="primary" onPress={() => openLogin('required')}>
           {t('header.sign_in')}
         </Button>
@@ -41,7 +41,7 @@ function SavedArticles() {
   if (query.isPending) return <ArticleCard.Skeleton />
   if (query.isError)
     return <ErrorState title={t('feed.load_error')} onRetry={() => void query.refetch()} />
-  if (visible.length === 0) return <EmptyState title={t('bookmarks.empty')} className="py-16" />
+  if (visible.length === 0) return <EmptyState title={t('bookmarks.empty')} description={t('bookmarks.empty_hint')} icon={<BookmarkIcon width={28} height={28} />} className="py-16" />
 
   return (
     <div className="flex flex-col gap-4">

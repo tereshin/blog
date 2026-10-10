@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { confirmEmailVerification, confirmPasswordReset, credentialFieldError } from '@/features/login'
 import { useT } from '@/shared/i18n'
-import { Button } from '@/shared/ui'
+import { Button, EmptyState } from '@/shared/ui'
 import { useShellStore } from '@/widgets/shell'
 
 type ActionStatus = 'idle' | 'ok' | 'fail'
@@ -51,6 +51,16 @@ export default function AuthActionPage() {
   }
 
   const is_reset = mode === 'resetPassword' || (status !== 'idle' && mode !== 'verifyEmail')
+
+  if (!oob_code || (mode !== 'verifyEmail' && mode !== 'resetPassword')) {
+    return (
+      <EmptyState title={t('auth_action.invalid_link')} description={t('auth_action.invalid_link_hint')}>
+        <Link to="/" className="text-accent underline-offset-2 hover:underline">
+          {t('shell.nav.fresh')}
+        </Link>
+      </EmptyState>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3 p-4">

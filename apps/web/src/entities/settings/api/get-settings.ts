@@ -1,5 +1,5 @@
-import { reactionAppearancesSchema } from '@blog/contracts'
-import type { ReactionAppearances } from '@blog/contracts'
+import { profileStatusIconsSchema, reactionAppearancesSchema } from '@blog/contracts'
+import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import { z } from 'zod'
 import { http } from '@/shared/api'
 
@@ -10,6 +10,7 @@ export const publicSettingsSchema = z.object({
   locale: z.enum(['ru', 'en', 'sr']).catch('ru'),
   about: z.string().nullable().optional(),
   reaction_appearances: reactionAppearancesSchema,
+  profile_status_icons: profileStatusIconsSchema.default([]),
 })
 type PublicSettingsDto = z.infer<typeof publicSettingsSchema>
 
@@ -20,6 +21,7 @@ export type PublicSettings = {
   locale: 'ru' | 'en' | 'sr'
   about: string
   reaction_appearances: ReactionAppearances
+  profile_status_icons: ProfileStatusIcon[]
 }
 
 export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
@@ -29,6 +31,7 @@ export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
     locale: dto.locale,
     about: dto.about ?? '',
     reaction_appearances: dto.reaction_appearances,
+    profile_status_icons: dto.profile_status_icons,
   }
 }
 

@@ -126,7 +126,7 @@ test.describe('Жесты карточки', () => {
     await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toBeVisible()
     await expect(main.getByRole('heading', { name: /^Статья 2:/ })).toBeVisible()
     await main.getByRole('button', { name: 'Убрать полосу' }).click()
-    await expect(main.getByText('Скрыто 2 просмотренных поста')).toHaveCount(0)
+    await expect(banner).toHaveCount(0)
     await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toHaveCount(0)
     await expect(main.getByRole('heading', { name: /^Статья 2:/ })).toHaveCount(0)
   })

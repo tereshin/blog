@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import { Button, CommentIcon, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import type { CommentsState } from '../model/useComments.ts'
 import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
 import { sortComments } from '../model/sort-comments.ts'
@@ -63,7 +63,7 @@ export function CommentThread({
   }
   if (state.status === 'error')
     return <ErrorState title={t('comment.load_error')} onRetry={state.refetch} />
-  if (state.status === 'empty') return <EmptyState title={t('comment.empty')} />
+  if (state.status === 'empty') return <EmptyState title={t('comment.empty')} icon={<CommentIcon width={28} height={28} />} className="min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none" />
 
   return (
     <div>

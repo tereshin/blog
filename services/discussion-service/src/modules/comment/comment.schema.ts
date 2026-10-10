@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { commentSortSchema, pageQuerySchema } from '@blog/contracts'
 
 /** Ответ маршрута описан в `@blog/contracts` (`popularCommentListSchema`); здесь — лимиты модуля. */
-export const POPULAR_COMMENTS_LIMIT = 10
+export const POPULAR_COMMENTS_LIMIT = 2
 export const COMMENT_EXCERPT_LENGTH = 140
 
 export const commentParamsSchema = z.strictObject({ article_id: z.uuid() })

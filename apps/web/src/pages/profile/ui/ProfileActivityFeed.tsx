@@ -1,6 +1,6 @@
 import { ArticleCard } from '@/entities/article'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState, Tabs } from '@/shared/ui'
+import { Button, CommentIcon, EmptyState, ErrorState, PenIcon, Tabs } from '@/shared/ui'
 import { ArticleFeedItem, ArticleOverflowMenu } from '@/widgets/feed'
 import { UserCommentRow } from '@/widgets/profile-card'
 import type { useProfileActivity } from '../model/useProfileActivity.ts'
@@ -19,7 +19,7 @@ export function ProfileActivityFeed({ activity, is_own }: ProfileActivityFeedPro
       ) : null}
       {tab === 'posts' && !list.isPending && !has_load_error ? (
         article_items.length === 0 ? (
-          <EmptyState title={t('profile.posts_empty')} />
+          <EmptyState title={t('profile.posts_empty')} description={t('profile.posts_empty_hint')} icon={<PenIcon width={28} height={28} />} />
         ) : (
           <ol className="flex flex-col gap-4">
             {article_items.map((article) => (
@@ -52,7 +52,7 @@ export function ProfileActivityFeed({ activity, is_own }: ProfileActivityFeedPro
       ) : null}
       {tab === 'comments' && !list.isPending && !has_load_error ? (
         comment_items.length === 0 ? (
-          <EmptyState title={t('profile.comments_empty')} />
+          <EmptyState title={t('profile.comments_empty')} description={t('profile.comments_empty_hint')} icon={<CommentIcon width={28} height={28} />} />
         ) : (
           <ul className="flex flex-col gap-4">
             {comment_items.map((comment) => (

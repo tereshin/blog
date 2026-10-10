@@ -6,7 +6,7 @@ import { useViewer } from '@/entities/session'
 import { useRequireSession } from '@/features/login'
 import { MessageComposer } from '@/features/send-message'
 import { useT } from '@/shared/i18n'
-import { Button, ErrorState, Skeleton } from '@/shared/ui'
+import { Button, CommentIcon, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import { useConversationLive } from '../model/useConversationLive.ts'
 
 type Peer = { user_id: string; display_name: string }
@@ -71,6 +71,13 @@ export function ConversationThread({ conversation_id, peer, show_back }: Convers
           </div>
         ) : null}
         {messages.status === 'error' ? <ErrorState title={t('messages.error')} onRetry={messages.refetch} /> : null}
+        {messages.status === 'empty' || messages.status === 'idle' ? (
+          <EmptyState
+            title={t('messages.thread_empty')}
+            description={t('messages.thread_empty_hint')}
+            icon={<CommentIcon width={28} height={28} />}
+          />
+        ) : null}
         {items.map((message) => (
           <MessageBubble key={message.id} message={message} is_own={message.sender_id === my_id} />
         ))}

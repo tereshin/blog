@@ -36,6 +36,17 @@ export const DEFAULT_REACTION_APPEARANCES = reactionAppearancesSchema.parse([
   { kind: 'fire', presentation: 'emoji', emoji: '🔥' },
 ])
 
+export const profileStatusIconSchema = z.strictObject({
+  id: z.uuid(),
+  label: z.string().trim().min(1).max(50),
+  image_url: z.url(),
+})
+export const profileStatusIconsSchema = z.array(profileStatusIconSchema).max(100).refine(
+  (icons) => new Set(icons.map((icon) => icon.id)).size === icons.length,
+  { message: 'Идентификаторы статусов должны быть уникальными' },
+)
+export type ProfileStatusIcon = z.infer<typeof profileStatusIconSchema>
+
 /** Публичные настройки площадки: `GET /v1/settings`. Закрытые поля (регистрация) сюда не попадают. */
 export const publicSettingsSchema = z.strictObject({
   name: z.string(),
@@ -43,6 +54,7 @@ export const publicSettingsSchema = z.strictObject({
   locale: localeSchema,
   about: z.string(),
   reaction_appearances: reactionAppearancesSchema,
+  profile_status_icons: profileStatusIconsSchema.default([]),
 })
 export type PublicSettings = z.infer<typeof publicSettingsSchema>
 
@@ -55,6 +67,7 @@ export const updateSettingsSchema = z.strictObject({
   registration_open: z.boolean(),
   new_members_can_publish: z.boolean(),
   reaction_appearances: reactionAppearancesSchema,
+  profile_status_icons: profileStatusIconsSchema.default([]),
 })
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>
 

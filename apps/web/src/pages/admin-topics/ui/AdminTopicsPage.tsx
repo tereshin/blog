@@ -26,7 +26,7 @@ function TopicsScreen() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">{t('admin.topics')}</h1>
       {topics.isError ? <ErrorState title={t('admin.topics.error')} onRetry={() => void topics.refetch()} /> : null}
-      {topics.data && items.length === 0 ? <EmptyState title={t('admin.topics.empty')} /> : null}
+      {topics.data && items.length === 0 ? <EmptyState title={t('admin.topics.empty')} description={t('admin.topics.empty_hint')} /> : null}
       <ul className="flex flex-col gap-2">
         {items.map((topic, index) => (
           <TopicRow key={topic.id} topic={topic} is_first={index === 0} is_last={index === items.length - 1} onMove={move} />

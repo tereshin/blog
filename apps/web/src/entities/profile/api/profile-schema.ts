@@ -8,6 +8,7 @@ export const profileSchema = z.object({
   bio: z.string().nullable(),
   avatar_url: z.string().nullable(),
   cover_url: z.string().nullable(),
+  status_icon_id: z.string().nullable().default(null),
   slug: z.string().nullable(),
   reputation: z.number().int(),
   created_at: z.string(),
@@ -24,10 +25,9 @@ export function toProfile(dto: z.infer<typeof profileSchema>): Profile {
 
 export function toUpdateBody(input: ProfileUpdate): ProfileUpdate {
   return {
-    display_name: input.display_name.trim(),
-    bio: input.bio && input.bio.trim().length > 0 ? input.bio.trim() : null,
-    avatar_url: input.avatar_url,
-    cover_url: input.cover_url,
-    slug: input.slug && input.slug.trim().length > 0 ? input.slug.trim().toLowerCase() : null,
+    ...input,
+    ...(input.display_name !== undefined ? { display_name: input.display_name.trim() } : {}),
+    ...(input.bio !== undefined ? { bio: input.bio?.trim() || null } : {}),
+    ...(input.slug !== undefined ? { slug: input.slug?.trim().toLowerCase() || null } : {}),
   }
 }

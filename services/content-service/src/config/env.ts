@@ -7,6 +7,7 @@ const envSchema = baseEnvSchema.extend({
   NATS_URL: z.string().min(1),
   SERVICE_JWT_PUBLIC_KEY: z.string().min(1),
   MEDIA_URL: z.url(),
+  S3_PUBLIC_URL: z.preprocess((value) => value === '' ? undefined : value, z.url().optional()),
   PUBLIC_ORIGIN: z.url(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),

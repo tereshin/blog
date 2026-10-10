@@ -7,7 +7,8 @@
     "article_title": "Как мы переписали ленту на курсорную пагинацию",
     "article_slug": "kursornaya-paginatsiya",
     "excerpt": "Главное — стабильный порядок: пара (дата, id) решает все гонки при вставке.",
-    "reaction_count": 12
+    "reaction_count": 12,
+    "reaction_counts": { "laugh": 0, "heart": 3, "thumb": 9, "fire": 0 }
   },
   {
     "id": "7a1c2d30-1111-4a11-8a11-000000000002",
@@ -17,6 +18,7 @@
     "article_title": "Тёмная тема без компромиссов",
     "article_slug": "temnaya-tema",
     "excerpt": "Контраст важнее красоты: проверяйте текст на втором уровне серого.",
-    "reaction_count": 7
+    "reaction_count": 7,
+    "reaction_counts": { "laugh": 0, "heart": 7, "thumb": 0, "fire": 0 }
   }
 ]

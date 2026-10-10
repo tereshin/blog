@@ -8,6 +8,7 @@ import type { AdminSettings } from '../api/update-settings.ts'
 import { appearanceErrors, appearancePayload, draftsFrom } from '../model/appearance-draft.ts'
 import type { AppearanceDraft } from '../model/appearance-draft.ts'
 import { useUpdateSettings } from '../model/useUpdateSettings.ts'
+import { SettingsStatusIcons } from './SettingsStatusIcons.tsx'
 import { SettingsReactionFields } from './SettingsReactionFields.tsx'
 
 type UploadSlot = (options: { label: string; onUploaded: (url: string) => void }) => ReactNode
@@ -48,9 +49,10 @@ export function SettingsForm({ initial, upload, can_edit_media = true }: Setting
     setAppearanceErrors(field_errors)
     if (Object.keys(field_errors).length > 0) return
     const reaction_appearances = can_edit_media ? appearancePayload(appearance_draft) : initial.reaction_appearances
+    const profile_status_icons = can_edit_media ? draft.profile_status_icons : initial.profile_status_icons
     const logo_url = can_edit_media ? draft.logo_url : initial.logo_url
     update.mutate(
-      { ...draft, name: draft.name.trim(), logo_url, reaction_appearances },
+      { ...draft, name: draft.name.trim(), logo_url, reaction_appearances, profile_status_icons },
       { onError: (reason) => setError(reason instanceof ApiError ? reason.message : t('admin.settings.error')) },
     )
   }
@@ -82,6 +84,12 @@ export function SettingsForm({ initial, upload, can_edit_media = true }: Setting
         errors={appearance_errors}
         upload={upload}
         onPatch={patchAppearance}
+      />
+      <SettingsStatusIcons
+        icons={draft.profile_status_icons}
+        can_edit_media={can_edit_media}
+        upload={upload}
+        onChange={(transform) => setDraft((current) => ({ ...current, profile_status_icons: transform(current.profile_status_icons) }))}
       />
       <label className="flex flex-col gap-1 text-sm">
         {t('admin.settings.locale')}

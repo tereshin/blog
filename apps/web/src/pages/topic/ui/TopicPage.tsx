@@ -25,7 +25,7 @@ export default function TopicPage() {
   if (topic.isError || !topic.data) {
     const missing = topic.error instanceof ApiError && topic.error.status === 404
     return missing ? (
-      <EmptyState title={t('topic.not_found')} className="py-16" />
+      <EmptyState title={t('topic.not_found')} description={t('topic.not_found_hint')} className="py-16" />
     ) : (
       <ErrorState title={t('error.unknown')} onRetry={() => void topic.refetch()} />
     )

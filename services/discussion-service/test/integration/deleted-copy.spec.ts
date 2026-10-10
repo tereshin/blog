@@ -12,7 +12,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles_copy, bookmarks, comments, users_copy } from '../../src/infra/db/schema.ts'
+import { articles_copy, bookmarks, comments, reactions, users_copy } from '../../src/infra/db/schema.ts'
 import { bookmarkRoutes } from '../../src/modules/bookmark/index.ts'
 import { commentRoutes } from '../../src/modules/comment/index.ts'
 import { createCopiesHandler } from '../../src/modules/copies/index.ts'
@@ -67,6 +67,7 @@ describe('discussion: удалённая статья не отдаёт обсу
     await apply(event('content.article.published', article))
     await database.db.insert(users_copy).values({ user_id: AUTHOR, display_name: 'Анна', avatar_url: null })
     await database.db.insert(comments).values({ id: COMMENT, article_id: ARTICLE, author_id: AUTHOR, body: 'Живой комментарий', reaction_count: 3 })
+    await database.db.insert(reactions).values({ user_id: READER, target_type: 'comment', target_id: COMMENT, kind: 'heart' })
     await database.db.insert(bookmarks).values({ user_id: READER, article_id: ARTICLE })
 
     app = Fastify()

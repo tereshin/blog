@@ -12,7 +12,7 @@ import { FollowButton } from '@/features/follow'
 import { ReactionControl } from '@/features/react'
 import { ShareButton } from '@/features/share-article'
 import { useT } from '@/shared/i18n'
-import { EmptyState, ErrorState } from '@/shared/ui'
+import { EmptyState, ErrorState, SearchIcon } from '@/shared/ui'
 import { ArticleOverflowMenu } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 
@@ -39,7 +39,13 @@ export default function SearchPage() {
   return (
     <div className="flex flex-col gap-6">
       {search.isError ? <ErrorState title={t('search.error')} onRetry={() => void search.refetch()} /> : null}
-      {q.trim().length < 2 || nothing ? <EmptyState title={t('search.empty')} className="py-16" /> : null}
+      {q.trim().length < 2 || (!search.isError && nothing) ? (
+        <EmptyState
+          title={t(q.trim().length < 2 ? 'search.prompt' : 'search.empty')}
+          description={t(q.trim().length < 2 ? 'search.prompt_hint' : 'search.empty_hint')}
+          icon={<SearchIcon width={28} height={28} />}
+        />
+      ) : null}
       {search.data && search.data.articles.length > 0 ? (
         <section className="flex flex-col gap-3">
           <h1 className="text-sm font-medium text-muted">{t('search.articles')}</h1>

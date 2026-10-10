@@ -1,6 +1,6 @@
 import { boolean, customType, index, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
-import type { ReactionAppearances } from '@blog/contracts'
+import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -37,6 +37,7 @@ export const profiles = pgTable('profiles', {
   bio: varchar('bio', { length: 500 }),
   avatar_url: text('avatar_url'),
   cover_url: text('cover_url'),
+  status_icon_id: uuid('status_icon_id'),
   slug: text('slug').unique(),
   reputation: integer('reputation').notNull().default(0),
 })
@@ -122,6 +123,7 @@ export const settings = pgTable('settings', {
   registration_open: boolean('registration_open').notNull().default(true),
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
   reaction_appearances: jsonb('reaction_appearances').$type<ReactionAppearances>().notNull().default(DEFAULT_REACTION_APPEARANCES),
+  profile_status_icons: jsonb('profile_status_icons').$type<ProfileStatusIcon[]>().notNull().default([]),
 })
 
 export const reports = pgTable(

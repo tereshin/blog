@@ -54,7 +54,9 @@ function WindowNotice({ title, onClose }: { title: string; onClose: () => void }
           </span>
         </Button>
       </div>
-      <EmptyState title={title} />
+      <EmptyState title={title}>
+        <Button variant="secondary" onPress={onClose}>{t('common.close')}</Button>
+      </EmptyState>
     </div>
   )
 }

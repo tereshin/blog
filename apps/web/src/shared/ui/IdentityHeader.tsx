@@ -31,13 +31,12 @@ function Cover({ url, action }: CoverProps) {
   )
 }
 
-function AvatarBlock({ src, name }: { src?: string | null; name: string }) {
+function AvatarBlock({ src, name, action }: { src?: string | null; name: string; action?: ReactNode }) {
   return (
-    <Avatar
-      src={src}
-      name={name}
-      className="relative -mt-12 size-20 shrink-0 ring-4 ring-surface sm:-mt-14 sm:size-24"
-    />
+    <div className="group relative -mt-12 size-20 shrink-0 rounded-avatar ring-4 ring-surface sm:-mt-14 sm:size-24">
+      <Avatar src={src} name={name} className="size-full" />
+      {action ? <div className="absolute inset-0 z-10 flex items-center justify-center rounded-avatar">{action}</div> : null}
+    </div>
   )
 }
 

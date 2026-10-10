@@ -6,7 +6,7 @@ import { EmptyState } from '@/shared/ui'
 export default function NotFoundPage() {
   const { t } = useT()
   return (
-    <EmptyState title={t('error.not_found')} className="py-16">
+    <EmptyState title={t('error.not_found')} description={t('error.not_found_hint')} className="py-16">
       <Link to="/" className="text-accent underline-offset-2 hover:underline">
         {t('shell.nav.fresh')}
       </Link>

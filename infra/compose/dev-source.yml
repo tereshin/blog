@@ -1,0 +1,20 @@
+# Не самостоятельный файл Compose: шаблон для `extends` из docker-compose.local.yml.
+# Код пакетов монтируется в каждый контейнер, свой `src` сервис добавляет сам.
+# node_modules остаются из образа (Linux-сборка), поэтому монтируются только каталоги с исходниками.
+services:
+  source:
+    build:
+      context: ../..
+      dockerfile: infra/docker/dev.Dockerfile
+    image: blog/dev:local
+    restart: "no"
+    volumes:
+      - ../../packages/broker/src:/repo/packages/broker/src:ro
+      - ../../packages/config/src:/repo/packages/config/src:ro
+      - ../../packages/contracts/src:/repo/packages/contracts/src:ro
+      - ../../packages/db-kit/src:/repo/packages/db-kit/src:ro
+      - ../../packages/errors/src:/repo/packages/errors/src:ro
+      - ../../packages/http-kit/src:/repo/packages/http-kit/src:ro
+      - ../../packages/logger/src:/repo/packages/logger/src:ro
+      - ../../packages/seed-data/src:/repo/packages/seed-data/src:ro
+      - ../../packages/telemetry/src:/repo/packages/telemetry/src:ro

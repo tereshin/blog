@@ -19,6 +19,12 @@ function ArticleCardRoot({ article, children, className }: ArticleCardRootProps)
   )
 }
 
+/** Полоса над автором, отделённая чертой (например, «Скрыто N просмотренных постов» у первой карточки ленты). */
+function Lead({ children }: { children?: ReactNode }) {
+  if (!children) return null
+  return <div className="border-b border-separator px-5 py-3">{children}</div>
+}
+
 type HeaderProps = {
   /** Слот «Подписаться» справа (только у чужого автора). */
   follow?: ReactNode
@@ -57,7 +63,7 @@ function Title() {
   const article = useArticleCardModel()
   return (
     <Card.Content className="px-5 pb-0 pt-3">
-      <h2 id={`article-title-${article.id}`} className="text-xl font-bold leading-snug tracking-tight">
+      <h2 id={`article-title-${article.id}`} className="text-xl font-semibold leading-snug tracking-[-0.005em]">
         <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
           {article.title}
         </Link>
@@ -185,6 +191,7 @@ function ArticleCardSkeleton() {
 }
 
 export const ArticleCard = Object.assign(ArticleCardRoot, {
+  Lead,
   Header,
   Title,
   Excerpt,

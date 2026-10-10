@@ -5,7 +5,7 @@ import { useViewer } from '@/entities/session'
 import { useLoginDialog } from '@/features/login'
 import { useT } from '@/shared/i18n'
 import { useMediaQuery } from '@/shared/lib'
-import { Button, EmptyState } from '@/shared/ui'
+import { Button, CommentIcon, EmptyState } from '@/shared/ui'
 import { useShellStore } from '@/widgets/shell'
 
 // Гость видит только просьбу войти: список и поле подгружаются, когда зритель уже участник.
@@ -68,7 +68,7 @@ export default function MessagesPage() {
 
   if (viewer.status === 'guest') {
     return (
-      <EmptyState title={t('messages.sign_in')} className="py-16">
+      <EmptyState title={t('messages.sign_in')} description={t('messages.sign_in_hint')} icon={<CommentIcon width={28} height={28} />} className="py-16">
         <Button variant="primary" onPress={() => openLogin('required')}>
           {t('header.sign_in')}
         </Button>
@@ -83,7 +83,7 @@ export default function MessagesPage() {
         show_thread && peer ? (
           <ConversationThread conversation_id={conversation_id} peer={peer} show_back={!is_split} />
         ) : (
-          <EmptyState title={t('messages.pick')} className="py-16" />
+          <EmptyState title={t('messages.pick')} description={t('messages.pick_hint')} icon={<CommentIcon width={28} height={28} />} className="py-16" />
         )
       ) : null}
     </div>

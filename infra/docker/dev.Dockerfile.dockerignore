@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/coverage
+**/storybook-static
+**/playwright-report
+**/test-results
+**/.env
+**/.env.*
+infra/env/*.env
+.git
+.cursor
+.specify
+specs
+docs
+*.log

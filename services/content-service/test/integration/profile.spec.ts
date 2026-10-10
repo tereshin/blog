@@ -10,12 +10,13 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles, follows, outbox, profiles, slugs, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { articles, follows, outbox, profiles, settings, slugs, topics, users_copy } from '../../src/infra/db/schema.ts'
 import { profileRoutes } from '../../src/modules/profile/index.ts'
 
 const OWNER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const OTHER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
 const MEDIA = 'http://media.test'
+const S3 = 'http://storage.test/media'
 
 const viewers: Record<string, ServiceContext> = {
   guest: { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' },
@@ -57,7 +58,7 @@ describe('content: профиль', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(profileRoutes, { database, media_url: MEDIA, public_origin: 'http://blog.test' })
+    await app.register(profileRoutes, { database, media_url: MEDIA, media_public_url: S3, public_origin: 'http://blog.test' })
   }, 120_000)
 
   afterAll(async () => {
@@ -111,10 +112,10 @@ describe('content: профиль', () => {
       method: 'PUT',
       url: '/v1/profiles/me',
       headers: { 'x-test-viewer': 'owner', 'content-type': 'application/json' },
-      payload: { ...body, avatar_url: `${MEDIA}/a.png` },
+      payload: { ...body, avatar_url: `${S3}/a.png` },
     })
     expect(response.statusCode).toBe(200)
-    expect(response.json()).toMatchObject({ slug: 'anna', is_own: true, avatar_url: `${MEDIA}/a.png` })
+    expect(response.json()).toMatchObject({ slug: 'anna', is_own: true, avatar_url: `${S3}/a.png` })
     const events = await database.db.select().from(outbox).where(eq(outbox.name, 'content.profile.updated'))
     expect(events).toHaveLength(1)
   })
@@ -157,4 +158,34 @@ describe('content: профиль', () => {
     expect(rating.json().items).toEqual([expect.objectContaining({ user_id: OWNER, reputation: 12 })])
     expect(rating.json().next_cursor).toEqual(expect.any(String))
   })
+  it('аватар и обложка с S3 сохраняются частично, имя и адрес остаются прежними', async () => {
+    const avatar_url = `${S3}/uploads/avatar`
+    const cover_url = `${S3}/uploads/cover`
+    for (const payload of [{ avatar_url }, { cover_url }]) {
+      const response = await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload })
+      expect(response.statusCode).toBe(200)
+    }
+    const saved = await app.inject({ method: 'GET', url: '/v1/profiles/anna' })
+    expect(saved.json()).toMatchObject({ avatar_url, cover_url, display_name: 'Анна', slug: 'anna', bio: 'Пишет' })
+    const denied = await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: { cover_url: 'https://other.test/cover' } })
+    expect(denied.statusCode).toBe(422)
+    expect((await app.inject({ method: 'GET', url: '/v1/profiles/anna' })).json().cover_url).toBe(cover_url)
+  })
+
+  it('статус выбирается только из каталога админки, сохраняется и сбрасывается', async () => {
+    const id = '44444444-4444-4444-8444-444444444444'
+    const payload = { status_icon_id: id }
+    const send = () => app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload })
+    expect((await send()).statusCode).toBe(422)
+    await database.db.insert(settings).values({ id: 1, name: 'Блог', profile_status_icons: [{ id, label: 'В отпуске', image_url: `${S3}/holiday.png` }] })
+    expect((await send()).statusCode).toBe(200)
+    expect((await app.inject({ method: 'GET', url: '/v1/profiles/7' })).json().status_icon_id).toBe(id)
+    await database.db.update(settings).set({ profile_status_icons: [] }).where(eq(settings.id, 1))
+    expect((await send()).statusCode).toBe(422)
+    const cleared = await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: { status_icon_id: null } })
+    expect(cleared.statusCode).toBe(200)
+    expect(cleared.json()).toMatchObject({ status_icon_id: null, display_name: 'Анна', slug: 'anna' })
+    expect((await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: {} })).statusCode).toBe(422)
+  })
+
 })

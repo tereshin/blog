@@ -8,6 +8,7 @@ export type ProfileRecord = {
   bio: string | null
   avatar_url: string | null
   cover_url: string | null
+  status_icon_id: string | null
   slug: string | null
   reputation: number
   created_at: Date

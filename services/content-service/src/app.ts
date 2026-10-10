@@ -50,7 +50,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   await app.register(accessRoutes, { database: deps.database })
   await app.register(topicRoutes, { database: deps.database, media_url: env.MEDIA_URL })
-  await app.register(settingsRoutes, { database: deps.database, media_url: env.MEDIA_URL })
+  await app.register(settingsRoutes, { database: deps.database, media_url: env.S3_PUBLIC_URL ?? env.MEDIA_URL })
   await app.register(feedRoutes, { database: deps.database })
   await app.register(searchRoutes, { database: deps.database })
   await app.register(prerenderRoutes, { database: deps.database })
@@ -59,7 +59,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     media_urls: [env.MEDIA_URL],
     lookupFile: (url) => lookupMediaFile(media, url),
   })
-  await app.register(profileRoutes, { database: deps.database, media_url: env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN })
+  await app.register(profileRoutes, { database: deps.database, media_url: env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN, media_public_url: env.S3_PUBLIC_URL })
   await app.register(followRoutes, { database: deps.database })
   await app.register(promotionRoutes, { database: deps.database })
   await app.register(reportRoutes, { database: deps.database })

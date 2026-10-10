@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
+import { useProfile } from '@/entities/profile'
 import { useViewer } from '@/entities/session'
 import { AppearanceToggle } from '@/features/toggle-appearance'
 import { EditProfileDialog } from '@/features/edit-profile'
 import { useLoginDialog } from '@/features/login'
 import { LogoutMenuItem } from '@/features/logout'
-import { ImageUploadButton } from '@/features/upload-media'
 import { useT } from '@/shared/i18n'
 import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
 
@@ -17,6 +17,8 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
   const openLogin = useLoginDialog((state) => state.open)
   const navigate = useNavigate()
   const [is_editing, setEditing] = useState(false)
+  const address = viewer.status === 'member' ? viewer.profile.slug || String(viewer.user.public_number) : undefined
+  const { data: profile } = useProfile(is_editing ? address : undefined)
 
   if (viewer.status !== 'member') {
     if (viewer.status === 'loading') return null
@@ -31,15 +33,6 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
     )
   }
 
-  const address = viewer.profile.slug || String(viewer.user.public_number)
-  const draft = {
-    display_name: viewer.profile.display_name,
-    bio: '',
-    avatar_url: viewer.profile.avatar_url,
-    cover_url: null,
-    slug: viewer.profile.slug,
-    saved_slug: viewer.profile.slug,
-  }
 
   return (
     <>
@@ -60,14 +53,13 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
           <LogoutMenuItem />
         </Menu.Content>
       </Menu>
-      <EditProfileDialog
-        is_open={is_editing}
-        onOpenChange={setEditing}
-        initial={draft}
-        upload={(field, onUploaded) => (
-          <ImageUploadButton label={t(field === 'avatar' ? 'profile.avatar' : 'profile.cover')} onUploaded={onUploaded} />
-        )}
-      />
+      {is_editing && profile ? (
+        <EditProfileDialog
+          is_open={is_editing}
+          onOpenChange={setEditing}
+          initial={{ display_name: profile.display_name, bio: profile.bio ?? '', slug: profile.slug ?? '' }}
+        />
+      ) : null}
     </>
   )
 }

@@ -23,7 +23,7 @@ export default function AboutPage() {
     .map((paragraph) => paragraph.trim())
     .filter((paragraph) => paragraph.length > 0)
 
-  if (paragraphs.length === 0) return <EmptyState title={t('about.empty')} />
+  if (paragraphs.length === 0) return <EmptyState title={t('about.empty')} description={t('about.empty_hint')} />
 
   return (
     <article className="flex flex-col gap-4">

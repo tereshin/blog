@@ -3,7 +3,6 @@ import { MemoryRouter } from 'react-router'
 import type { Profile } from '@/entities/profile'
 import { Button, Tabs } from '@/shared/ui'
 import { ProfileCard } from './ProfileCard.tsx'
-import { ReputationHint } from './ReputationHint.tsx'
 
 const own: Profile = {
   user_id: '0b3a4c50-3333-4c33-8c33-000000000005',
@@ -12,6 +11,7 @@ const own: Profile = {
   bio: null,
   avatar_url: null,
   cover_url: null,
+  status_icon_id: null,
   slug: 'reader',
   reputation: 0,
   created_at: '2024-01-01T00:00:00.000Z',
@@ -60,7 +60,6 @@ function Frame({ profile, action }: { profile: Profile; action?: boolean }) {
             <ProfileCard.Content>
               <ProfileCard.Name
                 profile={profile}
-                aside={profile.is_own ? <ReputationHint /> : null}
               />
               <ProfileCard.Reputation profile={profile} />
               <ProfileCard.Bio profile={profile} />

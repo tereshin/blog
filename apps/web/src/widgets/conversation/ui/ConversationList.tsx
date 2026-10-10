@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ConversationListItem, useConversations } from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import { Button, CommentIcon, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import { PeerPicker } from './PeerPicker.tsx'
 
 type ConversationListProps = {
@@ -28,7 +28,7 @@ export function ConversationList({ selected_id }: ConversationListProps) {
         </div>
       ) : null}
       {conversations.status === 'error' ? <ErrorState title={t('messages.error')} onRetry={conversations.refetch} /> : null}
-      {conversations.status === 'empty' ? <EmptyState title={t('messages.empty')} className="py-8" /> : null}
+      {conversations.status === 'empty' ? <EmptyState title={t('messages.empty')} description={t('messages.empty_hint')} icon={<CommentIcon width={28} height={28} />} className="py-8" /> : null}
       {conversations.status === 'ok' ? (
         <ul className="flex min-h-0 flex-col gap-1 overflow-y-auto">
           {conversations.items.map((conversation) => (

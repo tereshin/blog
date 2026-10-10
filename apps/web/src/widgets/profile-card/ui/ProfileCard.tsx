@@ -11,8 +11,8 @@ function Cover({ url, is_own, action }: CoverProps) {
   return <IdentityHeader.Cover url={url} action={is_own ? action : null} />
 }
 
-function AvatarBlock({ profile }: { profile: Profile }) {
-  return <IdentityHeader.Avatar src={profile.avatar_url} name={profile.display_name} />
+function AvatarBlock({ profile, action }: { profile: Profile; action?: ReactNode }) {
+  return <IdentityHeader.Avatar src={profile.avatar_url} name={profile.display_name} action={profile.is_own ? action : null} />
 }
 
 function Name({ profile, aside }: { profile: Profile; aside?: ReactNode }) {

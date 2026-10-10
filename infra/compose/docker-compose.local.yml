@@ -1,26 +1,25 @@
-# local: сборка из исходников, открытые порты, эмулятор firebase-auth, без перезапуска.
+# local: запуск из исходников с горячей перезагрузкой, открытые порты, эмулятор firebase-auth, без перезапуска.
+# Сервисы — `tsx watch` (перезапуск процесса при правке `src` сервиса или `packages/*/src`),
+# клиент — dev-сервер Vite с HMR. Образ общий — blog/dev:local (infra/docker/dev.Dockerfile).
+# Пересборка образа нужна только после изменения зависимостей: `pnpm infra:up local` делает её сам.
 services:
   gateway:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: gateway-service
-    image: blog/gateway:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/gateway-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/gateway-service/src:/repo/services/gateway-service/src:ro
     ports:
       - "3000:3000"
     environment:
       FIREBASE_AUTH_EMULATOR_HOST: "${FIREBASE_AUTH_EMULATOR_HOST:?}"
 
   identity:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: identity-service
-    image: blog/identity:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/identity-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/identity-service/src:/repo/services/identity-service/src:ro
     environment:
       FIREBASE_AUTH_EMULATOR_HOST: "${FIREBASE_AUTH_EMULATOR_HOST:?}"
       SEED_AUTH_PASSWORD: "${SEED_AUTH_PASSWORD:?}"
@@ -29,97 +28,81 @@ services:
         condition: service_healthy
 
   content:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: content-service
-    image: blog/content:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/content-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/content-service/src:/repo/services/content-service/src:ro
 
   discussion:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: discussion-service
-    image: blog/discussion:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/discussion-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/discussion-service/src:/repo/services/discussion-service/src:ro
 
   messaging:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: messaging-service
-    image: blog/messaging:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/messaging-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/messaging-service/src:/repo/services/messaging-service/src:ro
 
   notification:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: notification-service
-    image: blog/notification:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/notification-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/notification-service/src:/repo/services/notification-service/src:ro
 
   media:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: media-service
-    image: blog/media:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/media-service
+    command: ["tsx", "watch", "--clear-screen=false", "src/main.ts"]
+    volumes:
+      - ../../services/media-service/src:/repo/services/media-service/src:ro
 
   identity-migrate:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: identity-service
-    image: blog/identity:local
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/identity-service
+    command: ["tsx", "src/migrate.ts"]
+    volumes:
+      - ../../services/identity-service/src:/repo/services/identity-service/src:ro
 
   content-migrate:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: content-service
-    image: blog/content:local
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/content-service
+    command: ["tsx", "src/migrate.ts"]
+    volumes:
+      - ../../services/content-service/src:/repo/services/content-service/src:ro
 
   discussion-migrate:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: discussion-service
-    image: blog/discussion:local
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/discussion-service
+    command: ["tsx", "src/migrate.ts"]
+    volumes:
+      - ../../services/discussion-service/src:/repo/services/discussion-service/src:ro
 
   messaging-migrate:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: messaging-service
-    image: blog/messaging:local
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/messaging-service
+    command: ["tsx", "src/migrate.ts"]
+    volumes:
+      - ../../services/messaging-service/src:/repo/services/messaging-service/src:ro
 
   notification-migrate:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: notification-service
-    image: blog/notification:local
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/notification-service
+    command: ["tsx", "src/migrate.ts"]
+    volumes:
+      - ../../services/notification-service/src:/repo/services/notification-service/src:ro
 
   media-migrate:
-    build:
-      context: ../..
-      dockerfile: infra/docker/service.Dockerfile
-      args:
-        SERVICE: media-service
-    image: blog/media:local
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/services/media-service
+    command: ["tsx", "src/migrate.ts"]
+    volumes:
+      - ../../services/media-service/src:/repo/services/media-service/src:ro
 
   identity-db:
     restart: "no"
@@ -162,19 +145,20 @@ services:
       - "9000:9000"
       - "9001:9001"
 
+  # Dev-сервер Vite вместо nginx со сборкой: CSP из web.nginx.conf здесь не действует, её проверяют dev и prod.
   web:
-    build:
-      context: ../..
-      dockerfile: infra/docker/web.Dockerfile
-      args:
-        VITE_API_BASE_URL: http://localhost:3000
-    image: blog/web:local
-    restart: "no"
+    extends: { file: dev-source.yml, service: source }
+    working_dir: /repo/apps/web
+    command: ["node_modules/.bin/vite", "--host", "0.0.0.0", "--port", "8080", "--strictPort"]
+    volumes:
+      - ../../apps/web/src:/repo/apps/web/src:ro
+      - ../../apps/web/public:/repo/apps/web/public:ro
     ports:
       - "8080:8080"
     environment:
-      CSP_EMULATOR_ORIGIN: "http://${FIREBASE_AUTH_EMULATOR_HOST:?}"
-      CSP_API_ORIGIN: "http://localhost:3000"
+      VITE_API_BASE_URL: http://localhost:3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
   firebase-auth:
     build:
@@ -197,4 +181,3 @@ services:
       timeout: 3s
       retries: 30
       start_period: 20s
-

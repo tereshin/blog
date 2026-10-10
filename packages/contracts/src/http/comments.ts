@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { reactionCountsSchema, reactionKindSchema } from './feed.ts'
 import { pageSchema } from './pagination.ts'
 
-/** Строка правой карточки: самый популярный комментарий доступной зрителю статьи. */
+/** Строка правой карточки: новый комментарий с реакциями доступной зрителю статьи. */
 export const popularCommentSchema = z.strictObject({
   id: z.uuid(),
   author_name: z.string(),
@@ -12,11 +12,12 @@ export const popularCommentSchema = z.strictObject({
   article_slug: z.string(),
   excerpt: z.string(),
   reaction_count: z.number().int().nonnegative(),
+  reaction_counts: reactionCountsSchema,
 })
 export type PopularComment = z.infer<typeof popularCommentSchema>
 
-/** `GET /v1/comments/popular` — до 10 строк. */
-export const popularCommentListSchema = z.array(popularCommentSchema).max(10)
+/** `GET /v1/comments/popular` — два последних комментария с реакциями. */
+export const popularCommentListSchema = z.array(popularCommentSchema).max(2)
 
 export const commentAuthorSchema = z.strictObject({
   user_id: z.uuid(),

@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   registration_open: true,
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  profile_status_icons: [],
 }
 
 function appearancesOf(value: ReactionAppearances): ReactionAppearances {
@@ -26,6 +27,7 @@ function toPublic(row: SettingsRow): PublicSettings {
     locale: row.locale,
     about: row.about,
     reaction_appearances: appearancesOf(row.reaction_appearances),
+    profile_status_icons: row.profile_status_icons,
   }
 }
 
@@ -46,6 +48,7 @@ export const BOOTSTRAP_SETTINGS: SettingsRow = {
   registration_open: false,
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  profile_status_icons: [],
 }
 
 export type SettingsService = {
@@ -83,6 +86,9 @@ export function createSettingsService(repository: SettingsRepository, options: {
       requireSuperadmin(viewer)
       assertMediaUrl(input.logo_url, options.media_url, 'logo_url')
       assertAppearances(input.reaction_appearances, options.media_url)
+      for (const icon of input.profile_status_icons) {
+        assertMediaUrl(icon.image_url, options.media_url, `profile_status_icons.${icon.id}.image_url`)
+      }
       const saved = await repository.save(
         {
           name: input.name,
@@ -92,6 +98,7 @@ export function createSettingsService(repository: SettingsRepository, options: {
           registration_open: input.registration_open,
           new_members_can_publish: input.new_members_can_publish,
           reaction_appearances: input.reaction_appearances,
+          profile_status_icons: input.profile_status_icons,
         },
         correlation_id,
       )

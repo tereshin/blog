@@ -35,15 +35,15 @@ export async function markSeenArticle(feed_key: string, article_id: string): Pro
 }
 
 /** Просмотренные карточки режима и полоса «Скрыто N». */
-export function useSeenArticles(feed_key: string) {
+export function useSeenArticles(feed_key: string, auto_reveal_ids: readonly string[] = []) {
   const queryClient = useQueryClient()
   const [banner_key, setBannerKey] = useState(feed_key)
-  const [is_revealed, setRevealed] = useState(false)
+  const [reveal_mode, setRevealMode] = useState<'hidden' | 'manual' | 'automatic'>('hidden')
   const [is_dismissed, setDismissed] = useState(() => sessionStorage.getItem(dismissedKey(feed_key)) === '1')
   if (banner_key !== feed_key) {
     setBannerKey(feed_key)
     setDismissed(sessionStorage.getItem(dismissedKey(feed_key)) === '1')
-    setRevealed(false)
+    setRevealMode('hidden')
   }
   const query = useQuery({
     queryKey: seenKeys.list(feed_key),
@@ -51,6 +51,12 @@ export function useSeenArticles(feed_key: string) {
   })
   const server_ids = query.data?.article_ids ?? []
   const seen_ids = new Set(server_ids.filter((id) => !visitIds(feed_key).has(id)))
+
+  // Не оставляем пустой экран, если вся загруженная порция уже просмотрена.
+  // Раскрытие сохраняется при подгрузке следующих порций, чтобы список не прыгал.
+  if (reveal_mode === 'hidden' && auto_reveal_ids.length > 0 && auto_reveal_ids.every((id) => seen_ids.has(id))) {
+    setRevealMode('automatic')
+  }
 
   useEffect(() => {
     return () => {
@@ -72,13 +78,14 @@ export function useSeenArticles(feed_key: string) {
 
   return {
     seen_ids,
-    is_revealed,
-    reveal: () => setRevealed(true),
+    is_revealed: reveal_mode !== 'hidden',
+    is_auto_revealed: reveal_mode === 'automatic',
+    reveal: () => setRevealMode('manual'),
     is_dismissed,
     dismiss: () => {
       sessionStorage.setItem(dismissedKey(feed_key), '1')
       setDismissed(true)
-      setRevealed(false)
+      setRevealMode('hidden')
     },
     mark,
   }

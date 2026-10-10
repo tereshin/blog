@@ -27,7 +27,9 @@ export const Loaded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByRole('region', { name: 'Популярные комментарии' })
-    expect(canvasElement.querySelector('.w-\\[320px\\] .rounded-card')).not.toBeNull()
+    await canvas.findAllByRole('listitem')
+    expect(canvas.getAllByRole('listitem')).toHaveLength(2)
+    expect(canvasElement.querySelector('.w-\\[320px\\] .card')).not.toBeNull()
     expect(canvasElement.innerHTML).not.toContain('1200')
     expect(canvasElement.textContent).not.toContain('Подписка Plus')
   },

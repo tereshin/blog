@@ -11,7 +11,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles_copy, comments, outbox, users_copy } from '../../src/infra/db/schema.ts'
+import { articles_copy, comments, outbox, reactions, users_copy } from '../../src/infra/db/schema.ts'
 import { commentRoutes, toExcerpt } from '../../src/modules/comment/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -56,6 +56,7 @@ describe('discussion: GET /v1/comments/popular', () => {
       author_id: AUTHOR,
       body: `Комментарий ${index}`,
       reaction_count,
+      created_at: new Date(`2026-10-08T${index < 8 ? '11' : '10'}:${String(index).padStart(2, '0')}:00Z`),
       ...extra,
     })
     await db.insert(comments).values([
@@ -69,6 +70,15 @@ describe('discussion: GET /v1/comments/popular', () => {
       comment(8, 1, 1, { author_id: OTHER, body: 'Из  ответа\n\nс переносами' }),
     ])
     for (let index = 20; index < 35; index += 1) await db.insert(comments).values(comment(index, 1, 2))
+    const reacted = await db.select({ id: comments.id, total: comments.reaction_count }).from(comments)
+    for (const item of reacted) {
+      await db.insert(reactions).values(Array.from({ length: item.total }, (_, index) => ({
+        user_id: id(1000 + index), target_type: 'comment' as const, target_id: item.id,
+        kind: index === 0 ? 'heart' as const : 'thumb' as const,
+      })))
+    }
+    // Свежий комментарий со старым счётчиком, но без настоящих реакций, не попадает в сайдбар.
+    await db.insert(comments).values(comment(50, 1, 999, { created_at: new Date('2026-10-08T12:00:00Z') }))
 
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'discussion-test', level: 'silent' }) })
@@ -92,13 +102,13 @@ describe('discussion: GET /v1/comments/popular', () => {
     return popularCommentListSchema.parse(response.json())
   }
 
-  it('гость: только публичные опубликованные статьи, не более 10, по убыванию реакций', async () => {
+  it('гость: два последних комментария с настоящими реакциями на публичных статьях', async () => {
     const list = await popular('guest')
-    expect(list).toHaveLength(10)
+    expect(list).toHaveLength(2)
     expect(list.every((item) => item.article_slug === 'public')).toBe(true)
-    expect(list[0]).toMatchObject({ id: id(101), reaction_count: 5, author_name: 'Анна', article_title: 'Публичная' })
-    const counts = list.map((item) => item.reaction_count)
-    expect(counts).toEqual([...counts].sort((a, b) => b - a))
+    expect(list[0]).toMatchObject({ id: id(101), reaction_count: 5, reaction_counts: { laugh: 0, heart: 1, thumb: 4, fire: 0 }, author_name: 'Анна', article_title: 'Публичная' })
+    expect(list.map((item) => item.id)).toEqual([id(101), id(134)])
+    expect(list.map((item) => item.id)).not.toContain(id(150))
     expect(list.map((item) => item.id)).not.toContain(id(106))
     expect(list.map((item) => item.id)).not.toContain(id(107))
   })
@@ -112,7 +122,7 @@ describe('discussion: GET /v1/comments/popular', () => {
   it('автор и администратор видят закрытую статью, скрытые и черновики — нет', async () => {
     for (const viewer of ['author', 'admin']) {
       const list = await popular(viewer)
-      expect(list.slice(0, 2).map((item) => item.article_slug)).toEqual(['members', 'author'])
+      expect(list.slice(0, 2).map((item) => item.article_slug)).toEqual(['author', 'members'])
       expect(list.map((item) => item.article_slug)).not.toContain('hidden')
       expect(list.map((item) => item.article_slug)).not.toContain('draft')
     }
@@ -121,8 +131,9 @@ describe('discussion: GET /v1/comments/popular', () => {
   it('автор без профиля получает нейтральное имя', async () => {
     const response = await app.inject({ method: 'GET', url: '/v1/comments/popular', headers: { 'x-test-viewer': 'guest' } })
     expect(response.statusCode).toBe(200)
-    await database.db.insert(comments).values({ id: id(300), article_id: id(1), author_id: OTHER, body: 'Лидер', reaction_count: 1000 })
-    expect((await popular('guest'))[0]).toMatchObject({ id: id(300), author_name: 'Участник', author_avatar_url: null })
+    await database.db.insert(comments).values({ id: id(300), article_id: id(1), author_id: OTHER, body: 'Новый', reaction_count: 1000, created_at: new Date('2026-10-09T10:00:00Z') })
+    await database.db.insert(reactions).values({ user_id: AUTHOR, target_type: 'comment', target_id: id(300), kind: 'fire' })
+    expect((await popular('guest'))[0]).toMatchObject({ id: id(300), author_name: 'Участник', author_avatar_url: null, reaction_count: 1, reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 1 } })
   })
 
   it('toExcerpt схлопывает пробелы и режет по границе слова', () => {

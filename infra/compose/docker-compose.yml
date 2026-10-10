@@ -117,12 +117,18 @@ services:
       timeout: 3s
       retries: 20
 
+  # Браузер берёт картинки и вложения прямо по S3_PUBLIC_URL, поэтому объекты bucket читаются без ключа.
+  # Только s3:GetObject: пресет `mc anonymous set download` добавляет ещё и ListBucket — список всех файлов.
   minio-init:
     image: pgsty/mc:RELEASE.2026-09-16T00-00-00Z
     restart: "no"
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && mc mb --ignore-existing local/media
+      - >-
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        && mc mb --ignore-existing local/media
+        && echo '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::media/*"]}]}' > /tmp/media-policy.json
+        && mc anonymous set-json /tmp/media-policy.json local/media
     environment:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER:?}"
       MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?}"

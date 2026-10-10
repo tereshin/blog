@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { reactionAppearancesSchema } from '@blog/contracts'
-import type { ReactionAppearances } from '@blog/contracts'
+import { profileStatusIconsSchema, reactionAppearancesSchema } from '@blog/contracts'
+import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import type { Database } from '@blog/broker'
 import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
@@ -14,6 +14,7 @@ export type SettingsRow = {
   registration_open: boolean
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
+  profile_status_icons: ProfileStatusIcon[]
 }
 
 const columns = {
@@ -24,10 +25,15 @@ const columns = {
   registration_open: settings.registration_open,
   new_members_can_publish: settings.new_members_can_publish,
   reaction_appearances: settings.reaction_appearances,
+  profile_status_icons: settings.profile_status_icons,
 }
 
-function readRow(row: Omit<SettingsRow, 'reaction_appearances'> & { reaction_appearances: ReactionAppearances }): SettingsRow {
-  return { ...row, reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances) }
+function readRow(row: SettingsRow): SettingsRow {
+  return {
+    ...row,
+    reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances),
+    profile_status_icons: profileStatusIconsSchema.parse(row.profile_status_icons),
+  }
 }
 
 export type SettingsRepository = {

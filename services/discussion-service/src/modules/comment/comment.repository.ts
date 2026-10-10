@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, exists, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import {
@@ -32,9 +32,21 @@ export function createCommentRepository(db: NodePgDatabase): CommentRepository {
         .innerJoin(articles_copy, eq(articles_copy.article_id, comments.article_id))
         .leftJoin(users_copy, eq(users_copy.user_id, comments.author_id))
         .where(
-          and(eq(comments.status, 'visible'), ne(comments.body, ''), readableArticleWhere(viewer)),
+          and(
+            eq(comments.status, 'visible'),
+            ne(comments.body, ''),
+            readableArticleWhere(viewer),
+            exists(
+              db
+                .select({ value: sql`1` })
+                .from(reactions)
+                .where(
+                  and(eq(reactions.target_type, 'comment'), eq(reactions.target_id, comments.id)),
+                ),
+            ),
+          ),
         )
-        .orderBy(desc(comments.reaction_count), desc(comments.created_at), desc(comments.id))
+        .orderBy(desc(comments.created_at), desc(comments.id))
         .limit(limit)
     },
 

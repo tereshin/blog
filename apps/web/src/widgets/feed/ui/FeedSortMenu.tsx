@@ -1,5 +1,5 @@
 import { useT } from '@/shared/i18n'
-import { Button, ChevronDownIcon, Menu } from '@/shared/ui'
+import { Link, ChevronDownIcon, Menu } from '@/shared/ui'
 
 type FeedSortMenuProps = {
   sort: 'fresh' | 'popular'
@@ -11,10 +11,10 @@ export function FeedSortMenu({ sort, onChange }: FeedSortMenuProps) {
   return (
     <div className="px-3 sm:px-4">
       <Menu>
-        <Button variant="ghost" className="gap-2 px-2 text-muted">
+        <Link className="no-underline text-sm gap-1 opacity-80 hover:opacity-100 transition-opacity">
           {t(`profile.sort.${sort}`)}
           <ChevronDownIcon width={16} height={16} />
-        </Button>
+        </Link>
         <Menu.Content
           aria-label={t('profile.sort.fresh')}
           selectionMode="single"

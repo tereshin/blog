@@ -1,4 +1,4 @@
-import { reactionAppearancesSchema } from '@blog/contracts'
+import { profileStatusIconsSchema, reactionAppearancesSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { http } from '@/shared/api'
 
@@ -10,6 +10,7 @@ export const adminSettingsSchema = z.object({
   registration_open: z.boolean(),
   new_members_can_publish: z.boolean(),
   reaction_appearances: reactionAppearancesSchema,
+  profile_status_icons: profileStatusIconsSchema.default([]),
 })
 
 export type AdminSettings = z.infer<typeof adminSettingsSchema>

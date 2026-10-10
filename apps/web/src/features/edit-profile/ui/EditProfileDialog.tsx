@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import type { ReactNode } from 'react'
+import { useId, useState } from 'react'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
@@ -9,18 +8,13 @@ import { useUpdateProfile } from '../model/useUpdateProfile.ts'
 export type ProfileDraft = {
   display_name: string
   bio: string
-  avatar_url: string | null
-  cover_url: string | null
   slug: string
-  saved_slug: string
 }
 
 type EditProfileDialogProps = {
   is_open: boolean
   onOpenChange: (is_open: boolean) => void
   initial: ProfileDraft
-  /** Слот загрузки: соседний feature не импортируется отсюда (границы слоёв). */
-  upload: (field: 'avatar' | 'cover', onUploaded: (url: string) => void) => ReactNode
 }
 
 const FIELD_ERROR: Record<string, MessageKey> = {
@@ -30,30 +24,20 @@ const FIELD_ERROR: Record<string, MessageKey> = {
   slug_invalid: 'profile.error.invalid',
 }
 
-export function EditProfileDialog({ is_open, onOpenChange, initial, upload }: EditProfileDialogProps) {
+export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfileDialogProps) {
   const { t } = useT()
   const update = useUpdateProfile()
+  const form_id = useId()
   const [draft, setDraft] = useState(initial)
   const [field_error, setFieldError] = useState<string | null>(null)
 
-  const snapshot = `${initial.display_name}\0${initial.slug}\0${initial.avatar_url ?? ''}`
-  const [seen, setSeen] = useState({ is_open, snapshot })
-  if (seen.is_open !== is_open || seen.snapshot !== snapshot) {
-    setSeen({ is_open, snapshot })
-    if (!is_open) {
-      setDraft(initial)
-      setFieldError(null)
-    }
-  }
-
   const save = () => {
+    if (update.isPending) return
     setFieldError(null)
     update.mutate(
       {
         display_name: draft.display_name,
         bio: draft.bio,
-        avatar_url: draft.avatar_url,
-        cover_url: draft.cover_url,
         slug: draft.slug.length > 0 ? draft.slug : null,
       },
       {
@@ -76,6 +60,7 @@ export function EditProfileDialog({ is_open, onOpenChange, initial, upload }: Ed
       </Dialog.Header>
       <Dialog.Body>
         <form
+          id={form_id}
           className="flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault()
@@ -102,25 +87,25 @@ export function EditProfileDialog({ is_open, onOpenChange, initial, upload }: Ed
               className="min-h-24 rounded-lg border border-separator bg-background px-3 py-2"
             />
           </label>
-          {upload('avatar', (url) => setDraft((current) => ({ ...current, avatar_url: url })))}
-          {upload('cover', (url) => setDraft((current) => ({ ...current, cover_url: url })))}
           <label className="flex flex-col gap-1 text-sm">
             {t('profile.slug')}
             <input
               value={draft.slug}
               maxLength={40}
+              minLength={3}
+              pattern="[a-zA-Z0-9][a-zA-Z0-9\-]{1,38}[a-zA-Z0-9]"
               aria-invalid={slug_message ? true : undefined}
               onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
               className="rounded-lg border border-separator bg-background px-3 py-2"
             />
             <span className="text-muted">{t('profile.slug_hint')}</span>
-            {draft.saved_slug ? <span className="text-muted">{t('profile.slug_current', { slug: draft.saved_slug })}</span> : null}
-            {slug_message ? <span className="text-danger">{slug_message}</span> : null}
+            {initial.slug ? <span className="text-muted">{t('profile.slug_current', { slug: initial.slug })}</span> : null}
+            {slug_message ? <span role="alert" className="text-danger">{slug_message}</span> : null}
           </label>
         </form>
       </Dialog.Body>
       <Dialog.Footer>
-        <Button variant="primary" isDisabled={update.isPending || draft.display_name.trim().length === 0} onPress={save}>
+        <Button type="submit" form={form_id} variant="primary" isDisabled={update.isPending || draft.display_name.trim().length === 0}>
           {update.isPending ? t('profile.saving') : t('profile.save')}
         </Button>
         <Button variant="ghost" slot="close">

@@ -75,7 +75,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const brand = settings?.name || t('common.site_name_fallback')
 
   return (
-    <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-1 border-b border-separator bg-background px-2 sm:gap-2 sm:px-4 [&_.button--icon-only]:max-sm:size-9 [&_.button--icon-only]:max-sm:min-w-9">
+    <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-1 px-2 sm:gap-2 sm:px-4 [&_.button--icon-only]:max-sm:size-9 [&_.button--icon-only]:max-sm:min-w-9">
       <Button
         variant="ghost"
         isIconOnly

@@ -44,6 +44,11 @@ export function parseSeedRequest(argv: readonly string[]): SeedRequest {
   return { env, profile: profile as SeedProfile, anchor }
 }
 
+/** В local контейнеры работают из исходников (dev-образ без `dist`), в dev — из собранного образа. */
+function seedCommand(env: Environment): string[] {
+  return env === 'local' ? ['tsx', 'src/seed.ts'] : ['node', 'dist/seed.js']
+}
+
 /** План: по одному одноразовому контейнеру на сервис, в порядке `SEED_SERVICES`. Стек уже поднят, зависимости не трогаем. */
 export function planSeed(request: SeedRequest, services: readonly string[] = SEED_SERVICES): SeedStep[] {
   if (request.env === 'prod') throw new SeedForbiddenError()
@@ -54,8 +59,7 @@ export function planSeed(request: SeedRequest, services: readonly string[] = SEE
       '--rm',
       '--no-deps',
       service,
-      'node',
-      'dist/seed.js',
+      ...seedCommand(request.env),
       '--profile',
       request.profile,
       ...(request.anchor ? [`--anchor=${request.anchor}`] : []),

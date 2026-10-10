@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { CommentItem } from '@/entities/comment'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState } from '@/shared/ui'
+import { BookmarkIcon, Button, EmptyState, ErrorState } from '@/shared/ui'
 import { useSavedComments } from '../model/useSavedComments.ts'
 import { CommentOverflowMenu } from './CommentOverflowMenu.tsx'
 export function SavedComments() {
@@ -10,7 +10,7 @@ export function SavedComments() {
   if (query.isPending) return <p role="status">{t('common.loading')}</p>
   if (query.isError)
     return <ErrorState title={t('comment.load_error')} onRetry={() => void query.refetch()} />
-  if (!items.length) return <EmptyState title={t('comment.saved_empty')} />
+  if (!items.length) return <EmptyState title={t('comment.saved_empty')} description={t('comment.saved_empty_hint')} icon={<BookmarkIcon width={28} height={28} />} />
   return (
     <div className="flex flex-col gap-3">
       {items.map((item) => (

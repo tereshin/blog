@@ -31,6 +31,7 @@ const body = {
   registration_open: false,
   new_members_can_publish: false,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  profile_status_icons: [],
 }
 
 describe('content: настройки площадки', () => {
@@ -67,6 +68,7 @@ describe('content: настройки площадки', () => {
       locale: 'ru',
       about: '',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  profile_status_icons: [],
     })
   })
 
@@ -108,6 +110,7 @@ describe('content: настройки площадки', () => {
       locale: 'en',
       about: 'О проекте',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  profile_status_icons: [],
     })
     const events = await database.db.select().from(outbox).where(eq(outbox.name, 'content.settings.updated'))
     expect(events).toHaveLength(1)
@@ -249,4 +252,22 @@ describe('content: настройки площадки', () => {
     expect(guest.json()).toMatchObject({ reaction_appearances: saved_appearances })
     expect(guest.json()).not.toHaveProperty('registration_open')
   })
+  it('иконки статусов сохраняются отдельно от реакций и публикуются для участников', async () => {
+    const icon = { id: '44444444-4444-4444-8444-444444444444', label: 'В отпуске', image_url: `${MEDIA}/holiday.png` }
+    const response = await app.inject({
+      method: 'PUT', url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: { ...body, profile_status_icons: [icon] },
+    })
+    expect(response.statusCode).toBe(200)
+    const public_response = await app.inject({ method: 'GET', url: '/v1/settings' })
+    expect(public_response.json()).toMatchObject({ profile_status_icons: [icon], reaction_appearances: body.reaction_appearances })
+    const denied = await app.inject({
+      method: 'PUT', url: '/v1/settings', headers: { 'x-test-viewer': 'superadmin' },
+      payload: { ...body, profile_status_icons: [{ ...icon, image_url: 'https://other.test/icon.png' }] },
+    })
+    expect(denied.statusCode).toBe(422)
+    expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json().profile_status_icons).toEqual([icon])
+  })
+
 })

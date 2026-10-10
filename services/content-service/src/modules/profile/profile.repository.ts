@@ -19,6 +19,7 @@ function selection(viewer_id: string | undefined) {
     bio: profiles.bio,
     avatar_url: profiles.avatar_url,
     cover_url: profiles.cover_url,
+    status_icon_id: profiles.status_icon_id,
     slug: profiles.slug,
     reputation: profiles.reputation,
     created_at: users_copy.created_at,
@@ -36,6 +37,7 @@ function toRecord(row: {
   bio: string | null
   avatar_url: string | null
   cover_url: string | null
+  status_icon_id: string | null
   slug: string | null
   reputation: number
   created_at: Date
@@ -66,33 +68,28 @@ export function createProfileRepository(db: NodePgDatabase): ProfileRepository {
       return (db as Database).transaction(async (tx) => {
         const database = tx as Database
         if (input.slug === null) await releaseSlug(database, 'profile', user_id)
-        else await replaceSlug(database, input.slug, 'profile', user_id)
+        else if (input.slug !== undefined) await replaceSlug(database, input.slug, 'profile', user_id)
         const [row] = await database
           .update(profiles)
-          .set({
-            display_name: input.display_name,
-            bio: input.bio,
-            avatar_url: input.avatar_url,
-            cover_url: input.cover_url,
-            slug: input.slug,
-          })
+          .set(input)
           .where(eq(profiles.user_id, user_id))
           .returning({ user_id: profiles.user_id })
         if (!row) return null
-        await appendProfileUpdated(database, {
-          user_id,
-          display_name: input.display_name,
-          avatar_url: input.avatar_url,
-          slug: input.slug,
-          correlation_id,
-        })
         const [fresh] = await database
           .select(selection(user_id))
           .from(profiles)
           .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
           .where(eq(profiles.user_id, user_id))
           .limit(1)
-        return fresh ? toRecord(fresh) : null
+        if (!fresh) return null
+        await appendProfileUpdated(database, {
+          user_id,
+          display_name: fresh.display_name,
+          avatar_url: fresh.avatar_url,
+          slug: fresh.slug,
+          correlation_id,
+        })
+        return toRecord(fresh)
       })
     },
   }

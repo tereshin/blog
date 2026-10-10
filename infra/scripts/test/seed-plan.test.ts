@@ -14,6 +14,11 @@ describe('seed-plan: порядок и состав', () => {
   it('по одному одноразовому контейнеру на сервис, без зависимостей', () => {
     const steps = planSeed(parseSeedRequest(['local', 'small']))
     expect(steps.map((step) => step.service)).toEqual([...SEED_SERVICES])
+    expect(steps[0]?.compose_args).toEqual(['run', '--rm', '--no-deps', 'identity', 'tsx', 'src/seed.ts', '--profile', 'small'])
+  })
+
+  it('в dev seed запускается из собранного образа', () => {
+    const steps = planSeed(parseSeedRequest(['dev', 'small']))
     expect(steps[0]?.compose_args).toEqual(['run', '--rm', '--no-deps', 'identity', 'node', 'dist/seed.js', '--profile', 'small'])
   })
 

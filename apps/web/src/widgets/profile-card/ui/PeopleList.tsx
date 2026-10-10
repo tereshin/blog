@@ -35,7 +35,7 @@ export function PeopleList({ title_key, query_key, load }: PeopleListProps) {
       <h1 className="px-1 text-xl font-semibold">{title}</h1>
       {people.isPending ? <ProfileCard.Skeleton /> : null}
       {people.isError ? <ErrorState title={t('error.unknown')} onRetry={() => void people.refetch()} /> : null}
-      {people.data && items.length === 0 ? <EmptyState title={t('profile.list_empty')} /> : null}
+      {people.data && items.length === 0 ? <EmptyState title={t('profile.list_empty')} description={t('profile.list_empty_hint')} /> : null}
       {items.length > 0 ? (
         <ul>
           {items.map((user) => (

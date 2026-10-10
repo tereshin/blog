@@ -8,7 +8,7 @@ export function CommentReportQueue() {
   if (query.isPending) return <p role="status">{t('common.loading')}</p>
   if (query.isError)
     return <ErrorState title={t('error.unknown')} onRetry={() => void query.refetch()} />
-  if (!items.length) return <EmptyState title={t('admin.moderation.reports_empty')} />
+  if (!items.length) return <EmptyState title={t('admin.moderation.reports_empty')} description={t('admin.moderation.reports_empty_hint')} />
   return (
     <div className="flex flex-col gap-4">
       {items.map((item) => (

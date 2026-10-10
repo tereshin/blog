@@ -1,13 +1,14 @@
 import { delay, HttpResponse, http } from 'msw'
 import { readMockViewer } from './session.ts'
 
-type ProfileBody = {
+type ProfileBody = Partial<{
   display_name: string
   bio: string | null
   avatar_url: string | null
   cover_url: string | null
   slug: string | null
-}
+  status_icon_id: string | null
+}>
 
 const READER = '0b3a4c50-3333-4c33-8c33-000000000005'
 const ANNA = '0b3a4c50-3333-4c33-8c33-000000000001'
@@ -19,6 +20,7 @@ const profile = {
   bio: null as string | null,
   avatar_url: null as string | null,
   cover_url: null as string | null,
+  status_icon_id: null as string | null,
   slug: 'reader' as string | null,
   reputation: 0,
   created_at: '2024-01-01T00:00:00.000Z',
@@ -122,11 +124,7 @@ export const profileHandlers = [
     if (body.slug === 'taken') {
       return HttpResponse.json({ code: 'slug_taken', title: 'Этот адрес уже занят', status: 409 }, { status: 409 })
     }
-    profile.display_name = body.display_name
-    profile.bio = body.bio
-    profile.avatar_url = body.avatar_url
-    profile.cover_url = body.cover_url
-    profile.slug = body.slug
+    Object.assign(profile, body)
     return HttpResponse.json(profile)
   }),
   http.post('*/v1/media', () =>

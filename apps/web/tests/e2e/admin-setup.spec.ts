@@ -33,7 +33,7 @@ test.describe('Настройки площадки', () => {
   test('загруженный логотип виден гостю в шапке', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'superadmin'))
     await page.goto('/admin/settings')
-    await page.locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG })
+    await page.getByRole('button', { name: 'Логотип', exact: true }).locator('..').locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG })
     await page.getByRole('button', { name: 'Сохранить' }).click()
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'guest'))
     await page.goto('/')
@@ -71,4 +71,23 @@ test.describe('Настройки площадки', () => {
     if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
     if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
   })
+  test('суперадминистратор загружает иконку статуса, участник видит её рядом с именем', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!window.localStorage.getItem('mock_viewer')) window.localStorage.setItem('mock_viewer', 'superadmin')
+    })
+    await page.goto('/admin/settings')
+    const field = page.getByRole('group', { name: 'Иконки статусов профиля' })
+    await field.locator('input[type="file"]').setInputFiles({ name: 'status.png', mimeType: 'image/png', buffer: PNG })
+    await field.getByLabel('Название статуса', { exact: true }).fill('В отпуске')
+    const saved = page.waitForResponse((response) => response.url().endsWith('/v1/settings') && response.request().method() === 'PUT')
+    await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
+    const response = await saved
+    expect(response.ok()).toBe(true)
+    expect(response.request().postDataJSON().profile_status_icons).toEqual([expect.objectContaining({ label: 'В отпуске' })])
+    await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'member'))
+    await page.goto('/u/reader')
+    await page.getByRole('button', { name: 'Выбрать статус', exact: true }).click()
+    await expect(page.getByRole('menuitemradio', { name: 'В отпуске', exact: true })).toBeVisible()
+  })
+
 })

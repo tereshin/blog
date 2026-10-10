@@ -36,9 +36,11 @@ export {
   localeSchema,
   publicSettingsSchema,
   reactionAppearancesSchema,
+  profileStatusIconSchema,
+  profileStatusIconsSchema,
   updateSettingsSchema,
 } from './settings.ts'
-export type { AdminSettings, PublicSettings, ReactionAppearance, ReactionAppearances, UpdateSettings } from './settings.ts'
+export type { AdminSettings, ProfileStatusIcon, PublicSettings, ReactionAppearance, ReactionAppearances, UpdateSettings } from './settings.ts'
 export { EMBED_SERVICES, blocksDocumentSchema, editorBlockSchema, embedServiceSchema, listItemSchema } from './blocks.ts'
 export type { BlocksDocument, EditorBlock, ListItem } from './blocks.ts'
 export { articleCardsSchema, articleDraftListSchema, articleDraftSchema, articleSchema, articleStatusSchema, articleUnavailableSchema, createArticleSchema, updateArticleSchema } from './articles.ts'

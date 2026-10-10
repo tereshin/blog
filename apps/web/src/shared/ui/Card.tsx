@@ -5,7 +5,7 @@ import { cn } from '@/shared/lib'
 type CardProps = ComponentProps<typeof HeroCard>
 
 function CardRoot({ className, ...rest }: CardProps) {
-  return <HeroCard className={cn('rounded-card', className)} {...rest} />
+  return <HeroCard className={cn('rounded-card shadow-none', className)} {...rest} />
 }
 
 type CardPartProps<TKey extends 'Header' | 'Content' | 'Footer'> = ComponentProps<(typeof HeroCard)[TKey]>

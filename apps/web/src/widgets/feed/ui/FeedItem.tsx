@@ -19,12 +19,15 @@ type FeedItemProps = {
   viewer_state?: ArticleViewerState
   slots: FeedSlots
   onExpanded?: (article_id: string) => void
+  /** Полоса над автором внутри карточки; лента ставит её только первой карточке. */
+  lead?: ReactNode
 }
 
 /** Карточка ленты в порядке FR-060: автор, заголовок, фрагмент, изображение, раскрытие, реакции, действия, комментарий. */
-export function FeedItem({ article, viewer_state = EMPTY_VIEWER_STATE, slots, onExpanded }: FeedItemProps) {
+export function FeedItem({ article, viewer_state = EMPTY_VIEWER_STATE, slots, onExpanded, lead }: FeedItemProps) {
   return (
     <ArticleCard article={article}>
+      <ArticleCard.Lead>{lead}</ArticleCard.Lead>
       <ArticleCard.Header follow={slots.renderFollow?.(article)} menu={slots.renderMenu?.(article)} />
       <ArticleCard.Title />
       <ArticleCard.Excerpt />

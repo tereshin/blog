@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw'
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
-import type { ReactionAppearances } from '@blog/contracts'
+import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
 import settings_fixture from '../fixtures/settings.json'
 import topics_fixture from '../fixtures/topics.json'
@@ -16,6 +16,7 @@ type SiteSettings = {
   registration_open: boolean
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
+  profile_status_icons: ProfileStatusIcon[]
 }
 
 type SiteTopic = {
@@ -39,6 +40,7 @@ function initialState(): SiteState {
       registration_open: true,
       new_members_can_publish: true,
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+      profile_status_icons: [],
     },
     topics: topics_fixture.map((topic) => ({ ...topic, status: topic.status as SiteTopic['status'] })),
   }
@@ -62,6 +64,7 @@ function publicSettings(settings: SiteSettings) {
     locale: settings.locale,
     about: settings.about,
     reaction_appearances: settings.reaction_appearances,
+    profile_status_icons: settings.profile_status_icons,
   }
 }
 

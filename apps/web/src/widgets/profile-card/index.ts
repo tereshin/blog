@@ -1,5 +1,5 @@
 export { OwnerActions } from './ui/OwnerActions.tsx'
 export { PeopleList } from './ui/PeopleList.tsx'
 export { ProfileCard } from './ui/ProfileCard.tsx'
-export { ReputationHint } from './ui/ReputationHint.tsx'
+export { ProfileStatus } from './ui/ProfileStatus.tsx'
 export { UserCommentRow } from './ui/UserCommentRow.tsx'

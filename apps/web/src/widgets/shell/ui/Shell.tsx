@@ -41,21 +41,21 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <header role="banner" data-mount-id={mount_id} className="sticky top-0 z-20 h-14 bg-background">
+      <header role="banner" data-mount-id={mount_id} className="sticky top-0 z-20 h-14 bg-[var(--surface)]">
         {header}
       </header>
       <div className="mx-auto w-full min-[768px]:grid min-[768px]:grid-cols-[220px_minmax(0,1fr)] min-[768px]:gap-x-4 min-[1280px]:w-[1280px] min-[1280px]:grid-cols-[220px_minmax(0,1fr)_320px]">
         <nav
           aria-label={t('shell.navigation')}
           data-shell-scroll="left"
-          className="sticky top-14 hidden max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[768px]:block"
+          className="sticky pt-2 top-14 hidden max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[768px]:block"
         >
           {left}
         </nav>
-        <main className="min-w-0">{center}</main>
+        <main className="min-w-0 pt-4">{center}</main>
         <aside
           aria-label={t('shell.popular_comments')}
-          className="sticky top-14 hidden w-[320px] max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[1280px]:block"
+          className="sticky pt-4 top-14 hidden w-[320px] max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[1280px]:block"
         >
           {right}
         </aside>

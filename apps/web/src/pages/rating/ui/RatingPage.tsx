@@ -25,7 +25,7 @@ export default function RatingPage() {
     <div className="flex flex-col gap-3">
       <h1 className="px-1 text-xl font-semibold">{t('rating.title')}</h1>
       {rating.isError ? <ErrorState title={t('error.unknown')} onRetry={() => void rating.refetch()} /> : null}
-      {rating.data && items.length === 0 ? <EmptyState title={t('rating.empty')} /> : null}
+      {rating.data && items.length === 0 ? <EmptyState title={t('rating.empty')} description={t('rating.empty_hint')} /> : null}
       {items.length > 0 ? (
         <ol>
           {items.map((user) => (

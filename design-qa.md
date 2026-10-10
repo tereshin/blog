@@ -33,3 +33,32 @@ Compared the full profile reference and desktop rendering together; compared the
 3. Fixed profile counter updates and rollback by including profile article queries in the existing reaction/bookmark mutation cache updates. Tested server-returned counts and retention across tab switches.
 
 No remaining P0/P1/P2 visual findings in the requested scope. Final web production build passed (icon check, TypeScript, Vite). Latest profile/profile-topic E2E run: 23 passed, 1 skipped. Web unit tests: 105 passed across 17 files. Targeted ESLint passed.
+
+
+## Popular comments — supplied reference, 2026-10-10
+
+final result: passed
+
+Scope: match the sidebar composition and styling while keeping two latest genuinely reacted comments from the live API.
+
+Source visual truth: `/var/folders/zr/h4kxlfwj00sgt053kx4gz3wm0000gn/T/TemporaryItems/NSIRD_screencaptureui_YSBteS/Screenshot 2026-10-10 at 17.14.24.png`. Source is a cropped sidebar at approximately 2x density; the 600 × 738 px card is normalized to 300 × 369 CSS px for comparison. Existing product sidebar remains 320 CSS px wide.
+
+Implementation screenshots: `/tmp/blog-popular-comments-design/before.png`, `after.png`, `after-full.png`, `light.png`. Browser viewport: 1280 × 800 CSS px. Final sidebar crop: 320 × 280 screenshot/CSS px. State: guest, main feed, loaded, dark/light. Short live excerpts, API authors/avatars and actual counts differ from the reference; consequently card height differs. Reference people, comments and reactions are not inserted into live data.
+
+Combined comparison evidence: `/tmp/blog-popular-comments-design/comparison.png` places the normalized reference and actual browser crop together. Full-page context is in `after-full.png`; the combined image shows the entire target component, including readable header and reaction details, so another focused crop was unnecessary.
+
+Comparison history:
+1. P1: article attribution was below the author and prefixed by quotes; reaction types were separate numbered pills. Fixed attribution beside the name, article on its own line without quotes, and actual glyphs followed by the localized aggregate count.
+2. P2: extra item inset, undersized body/glyphs, incorrect surface and spacing. Fixed aligned 16px card insets, 36px avatars, 13px/18px author and article, 15px/22px body, 20px item gap, #222 dark surface and #c4c6c8 text.
+3. P2: the shared radius token overrode a rounded utility. Browser inspection caught 16px instead of 10px; scoped --radius-card:10px fixes it. Recaptured after the fix. Reduced heading and attribution to medium weight for closer reference typography.
+
+Required fidelity surfaces:
+- Typography: existing system sans retained, 15px heading/body and 13px metadata; single-line name/article truncation, body clamped to three lines. Exact original font was not supplied; residual font rasterization differences are P3.
+- Layout: source header composition, full-width text beneath the identity row, flat reaction summary, matched padding and radius. Live single-line excerpts naturally shorten the card.
+- Colors: dark reference surface and foreground matched locally; existing light tokens retained and inspected.
+- Assets: existing API avatars and configured reaction appearances retained. Only actual nonzero reaction kinds render. Source-specific people and decorative glyph choices are intentional content differences.
+- Copy: localized UI labels retained; aggregate singular/plural count uses real API totals.
+
+Validation: TypeScript and targeted ESLint passed. In-app browser verified two rows, text below header at identical x/width, reactions below text, absence of pills, correct radius/background, light theme and successful link navigation to the exact comment. No browser console errors observed. Existing E2E regression updated for the aggregate summary.
+
+No remaining actionable P0/P1/P2 findings in this scoped sidebar change.

@@ -16,6 +16,7 @@ export const profileSchema = z.strictObject({
   bio: z.string().nullable(),
   avatar_url: z.string().nullable(),
   cover_url: z.string().nullable(),
+  status_icon_id: z.uuid().nullable().default(null),
   slug: z.string().nullable(),
   reputation: z.number().int(),
   created_at: z.iso.datetime(),
@@ -27,12 +28,16 @@ export const profileSchema = z.strictObject({
 })
 export type Profile = z.infer<typeof profileSchema>
 
+/** Частичное обновление: смена изображения не перезаписывает остальные поля профиля. */
 export const updateProfileSchema = z.strictObject({
   display_name: z.string().trim().min(1).max(50),
   bio: z.string().max(500).nullable(),
   avatar_url: z.string().nullable(),
   cover_url: z.string().nullable(),
   slug: z.string().regex(PROFILE_SLUG_PATTERN).nullable(),
+  status_icon_id: z.uuid().nullable(),
+}).partial().refine((input) => Object.values(input).some((value) => value !== undefined), {
+  message: 'Укажите хотя бы одно поле профиля',
 })
 export type UpdateProfile = z.infer<typeof updateProfileSchema>
 

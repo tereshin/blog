@@ -42,8 +42,10 @@ describe('остальные мапперы', () => {
       article_slug: 'zagolovok',
       excerpt: 'Текст',
       reaction_count: 3,
+      reaction_counts: { laugh: 0, heart: 2, thumb: 1, fire: 0 },
     })
     expect(model.href).toBe('/p/zagolovok#comment-c1')
+    expect(model.reaction_counts).toEqual({ laugh: 0, heart: 2, thumb: 1, fire: 0 })
   })
 
   it('тема заполняет необязательные поля и даёт устойчивый оттенок', () => {

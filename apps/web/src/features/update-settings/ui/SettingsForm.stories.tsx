@@ -13,6 +13,7 @@ const initial: AdminSettings = {
   registration_open: true,
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
+  profile_status_icons: [],
 }
 
 function upload({ label, onUploaded }: { label: string; onUploaded: (url: string) => void }) {

@@ -23,6 +23,7 @@ export function toProfile(row: ProfileRecord, viewer: ServiceContext, now: Date)
     bio: row.bio,
     avatar_url: row.avatar_url,
     cover_url: row.cover_url,
+    status_icon_id: row.status_icon_id,
     slug: row.slug,
     reputation: row.reputation,
     created_at: row.created_at.toISOString(),
@@ -48,7 +49,7 @@ function assertOwnedUrl(value: string | null, bases: readonly string[], field: s
 
 export function createProfileService(
   repository: ProfileRepository,
-  options: { media_bases: readonly string[]; now?: () => Date },
+  options: { media_bases: readonly string[]; isStatusIconAvailable?: (id: string) => Promise<boolean>; now?: () => Date },
 ): ProfileService {
   const now = options.now ?? (() => new Date())
 
@@ -64,10 +65,12 @@ export function createProfileService(
       if (!viewer.user_id) throw new UnauthorizedError()
       if (viewer.is_restricted) throw new RestrictedError()
       if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
-      const bio = input.bio === '' ? null : input.bio
-      const next = { ...input, bio }
-      assertOwnedUrl(next.avatar_url, options.media_bases, 'avatar_url')
-      assertOwnedUrl(next.cover_url, options.media_bases, 'cover_url')
+      const next = { ...input, ...(input.bio !== undefined ? { bio: input.bio === '' ? null : input.bio } : {}) }
+      if (next.avatar_url !== undefined) assertOwnedUrl(next.avatar_url, options.media_bases, 'avatar_url')
+      if (next.cover_url !== undefined) assertOwnedUrl(next.cover_url, options.media_bases, 'cover_url')
+      if (next.status_icon_id && !(await options.isStatusIconAvailable?.(next.status_icon_id))) {
+        throw new ValidationError({ message: 'Этот статус недоступен', details: { field: 'status_icon_id' } })
+      }
       const row = await repository.update(viewer.user_id, next, correlation_id)
       if (!row) throw new NotFoundError({ message: 'Профиль не найден' })
       return toProfile(row, viewer, now())

@@ -119,16 +119,21 @@ export function createCommentService(
   return {
     async getPopular(viewer) {
       const rows = await repository.findPopular(viewer, POPULAR_COMMENTS_LIMIT)
-      return rows.map((row) => ({
-        id: row.id,
-        author_name: row.author_name ?? ANONYMOUS_NAME,
-        author_avatar_url: row.author_avatar_url,
-        article_id: row.article_id,
-        article_title: row.article_title,
-        article_slug: row.article_slug,
-        excerpt: toExcerpt(row.body),
-        reaction_count: row.reaction_count,
-      }))
+      const facts = indexCounts(await repository.countReactions(rows.map((row) => row.id)))
+      return rows.map((row) => {
+        const reaction_counts = facts.get(row.id) ?? emptyCounts()
+        return {
+          id: row.id,
+          author_name: row.author_name ?? ANONYMOUS_NAME,
+          author_avatar_url: row.author_avatar_url,
+          article_id: row.article_id,
+          article_title: row.article_title,
+          article_slug: row.article_slug,
+          excerpt: toExcerpt(row.body),
+          reaction_counts,
+          reaction_count: REACTION_KINDS.reduce((sum, kind) => sum + reaction_counts[kind], 0),
+        }
+      })
     },
 
     async listForArticle(viewer, article_id, query) {

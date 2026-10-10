@@ -27,6 +27,7 @@ function Queue({ filter }: { filter: 'reported' | 'hidden' }) {
   if (queue.data.length === 0) {
     return (
       <EmptyState
+        description={t(filter === 'reported' ? 'admin.moderation.reports_empty_hint' : 'admin.moderation.hidden_empty_hint')}
         title={
           filter === 'reported'
             ? t('admin.moderation.reports_empty')
