@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const notificationDtoSchema = z.object({
   id: z.string(),
-  kind: z.enum(['comment', 'reply', 'reaction', 'message', 'moderation']),
+  kind: z.enum(['comment', 'reply', 'reaction', 'message', 'moderation', 'mention']),
   article_id: z.string().nullable(),
   article_slug: z.string().nullable(),
   article_title: z.string().nullable(),
@@ -29,7 +29,7 @@ export function toNotification(dto: z.infer<typeof notificationDtoSchema>): Noti
   const href =
     dto.kind === 'message' && dto.conversation_id
       ? `/messages/${encodeURIComponent(dto.conversation_id)}`
-      : dto.kind === 'comment' || dto.kind === 'reply'
+      : dto.kind === 'comment' || dto.kind === 'reply' || dto.kind === 'mention'
         ? comment_href
         : article_href
   return { ...dto, href }

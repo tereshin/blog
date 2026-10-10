@@ -20,22 +20,24 @@ function ArticleViewRoot({ article, children }: ArticleViewRootProps) {
   )
 }
 
-function Reach({ children }: { children?: ReactNode }) {
-  if (!children) return null
-  return <div>{children}</div>
-}
-
 type BylineProps = { follow?: ReactNode; menu?: ReactNode }
 
 function Byline({ follow, menu }: BylineProps) {
   const article = useArticleViewModel()
   return (
     <div className="flex items-center gap-3">
-      <Link to={article.author.href} className="shrink-0 rounded-avatar outline-offset-2" aria-label={article.author.display_name}>
+      <Link
+        to={article.author.href}
+        className="shrink-0 rounded-avatar outline-offset-2"
+        aria-label={article.author.display_name}
+      >
         <Avatar src={article.author.avatar_url} name={article.author.display_name} size="md" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Link to={article.author.href} className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline">
+        <Link
+          to={article.author.href}
+          className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline"
+        >
           {article.author.display_name}
         </Link>
         <div className="flex min-w-0 items-center gap-1 text-xs text-muted">
@@ -96,4 +98,10 @@ function Discussion({ children }: { children?: ReactNode }) {
   )
 }
 
-export const ArticleView = Object.assign(ArticleViewRoot, { Reach, Byline, Title, Body, Reactions, Discussion })
+export const ArticleView = Object.assign(ArticleViewRoot, {
+  Byline,
+  Title,
+  Body,
+  Reactions,
+  Discussion,
+})

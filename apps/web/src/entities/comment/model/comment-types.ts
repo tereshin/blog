@@ -6,6 +6,10 @@ export type CommentStatus = 'visible' | 'deleted' | 'hidden' | 'pending'
 export type CommentNode = {
   id: string
   author: { user_id: string; display_name: string; avatar_url: string | null }
+  reply_count?: number
+  is_bookmarked?: boolean
+  media?: { url: string; alt: string }[]
+  mentions?: { user_id: string; display_name: string }[]
   body: string | null
   status: CommentStatus
   edited_at: string | null

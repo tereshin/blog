@@ -17,6 +17,28 @@ test.describe('Вход и профиль', () => {
     expect(page.url()).not.toContain('/v1/auth/google')
   })
 
+  test('регистрация передаёт имя, а сброс пароля скрывает лишние поля', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: 'Зарегистрироваться', exact: true }).click()
+    await dialog.getByLabel('Имя', { exact: true }).fill('Анна')
+    await dialog.getByLabel('Почта', { exact: true }).fill('anna@example.com')
+    await dialog.getByLabel('Пароль', { exact: true }).fill('password-ok')
+    await page.route('**/v1/auth/registrations', async (route) => {
+      expect(route.request().postDataJSON()).toEqual({ email: 'anna@example.com', password: 'password-ok', display_name: 'Анна' })
+      await route.fulfill({ json: { status: 'pending' } })
+    })
+    await dialog.getByRole('button', { name: 'Создать учётную запись' }).click()
+    await expect(dialog.getByText(/Если адрес можно использовать/)).toBeVisible()
+    await dialog.getByRole('button', { name: 'Войти', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Забыли пароль?' }).click()
+    await expect(dialog.getByLabel('Почта', { exact: true })).toBeVisible()
+    await expect(dialog.getByLabel('Пароль', { exact: true })).toHaveCount(0)
+    await expect(dialog.getByLabel('Имя', { exact: true })).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: 'Войти через Google' })).toBeVisible()
+  })
+
   test('участник выходит и вторая вкладка тоже становится гостем', async ({ page }) => {
     test.skip(is_local, 'мок viewer только на фикстурном gateway')
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
@@ -62,6 +84,7 @@ test.describe('вход через эмулятор', () => {
     await page.getByLabel('Почта').fill(email)
     await page.getByLabel('Пароль').fill(password)
     await page.getByRole('button', { name: 'Зарегистрироваться' }).click()
+    await page.getByLabel('Имя', { exact: true }).fill('Тестовый участник')
     await page.getByRole('button', { name: 'Создать учётную запись' }).click()
     await expect(page.getByText('Если адрес можно использовать, мы отправили письмо.')).toBeVisible()
 

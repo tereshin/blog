@@ -1,6 +1,6 @@
 import { useAppearance } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { Button, Menu } from '@/shared/ui'
+import { BaseIcon, Button, Menu } from '@/shared/ui'
 
 type AppearanceToggleProps = { as?: 'button' | 'item' }
 
@@ -18,8 +18,18 @@ export function AppearanceToggle({ as = 'button' }: AppearanceToggleProps) {
     )
   }
   return (
-    <Button variant="ghost" onPress={() => setAppearance(next)}>
-      {label}
+    <Button
+      variant="ghost"
+      aria-label={label}
+      className="max-sm:size-9 max-sm:min-w-9 max-sm:p-0"
+      onPress={() => setAppearance(next)}
+    >
+      {next === 'light' ? (
+        <BaseIcon name="sun" style="line" size={20} className="sm:hidden" />
+      ) : (
+        <BaseIcon name="moon" style="line" size={20} className="sm:hidden" />
+      )}
+      <span className="max-sm:sr-only">{label}</span>
     </Button>
   )
 }

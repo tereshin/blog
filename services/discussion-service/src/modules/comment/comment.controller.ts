@@ -1,11 +1,22 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { commentSchema, commentTreePageSchema, createCommentSchema, popularCommentListSchema, updateCommentSchema, userCommentPageSchema } from '@blog/contracts'
+import {
+  pageQuerySchema,
+  commentSchema,
+  commentThreadSchema,
+  commentTreePageSchema,
+  createCommentSchema,
+  popularCommentListSchema,
+  updateCommentSchema,
+  userCommentPageSchema,
+} from '@blog/contracts'
 import { commentIdParamsSchema, commentParamsSchema, commentQuerySchema } from './comment.schema.ts'
 import type { CommentService } from './comment.types.ts'
 
 const userParamsSchema = z.object({ user_id: z.uuid() })
-const userQuerySchema = commentQuerySchema.extend({ sort: z.enum(['fresh', 'popular']).default('fresh') })
+const userQuerySchema = pageQuerySchema.extend({
+  sort: z.enum(['fresh', 'popular']).default('fresh'),
+})
 
 function idempotencyKey(value: string | string[] | undefined): string | null {
   const raw = Array.isArray(value) ? value[0] : value
@@ -20,12 +31,32 @@ export function createCommentController(service: CommentService) {
     async list(request: FastifyRequest, reply: FastifyReply) {
       const params = commentParamsSchema.parse(request.params)
       const query = commentQuerySchema.parse(request.query)
-      return reply.send(commentTreePageSchema.parse(await service.listForArticle(request.viewer, params.article_id, query)))
+      return reply.send(
+        commentTreePageSchema.parse(
+          await service.listForArticle(request.viewer, params.article_id, query),
+        ),
+      )
+    },
+    async replies(request: FastifyRequest, reply: FastifyReply) {
+      const { id } = commentIdParamsSchema.parse(request.params)
+      return reply.send(
+        commentTreePageSchema.parse(
+          await service.listReplyPage(request.viewer, id, commentQuerySchema.parse(request.query)),
+        ),
+      )
+    },
+    async thread(request: FastifyRequest, reply: FastifyReply) {
+      const { id } = commentIdParamsSchema.parse(request.params)
+      return reply.send(commentThreadSchema.parse(await service.getThread(request.viewer, id)))
     },
     async byAuthor(request: FastifyRequest, reply: FastifyReply) {
       const params = userParamsSchema.parse(request.params)
       const query = userQuerySchema.parse(request.query)
-      return reply.send(userCommentPageSchema.parse(await service.listByAuthor(request.viewer, params.user_id, query.sort, query)))
+      return reply.send(
+        userCommentPageSchema.parse(
+          await service.listByAuthor(request.viewer, params.user_id, query.sort, query),
+        ),
+      )
     },
     async create(request: FastifyRequest, reply: FastifyReply) {
       const params = commentParamsSchema.parse(request.params)
@@ -34,6 +65,8 @@ export function createCommentController(service: CommentService) {
         viewer: request.viewer,
         article_id: params.article_id,
         body: body.body,
+        media: body.media,
+        mentions: body.mentions,
         parent_id: body.parent_id,
         idempotency_key: idempotencyKey(request.headers['x-idempotency-key']),
         correlation_id: request.correlation_id,
@@ -64,17 +97,29 @@ export function createCommentController(service: CommentService) {
     },
     async hide(request: FastifyRequest, reply: FastifyReply) {
       const params = commentIdParamsSchema.parse(request.params)
-      const comment = await service.hide({ viewer: request.viewer, comment_id: params.id, correlation_id: request.correlation_id })
+      const comment = await service.hide({
+        viewer: request.viewer,
+        comment_id: params.id,
+        correlation_id: request.correlation_id,
+      })
       return reply.send(commentSchema.parse(comment))
     },
     async restore(request: FastifyRequest, reply: FastifyReply) {
       const params = commentIdParamsSchema.parse(request.params)
-      const comment = await service.restore({ viewer: request.viewer, comment_id: params.id, correlation_id: request.correlation_id })
+      const comment = await service.restore({
+        viewer: request.viewer,
+        comment_id: params.id,
+        correlation_id: request.correlation_id,
+      })
       return reply.send(commentSchema.parse(comment))
     },
     async moderateRemove(request: FastifyRequest, reply: FastifyReply) {
       const params = commentIdParamsSchema.parse(request.params)
-      const comment = await service.moderateRemove({ viewer: request.viewer, comment_id: params.id, correlation_id: request.correlation_id })
+      const comment = await service.moderateRemove({
+        viewer: request.viewer,
+        comment_id: params.id,
+        correlation_id: request.correlation_id,
+      })
       return reply.send(commentSchema.parse(comment))
     },
   }

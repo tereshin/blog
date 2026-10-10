@@ -14,7 +14,11 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { notifications, outbox } from '../../src/infra/db/schema.ts'
-import { createNotificationHandler, createNotificationRepository, notificationRoutes } from '../../src/modules/notification/index.ts'
+import {
+  createNotificationHandler,
+  createNotificationRepository,
+  notificationRoutes,
+} from '../../src/modules/notification/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const OTHER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
@@ -22,14 +26,39 @@ const ARTICLE = '5c9d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a01'
 const COMMENT = '4a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a31'
 const CONSUMER = 'notification-test'
 
-const guest: ServiceContext = { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' }
-const author: ServiceContext = { user_id: AUTHOR, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${AUTHOR}` }
-
-function event(name: string, payload: Record<string, unknown>): OutboxEvent {
-  return { event_id: newEventId(), name, occurred_at: '2026-10-08T12:00:00.000Z', correlation_id: 'test', causation_id: null, version: 1, ...payload }
+const guest: ServiceContext = {
+  role: 'guest',
+  is_restricted: false,
+  can_publish: false,
+  viewer_key: 'guest:1',
+}
+const author: ServiceContext = {
+  user_id: AUTHOR,
+  role: 'member',
+  is_restricted: false,
+  can_publish: true,
+  viewer_key: `user:${AUTHOR}`,
 }
 
-const user = { public_number: 7, role: 'member', can_publish: true, is_restricted: false, created_at: '2026-01-01T00:00:00.000Z' }
+function event(name: string, payload: Record<string, unknown>): OutboxEvent {
+  return {
+    event_id: newEventId(),
+    name,
+    occurred_at: '2026-10-08T12:00:00.000Z',
+    correlation_id: 'test',
+    causation_id: null,
+    version: 1,
+    ...payload,
+  }
+}
+
+const user = {
+  public_number: 7,
+  role: 'member',
+  can_publish: true,
+  is_restricted: false,
+  created_at: '2026-01-01T00:00:00.000Z',
+}
 const article = {
   article_id: ARTICLE,
   author_id: AUTHOR,
@@ -58,11 +87,20 @@ describe('notification: записи из событий (PostgreSQL в конт
     const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, handler)
 
     await apply(event('identity.user.created', { ...user, user_id: AUTHOR, display_name: 'Анна' }))
-    await apply(event('identity.user.created', { ...user, user_id: OTHER, public_number: 8, display_name: 'Борис' }))
+    await apply(
+      event('identity.user.created', {
+        ...user,
+        user_id: OTHER,
+        public_number: 8,
+        display_name: 'Борис',
+      }),
+    )
     await apply(event('content.article.published', article))
 
     app = Fastify()
-    await app.register(requestContext, { logger: createLogger({ service: 'notification-test', level: 'silent' }) })
+    await app.register(requestContext, {
+      logger: createLogger({ service: 'notification-test', level: 'silent' }),
+    })
     await app.register(errorHandler)
     app.decorateRequest('viewer', undefined as unknown as ServiceContext)
     app.addHook('onRequest', async (request) => {
@@ -90,16 +128,22 @@ describe('notification: записи из событий (PostgreSQL в конт
   })
 
   it('комментарий другого участника — одна запись и событие outbox, повтор не плодит строки', async () => {
-    const rows = await database.db.select().from(notifications).where(eq(notifications.user_id, AUTHOR))
+    const rows = await database.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.user_id, AUTHOR))
     expect(rows).toHaveLength(1)
     expect(rows[0]?.kind).toBe('comment')
     const published = await database.db.select().from(outbox)
-    expect(published.filter((item) => item.name === 'notification.notification.created')).toHaveLength(1)
+    expect(
+      published.filter((item) => item.name === 'notification.notification.created'),
+    ).toHaveLength(1)
   })
 
   it('свой комментарий и реакция на комментарий записей не создают', async () => {
     const repository = createNotificationRepository(database.db)
-    const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, createNotificationHandler(repository))
+    const apply = (item: OutboxEvent) =>
+      processEvent(database.db, CONSUMER, item, createNotificationHandler(repository))
     await apply(
       event('discussion.comment.created', {
         comment_id: '4a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a32',
@@ -121,17 +165,51 @@ describe('notification: записи из событий (PostgreSQL в конт
         kind: 'heart',
       }),
     )
-    const rows = await database.db.select().from(notifications).where(eq(notifications.user_id, AUTHOR))
+    const rows = await database.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.user_id, AUTHOR))
     expect(rows.map((row) => row.kind)).toEqual(['comment'])
   })
 
   it('гость получает 401, автор видит своё уведомление', async () => {
     expect((await app.inject({ method: 'GET', url: '/v1/notifications' })).statusCode).toBe(401)
-    const response = await app.inject({ method: 'GET', url: '/v1/notifications', headers: { 'x-test-viewer': 'author' } })
+    const response = await app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: { 'x-test-viewer': 'author' },
+    })
     expect(response.statusCode).toBe(200)
     const page = notificationPageSchema.parse(response.json())
     expect(page.items.map((item) => item.kind)).toEqual(['comment'])
     expect(page.items[0]?.article_slug).toBe('zagolovok')
     expect(page.items[0]?.actor.display_name).toBe('Борис')
+  })
+  it('subscription and mention recipients are deduplicated, exclude the actor and survive replay', async () => {
+    const subscriber = '00000000-0000-4000-8000-000000000099'
+    const comment_id = '00000000-0000-4000-8000-000000000098'
+    const repository = createNotificationRepository(database.db)
+    const handler = createNotificationHandler(repository)
+    const item = event('discussion.comment.created', {
+      comment_id,
+      article_id: ARTICLE,
+      author_id: AUTHOR,
+      article_author_id: AUTHOR,
+      parent_id: COMMENT,
+      parent_author_id: OTHER,
+      excerpt: 'Mention',
+      subscriber_ids: [AUTHOR, OTHER, subscriber, subscriber],
+      mention_ids: [OTHER],
+    })
+    expect(await processEvent(database.db, CONSUMER, item, handler)).toBe('ok')
+    expect(await processEvent(database.db, CONSUMER, item, handler)).toBe('duplicate')
+    const rows = await database.db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.comment_id, comment_id))
+    expect(rows).toHaveLength(2)
+    expect(rows.find((row) => row.user_id === OTHER)?.kind).toBe('mention')
+    expect(rows.find((row) => row.user_id === subscriber)?.kind).toBe('comment')
+    expect(rows.some((row) => row.user_id === AUTHOR)).toBe(false)
   })
 })

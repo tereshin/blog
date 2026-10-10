@@ -4,7 +4,7 @@ import { hiddenArticleIds } from './moderation-store.ts'
 import { mockFeedArticles } from './feed.ts'
 import type { FeedCardFixture } from '../fixtures/feed.ts'
 import { currentMockAuthor, publishedFeedCards, readMockArticles } from './articles-store.ts'
-import { commentTree, commentsForArticle, mockViewerId, patchStoredComment, readStoredComments, recordMockView, saveComment } from './discussion-store.ts'
+import { commentTree, mockCommentBookmarked, commentsForArticle, mockViewerId, patchStoredComment, readStoredComments, recordMockView, saveComment } from './discussion-store.ts'
 import type { StoredComment } from './discussion-store.ts'
 import { addMockNotification } from './notifications-store.ts'
 import { readMockViewer } from './session.ts'
@@ -59,6 +59,10 @@ function presentStored(row: StoredComment, viewer_id: string) {
   const node = (item: StoredComment) => ({
     id: item.id,
     author: item.author,
+    reply_count: siblings.filter((child) => child.parent_id === item.id && child.status === 'visible').length,
+    is_bookmarked: mockCommentBookmarked(item.id, viewer_id),
+    media: item.status === 'visible' ? item.media ?? [] : [],
+    mentions: item.status === 'visible' ? item.mentions ?? [] : [],
     body: item.status === 'visible' ? item.body : null,
     status: item.status,
     edited_at: item.edited_at,
@@ -156,12 +160,19 @@ export const actionHandlers = [
     })
   }),
 
-  http.get('*/v1/articles/:article_id/comments', ({ params }) => {
+  http.get('*/v1/articles/:article_id/comments', ({ params, request }) => {
     const article = mockFeedArticles.find((item) => item.id === params.article_id)
     if (!article) {
       return HttpResponse.json({ code: 'not_found', title: 'Статья недоступна', status: 404 }, { status: 404 })
     }
-    return HttpResponse.json(commentTree(article, mockViewerId()))
+    const url = new URL(request.url)
+    const sort = url.searchParams.get('sort') ?? 'oldest'
+    const tree = commentTree(article, mockViewerId())
+    const sorted = tree.comments.sort((a, b) => sort === 'best' ? b.reaction_count - a.reaction_count || b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id) : sort === 'newest' ? b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id) : a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
+    const start = url.searchParams.get('cursor') ? sorted.findIndex((item) => item.id === url.searchParams.get('cursor')) + 1 : 0
+    const limit = Number(url.searchParams.get('limit') ?? 20)
+    const page = sorted.slice(start, start + limit)
+    return HttpResponse.json({ comments: page.map((item) => ({ ...item, replies: url.searchParams.get('include_replies') === 'false' ? [] : item.replies })), next_cursor: sorted.length > start + limit ? page.at(-1)?.id : null })
   }),
 
   http.post('*/v1/articles/:article_id/comments', async ({ params, request }) => {
@@ -189,6 +200,8 @@ export const actionHandlers = [
       parent_id,
       author: { user_id: actor.id, display_name: actor.display_name, avatar_url: null },
       body,
+      ...(typeof payload === 'object' && payload && 'media' in payload ? { media: payload.media as StoredComment['media'] } : {}),
+      ...(typeof payload === 'object' && payload && 'mentions' in payload ? { mentions: payload.mentions as StoredComment['mentions'] } : {}),
       status: 'visible',
       edited_at: null,
       reaction_counts: emptyCounts(),

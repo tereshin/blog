@@ -1,4 +1,17 @@
-import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -37,6 +50,11 @@ export const comments = pgTable(
     author_id: uuid('author_id').notNull(),
     parent_id: uuid('parent_id'),
     body: varchar('body', { length: 5000 }).notNull().default(''),
+    media: jsonb('media').$type<{ url: string; alt: string }[]>().notNull().default([]),
+    mentions: jsonb('mentions')
+      .$type<{ user_id: string; display_name: string }[]>()
+      .notNull()
+      .default([]),
     status: comment_status('status').notNull().default('visible'),
     edited_at: timestamp('edited_at', { withTimezone: true }),
     reaction_count: integer('reaction_count').notNull().default(0),
@@ -91,7 +109,10 @@ export const bookmarks = pgTable(
     article_id: uuid('article_id').notNull(),
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [primaryKey({ columns: [table.user_id, table.article_id] }), index('bookmarks_user_idx').on(table.user_id, table.created_at)],
+  (table) => [
+    primaryKey({ columns: [table.user_id, table.article_id] }),
+    index('bookmarks_user_idx').on(table.user_id, table.created_at),
+  ],
 )
 
 /** Ответ мутации по `X-Idempotency-Key`: повтор того же ключа не меняет данные ещё раз. */
@@ -112,3 +133,49 @@ export const seed_runs = pgTable('seed_runs', {
   started_at: timestamp('started_at', { withTimezone: true }).notNull(),
   finished_at: timestamp('finished_at', { withTimezone: true }),
 })
+
+export const comment_bookmarks = pgTable(
+  'comment_bookmarks',
+  {
+    user_id: uuid('user_id').notNull(),
+    comment_id: uuid('comment_id')
+      .notNull()
+      .references(() => comments.id, { onDelete: 'cascade' }),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.user_id, t.comment_id] }),
+    index('comment_bookmarks_user_idx').on(t.user_id, t.created_at, t.comment_id),
+  ],
+)
+export const comment_reports = pgTable(
+  'comment_reports',
+  {
+    id: uuid('id').primaryKey(),
+    comment_id: uuid('comment_id')
+      .notNull()
+      .references(() => comments.id, { onDelete: 'cascade' }),
+    reporter_id: uuid('reporter_id').notNull(),
+    reason: text('reason').notNull(),
+    status: text('status').$type<'open' | 'reviewed'>().notNull().default('open'),
+    reviewed_by: uuid('reviewed_by'),
+    reviewed_at: timestamp('reviewed_at', { withTimezone: true }),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('comment_reports_status_idx').on(t.status, t.created_at, t.id),
+    uniqueIndex('comment_reports_comment_id_reporter_id_key').on(t.comment_id, t.reporter_id),
+  ],
+)
+export const discussion_subscriptions = pgTable(
+  'discussion_subscriptions',
+  {
+    user_id: uuid('user_id').notNull(),
+    article_id: uuid('article_id').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.user_id, t.article_id] }),
+    index('discussion_subscriptions_article_idx').on(t.article_id),
+  ],
+)

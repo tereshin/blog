@@ -1,16 +1,34 @@
 import { REACTION_KINDS, canReadArticle, requireVerifiedEmail } from '@blog/contracts'
-import type { ReactionCounts, ReactionKind } from '@blog/contracts'
-import { EmailUnverifiedError, ForbiddenError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
-import { CommentArticleNotFoundError, CommentsDisabledError } from './comment.errors.ts'
+import type { CommentSort, ReactionCounts, ReactionKind, ServiceContext } from '@blog/contracts'
+import {
+  EmailUnverifiedError,
+  ForbiddenError,
+  RestrictedError,
+  UnauthorizedError,
+  ValidationError,
+} from '@blog/errors'
+import {
+  CommentArticleNotFoundError,
+  CommentNotFoundError,
+  CommentsDisabledError,
+} from './comment.errors.ts'
 import { toExcerpt } from './comment.excerpt.ts'
-import { POPULAR_COMMENTS_LIMIT, decodeCommentCursor, decodeUserCommentCursor, encodeCommentCursor, encodeUserCommentCursor } from './comment.schema.ts'
+import {
+  POPULAR_COMMENTS_LIMIT,
+  decodeCommentCursor,
+  decodeUserCommentCursor,
+  encodeCommentCursor,
+  encodeUserCommentCursor,
+} from './comment.schema.ts'
 import type { CommentRepository, CommentService } from './comment.types.ts'
 import type { CommentWriter } from './comment.write.ts'
-import { assembleCommentTree, emptyCounts } from './comment.tree.ts'
+import { assembleCommentTree, emptyCounts, occupiesThread, toCommentNode } from './comment.tree.ts'
 
 const ANONYMOUS_NAME = 'Участник'
 
-function indexCounts(rows: { target_id: string; kind: ReactionKind; total: number }[]): Map<string, ReactionCounts> {
+function indexCounts(
+  rows: { target_id: string; kind: ReactionKind; total: number }[],
+): Map<string, ReactionCounts> {
   const facts = new Map<string, ReactionCounts>()
   for (const row of rows) {
     const counts = facts.get(row.target_id) ?? emptyCounts()
@@ -33,7 +51,71 @@ function requireModerator(viewer: Parameters<CommentService['create']>[0]['viewe
   return viewer.user_id
 }
 
-export function createCommentService(repository: CommentRepository, writer: CommentWriter): CommentService {
+export function createCommentService(
+  repository: CommentRepository,
+  writer: CommentWriter,
+): CommentService {
+  async function present(
+    viewer: ServiceContext,
+    rows: import('./comment.tree.ts').CommentRow[],
+    replies: import('./comment.tree.ts').CommentRow[] = [],
+  ) {
+    const ids = [...rows, ...replies].map((row) => row.id)
+    const facts = indexCounts(await repository.countReactions(ids))
+    const mine = new Map<string, ReactionKind>()
+    if (viewer.user_id)
+      for (const row of await repository.findMine(viewer.user_id, ids))
+        mine.set(row.target_id, row.kind)
+    const saved = new Set(viewer.user_id ? await repository.findBookmarks(viewer.user_id, ids) : [])
+    const hydrate = (row: import('./comment.tree.ts').CommentRow) => ({
+      ...row,
+      is_bookmarked: saved.has(row.id),
+    })
+    return {
+      nodes: assembleCommentTree(rows.map(hydrate), replies.map(hydrate), facts, mine),
+      node: (row: import('./comment.tree.ts').CommentRow) =>
+        toCommentNode(hydrate(row), facts, mine, []),
+    }
+  }
+  function cursorOf(value: string | undefined, sort: CommentSort, scope: string) {
+    if (!value) return null
+    try {
+      const cursor = decodeCommentCursor(value)
+      if (
+        (cursor.sort ?? 'oldest') !== sort ||
+        (cursor.scope && cursor.scope !== scope) ||
+        (sort === 'best' && cursor.score === undefined)
+      )
+        throw new Error('Cursor scope mismatch')
+      return cursor
+    } catch (cause) {
+      throw new ValidationError({ message: 'Некорректный курсор', cause })
+    }
+  }
+  function nextCursor(
+    rows: import('./comment.tree.ts').CommentRow[],
+    limit: number,
+    sort: CommentSort,
+    scope: string,
+  ) {
+    const last = rows.slice(0, limit).at(-1)
+    return rows.length > limit && last
+      ? encodeCommentCursor({
+          t: last.created_at.toISOString(),
+          id: last.id,
+          sort,
+          scope,
+          ...(sort === 'best' ? { score: last.reaction_count } : {}),
+        })
+      : null
+  }
+  async function readableComment(viewer: ServiceContext, id: string) {
+    const row = await repository.findComment(id)
+    if (!row || !occupiesThread(row)) throw new CommentNotFoundError()
+    const article = await repository.findArticle(row.article_id)
+    if (!article || !canReadArticle(viewer, article)) throw new CommentNotFoundError()
+    return row
+  }
   return {
     async getPopular(viewer) {
       const rows = await repository.findPopular(viewer, POPULAR_COMMENTS_LIMIT)
@@ -52,27 +134,45 @@ export function createCommentService(repository: CommentRepository, writer: Comm
     async listForArticle(viewer, article_id, query) {
       const article = await repository.findArticle(article_id)
       if (!article || !canReadArticle(viewer, article)) throw new CommentArticleNotFoundError()
-      let cursor = null
-      if (query.cursor) {
-        try {
-          cursor = decodeCommentCursor(query.cursor)
-        } catch (error) {
-          throw new ValidationError({ message: 'Некорректный курсор', cause: error })
-        }
-      }
-      const roots = await repository.listRoots(article_id, cursor, query.limit + 1)
+      const sort = query.sort ?? 'oldest'
+      const cursor = cursorOf(query.cursor, sort, article_id)
+      const roots = await repository.listRoots(article_id, cursor, query.limit + 1, sort)
       const page = roots.slice(0, query.limit)
-      const last = page.at(-1)
-      const replies = await repository.listReplies(page.map((row) => row.id))
-      const ids = [...page, ...replies].map((row) => row.id)
-      const facts = indexCounts(await repository.countReactions(ids))
-      const mine = new Map<string, ReactionKind>()
-      if (viewer.user_id) {
-        for (const row of await repository.findMine(viewer.user_id, ids)) mine.set(row.target_id, row.kind)
-      }
+      const replies =
+        query.include_replies === false
+          ? []
+          : await repository.listReplies(page.map((row) => row.id))
       return {
-        comments: assembleCommentTree(page, replies, facts, mine),
-        next_cursor: roots.length > query.limit && last ? encodeCommentCursor({ t: last.created_at.toISOString(), id: last.id }) : null,
+        comments: (await present(viewer, page, replies)).nodes,
+        next_cursor: nextCursor(roots, query.limit, sort, article_id),
+      }
+    },
+    async listReplyPage(viewer, root_id, query) {
+      const root = await readableComment(viewer, root_id)
+      if (root.parent_id) throw new CommentNotFoundError()
+      const sort = query.sort ?? 'oldest'
+      const rows = await repository.listReplyPage(
+        root_id,
+        cursorOf(query.cursor, sort, root_id),
+        query.limit + 1,
+        sort,
+      )
+      return {
+        comments: (await present(viewer, rows.slice(0, query.limit))).nodes,
+        next_cursor: nextCursor(rows, query.limit, sort, root_id),
+      }
+    },
+    async getByIds(viewer, ids) {
+      return (await present(viewer, await repository.findByIds(viewer, ids))).nodes
+    },
+    async getThread(viewer, id) {
+      const target = await readableComment(viewer, id)
+      const root = target.parent_id ? await readableComment(viewer, target.parent_id) : target
+      const response = await present(viewer, target.id === root.id ? [root] : [root, target])
+      return {
+        article_id: target.article_id,
+        root: response.node(root),
+        target: response.node(target),
       }
     },
 
@@ -112,12 +212,15 @@ export function createCommentService(repository: CommentRepository, writer: Comm
     async create(input) {
       const user_id = requireActor(input.viewer)
       const article = await repository.findArticle(input.article_id)
-      if (!article || !canReadArticle(input.viewer, article)) throw new CommentArticleNotFoundError()
+      if (!article || !canReadArticle(input.viewer, article))
+        throw new CommentArticleNotFoundError()
       if (!article.comments_enabled) throw new CommentsDisabledError()
       return writer.insert({
         user_id,
         article_id: input.article_id,
         body: input.body,
+        media: input.media,
+        mentions: input.mentions,
         parent_id: input.parent_id,
         idempotency_key: input.idempotency_key,
         correlation_id: input.correlation_id,
@@ -147,17 +250,32 @@ export function createCommentService(repository: CommentRepository, writer: Comm
 
     async hide(input) {
       const moderator_id = requireModerator(input.viewer)
-      return writer.moderate({ comment_id: input.comment_id, status: 'hidden', correlation_id: input.correlation_id, moderator_id })
+      return writer.moderate({
+        comment_id: input.comment_id,
+        status: 'hidden',
+        correlation_id: input.correlation_id,
+        moderator_id,
+      })
     },
 
     async restore(input) {
       const moderator_id = requireModerator(input.viewer)
-      return writer.moderate({ comment_id: input.comment_id, status: 'visible', correlation_id: input.correlation_id, moderator_id })
+      return writer.moderate({
+        comment_id: input.comment_id,
+        status: 'visible',
+        correlation_id: input.correlation_id,
+        moderator_id,
+      })
     },
 
     async moderateRemove(input) {
       const moderator_id = requireModerator(input.viewer)
-      return writer.moderate({ comment_id: input.comment_id, status: 'deleted', correlation_id: input.correlation_id, moderator_id })
+      return writer.moderate({
+        comment_id: input.comment_id,
+        status: 'deleted',
+        correlation_id: input.correlation_id,
+        moderator_id,
+      })
     },
   }
 }

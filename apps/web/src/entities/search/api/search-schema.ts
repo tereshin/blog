@@ -46,7 +46,7 @@ export const searchDtoSchema = z.object({
 
 export type SearchArticle = ReturnType<typeof toSearchArticle>
 export type SearchPerson = { user_id: string; display_name: string; avatar_url: string | null; slug: string; reputation: number; href: string }
-export type SearchTopic = { id: string; title: string; slug: string }
+export type SearchTopic = { id: string; title: string; slug: string; avatar_url: string | null }
 export type SearchResult = { articles: SearchArticle[]; people: SearchPerson[]; topics: SearchTopic[]; next_cursor: string | null }
 
 export function toSearchArticle(dto: z.infer<typeof articleSchema>, now: Date = new Date()) {
@@ -63,7 +63,7 @@ export function toSearchResult(dto: z.infer<typeof searchDtoSchema>, now: Date =
   return {
     articles: dto.articles.map((item) => toSearchArticle(item, now)),
     people: dto.people.map((person) => ({ ...person, href: `/u/${encodeURIComponent(person.slug)}` })),
-    topics: dto.topics.map((topic) => ({ id: topic.id, title: topic.title, slug: topic.slug })),
+    topics: dto.topics.map((topic) => ({ id: topic.id, title: topic.title, slug: topic.slug, avatar_url: topic.avatar_url })),
     next_cursor: dto.next_cursor,
   }
 }

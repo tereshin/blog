@@ -10,7 +10,7 @@ import { useLoginDialog } from './useLoginDialog.ts'
 
 export type AuthPhase = 'sign_in' | 'register' | 'pending' | 'reset' | 'claim'
 
-type FieldName = 'email' | 'password'
+type FieldName = 'email' | 'password' | 'name'
 
 export function providerLabel(provider_id: string): string {
   if (provider_id === 'google.com') return 'Google'
@@ -24,6 +24,7 @@ export function useAuthPanel(is_open: boolean) {
   const close = useLoginDialog((state) => state.close)
   const [phase, setPhase] = useState<AuthPhase>('sign_in')
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [field_error, setFieldError] = useState<FieldName | null>(null)
   const [notice, setNotice] = useState<'incomplete' | 'invalid_credentials' | 'reset_sent' | null>(null)
@@ -67,6 +68,10 @@ export function useAuthPanel(is_open: boolean) {
   async function submitPassword(): Promise<void> {
     setNotice(null)
     if (is_submitting) return
+    if (phase === 'register' && (!name.trim() || name.trim().length > 50)) {
+      setFieldError('name')
+      return
+    }
     if (phase === 'reset' || phase === 'claim') {
       if (!looksLikeEmail(email)) {
         setFieldError('email')
@@ -81,7 +86,7 @@ export function useAuthPanel(is_open: boolean) {
     setSubmitting(true)
     try {
       if (phase === 'register') {
-        await registerWithPassword(email.trim(), password)
+        await registerWithPassword(email.trim(), password, name.trim())
         setPhase('pending')
         setPassword('')
         return
@@ -154,6 +159,8 @@ export function useAuthPanel(is_open: boolean) {
     setPhase,
     email,
     setEmail,
+    name,
+    setName,
     password,
     setPassword,
     field_error,

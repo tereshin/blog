@@ -1,3 +1,4 @@
+import { commentInteractionHandlers } from './comment-interactions.ts'
 import { actionHandlers } from './actions.ts'
 import { articleHandlers } from './articles.ts'
 import { feedHandlers } from './feed.ts'
@@ -11,4 +12,4 @@ import { shellHandlers } from './shell.ts'
 
 // Обработчики разделов (лента, статья, профиль, обсуждение, сообщения, поиск, модерация)
 // добавляются вместе со своими историями и подключаются здесь: Storybook и Playwright берут тот же список.
-export const handlers = [...sessionHandlers, ...shellHandlers, ...feedHandlers, ...articleHandlers, ...actionHandlers, ...profileHandlers, ...searchHandlers, ...notificationHandlers, ...messageHandlers, ...moderationHandlers]
+export const handlers = [...sessionHandlers, ...shellHandlers, ...feedHandlers, ...articleHandlers, ...commentInteractionHandlers, ...actionHandlers, ...profileHandlers, ...searchHandlers, ...notificationHandlers, ...messageHandlers, ...moderationHandlers]

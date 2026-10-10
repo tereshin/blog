@@ -3,11 +3,12 @@ import { useSearchParams } from 'react-router'
 import { useRecordView } from '@/entities/article'
 import type { ArticleModel } from '@/entities/article'
 import { CommentThread, useComments } from '@/entities/comment'
+import type { CommentSort } from '@/entities/comment'
 import { useViewer } from '@/entities/session'
 import { useRequireSession } from '@/features/login'
 import { CommentModerationActions } from '@/features/moderate-content'
 import { ReactionControl } from '@/features/react'
-import { CommentActions, CommentForm } from '@/features/send-comment'
+import { CommentActions, CommentForm, DiscussionSubscription } from '@/features/send-comment'
 
 type ArticleDiscussionProps = { article: ArticleModel }
 
@@ -16,7 +17,8 @@ export function ArticleDiscussion({ article }: ArticleDiscussionProps) {
   const [params] = useSearchParams()
   const { is_admin } = useViewer()
   const from_moderation = params.get('from') === 'moderation'
-  const comments = useComments(article.id)
+  const [sort, setSort] = useState<CommentSort>('best')
+  const comments = useComments(article.id, sort)
   const requireSession = useRequireSession()
   const [reply, setReply] = useState<{ id: string; name: string; anchor_id: string } | null>(null)
   useRecordView({ id: article.id, slug: article.slug }, from_moderation)
@@ -35,7 +37,11 @@ export function ArticleDiscussion({ article }: ArticleDiscussionProps) {
         onSent={() => undefined}
         requireSession={requireSession}
       />
+      <DiscussionSubscription article_id={article.id} />
       <CommentThread
+        article_id={article.id}
+        sort={sort}
+        onSort={setSort}
         state={comments}
         renderReactions={(comment) => (
           <ReactionControl
@@ -46,11 +52,24 @@ export function ArticleDiscussion({ article }: ArticleDiscussionProps) {
             my_reaction={comment.my_reaction}
           />
         )}
-        renderActions={(comment, placement) => (
+        renderActions={(comment, placement, expand) => (
           <>
-            <CommentActions comment={comment} placement={placement} article_id={article.id} onReply={openReply} />
+            <CommentActions
+              comment={comment}
+              placement={placement}
+              article_id={article.id}
+              comments_enabled={article.comments_enabled}
+              onReply={(target) => {
+                expand()
+                openReply(target)
+              }}
+            />
             {from_moderation && is_admin ? (
-              <CommentModerationActions article_id={article.id} comment_id={comment.id} status={comment.status} />
+              <CommentModerationActions
+                article_id={article.id}
+                comment_id={comment.id}
+                status={comment.status}
+              />
             ) : null}
           </>
         )}

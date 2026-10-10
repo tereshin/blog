@@ -1,17 +1,30 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { commentSchema } from '@blog/contracts'
-import type { Comment, ReactionCounts, ReactionKind } from '@blog/contracts'
-import { REACTION_KINDS } from '@blog/contracts'
+import type { Comment } from '@blog/contracts'
 import type { Database } from '@blog/broker'
-import { articles_copy, comments, idempotency_keys, reactions, users_copy } from '../../infra/db/schema.ts'
+import { ValidationError } from '@blog/errors'
+import {
+  articles_copy,
+  discussion_subscriptions,
+  comments,
+  idempotency_keys,
+  users_copy,
+} from '../../infra/db/schema.ts'
 import { loadArticleCounters } from '../article-snapshot/index.ts'
-import { CommentArticleNotFoundError, CommentNotFoundError, CommentParentInvalidError, CommentsDisabledError } from './comment.errors.ts'
-import { appendCommentCreated, appendCommentHidden, appendCommentUpdated } from './comment.events.ts'
+import {
+  CommentArticleNotFoundError,
+  CommentNotFoundError,
+  CommentParentInvalidError,
+  CommentsDisabledError,
+} from './comment.errors.ts'
+import { appendCommentCreated, appendCommentUpdated } from './comment.events.ts'
 import { toExcerpt } from './comment.excerpt.ts'
-import { emptyCounts, occupiesThread, toCommentNode, toReplyNode } from './comment.tree.ts'
-import type { CommentRow, CommentStatus } from './comment.tree.ts'
+import { recountReplies } from './comment.counts.ts'
+import { present } from './comment.presentation.ts'
+import { moderateComment } from './comment.moderate-write.ts'
+import type { CommentStatus } from './comment.tree.ts'
 
 type WriteBase = {
   user_id: string
@@ -22,6 +35,8 @@ type WriteBase = {
 export type InsertCommentInput = WriteBase & {
   article_id: string
   body: string
+  media?: { url: string; alt: string }[] | undefined
+  mentions?: { user_id: string; display_name: string }[] | undefined
   parent_id?: string | undefined
 }
 
@@ -45,91 +60,27 @@ async function replay(tx: Database, user_id: string, key: string | null): Promis
   return stored ? commentSchema.parse(stored.response) : null
 }
 
-async function remember(tx: Database, user_id: string, key: string | null, response: Comment): Promise<Comment> {
+async function remember(
+  tx: Database,
+  user_id: string,
+  key: string | null,
+  response: Comment,
+): Promise<Comment> {
   if (key) await tx.insert(idempotency_keys).values({ user_id, key, response })
   return response
 }
 
-async function recountReplies(tx: Database, parent_id: string): Promise<void> {
-  await tx
-    .update(comments)
-    .set({
-      reply_count: sql<number>`(
-        select count(*)::int from comments as child
-        where child.parent_id = ${parent_id}::uuid
-          and (child.status = 'visible' or child.reply_count > 0)
-      )`,
-    })
-    .where(eq(comments.id, parent_id))
-}
-
-async function loadRows(tx: Database, ids: readonly string[]): Promise<CommentRow[]> {
-  if (ids.length === 0) return []
-  return tx
-    .select({
-      id: comments.id,
-      author_id: comments.author_id,
-      parent_id: comments.parent_id,
-      body: comments.body,
-      status: comments.status,
-      edited_at: comments.edited_at,
-      reaction_count: comments.reaction_count,
-      reply_count: comments.reply_count,
-      created_at: comments.created_at,
-      author_name: users_copy.display_name,
-      author_avatar_url: users_copy.avatar_url,
-    })
-    .from(comments)
-    .leftJoin(users_copy, eq(users_copy.user_id, comments.author_id))
-    .where(inArray(comments.id, [...ids]))
-    .orderBy(asc(comments.created_at), asc(comments.id))
-}
-
-async function present(tx: Database, comment_id: string, user_id: string): Promise<Comment> {
-  const [row] = await loadRows(tx, [comment_id])
-  if (!row) throw new CommentNotFoundError()
-  const reply_rows = row.parent_id
-    ? []
-    : (
-        await tx
-          .select({ id: comments.id })
-          .from(comments)
-          .where(eq(comments.parent_id, row.id))
-          .orderBy(asc(comments.created_at), asc(comments.id))
-      ).map((item) => item.id)
-  const replies = (await loadRows(tx, reply_rows)).filter(occupiesThread)
-  const ids = [row.id, ...replies.map((item) => item.id)]
-  const kind_rows = await tx
-    .select({ target_id: reactions.target_id, kind: reactions.kind, total: sql<number>`count(*)::int` })
-    .from(reactions)
-    .where(and(eq(reactions.target_type, 'comment'), inArray(reactions.target_id, ids)))
-    .groupBy(reactions.target_id, reactions.kind)
-  const facts = new Map<string, ReactionCounts>()
-  for (const kind_row of kind_rows) {
-    const counts = facts.get(kind_row.target_id) ?? emptyCounts()
-    if (REACTION_KINDS.includes(kind_row.kind)) counts[kind_row.kind] = Number(kind_row.total)
-    facts.set(kind_row.target_id, counts)
-  }
-  const mine_rows = await tx
-    .select({ target_id: reactions.target_id, kind: reactions.kind })
-    .from(reactions)
-    .where(and(eq(reactions.user_id, user_id), eq(reactions.target_type, 'comment'), inArray(reactions.target_id, ids)))
-  const mine = new Map<string, ReactionKind>(mine_rows.map((item) => [item.target_id, item.kind]))
-  return toCommentNode(
-    row,
-    facts,
-    mine,
-    replies.map((reply) => toReplyNode(reply, facts, mine)),
-  )
-}
-
 async function requireOwnVisible(tx: Database, comment_id: string, user_id: string) {
   const [row] = await tx.select().from(comments).where(eq(comments.id, comment_id)).limit(1)
-  if (!row || row.author_id !== user_id || row.status !== 'visible') throw new CommentNotFoundError()
+  if (!row || row.author_id !== user_id || row.status !== 'visible')
+    throw new CommentNotFoundError()
   return row
 }
 
-export function createCommentWriter(db: NodePgDatabase) {
+export function createCommentWriter(
+  db: NodePgDatabase,
+  lookup_file?: (url: string) => Promise<{ uploader_id: string; kind: string } | null>,
+) {
   return {
     async insert(input: InsertCommentInput): Promise<Comment> {
       return db.transaction(async (tx) => {
@@ -137,18 +88,65 @@ export function createCommentWriter(db: NodePgDatabase) {
         const stored = await replay(database, input.user_id, input.idempotency_key)
         if (stored) return stored
 
-        const [article] = await database.select().from(articles_copy).where(eq(articles_copy.article_id, input.article_id)).limit(1)
+        const [article] = await database
+          .select()
+          .from(articles_copy)
+          .where(eq(articles_copy.article_id, input.article_id))
+          .limit(1)
         if (!article) throw new CommentArticleNotFoundError()
         if (!article.comments_enabled) throw new CommentsDisabledError()
 
         let parent_author_id: string | null = null
         if (input.parent_id) {
-          const [parent] = await database.select().from(comments).where(eq(comments.id, input.parent_id)).limit(1)
+          const [parent] = await database
+            .select()
+            .from(comments)
+            .where(eq(comments.id, input.parent_id))
+            .limit(1)
           // Ответ только на корень этой статьи: вложенность глубже одного уровня в выдаче не показывается.
-          if (!parent || parent.article_id !== input.article_id || parent.parent_id !== null) throw new CommentParentInvalidError()
+          if (!parent || parent.article_id !== input.article_id || parent.parent_id !== null)
+            throw new CommentParentInvalidError()
           parent_author_id = parent.author_id
         }
 
+        for (const file of input.media ?? []) {
+          const parsed = new URL(file.url)
+          if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password)
+            throw new ValidationError({ message: 'Недопустимый адрес изображения' })
+          const stored_file = await lookup_file?.(file.url)
+          if (
+            !stored_file ||
+            stored_file.uploader_id !== input.user_id ||
+            stored_file.kind !== 'image'
+          )
+            throw new ValidationError({ message: 'Прикрепите загруженное вами изображение' })
+        }
+        const mention_ids = [...new Set((input.mentions ?? []).map((item) => item.user_id))]
+        if (article.visibility === 'author' && mention_ids.some((id) => id !== article.author_id))
+          throw new ValidationError({ message: 'Участник не может читать закрытое обсуждение' })
+        const mention_rows = mention_ids.length
+          ? await database
+              .select({ user_id: users_copy.user_id, display_name: users_copy.display_name })
+              .from(users_copy)
+              .where(
+                and(inArray(users_copy.user_id, mention_ids), eq(users_copy.is_restricted, false)),
+              )
+          : []
+        if (mention_rows.length !== mention_ids.length)
+          throw new ValidationError({ message: 'Участник для упоминания не найден' })
+        const subscribers = await database
+          .select({ user_id: discussion_subscriptions.user_id })
+          .from(discussion_subscriptions)
+          .innerJoin(users_copy, eq(users_copy.user_id, discussion_subscriptions.user_id))
+          .where(
+            and(
+              eq(discussion_subscriptions.article_id, input.article_id),
+              eq(users_copy.is_restricted, false),
+              article.visibility === 'author'
+                ? eq(discussion_subscriptions.user_id, article.author_id)
+                : undefined,
+            ),
+          )
         const comment_id = randomUUID()
         await database.insert(comments).values({
           id: comment_id,
@@ -156,6 +154,11 @@ export function createCommentWriter(db: NodePgDatabase) {
           author_id: input.user_id,
           parent_id: input.parent_id ?? null,
           body: input.body,
+          media: input.media ?? [],
+          mentions: mention_rows.map((row) => ({
+            user_id: row.user_id,
+            display_name: row.display_name ?? 'Участник',
+          })),
           status: 'visible',
         })
         if (input.parent_id) await recountReplies(database, input.parent_id)
@@ -172,8 +175,15 @@ export function createCommentWriter(db: NodePgDatabase) {
           parent_author_id,
           article_author_id: article.author_id,
           excerpt: toExcerpt(input.body),
+          mention_ids,
+          subscriber_ids: subscribers.map((row) => row.user_id),
         })
-        return remember(database, input.user_id, input.idempotency_key, await present(database, comment_id, input.user_id))
+        return remember(
+          database,
+          input.user_id,
+          input.idempotency_key,
+          await present(database, comment_id, input.user_id),
+        )
       })
     },
 
@@ -184,7 +194,10 @@ export function createCommentWriter(db: NodePgDatabase) {
         if (stored) return stored
         const row = await requireOwnVisible(database, input.comment_id, input.user_id)
         const edited_at = new Date()
-        await database.update(comments).set({ body: input.body, edited_at }).where(eq(comments.id, row.id))
+        await database
+          .update(comments)
+          .set({ body: input.body, edited_at })
+          .where(eq(comments.id, row.id))
         const occurred_at = edited_at.toISOString()
         const snapshot = await loadArticleCounters(database, row.article_id)
         await appendCommentUpdated(database, {
@@ -195,7 +208,12 @@ export function createCommentWriter(db: NodePgDatabase) {
           status: 'visible',
           edited_at: occurred_at,
         })
-        return remember(database, input.user_id, input.idempotency_key, await present(database, row.id, input.user_id))
+        return remember(
+          database,
+          input.user_id,
+          input.idempotency_key,
+          await present(database, row.id, input.user_id),
+        )
       })
     },
 
@@ -205,7 +223,10 @@ export function createCommentWriter(db: NodePgDatabase) {
         const stored = await replay(database, input.user_id, input.idempotency_key)
         if (stored) return stored
         const row = await requireOwnVisible(database, input.comment_id, input.user_id)
-        await database.update(comments).set({ status: 'deleted' satisfies CommentStatus }).where(eq(comments.id, row.id))
+        await database
+          .update(comments)
+          .set({ status: 'deleted' satisfies CommentStatus })
+          .where(eq(comments.id, row.id))
         if (row.parent_id) await recountReplies(database, row.parent_id)
         const snapshot = await loadArticleCounters(database, row.article_id)
         await appendCommentUpdated(database, {
@@ -216,40 +237,24 @@ export function createCommentWriter(db: NodePgDatabase) {
           status: 'deleted',
           edited_at: row.edited_at ? row.edited_at.toISOString() : null,
         })
-        return remember(database, input.user_id, input.idempotency_key, await present(database, row.id, input.user_id))
+        return remember(
+          database,
+          input.user_id,
+          input.idempotency_key,
+          await present(database, row.id, input.user_id),
+        )
       })
     },
 
-    async moderate(input: { comment_id: string; status: CommentStatus; correlation_id: string; moderator_id: string }): Promise<Comment> {
+    async moderate(input: {
+      comment_id: string
+      status: CommentStatus
+      correlation_id: string
+      moderator_id: string
+    }): Promise<Comment> {
       return db.transaction(async (tx) => {
         const database = tx as Database
-        const [row] = await database.select().from(comments).where(eq(comments.id, input.comment_id)).limit(1)
-        if (!row) throw new CommentNotFoundError()
-        if (row.status !== input.status) {
-          await database.update(comments).set({ status: input.status }).where(eq(comments.id, row.id))
-          if (row.parent_id) await recountReplies(database, row.parent_id)
-          const occurred_at = new Date().toISOString()
-          const snapshot = await loadArticleCounters(database, row.article_id)
-          await appendCommentUpdated(database, {
-            correlation_id: input.correlation_id,
-            occurred_at,
-            snapshot,
-            comment_id: row.id,
-            status: input.status,
-            edited_at: row.edited_at ? row.edited_at.toISOString() : null,
-          })
-          if (input.status === 'hidden') {
-            await appendCommentHidden(database, {
-              correlation_id: input.correlation_id,
-              occurred_at,
-              comment_id: row.id,
-              article_id: row.article_id,
-              author_id: row.author_id,
-              moderator_id: input.moderator_id,
-            })
-          }
-        }
-        return present(database, row.id, input.moderator_id)
+        return moderateComment(database, input)
       })
     },
   }

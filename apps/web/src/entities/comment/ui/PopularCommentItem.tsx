@@ -26,7 +26,12 @@ export function PopularCommentItem({ comment }: PopularCommentItemProps) {
         to={comment.href}
         className="flex gap-3 rounded-xl p-2 text-foreground outline-offset-2 hover:bg-surface-secondary"
       >
-        <Avatar src={comment.author_avatar_url} name={comment.author_name} size="sm" className="mt-0.5 shrink-0" />
+        <Avatar
+          src={comment.author_avatar_url}
+          name={comment.author_name}
+          size="sm"
+          className="mt-0.5 shrink-0"
+        />
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-sm font-medium">{comment.author_name}</span>
           <span className="flex min-w-0 text-xs text-muted">
@@ -52,7 +57,12 @@ export function PopularCommentItem({ comment }: PopularCommentItemProps) {
                 ),
               )}
             </span>
-            <span>{t('comment.reactions', { count: comment.reaction_count, value: formatCount(comment.reaction_count, locale) })}</span>
+            <span>
+              {t('comment.reactions', {
+                count: comment.reaction_count,
+                value: formatCount(comment.reaction_count, locale),
+              })}
+            </span>
           </span>
         </span>
       </Link>

@@ -2,7 +2,14 @@ import { index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-co
 
 export { outbox, processed_events } from '@blog/broker'
 
-export const notification_kind = pgEnum('notification_kind', ['comment', 'reply', 'reaction', 'message', 'moderation'])
+export const notification_kind = pgEnum('notification_kind', [
+  'comment',
+  'reply',
+  'reaction',
+  'message',
+  'moderation',
+  'mention',
+])
 
 export const articles_copy = pgTable('articles_copy', {
   article_id: uuid('article_id').primaryKey(),

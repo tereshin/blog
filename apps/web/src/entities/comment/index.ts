@@ -11,8 +11,16 @@ export { commentKeys } from './model/comment-keys.ts'
 export { useComments } from './model/useComments.ts'
 export type { CommentsState } from './model/useComments.ts'
 export { usePopularComments } from './model/usePopularComments.ts'
-export type { CommentNode, CommentPage, CommentPlacement, CommentStatus } from './model/comment-types.ts'
+export type {
+  CommentNode,
+  CommentPage,
+  CommentPlacement,
+  CommentStatus,
+} from './model/comment-types.ts'
 export { CommentItem } from './ui/CommentItem.tsx'
 export { CommentThread } from './ui/CommentThread.tsx'
 export { CommentReactionGlyphsProvider } from './model/comment-reaction-glyphs.tsx'
 export { PopularCommentItem } from './ui/PopularCommentItem.tsx'
+
+export * from './api/comment-interactions.ts'
+export type { CommentSort } from './model/sort-comments.ts'

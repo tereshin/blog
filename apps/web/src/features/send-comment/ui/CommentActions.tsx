@@ -3,6 +3,7 @@ import type { CommentNode, CommentPlacement } from '@/entities/comment'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { Button, Dialog } from '@/shared/ui'
+import { CommentOverflowMenu } from './CommentOverflowMenu.tsx'
 import { useDeleteComment } from '../model/useDeleteComment.ts'
 import { useEditComment } from '../model/useEditComment.ts'
 
@@ -13,10 +14,17 @@ type CommentActionsProps = {
   placement: CommentPlacement
   article_id: string
   onReply: (target: ReplyTarget) => void
+  comments_enabled: boolean
 }
 
 /** Ответ, правка и удаление своей реплики. Заглушка и ещё не доехавший комментарий действий не имеют. */
-export function CommentActions({ comment, placement, article_id, onReply }: CommentActionsProps) {
+export function CommentActions({
+  comment,
+  placement,
+  article_id,
+  onReply,
+  comments_enabled,
+}: CommentActionsProps) {
   const { t } = useT()
   const { is_own } = useViewer()
   const edit = useEditComment(article_id)
@@ -47,7 +55,12 @@ export function CommentActions({ comment, placement, article_id, onReply }: Comm
           onChange={(event) => setText(event.target.value)}
         />
         <div className="flex gap-2">
-          <Button type="submit" variant="primary" size="sm" isDisabled={text.trim().length === 0 || edit.is_pending}>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            isDisabled={text.trim().length === 0 || edit.is_pending}
+          >
             {t('comment.save')}
           </Button>
           <Button type="button" variant="ghost" size="sm" onPress={() => setEditing(false)}>
@@ -63,6 +76,8 @@ export function CommentActions({ comment, placement, article_id, onReply }: Comm
       <Button
         variant="ghost"
         size="sm"
+        className="px-2 text-muted"
+        isDisabled={!comments_enabled}
         onPress={() =>
           onReply({
             id: placement.root_id ?? comment.id,
@@ -73,14 +88,20 @@ export function CommentActions({ comment, placement, article_id, onReply }: Comm
       >
         {t('comment.reply')}
       </Button>
+      <CommentOverflowMenu
+        comment={comment}
+        {...(is_own(comment.author.user_id)
+          ? {
+              onEdit: () => {
+                setText(comment.body ?? '')
+                setEditing(true)
+              },
+              onDelete: () => setOpen(true),
+            }
+          : {})}
+      />
       {is_own(comment.author.user_id) ? (
         <>
-          <Button variant="ghost" size="sm" onPress={() => setEditing(true)}>
-            {t('common.edit')}
-          </Button>
-          <Button variant="ghost" size="sm" onPress={() => setOpen(true)}>
-            {t('common.delete')}
-          </Button>
           <Dialog is_open={is_open} onOpenChange={setOpen}>
             <Dialog.Header>
               <Dialog.Heading>{t('comment.delete_title')}</Dialog.Heading>

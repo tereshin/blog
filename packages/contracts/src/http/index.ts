@@ -122,3 +122,7 @@ export {
   updateUserRoleSchema,
 } from './admin.ts'
 export type { AdminUser, AdminUserPage, ModerationArticle, ModerationPage, RestrictUser, ReviewReport, UpdateUserPublishing, UpdateUserRole } from './admin.ts'
+
+export * from './comment-interactions.ts'
+export { commentMediaSchema, commentMentionSchema, commentSortSchema } from './comments.ts'
+export type { CommentSort } from './comments.ts'

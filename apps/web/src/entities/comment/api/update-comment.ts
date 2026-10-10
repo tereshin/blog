@@ -5,6 +5,8 @@ import { commentNodeSchema, toCommentNode } from './comment-mapper.ts'
 
 export function updateComment(comment_id: string, body: string): Promise<CommentNode> {
   return http
-    .patch(`/v1/comments/${comment_id}`, commentNodeSchema, { body: updateCommentSchema.parse({ body }) })
+    .patch(`/v1/comments/${comment_id}`, commentNodeSchema, {
+      body: updateCommentSchema.parse({ body }),
+    })
     .then((dto) => toCommentNode(dto))
 }

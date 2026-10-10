@@ -12,6 +12,8 @@ export type StoredComment = {
   article_id: string
   parent_id: string | null
   author: { user_id: string; display_name: string; avatar_url: string | null }
+  media?: { url: string; alt: string }[]
+  mentions?: { user_id: string; display_name: string }[]
   body: string
   status: 'visible' | 'deleted' | 'hidden'
   edited_at: string | null
@@ -85,6 +87,10 @@ export function commentTree(article: FeedCardFixture, viewer_id: string | null) 
   const toNode = (row: StoredComment) => ({
     id: row.id,
     author: row.author,
+    reply_count: rows.filter((item) => item.parent_id === row.id && item.status === 'visible').length,
+    is_bookmarked: mockCommentBookmarked(row.id, viewer_id),
+    media: row.status === 'visible' ? row.media ?? [] : [],
+    mentions: row.status === 'visible' ? row.mentions ?? [] : [],
     body: row.status === 'visible' ? row.body : null,
     status: row.status,
     edited_at: row.edited_at,
@@ -118,4 +124,16 @@ export function recordMockView(article: FeedCardFixture, viewer_key: string, is_
 
 export function mockViewerId(): string | null {
   return currentMockAuthor()?.id ?? null
+}
+
+export function mockCommentBookmarked(id: string, viewer_id: string | null): boolean {
+  return mockCommentBookmarks(viewer_id).includes(id)
+}
+export function mockCommentBookmarks(viewer_id: string | null): string[] {
+  try { return JSON.parse(localStorage.getItem(`mock_comment_bookmarks:${viewer_id}`) ?? '[]') as string[] } catch { return [] }
+}
+export function setMockCommentBookmark(id: string, viewer_id: string, saved: boolean) {
+  const ids = mockCommentBookmarks(viewer_id).filter((item) => item !== id)
+  if (saved) ids.unshift(id)
+  localStorage.setItem(`mock_comment_bookmarks:${viewer_id}`, JSON.stringify(ids))
 }

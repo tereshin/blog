@@ -12,7 +12,7 @@ type OwnArticleMenuProps = { article_id: string }
 export function OwnArticleMenu({ article_id }: OwnArticleMenuProps) {
   const { t } = useT()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const { viewer } = useViewer()
   const toast = useToast()
   const remove = useDeleteArticle()
@@ -37,7 +37,7 @@ export function OwnArticleMenu({ article_id }: OwnArticleMenuProps) {
           <MoreIcon width={18} height={18} />
         </Button>
         <Menu.Content>
-          <Menu.Item onPress={() => navigate(`/write/${article_id}`)}>{t('common.edit')}</Menu.Item>
+          <Menu.Item onPress={() => navigate(`/write/${article_id}`, { state: { editor_return_to: pathname + search + hash } })}>{t('common.edit')}</Menu.Item>
           <Menu.Item onPress={() => setOpen(true)}>{t('common.delete')}</Menu.Item>
         </Menu.Content>
       </Menu>

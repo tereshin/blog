@@ -1,13 +1,20 @@
 import Fastify from 'fastify'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
-import { errorHandler, health, requestContext, serviceContext } from '@blog/http-kit'
+import {
+  createServiceClient,
+  errorHandler,
+  health,
+  requestContext,
+  serviceContext,
+} from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
+import { lookupCommentMedia } from './infra/http/media-files.ts'
 import { articleStateRoutes } from './modules/article-state/index.ts'
 import { bookmarkRoutes } from './modules/bookmark/index.ts'
-import { commentRoutes } from './modules/comment/index.ts'
+import { commentRoutes, commentInteractionRoutes } from './modules/comment/index.ts'
 import { reactionRoutes } from './modules/reaction/index.ts'
 import { seenRoutes } from './modules/seen/index.ts'
 import { viewRoutes } from './modules/view/index.ts'
@@ -23,7 +30,10 @@ export type AppDeps = {
 /** Сборка Fastify: плагины, хуки, регистрация модулей. Бизнес-логики здесь нет. */
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const { env, logger } = deps
-  const app: FastifyInstance = Fastify({ loggerInstance: logger as FastifyBaseLogger, trustProxy: true })
+  const app: FastifyInstance = Fastify({
+    loggerInstance: logger as FastifyBaseLogger,
+    trustProxy: true,
+  })
 
   await app.register(requestContext, { logger })
   await app.register(errorHandler)
@@ -37,7 +47,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // Служебный контекст проверяется на каждом маршруте без `config: { is_public: true }`.
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
 
-  await app.register(commentRoutes, { database: deps.database })
+  const media = createServiceClient({ name: 'media', base_url: env.MEDIA_URL })
+  await app.register(commentRoutes, {
+    database: deps.database,
+    lookup_file: (url) => lookupCommentMedia(media, url),
+  })
+  await app.register(commentInteractionRoutes, { database: deps.database })
   await app.register(reactionRoutes, { database: deps.database })
   await app.register(bookmarkRoutes, { database: deps.database })
   await app.register(articleStateRoutes, { database: deps.database })

@@ -1,7 +1,7 @@
 export type MockNotification = {
   id: string
   user_id: string
-  kind: 'comment' | 'reply' | 'reaction' | 'message' | 'moderation'
+  kind: 'comment' | 'reply' | 'reaction' | 'message' | 'moderation' | 'mention'
   article_id: string | null
   article_slug: string | null
   article_title: string | null

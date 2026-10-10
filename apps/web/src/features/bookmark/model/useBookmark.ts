@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { articleKeys, mapFeedCards } from '@/entities/article'
 import type { ArticleViewerState } from '@/entities/article'
+import { profileKeys } from '@/entities/profile'
 import { useViewer } from '@/entities/session'
 import { ApiError, http, sessionEvents } from '@/shared/api'
 import { useT } from '@/shared/i18n'
@@ -17,6 +18,9 @@ const stateSchema = z.object({
 type BookmarkTarget = { article_id: string; slug: string; count: number; is_bookmarked: boolean }
 
 function patch(queryClient: QueryClient, target: BookmarkTarget, next: { count: number; is_bookmarked: boolean }): void {
+  queryClient.setQueriesData({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' }, (data) =>
+    mapFeedCards(data, (card) => (card.id === target.article_id ? { ...card, bookmark_count: next.count } : card)),
+  )
   queryClient.setQueriesData({ queryKey: articleKeys.lists() }, (data) =>
     mapFeedCards(data, (card) => (card.id === target.article_id ? { ...card, bookmark_count: next.count } : card)),
   )
@@ -40,13 +44,16 @@ export function useBookmark(target: BookmarkTarget): { toggle: () => void; is_pe
     },
     onMutate: async (bookmarked) => {
       await queryClient.cancelQueries({ queryKey: articleKeys.all })
+      await queryClient.cancelQueries({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' })
+      const previous_profiles = queryClient.getQueriesData({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' })
       const previous = queryClient.getQueriesData({ queryKey: articleKeys.all })
       const delta = bookmarked === target.is_bookmarked ? 0 : bookmarked ? 1 : -1
       patch(queryClient, target, { count: Math.max(0, target.count + delta), is_bookmarked: bookmarked })
-      return { previous }
+      return { previous, previous_profiles }
     },
     onError: (error, _bookmarked, context) => {
       for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data)
+      for (const [key, data] of context?.previous_profiles ?? []) queryClient.setQueryData(key, data)
       const restricted = error instanceof ApiError && error.code === 'restricted'
       toast.error(restricted ? t('bookmark.restricted') : t('bookmark.failed'))
     },

@@ -1,3 +1,5 @@
+export { BaseIcon } from './BaseIcon.tsx'
+export type { BaseIconProps } from './BaseIcon.tsx'
 export { Avatar } from './Avatar.tsx'
 export type { AvatarProps } from './Avatar.tsx'
 export { Button } from './Button.tsx'
@@ -34,3 +36,5 @@ export {
   SearchIcon,
   ShareIcon,
 } from './icons.tsx'
+
+export { IdentityHeader } from './IdentityHeader.tsx'

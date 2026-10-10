@@ -5,7 +5,12 @@ import { commentNodeSchema, toCommentNode } from './comment-mapper.ts'
 
 export function createComment(
   article_id: string,
-  input: { body: string; parent_id?: string },
+  input: {
+    body: string
+    parent_id?: string
+    media?: { url: string; alt: string }[]
+    mentions?: { user_id: string; display_name: string }[]
+  },
   idempotency_key: string,
 ): Promise<CommentNode> {
   return http

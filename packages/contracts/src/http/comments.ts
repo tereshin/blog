@@ -24,9 +24,24 @@ export const commentAuthorSchema = z.strictObject({
   avatar_url: z.string().nullable(),
 })
 
+export const commentMediaSchema = z.strictObject({
+  url: z.url(),
+  alt: z.string().max(300).default(''),
+})
+export const commentMentionSchema = z.strictObject({
+  user_id: z.uuid(),
+  display_name: z.string().min(1).max(100),
+})
+export const commentSortSchema = z.enum(['best', 'newest', 'oldest'])
+export type CommentSort = z.infer<typeof commentSortSchema>
+
 const commentFields = {
   id: z.uuid(),
   author: commentAuthorSchema,
+  reply_count: z.number().int().nonnegative().optional(),
+  is_bookmarked: z.boolean().optional(),
+  media: z.array(commentMediaSchema).max(4).optional(),
+  mentions: z.array(commentMentionSchema).max(10).optional(),
   /** У заглушки удалённого или скрытого комментария текста нет. */
   body: z.string().nullable(),
   status: z.enum(['visible', 'deleted', 'hidden']),
@@ -73,6 +88,8 @@ export type UserCommentPage = z.infer<typeof userCommentPageSchema>
 export const createCommentSchema = z.strictObject({
   body: z.string().min(1).max(5000),
   parent_id: z.uuid().optional(),
+  media: z.array(commentMediaSchema).max(4).optional(),
+  mentions: z.array(commentMentionSchema).max(10).optional(),
 })
 export type CreateComment = z.infer<typeof createCommentSchema>
 

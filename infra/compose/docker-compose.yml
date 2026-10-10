@@ -290,6 +290,7 @@ services:
       APP_ENV: "${APP_ENV:?}"
       HTTP_PORT: "3003"
       DATABASE_URL: "postgres://discussion:${DISCUSSION_DB_PASSWORD:?}@discussion-db:5432/discussion"
+      MEDIA_URL: "http://media:3006"
       NATS_URL: "nats://nats:4222"
       SERVICE_JWT_PUBLIC_KEY: "${SERVICE_JWT_PUBLIC_KEY:?}"
       S3_PUBLIC_URL: "${S3_PUBLIC_URL:-}"

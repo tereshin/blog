@@ -23,7 +23,12 @@ describe('служебный контекст', () => {
   })
 
   it('у гостя sub = viewer_key, user_id нет', () => {
-    const guest = { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:abc' } as const
+    const guest = {
+      role: 'guest',
+      is_restricted: false,
+      can_publish: false,
+      viewer_key: 'guest:abc',
+    } as const
     const context = claimsToContext(serviceJwtClaimsSchema.parse(contextToClaims(guest, 1_000)))
     expect(context.user_id).toBeUndefined()
     expect(context.viewer_key).toBe('guest:abc')
@@ -31,7 +36,7 @@ describe('служебный контекст', () => {
 
   it('старый JWT без email_verified читается как подтверждённый', () => {
     const claims = contextToClaims(member, 1_000)
-    const legacy = { ...claims }
+    const legacy: Record<string, unknown> = { ...claims }
     delete legacy.email_verified
     const parsed = serviceJwtClaimsSchema.parse(legacy)
     expect(parsed.email_verified).toBe(true)

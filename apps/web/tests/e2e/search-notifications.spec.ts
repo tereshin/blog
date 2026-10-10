@@ -19,7 +19,7 @@ test.describe('Поиск и уведомления', () => {
     await expect(banner.getByRole('button', { name: 'Поиск' })).toBeVisible({ timeout: 15_000 })
     await expect(banner.locator('a[href^="/p/"]')).toHaveCount(0)
     await banner.getByRole('button', { name: 'Поиск' }).click()
-    const field = banner.getByRole('textbox', { name: 'Поиск' })
+    const field = page.getByRole('dialog', { name: 'Поиск' }).getByRole('textbox', { name: 'Поиск' })
     await expect(field).toBeVisible({ timeout: 10_000 })
     await field.press('Escape')
     await expect(field).toHaveCount(0)

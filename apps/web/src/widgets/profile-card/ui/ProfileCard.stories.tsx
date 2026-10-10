@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter } from 'react-router'
 import type { Profile } from '@/entities/profile'
-import { Button } from '@/shared/ui'
+import { Button, Tabs } from '@/shared/ui'
 import { ProfileCard } from './ProfileCard.tsx'
 import { ReputationHint } from './ReputationHint.tsx'
 
@@ -40,35 +40,60 @@ function Frame({ profile, action }: { profile: Profile; action?: boolean }) {
   return (
     <MemoryRouter>
       <div className="max-w-xl p-4">
-        <ProfileCard>
-          <ProfileCard.Cover url={profile.cover_url} is_own={profile.is_own} action={action ? <Button variant="secondary">Добавить обложку</Button> : null} />
-          <div className="flex items-end justify-between px-4">
-            <ProfileCard.Avatar profile={profile} />
-            <ProfileCard.Actions>
-              {profile.is_own ? <Button variant="secondary">Редактировать</Button> : <Button isDisabled>Подписаться</Button>}
-            </ProfileCard.Actions>
-          </div>
-          <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
-            <ProfileCard.Name profile={profile} aside={profile.is_own ? <ReputationHint /> : null} />
-            <ProfileCard.Reputation profile={profile} />
-            <ProfileCard.Bio profile={profile} />
-            <ProfileCard.Counts profile={profile} address={address} />
-            <ProfileCard.Badges badges={profile.badges} />
-            <ProfileCard.Tabs tab="posts" onChange={() => undefined} />
-          </div>
-        </ProfileCard>
+        <Tabs variant="secondary" defaultSelectedKey="posts">
+          <ProfileCard>
+            <ProfileCard.Cover
+              url={profile.cover_url}
+              is_own={profile.is_own}
+              action={action ? <Button variant="secondary">Добавить обложку</Button> : null}
+            />
+            <ProfileCard.Identity
+              avatar={<ProfileCard.Avatar profile={profile} />}
+              actions={
+                profile.is_own ? (
+                  <Button variant="secondary">Редактировать</Button>
+                ) : (
+                  <Button isDisabled>Подписаться</Button>
+                )
+              }
+            />
+            <ProfileCard.Content>
+              <ProfileCard.Name
+                profile={profile}
+                aside={profile.is_own ? <ReputationHint /> : null}
+              />
+              <ProfileCard.Reputation profile={profile} />
+              <ProfileCard.Bio profile={profile} />
+              <ProfileCard.Counts profile={profile} address={address} />
+              <ProfileCard.Badges badges={profile.badges} />
+            </ProfileCard.Content>
+            <ProfileCard.Navigation>
+              <ProfileCard.Tabs />
+            </ProfileCard.Navigation>
+          </ProfileCard>
+          <Tabs.Panel id="posts">Посты автора</Tabs.Panel>
+          <Tabs.Panel id="comments">Комментарии автора</Tabs.Panel>
+        </Tabs>
       </div>
     </MemoryRouter>
   )
 }
 
-const meta = { title: 'widgets/profile-card/ProfileCard', component: ProfileCard } satisfies Meta<typeof ProfileCard>
+const meta = { title: 'widgets/profile-card/ProfileCard', component: ProfileCard } satisfies Meta<
+  typeof ProfileCard
+>
 export default meta
 type Story = StoryObj
 
 export const OwnWithoutCover: Story = { render: () => <Frame profile={own} action /> }
-export const OwnWithCover: Story = { render: () => <Frame profile={{ ...own, cover_url: 'https://example.com/cover.jpg', bio: 'О себе' }} /> }
+export const OwnWithCover: Story = {
+  render: () => (
+    <Frame profile={{ ...own, cover_url: 'https://example.com/cover.jpg', bio: 'О себе' }} />
+  ),
+}
 export const Foreign: Story = { render: () => <Frame profile={foreign} /> }
-export const WithoutBioAndBadges: Story = { render: () => <Frame profile={{ ...foreign, bio: null, badges: [] }} /> }
+export const WithoutBioAndBadges: Story = {
+  render: () => <Frame profile={{ ...foreign, bio: null, badges: [] }} />,
+}
 export const ZeroReputation: Story = { render: () => <Frame profile={own} /> }
 export const Loading: Story = { render: () => <ProfileCard.Skeleton /> }

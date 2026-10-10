@@ -10,6 +10,8 @@ export const CommentCreatedV1 = defineEvent('discussion.comment.created', 1, {
   parent_author_id: z.uuid().nullable(),
   article_author_id: z.uuid(),
   excerpt: z.string(),
+  mention_ids: z.array(z.uuid()).max(10).optional(),
+  subscriber_ids: z.array(z.uuid()).optional(),
 })
 
 export type CommentCreatedV1 = z.infer<typeof CommentCreatedV1>

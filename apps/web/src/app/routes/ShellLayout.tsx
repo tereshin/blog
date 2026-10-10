@@ -1,8 +1,18 @@
-import { Suspense, useEffect } from 'react'
-import { Outlet, useLocation, useMatches } from 'react-router'
+import { Suspense, useEffect, useState } from 'react'
+import { useOutlet, useLocation, useMatches } from 'react-router'
+import { FreshFeedPage } from '@/pages/fresh-feed'
 import { RestrictedNotice } from '@/entities/session'
 import { NotificationBell } from '@/widgets/notification-bell'
-import { AccountMenu, CenterSkeleton, HeaderCenter, LeftNav, RightRail, Shell, SiteHeader, useShellStore } from '@/widgets/shell'
+import {
+  AccountMenu,
+  CenterSkeleton,
+  HeaderCenter,
+  LeftNav,
+  RightRail,
+  Shell,
+  SiteHeader,
+  useShellStore,
+} from '@/widgets/shell'
 import type { CenterSkeletonKind } from '@/widgets/shell'
 import { CenterErrorBoundary } from './CenterErrorBoundary.tsx'
 
@@ -17,6 +27,12 @@ function skeletonOf(matches: ReturnType<typeof useMatches>): CenterSkeletonKind 
 /** Единственный layout-маршрут: шапка и обе карточки не размонтируются при переходах, меняется только центр. */
 export function ShellLayout() {
   const { pathname } = useLocation()
+  const outlet = useOutlet()
+  const is_editor = /^\/write(?:\/|$)/.test(pathname)
+  const [previous, setPrevious] = useState({ pathname, outlet })
+  if (!is_editor && previous.pathname !== pathname) setPrevious({ pathname, outlet })
+  const background_path = previous.pathname
+  const background = previous.outlet
   const skeleton = skeletonOf(useMatches())
   const setNavOpen = useShellStore((state) => state.setNavOpen)
 
@@ -27,15 +43,30 @@ export function ShellLayout() {
 
   return (
     <Shell
-      header={<SiteHeader center={<HeaderCenter />} notifications={<NotificationBell />} account={<AccountMenu />} />}
+      header={
+        <SiteHeader
+          center={<HeaderCenter />}
+          notifications={<NotificationBell />}
+          account={<AccountMenu />}
+        />
+      }
       left={<LeftNav />}
       right={<RightRail />}
-      scroll_key={pathname}
+      scroll_key={is_editor ? background_path : pathname}
       center={
-        <CenterErrorBoundary key={pathname}>
+        <CenterErrorBoundary key={is_editor ? background_path : pathname}>
           <Suspense fallback={<CenterSkeleton kind={skeleton} />}>
             <RestrictedNotice />
-            <Outlet />
+            {is_editor ? (
+              background_path.startsWith('/write') ? (
+                <FreshFeedPage />
+              ) : (
+                background
+              )
+            ) : (
+              outlet
+            )}
+            {is_editor ? outlet : null}
           </Suspense>
         </CenterErrorBoundary>
       }

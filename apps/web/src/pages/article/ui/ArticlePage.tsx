@@ -4,12 +4,11 @@ import { useParams } from 'react-router'
 import { articleKeys, getArticle, useArticleStates } from '@/entities/article'
 import { useViewer } from '@/entities/session'
 import { FollowButton } from '@/features/follow'
-import { PromoteDialog } from '@/features/promote-article'
 import { ReactionControl } from '@/features/react'
 import { ShareButton } from '@/features/share-article'
 import { useT } from '@/shared/i18n'
 import { readFeedReturn } from '@/shared/lib'
-import { ArticleSkeleton, ArticleUnavailable, ArticleView, ReachBanner } from '@/widgets/article-view'
+import { ArticleSkeleton, ArticleUnavailable, ArticleView } from '@/widgets/article-view'
 import { ArticleOverflowMenu, markSeenArticle } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 import { useArticleLive } from '../model/useArticleLive.ts'
@@ -35,7 +34,7 @@ export default function ArticlePage() {
     void markSeenArticle(saved.feed_key, article.id)
   }, [article])
   const viewer_states = useArticleStates(article ? [article.id] : [], viewer.status === 'member')
-  const mine = article ? viewer_states.get(article.id)?.my_reaction ?? null : null
+  const mine = article ? (viewer_states.get(article.id)?.my_reaction ?? null) : null
 
   useEffect(() => {
     setHeaderCenter({ kind: 'back', title: article?.title ?? '' })
@@ -48,7 +47,11 @@ export default function ArticlePage() {
 
   if (query.isPending) return <ArticleSkeleton />
   if (query.isError || !query.data || query.data.status !== 'ok') {
-    return <ArticleUnavailable status={query.data?.status === 'members_only' ? 'members_only' : 'unavailable'} />
+    return (
+      <ArticleUnavailable
+        status={query.data?.status === 'members_only' ? 'members_only' : 'unavailable'}
+      />
+    )
   }
 
   const loaded = query.data.article
@@ -58,18 +61,22 @@ export default function ArticlePage() {
   return (
     <div className="flex flex-col gap-4">
       <ArticleView article={loaded}>
-        {loaded.is_own ? (
-          <ArticleView.Reach>
-            <ReachBanner action={<PromoteDialog article_id={loaded.id} />} />
-          </ArticleView.Reach>
-        ) : null}
         <ArticleView.Byline
           follow={
-            <FollowButton target_type="user" target_id={loaded.author.user_id} is_following={false} is_own={loaded.is_own} />
+            <FollowButton
+              target_type="user"
+              target_id={loaded.author.user_id}
+              is_following={false}
+              is_own={loaded.is_own}
+            />
           }
-          menu={<ArticleOverflowMenu article_id={loaded.id} slug={loaded.slug} is_own={loaded.is_own} />}
+          menu={
+            <ArticleOverflowMenu article_id={loaded.id} slug={loaded.slug} is_own={loaded.is_own} />
+          }
         />
-        {loaded.status === 'hidden' ? <p className="text-sm text-accent">{t('article.hidden_by_moderator')}</p> : null}
+        {loaded.status === 'hidden' ? (
+          <p className="text-sm text-accent">{t('article.hidden_by_moderator')}</p>
+        ) : null}
         <ArticleView.Title />
         <ArticleView.Body />
         <ArticleView.Reactions share={<ShareButton slug={loaded.slug} />}>

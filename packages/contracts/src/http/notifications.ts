@@ -1,7 +1,14 @@
 import { z } from 'zod'
 import { pageSchema } from './pagination.ts'
 
-export const notificationKindSchema = z.enum(['comment', 'reply', 'reaction', 'message', 'moderation'])
+export const notificationKindSchema = z.enum([
+  'comment',
+  'reply',
+  'reaction',
+  'message',
+  'moderation',
+  'mention',
+])
 export type NotificationKind = z.infer<typeof notificationKindSchema>
 
 export const notificationSchema = z.strictObject({

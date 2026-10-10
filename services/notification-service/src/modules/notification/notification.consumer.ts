@@ -49,31 +49,35 @@ export function createNotificationHandler(repository: NotificationRepository): E
       }
       case 'identity.user.created': {
         const parsed = UserCreatedV1.parse(event)
-        await repository.upsertUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name })
+        await repository.upsertUser(tx, {
+          user_id: parsed.user_id,
+          display_name: parsed.display_name,
+        })
         return
       }
       case 'content.profile.updated': {
         const parsed = ProfileUpdatedV1.parse(event)
-        await repository.upsertUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name, avatar_url: parsed.avatar_url })
+        await repository.upsertUser(tx, {
+          user_id: parsed.user_id,
+          display_name: parsed.display_name,
+          avatar_url: parsed.avatar_url,
+        })
         return
       }
       case 'discussion.comment.created': {
         const parsed = CommentCreatedV1.parse(event)
-        if (parsed.author_id !== parsed.article_author_id) {
+        const recipients = new Map<string, 'comment' | 'reply' | 'mention'>()
+        for (const id of parsed.subscriber_ids ?? []) recipients.set(id, 'comment')
+        recipients.set(parsed.article_author_id, 'comment')
+        if (parsed.parent_author_id && parsed.parent_author_id !== parsed.article_author_id)
+          recipients.set(parsed.parent_author_id, 'reply')
+        for (const id of parsed.mention_ids ?? []) recipients.set(id, 'mention')
+        recipients.delete(parsed.author_id)
+        for (const [user_id, kind] of recipients) {
           await repository.notify(tx, {
             source: event,
-            user_id: parsed.article_author_id,
-            kind: 'comment',
-            article_id: parsed.article_id,
-            comment_id: parsed.comment_id,
-            actor_id: parsed.author_id,
-          })
-        }
-        if (parsed.parent_author_id && parsed.parent_author_id !== parsed.author_id && parsed.parent_author_id !== parsed.article_author_id) {
-          await repository.notify(tx, {
-            source: event,
-            user_id: parsed.parent_author_id,
-            kind: 'reply',
+            user_id,
+            kind,
             article_id: parsed.article_id,
             comment_id: parsed.comment_id,
             actor_id: parsed.author_id,
@@ -112,7 +116,12 @@ export function createNotificationHandler(repository: NotificationRepository): E
   }
 }
 
-export type NotificationConsumerDeps = { db: Database; broker: BrokerClient; logger: Logger; repository: NotificationRepository }
+export type NotificationConsumerDeps = {
+  db: Database
+  broker: BrokerClient
+  logger: Logger
+  repository: NotificationRepository
+}
 
 const SUBSCRIPTIONS = [
   { durable: 'notification-articles', subject: 'content.article.>' },
@@ -124,8 +133,12 @@ const SUBSCRIPTIONS = [
 ] as const
 
 /** Запускает потребителей. Каждый durable пишет свою строку в `processed_events`. */
-export async function startNotificationConsumers(deps: NotificationConsumerDeps): Promise<RunningConsumer> {
+export async function startNotificationConsumers(
+  deps: NotificationConsumerDeps,
+): Promise<RunningConsumer> {
   const handler = createNotificationHandler(deps.repository)
-  const running = await Promise.all(SUBSCRIPTIONS.map((item) => createIdempotentConsumer({ ...deps, ...item, handler })))
+  const running = await Promise.all(
+    SUBSCRIPTIONS.map((item) => createIdempotentConsumer({ ...deps, ...item, handler })),
+  )
   return { stop: async () => void (await Promise.all(running.map((consumer) => consumer.stop()))) }
 }

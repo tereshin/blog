@@ -7,16 +7,25 @@ export function emptyCache(comment: CommentNode): CommentCache {
   return { pages: [{ comments: [comment], next_cursor: null }], pageParams: [undefined] }
 }
 
-function mapNode(node: CommentNode, visit: (node: CommentNode) => CommentNode | null): CommentNode | null {
+function mapNode(
+  node: CommentNode,
+  visit: (node: CommentNode) => CommentNode | null,
+): CommentNode | null {
   const next = visit(node)
   if (!next) return null
-  return { ...next, replies: next.replies.flatMap((reply) => {
-    const mapped = mapNode(reply, visit)
-    return mapped ? [mapped] : []
-  }) }
+  return {
+    ...next,
+    replies: next.replies.flatMap((reply) => {
+      const mapped = mapNode(reply, visit)
+      return mapped ? [mapped] : []
+    }),
+  }
 }
 
-export function mapComments(cache: CommentCache, visit: (node: CommentNode) => CommentNode | null): CommentCache {
+export function mapComments(
+  cache: CommentCache,
+  visit: (node: CommentNode) => CommentNode | null,
+): CommentCache {
   return {
     ...cache,
     pages: cache.pages.map((page) => ({
@@ -30,17 +39,35 @@ export function mapComments(cache: CommentCache, visit: (node: CommentNode) => C
 }
 
 /** Кладёт новый комментарий в конец корней или внутрь ответов родителя. */
-export function insertComment(cache: CommentCache, comment: CommentNode, parent_id: string | null): CommentCache {
+export function insertComment(
+  cache: CommentCache,
+  comment: CommentNode,
+  parent_id: string | null,
+): CommentCache {
   if (!parent_id) {
     const [first, ...rest] = cache.pages
     if (!first) return emptyCache(comment)
     return { ...cache, pages: [{ ...first, comments: [...first.comments, comment] }, ...rest] }
   }
-  return mapComments(cache, (node) => (node.id === parent_id ? { ...node, replies: [...node.replies, comment] } : node))
+  return mapComments(cache, (node) =>
+    node.id === parent_id
+      ? {
+          ...node,
+          reply_count: (node.reply_count ?? node.replies.length) + 1,
+          replies: [...node.replies, comment],
+        }
+      : node,
+  )
 }
 
-export function replaceComment(cache: CommentCache, comment_id: string, next: CommentNode): CommentCache {
+export function replaceComment(
+  cache: CommentCache,
+  comment_id: string,
+  next: CommentNode,
+): CommentCache {
   return mapComments(cache, (node) =>
-    node.id === comment_id ? { ...next, replies: next.replies.length > 0 ? next.replies : node.replies } : node,
+    node.id === comment_id
+      ? { ...next, replies: next.replies.length > 0 ? next.replies : node.replies }
+      : node,
   )
 }

@@ -7,7 +7,7 @@ export function notificationCreatedEvent(input: {
   causation_id: string | null
   notification_id: string
   user_id: string
-  kind: 'comment' | 'reply' | 'reaction' | 'message' | 'moderation'
+  kind: 'comment' | 'reply' | 'reaction' | 'message' | 'moderation' | 'mention'
 }): NotificationCreatedV1 {
   return NotificationCreatedV1.parse({
     event_id: newEventId(),

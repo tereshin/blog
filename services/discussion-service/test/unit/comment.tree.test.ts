@@ -31,7 +31,12 @@ describe('дерево комментариев', () => {
   it('прячет удалённый без ответов и оставляет заглушку, если ответы есть', () => {
     const tree = assembleCommentTree(
       [
-        row({ id: GONE, status: 'deleted', body: 'секрет', created_at: new Date('2026-10-08T09:00:00.000Z') }),
+        row({
+          id: GONE,
+          status: 'deleted',
+          body: 'секрет',
+          created_at: new Date('2026-10-08T09:00:00.000Z'),
+        }),
         row({ id: ROOT, status: 'hidden', body: 'скрыто', reply_count: 1 }),
       ],
       [row({ id: REPLY, parent_id: ROOT, status: 'visible', body: 'ответ' })],
@@ -46,11 +51,25 @@ describe('дерево комментариев', () => {
 })
 
 describe('listForArticle', () => {
-  const guest: ServiceContext = { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' }
+  const guest: ServiceContext = {
+    role: 'guest',
+    is_restricted: false,
+    can_publish: false,
+    viewer_key: 'guest:1',
+  }
   const query: PageQuery = { limit: 20 }
   const repository: CommentRepository = {
+    findByIds: async () => [],
+    findComment: async () => null,
+    findBookmarks: async () => [],
+    listReplyPage: async () => [],
     findPopular: async () => [],
-    findArticle: async () => ({ author_id: AUTHOR, visibility: 'members', status: 'published', comments_enabled: true }),
+    findArticle: async () => ({
+      author_id: AUTHOR,
+      visibility: 'members',
+      status: 'published',
+      comments_enabled: true,
+    }),
     listRoots: async () => [],
     listReplies: async () => [],
     countReactions: async () => [],
@@ -60,13 +79,25 @@ describe('listForArticle', () => {
 
   it('гость не читает обсуждение статьи только для участников', async () => {
     const writer: CommentWriter = {
-      insert: async () => { throw new Error('unused') },
-      update: async () => { throw new Error('unused') },
-      remove: async () => { throw new Error('unused') },
-      moderate: async () => { throw new Error('unused') },
+      insert: async () => {
+        throw new Error('unused')
+      },
+      update: async () => {
+        throw new Error('unused')
+      },
+      remove: async () => {
+        throw new Error('unused')
+      },
+      moderate: async () => {
+        throw new Error('unused')
+      },
     }
     const service = createCommentService(repository, writer)
-    await expect(service.listForArticle(guest, '7a1c2d30-1111-4a11-8a11-000000000099', query)).rejects.toMatchObject({ http_status: 404 })
-    expect(canReadArticle(guest, { author_id: AUTHOR, visibility: 'members', status: 'published' })).toBe(false)
+    await expect(
+      service.listForArticle(guest, '7a1c2d30-1111-4a11-8a11-000000000099', query),
+    ).rejects.toMatchObject({ http_status: 404 })
+    expect(
+      canReadArticle(guest, { author_id: AUTHOR, visibility: 'members', status: 'published' }),
+    ).toBe(false)
   })
 })

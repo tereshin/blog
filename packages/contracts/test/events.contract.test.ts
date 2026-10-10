@@ -7,7 +7,8 @@ import * as events from '../src/events/index.ts'
 const fixtures_root = join(import.meta.dirname, 'fixtures')
 
 function schemas(): z.ZodObject[] {
-  return Object.values(events).filter((value): value is z.ZodObject => {
+  const values: unknown[] = Object.values(events)
+  return values.filter((value): value is z.ZodObject => {
     if (!value || typeof value !== 'object' || !('shape' in value)) return false
     const name = (value as z.ZodObject).shape['name']
     return name instanceof z.ZodLiteral

@@ -9,11 +9,19 @@ const pageSchema = z.object({
 })
 
 /** Дерево комментариев статьи. Курсор листает корни, ответы приходят вместе с корнем. */
-export async function getComments(article_id: string, cursor: string | undefined, signal?: AbortSignal): Promise<CommentPage> {
+export async function getComments(
+  article_id: string,
+  cursor: string | undefined,
+  signal?: AbortSignal,
+  sort: 'best' | 'newest' | 'oldest' = 'best',
+): Promise<CommentPage> {
   const page = await http.get(`/v1/articles/${article_id}/comments`, pageSchema, {
-    query: { ...(cursor ? { cursor } : {}) },
+    query: { sort, include_replies: false, ...(cursor ? { cursor } : {}) },
     ...(signal ? { signal } : {}),
   })
   const now = new Date()
-  return { comments: page.comments.map((comment) => toCommentNode(comment, now)), next_cursor: page.next_cursor }
+  return {
+    comments: page.comments.map((comment) => toCommentNode(comment, now)),
+    next_cursor: page.next_cursor,
+  }
 }

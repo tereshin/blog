@@ -6,8 +6,8 @@ export function getAuthConfig(signal?: AbortSignal): Promise<AuthConfig> {
   return http.get('/v1/auth/config', authConfigSchema, { signal })
 }
 
-export function registerWithPassword(email: string, password: string): Promise<{ status: 'pending' }> {
-  return http.post('/v1/auth/registrations', pendingAuthSchema, { body: { email, password } })
+export function registerWithPassword(email: string, password: string, display_name: string): Promise<{ status: 'pending' }> {
+  return http.post('/v1/auth/registrations', pendingAuthSchema, { body: { email, password, display_name } })
 }
 
 export function signInWithPassword(email: string, password: string): Promise<void> {

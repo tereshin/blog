@@ -11,6 +11,9 @@ export type CommentRow = {
   author_id: string
   parent_id: string | null
   body: string
+  media?: { url: string; alt: string }[]
+  mentions?: { user_id: string; display_name: string }[]
+  is_bookmarked?: boolean
   status: CommentStatus
   edited_at: Date | null
   reaction_count: number
@@ -48,6 +51,10 @@ export function toCommentNode(
       avatar_url: row.author_avatar_url,
     },
     body: stub ? null : row.body,
+    media: stub ? [] : (row.media ?? []),
+    mentions: stub ? [] : (row.mentions ?? []),
+    is_bookmarked: row.is_bookmarked ?? false,
+    reply_count: row.reply_count,
     status: row.status,
     edited_at: row.edited_at ? row.edited_at.toISOString() : null,
     reaction_counts: countsOf(facts, row.id),
@@ -69,6 +76,10 @@ export function toReplyNode(
     id: node.id,
     author: node.author,
     body: node.body,
+    media: node.media,
+    mentions: node.mentions,
+    is_bookmarked: node.is_bookmarked,
+    reply_count: 0,
     status: node.status,
     edited_at: node.edited_at,
     reaction_counts: node.reaction_counts,

@@ -115,3 +115,60 @@
 .editor-holder .ce-inline-toolbar,
 .editor-holder .ce-settings,
 .editor-holder .ce-conversion-toolbar { color: #1a1a1a; }
+
+/* Article composer shares the site's theme, including the block menus. */
+.article-editor-window {
+  width: min(1000px, calc(100vw - 48px));
+  max-width: 1000px;
+  height: min(900px, calc(100dvh - 80px));
+  padding: 0;
+  overflow: hidden;
+  background: var(--overlay);
+  border: 1px solid var(--separator);
+  border-radius: 20px;
+}
+.article-editor-window--full { width: 100vw; max-width: none; height: 100dvh; border-radius: 0; }
+.article-editor-panel .editor-holder { min-height: 280px; }
+.article-editor-panel .codex-editor { padding-left: 4rem; padding-right: 2rem; }
+.article-editor-panel .ce-block { margin-bottom: 18px; }
+.article-editor-title { margin: 0 0 24px; font-size: clamp(26px, 3vw, 34px); line-height: 1.3; font-weight: 650; outline: none; overflow-wrap: anywhere; }
+.article-editor-title:empty::before { content: attr(data-placeholder); color: var(--muted); }
+.article-editor-panel .ce-paragraph { font-size: 18px; line-height: 1.75; }
+.article-editor-panel .ce-toolbar__actions { right: auto; left: -60px; }
+.article-editor-panel .ce-toolbar__plus,
+.article-editor-panel .ce-toolbar__settings-btn { color: var(--foreground); border-radius: 50%; }
+.article-editor-panel .ce-toolbar__plus:hover,
+.article-editor-panel .ce-toolbar__settings-btn:hover { background: var(--surface-secondary); }
+.article-editor-panel .ce-popover,
+.article-editor-panel .ce-inline-toolbar,
+.article-editor-panel .ce-conversion-toolbar {
+  --color-background: var(--overlay);
+  --color-text-primary: var(--foreground);
+  --color-border: var(--separator);
+  --color-background-item-hover: var(--surface-secondary);
+  background: var(--overlay); color: var(--foreground); border-color: var(--separator);
+}
+.article-editor-panel .ce-popover-item { color: var(--foreground); }
+.article-editor-panel .ce-popover-item__icon { background: transparent; box-shadow: none; }
+.article-editor-panel .ce-popover-item:hover { background: var(--surface-secondary); }
+.article-editor-panel .ce-block--selected .ce-block__content { background: var(--surface-secondary); }
+.article-editor-panel .image-tool__image { border-radius: 14px; overflow: hidden; }
+@media (max-width: 640px) {
+  .article-editor-window { width: 100vw; max-width: none; height: 100dvh; border-radius: 0; }
+  .article-editor-panel .codex-editor { padding-left: 2.75rem; padding-right: 0; }
+  .article-editor-panel .ce-toolbar__actions { left: -44px; }
+  .article-editor-panel .ce-paragraph { font-size: 16px; }
+}
+.article-editor-window { min-height: 0; max-height: calc(100dvh - 80px); }
+.article-editor-window--full { max-height: 100dvh; }
+.modal__backdrop:has(.article-editor-window) { backdrop-filter: blur(8px); }
+@media (max-width: 640px) { .article-editor-window { max-height: 100dvh; } }
+.article-editor-panel .ce-toolbar__content { margin-left: 4rem; margin-right: 2rem; }
+@media (max-width: 640px) { .article-editor-panel .ce-toolbar__content { margin-left: 2.75rem; margin-right: 0; } }
+.article-editor-panel .ce-inline-tool,
+.article-editor-panel .ce-inline-toolbar__dropdown { color: var(--foreground); }
+.article-editor-panel .ce-inline-tool:hover,
+.article-editor-panel .ce-inline-toolbar__dropdown:hover { background: var(--surface-secondary); }
+.article-editor-panel .cdx-search-field { background: var(--surface-secondary); border-color: var(--separator); }
+.article-editor-panel .cdx-search-field__input { color: var(--foreground); }
+.article-editor-panel .ce-popover__container { background: var(--overlay); border-color: var(--separator); }

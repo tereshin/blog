@@ -42,7 +42,8 @@ test.describe('обсуждение на фикстурном gateway', () => {
     await reply.locator('xpath=ancestor::form').getByRole('button', { name: 'Отправить' }).click()
     await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
 
-    await root.getByRole('button', { name: 'Удалить' }).first().click()
+    await root.getByRole('button', { name: 'Меню комментария' }).first().click()
+    await page.getByRole('menuitem', { name: 'Удалить', exact: true }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Удалить' }).click()
     await expect(page.getByText('Комментарий удалён')).toBeVisible()
     await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
@@ -98,7 +99,8 @@ test.describe('обсуждение на локальном стеке', () => {
     const reply = author.getByRole('textbox', { name: /Ответ для/ })
     await reply.fill('Черновик ответа')
     const title = await author.getByRole('heading', { level: 1 }).innerText()
-    await reader.getByRole('button', { name: 'Редактировать' }).click()
+    await reader.getByRole('button', { name: 'Меню комментария' }).click()
+    await reader.getByRole('menuitem', { name: 'Редактировать', exact: true }).click()
     await expect(author.getByRole('heading', { level: 1 })).not.toHaveText(title, { timeout: 2000 }).catch(() => undefined)
     await expect(reply).toHaveValue('Черновик ответа')
 

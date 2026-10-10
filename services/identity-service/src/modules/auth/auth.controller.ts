@@ -37,6 +37,7 @@ export function createAuthController(service: AuthService) {
       const result = await service.register({
         email: body.email,
         password: body.password,
+        ...(body.display_name !== undefined ? { display_name: body.display_name } : {}),
         idempotency_key: idempotencyKey(request),
         correlation_id: request.correlation_id,
       })

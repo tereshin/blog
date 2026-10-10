@@ -9,6 +9,7 @@ import type { NotificationModel } from '../api/notification-schema.ts'
 const KIND_KEY: Record<NotificationModel['kind'], MessageKey> = {
   comment: 'notification.comment',
   reply: 'notification.reply',
+  mention: 'notification.mention',
   reaction: 'notification.reaction',
   message: 'notification.message',
   moderation: 'notification.moderation',

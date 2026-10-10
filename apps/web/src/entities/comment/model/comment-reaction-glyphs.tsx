@@ -3,7 +3,9 @@ import type { ReactNode } from 'react'
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
 import type { ReactionAppearances } from '@blog/contracts'
 
-const CommentReactionGlyphsContext = createContext<ReactionAppearances>(DEFAULT_REACTION_APPEARANCES)
+const CommentReactionGlyphsContext = createContext<ReactionAppearances>(
+  DEFAULT_REACTION_APPEARANCES,
+)
 
 type CommentReactionGlyphsProviderProps = {
   appearances: ReactionAppearances
@@ -11,7 +13,10 @@ type CommentReactionGlyphsProviderProps = {
 }
 
 /** Вид реакций для популярных комментариев. Пока провайдер не подставил настройки, остаются эмодзи по умолчанию. */
-export function CommentReactionGlyphsProvider({ appearances, children }: CommentReactionGlyphsProviderProps) {
+export function CommentReactionGlyphsProvider({
+  appearances,
+  children,
+}: CommentReactionGlyphsProviderProps) {
   return <CommentReactionGlyphsContext value={appearances}>{children}</CommentReactionGlyphsContext>
 }
 

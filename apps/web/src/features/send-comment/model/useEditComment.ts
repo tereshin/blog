@@ -9,10 +9,13 @@ export function useEditComment(article_id: string): {
 } {
   const queryClient = useQueryClient()
   const mutation = useMutation({
-    mutationFn: (input: { comment_id: string; body: string }) => updateComment(input.comment_id, input.body),
+    mutationFn: (input: { comment_id: string; body: string }) =>
+      updateComment(input.comment_id, input.body),
     onSuccess: (comment) => {
-      queryClient.setQueryData<CommentCache>(commentKeys.list(article_id), (cache) =>
-        cache ? replaceComment(cache, comment.id, comment) : cache,
+      void queryClient.invalidateQueries({ queryKey: commentKeys.all })
+      queryClient.setQueriesData<CommentCache>(
+        { queryKey: commentKeys.list(article_id) },
+        (cache) => (cache ? replaceComment(cache, comment.id, comment) : cache),
       )
     },
   })

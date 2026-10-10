@@ -7,6 +7,7 @@ import type { CommentNode } from '@/entities/comment'
 import type { ArticleLoad, ArticleViewerState } from '@/entities/article'
 import { applyReactionChange } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
+import { profileKeys } from '@/entities/profile'
 import { useViewer } from '@/entities/session'
 import { ApiError, http, sessionEvents } from '@/shared/api'
 import { useT } from '@/shared/i18n'
@@ -43,12 +44,17 @@ function patchCommentCache(data: unknown, comment_id: string, next: ReactionSnap
     ...cache,
     pages: cache.pages.map((page) => ({
       ...page,
-      comments: page.comments.map((comment) => patchCommentNode(comment, comment_id, next)),
+      comments: Array.isArray(page.comments) ? page.comments.map((comment) => patchCommentNode(comment, comment_id, next)) : page.comments,
     })),
   }
 }
 
 function patchCaches(queryClient: QueryClient, target: ReactionTarget, next: ReactionSnapshot): void {
+  if (target.target_type === 'article') {
+    queryClient.setQueriesData({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' }, (data) =>
+      mapFeedCards(data, (card) => (card.id === target.target_id ? { ...card, reaction_counts: next.counts, reaction_count: next.reaction_count } : card)),
+    )
+  }
   queryClient.setQueriesData({ queryKey: articleKeys.lists() }, (data) =>
     mapFeedCards(data, (card) => (card.id === target.target_id ? { ...card, reaction_counts: next.counts, reaction_count: next.reaction_count } : card)),
   )
@@ -78,13 +84,16 @@ export function useReaction(target: ReactionTarget): { react: (kind: ReactionKin
     onMutate: async (kind) => {
       await queryClient.cancelQueries({ queryKey: articleKeys.all })
       await queryClient.cancelQueries({ queryKey: commentKeys.all })
+      await queryClient.cancelQueries({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' })
+      const previous_profiles = queryClient.getQueriesData({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' })
       const previous = queryClient.getQueriesData({ queryKey: articleKeys.all })
       const previous_comments = queryClient.getQueriesData({ queryKey: commentKeys.all })
       patchCaches(queryClient, target, applyReactionChange(target.counts, target.my_reaction, kind))
-      return { previous, previous_comments }
+      return { previous, previous_comments, previous_profiles }
     },
     onError: (error, _kind, context) => {
       for (const [key, data] of context?.previous ?? []) queryClient.setQueryData(key, data)
+      for (const [key, data] of context?.previous_profiles ?? []) queryClient.setQueryData(key, data)
       for (const [key, data] of context?.previous_comments ?? []) queryClient.setQueryData(key, data)
       const restricted = error instanceof ApiError && error.code === 'restricted'
       toast.error(restricted ? t('reaction.restricted') : t('reaction.failed'))

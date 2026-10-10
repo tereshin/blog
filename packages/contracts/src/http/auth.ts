@@ -64,6 +64,7 @@ export const authOkSchema = z.strictObject({ status: z.literal('ok') })
 export type AuthOk = z.infer<typeof authOkSchema>
 
 export const registrationBodySchema = z.strictObject({
+  display_name: z.string().trim().min(1).max(50).optional(),
   email: z.string(),
   password: z.string(),
 })

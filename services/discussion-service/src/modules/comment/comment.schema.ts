@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { pageQuerySchema } from '@blog/contracts'
+import { commentSortSchema, pageQuerySchema } from '@blog/contracts'
 
 /** Ответ маршрута описан в `@blog/contracts` (`popularCommentListSchema`); здесь — лимиты модуля. */
 export const POPULAR_COMMENTS_LIMIT = 10
@@ -7,9 +7,21 @@ export const COMMENT_EXCERPT_LENGTH = 140
 
 export const commentParamsSchema = z.strictObject({ article_id: z.uuid() })
 export const commentIdParamsSchema = z.strictObject({ id: z.uuid() })
-export const commentQuerySchema = pageQuerySchema
+export const commentQuerySchema = pageQuerySchema.extend({
+  sort: commentSortSchema.default('oldest'),
+  include_replies: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
+})
 
-const cursorSchema = z.strictObject({ t: z.iso.datetime(), id: z.uuid() })
+const cursorSchema = z.strictObject({
+  t: z.iso.datetime(),
+  id: z.uuid(),
+  sort: commentSortSchema.optional(),
+  scope: z.string().optional(),
+  score: z.number().int().nonnegative().optional(),
+})
 export type CommentCursor = z.infer<typeof cursorSchema>
 
 export function encodeCommentCursor(cursor: CommentCursor): string {

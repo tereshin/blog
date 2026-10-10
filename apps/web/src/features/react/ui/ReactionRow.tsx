@@ -1,8 +1,13 @@
 import type { ReactionAppearance, ReactionAppearances } from '@blog/contracts'
 import { useT } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
-import { Button, Menu } from '@/shared/ui'
-import { FALLBACK_REACTION_APPEARANCES, REACTION_KINDS, REACTION_LABEL, ReactionGlyph } from '@/entities/reaction'
+import { BaseIcon, Button, Menu } from '@/shared/ui'
+import {
+  FALLBACK_REACTION_APPEARANCES,
+  REACTION_KINDS,
+  REACTION_LABEL,
+  ReactionGlyph,
+} from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
 
 type ReactionRowProps = {
@@ -16,7 +21,11 @@ type ReactionRowProps = {
 }
 
 function appearanceOf(appearances: ReactionAppearances, kind: ReactionKind): ReactionAppearance {
-  return appearances.find((item) => item.kind === kind) ?? FALLBACK_REACTION_APPEARANCES[REACTION_KINDS.indexOf(kind)] ?? FALLBACK_REACTION_APPEARANCES[0]
+  return (
+    appearances.find((item) => item.kind === kind) ??
+    FALLBACK_REACTION_APPEARANCES[REACTION_KINDS.indexOf(kind)] ??
+    FALLBACK_REACTION_APPEARANCES[0]
+  )
 }
 
 /** Ряд реакций: вид с ненулевым числом — пилюля, «добавить» открывает меню из четырёх видов. */
@@ -40,6 +49,7 @@ export function ReactionRow({
             key={kind}
             variant={my_reaction === kind ? 'primary' : 'secondary'}
             size="sm"
+            className="h-8 min-w-0 gap-1.5 px-3 text-sm tabular-nums"
             aria-pressed={my_reaction === kind}
             aria-label={`${label} ${formatCount(counts[kind], locale)}`}
             isDisabled={is_pending}
@@ -51,21 +61,43 @@ export function ReactionRow({
         )
       })}
       {onAdd ? (
-        <Button variant="ghost" size="sm" aria-label={t('reaction.add')} isDisabled={is_pending} onPress={onAdd}>
-          +
+        <Button
+          variant="secondary"
+          size="sm"
+          isIconOnly
+          className="h-8 w-8 min-w-0 text-muted"
+          aria-label={t('reaction.add')}
+          isDisabled={is_pending}
+          onPress={onAdd}
+        >
+          <BaseIcon name="add" style="line" size={18} />
         </Button>
       ) : (
         <Menu>
-          <Button variant="ghost" size="sm" aria-label={t('reaction.add')} isDisabled={is_pending}>
-            +
+          <Button
+            variant="secondary"
+            size="sm"
+            isIconOnly
+            className="h-8 w-8 min-w-0 text-muted"
+            aria-label={t('reaction.add')}
+            isDisabled={is_pending}
+          >
+            <BaseIcon name="add" style="line" size={18} />
           </Button>
-          <Menu.Content aria-label={t('reaction.menu')} onAction={(key) => onSelect(String(key) as ReactionKind)}>
+          <Menu.Content
+            aria-label={t('reaction.menu')}
+            onAction={(key) => onSelect(String(key) as ReactionKind)}
+          >
             {REACTION_KINDS.map((kind) => {
               const label = t(REACTION_LABEL[kind])
               return (
                 <Menu.Item key={kind} id={kind} textValue={label}>
                   <span className="inline-flex items-center gap-1">
-                    <ReactionGlyph appearance={appearanceOf(appearances, kind)} label={label} hide_label_on_error />
+                    <ReactionGlyph
+                      appearance={appearanceOf(appearances, kind)}
+                      label={label}
+                      hide_label_on_error
+                    />
                     <span>{label}</span>
                   </span>
                 </Menu.Item>

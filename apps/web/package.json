@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build": "pnpm icons:check && tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
@@ -12,7 +12,9 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "size": "size-limit",
-    "test:unit": "vitest run --passWithNoTests --exclude '**/integration/**' --exclude '**/e2e/**'"
+    "test:unit": "vitest run --passWithNoTests --exclude '**/integration/**' --exclude '**/e2e/**'",
+    "icons": "node scripts/generate-icons.mjs",
+    "icons:check": "node scripts/generate-icons.mjs --check"
   },
   "dependencies": {
     "@blog/contracts": "workspace:^",

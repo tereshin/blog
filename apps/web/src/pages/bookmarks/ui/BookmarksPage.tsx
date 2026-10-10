@@ -1,20 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { articleKeys, ArticleCard, getBookmarks, useArticleStates } from '@/entities/article'
 import { useViewer } from '@/entities/session'
 import { BookmarkControl } from '@/features/bookmark'
 import { useLoginDialog } from '@/features/login'
+import { SavedComments } from '@/features/send-comment'
 import { ShareButton } from '@/features/share-article'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState } from '@/shared/ui'
+import { Button, EmptyState, ErrorState, Tabs } from '@/shared/ui'
 import { ArticleOverflowMenu } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 
-export default function BookmarksPage() {
+function SavedArticles() {
   const { t } = useT()
   const { viewer, is_own } = useViewer()
   const openLogin = useLoginDialog((state) => state.open)
-  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const is_member = viewer.status === 'member'
   const query = useQuery({
     queryKey: articleKeys.bookmarks(),
@@ -28,10 +28,6 @@ export default function BookmarksPage() {
   )
   const visible = articles.filter((article) => states.get(article.id)?.is_bookmarked !== false)
 
-  useEffect(() => {
-    setHeaderCenter({ kind: 'empty' })
-  }, [setHeaderCenter])
-
   if (viewer.status === 'guest') {
     return (
       <EmptyState title={t('bookmarks.guest')} className="py-16">
@@ -43,7 +39,8 @@ export default function BookmarksPage() {
   }
 
   if (query.isPending) return <ArticleCard.Skeleton />
-  if (query.isError) return <ErrorState title={t('feed.load_error')} onRetry={() => void query.refetch()} />
+  if (query.isError)
+    return <ErrorState title={t('feed.load_error')} onRetry={() => void query.refetch()} />
   if (visible.length === 0) return <EmptyState title={t('bookmarks.empty')} className="py-16" />
 
   return (
@@ -53,7 +50,13 @@ export default function BookmarksPage() {
         return (
           <ArticleCard key={article.id} article={article}>
             <ArticleCard.Header
-              menu={<ArticleOverflowMenu article_id={article.id} slug={article.slug} is_own={is_own(article.author.user_id)} />}
+              menu={
+                <ArticleOverflowMenu
+                  article_id={article.id}
+                  slug={article.slug}
+                  is_own={is_own(article.author.user_id)}
+                />
+              }
             />
             <ArticleCard.Title />
             <ArticleCard.Excerpt />
@@ -72,6 +75,29 @@ export default function BookmarksPage() {
           </ArticleCard>
         )
       })}
+    </div>
+  )
+}
+
+export default function BookmarksPage() {
+  const { t } = useT()
+  const { viewer } = useViewer()
+  const [tab, setTab] = useState('articles')
+  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
+  useEffect(() => {
+    setHeaderCenter({ kind: 'empty' })
+  }, [setHeaderCenter])
+  return (
+    <div className="flex flex-col gap-4">
+      {viewer.status === 'member' ? (
+        <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(String(key))}>
+          <Tabs.List aria-label={t('comment.bookmark')}>
+            <Tabs.Tab id="articles">{t('comment.saved_articles')}</Tabs.Tab>
+            <Tabs.Tab id="comments">{t('comment.saved_title')}</Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
+      ) : null}
+      {viewer.status === 'member' && tab === 'comments' ? <SavedComments /> : <SavedArticles />}
     </div>
   )
 }

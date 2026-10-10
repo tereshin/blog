@@ -7,7 +7,7 @@ import { defineConfig } from '@playwright/test'
 const is_local_target = process.env['E2E_TARGET'] === 'local'
 const base_url = is_local_target
   ? (process.env['E2E_BASE_URL'] ?? process.env['PUBLIC_ORIGIN'] ?? 'http://localhost:8080')
-  : 'http://localhost:5173'
+  : (process.env['E2E_BASE_URL'] ?? 'http://localhost:5173')
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -28,7 +28,7 @@ export default defineConfig({
   webServer: is_local_target
     ? undefined
     : {
-        command: 'pnpm dev --port 5173',
+        command: `pnpm dev --port ${new URL(base_url).port || '5173'} --strictPort`,
         env: { VITE_API_MOCK: '1' },
         url: base_url,
         reuseExistingServer: !process.env['CI'],

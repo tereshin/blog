@@ -19,11 +19,22 @@ const pageSchema = z.object({
 export type UserCommentModel = z.infer<typeof itemSchema> & { href: string }
 export type UserCommentPage = { items: UserCommentModel[]; next_cursor: string | null }
 
-export function getUserComments(user_id: string, sort: 'fresh' | 'popular', cursor: string | null, signal?: AbortSignal): Promise<UserCommentPage> {
+export function getUserComments(
+  user_id: string,
+  sort: 'fresh' | 'popular',
+  cursor: string | null,
+  signal?: AbortSignal,
+): Promise<UserCommentPage> {
   return http
-    .get(`/v1/users/${encodeURIComponent(user_id)}/comments`, pageSchema, { query: { sort, cursor: cursor ?? undefined }, signal })
+    .get(`/v1/users/${encodeURIComponent(user_id)}/comments`, pageSchema, {
+      query: { sort, cursor: cursor ?? undefined },
+      signal,
+    })
     .then((page) => ({
-      items: page.items.map((item) => ({ ...item, href: `/p/${encodeURIComponent(item.article_slug)}#comment-${item.id}` })),
+      items: page.items.map((item) => ({
+        ...item,
+        href: `/p/${encodeURIComponent(item.article_slug)}#comment-${item.id}`,
+      })),
       next_cursor: page.next_cursor,
     }))
 }

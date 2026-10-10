@@ -4,6 +4,7 @@ import type { BlocksDocument } from '@blog/contracts'
 import type EditorJS from '@editorjs/editorjs'
 import type { OutputData } from '@editorjs/editorjs'
 import { useT } from '@/shared/i18n'
+import { TitleTool } from '../lib/title-tool.ts'
 import { loadEditor } from '../lib/load-editor.ts'
 import { parseEditorOutput } from '../lib/normalize-document.ts'
 import type { BlockEditorHandle } from '../model/useEditorDocument.ts'
@@ -12,6 +13,9 @@ import '../styles/editorjs.css'
 
 type BlockEditorProps = {
   initial: BlocksDocument | null
+  title: string
+  title_placeholder: string
+  onTitleChange: (title: string) => void
   placeholder: string
   handle_ref: RefObject<BlockEditorHandle | null>
   onDirty: () => void
@@ -22,11 +26,21 @@ type BlockEditorProps = {
  * Редактор блоков. Сам Editor.js и инструменты грузятся динамически после монтирования,
  * чтобы не попасть в серверный граф и не инициализироваться до появления документа.
  */
-export function BlockEditor({ initial, placeholder, handle_ref, onDirty, onReady }: BlockEditorProps) {
+export function BlockEditor({
+  initial,
+  title,
+  title_placeholder,
+  onTitleChange,
+  placeholder,
+  handle_ref,
+  onDirty,
+  onReady,
+}: BlockEditorProps) {
   const { t } = useT()
   const holder_ref = useRef<HTMLDivElement>(null)
   const editor_ref = useRef<EditorJS | null>(null)
   const ready_ref = useRef(false)
+  const saved_blocks = useRef<string | null>(null)
   const on_dirty = useRef(onDirty)
   const on_ready = useRef(onReady)
   const [phase, setPhase] = useState<'loading' | 'ready' | 'failed'>('loading')
@@ -40,7 +54,12 @@ export function BlockEditor({ initial, placeholder, handle_ref, onDirty, onReady
     async save() {
       const editor = editor_ref.current
       if (!editor) throw new Error('Редактор ещё не готов')
-      return parseEditorOutput(await editor.save())
+      const output = await editor.save()
+      saved_blocks.current = JSON.stringify(output.blocks)
+      return parseEditorOutput({
+        ...output,
+        blocks: output.blocks.filter((block) => block.type !== 'title'),
+      })
     },
   }))
 
@@ -56,15 +75,36 @@ export function BlockEditor({ initial, placeholder, handle_ref, onDirty, onReady
         if (cancelled) return
         const editor = new Editor({
           holder,
-          tools,
+          tools: {
+            ...tools,
+            title: {
+              class: TitleTool,
+              config: { placeholder: title_placeholder, onChange: onTitleChange },
+            },
+          },
           placeholder,
           // Документ контракта совпадает с OutputData, но разделитель может прийти без data.
-          data: (initial ?? { blocks: [] }) as OutputData,
+          data: {
+            blocks: [
+              { type: 'title', data: { text: title } },
+              ...(initial?.blocks.length
+                ? initial.blocks
+                : [{ type: 'paragraph', data: { text: '' } }]),
+            ],
+          } as OutputData,
           inlineToolbar: ['bold', 'italic', 'link', 'inlineCode', 'marker', 'underline'],
           minHeight: 80,
-          onChange: () => {
+          onChange: async () => {
             if (!ready_ref.current) return
-            on_dirty.current()
+            // Editor.js debounces changes: a pre-save event can arrive after saving.
+            try {
+              const output = await editor.save()
+              const title_block = output.blocks.find((block) => block.type === 'title')
+              onTitleChange(typeof title_block?.data['text'] === 'string' ? title_block.data['text'] : '')
+              if (JSON.stringify(output.blocks) !== saved_blocks.current) on_dirty.current()
+            } catch {
+              on_dirty.current()
+            }
           },
         })
         await editor.isReady

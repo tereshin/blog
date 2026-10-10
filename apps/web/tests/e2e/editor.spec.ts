@@ -6,7 +6,10 @@ if (base_url) test.use({ baseURL: base_url })
 
 const TITLE = 'Первая заметка'
 const RENAMED = 'Совсем другой заголовок'
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+)
 
 async function openToolbox(page: Page, name: string) {
   await page.locator('.ce-paragraph, .cdx-list, .ce-block').last().click()
@@ -23,9 +26,15 @@ test.describe('Редактор статьи', () => {
     await expect(page).toHaveURL(/\/write$/)
     await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
 
-    await page.getByLabel('Заголовок').fill(TITLE)
+    await page.getByRole('button', { name: 'Развернуть на весь экран' }).click()
+    await expect(page.locator('.article-editor-window--full')).toBeVisible()
+    await page.getByRole('button', { name: 'Свернуть редактор' }).click()
+    await page.getByRole('textbox', { name: 'Заголовок', exact: true }).fill(TITLE)
     await page.locator('.ce-paragraph').first().click()
     await page.keyboard.type('Текст про телескоп')
+    await page.getByRole('button', { name: 'Предпросмотр', exact: true }).click()
+    await expect(page.getByRole('heading', { name: TITLE, exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Продолжить редактирование' }).click()
     await openToolbox(page, 'Unordered List')
     await page.keyboard.type('Пункт один')
     await openToolbox(page, 'Image')
@@ -48,8 +57,11 @@ test.describe('Редактор статьи', () => {
 
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto(write_url)
-    await expect(page.getByLabel('Заголовок')).toHaveValue(TITLE)
+    await expect(page.getByRole('textbox', { name: 'Заголовок', exact: true })).toHaveText(TITLE)
+    const published = page.waitForResponse((response) => response.url().endsWith('/publish') && response.request().method() === 'POST')
     await page.getByRole('button', { name: 'Опубликовать' }).click()
+    expect((await published).ok()).toBe(true)
+    await expect(page.getByRole('button', { name: 'Опубликовать' })).toBeEnabled()
     await expect(page.getByText('Сохранено').first()).toBeVisible()
     await page.goto('/')
     const link = page.getByRole('link', { name: TITLE })
@@ -57,20 +69,20 @@ test.describe('Редактор статьи', () => {
     const href = await link.getAttribute('href')
 
     await page.goto(write_url)
-    await page.getByLabel('Заголовок').fill(RENAMED)
+    await page.getByRole('textbox', { name: 'Заголовок', exact: true }).fill(RENAMED)
     await page.getByRole('button', { name: 'Сохранить черновик' }).click()
     await expect(page.getByText('Сохранено').first()).toBeVisible()
     await page.goto('/')
     await expect(page.getByRole('link', { name: RENAMED })).toHaveAttribute('href', href ?? '')
 
     await page.goto(write_url)
-    await page.getByLabel('Заголовок').fill('Ещё не сохранено')
-    await page.getByRole('link', { name: 'Блог' }).click()
+    await page.getByRole('textbox', { name: 'Заголовок', exact: true }).fill('Ещё не сохранено')
+    await page.getByRole('button', { name: 'Закрыть', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Уйти без сохранения?' })).toBeVisible()
-    await expect(page.getByRole('banner')).toBeVisible()
+    await expect(page.locator('header')).toBeVisible()
     await page.getByRole('button', { name: 'Остаться' }).click()
     await expect(page).toHaveURL(write_url)
-    await expect(page.getByLabel('Заголовок')).toHaveValue('Ещё не сохранено')
+    await expect(page.getByRole('textbox', { name: 'Заголовок', exact: true })).toHaveText('Ещё не сохранено')
   })
 
   test('гость и участник без права не попадают в редактор', async ({ page }) => {

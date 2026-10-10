@@ -66,6 +66,11 @@ body {
   outline-offset: 2px;
 }
 
+/* Фокус поля обозначен рамкой всего блока ввода; отдельная обводка textarea дублирует её. */
+.comment-composer textarea:focus-visible {
+  outline: none;
+}
+
 /* Заливка основной кнопки темнее акцента: белый текст на ней проходит контраст, а сам акцент остаётся читаемым на карточках. */
 .button--primary {
   background-color: oklch(0.45 0.16 253.83);
@@ -83,3 +88,73 @@ body {
     padding: 0;
   }
 }
+
+/* Поиск совпадает с центральной колонкой Shell и не зависит от ширины логотипа и кнопок. */
+.header-search-position {
+  position: fixed;
+  top: 6px;
+  right: 8px;
+  left: 8px;
+  width: auto;
+  height: auto;
+  max-height: calc(var(--visual-viewport-height, 100dvh) - 12px);
+  padding: 0;
+  animation: none;
+}
+
+.header-search-position input:focus-visible {
+  outline: none;
+}
+
+@media (min-width: 768px) {
+  .header-search-position {
+    right: 16px;
+    left: 236px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .header-search-position {
+    right: auto;
+    left: calc(50% - 404px);
+    width: 708px;
+  }
+}
+
+/* Вкладки шапки совпадают с нижним краем карточки, отступы задаёт её каркас. */
+.identity-header .tabs__list-container {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.identity-header .tabs__list {
+  padding: 0;
+  gap: 1.5rem;
+}
+
+.identity-header .tabs__tab {
+  border-radius: 0;
+  width: auto;
+  flex-shrink: 0;
+  height: 3.25rem;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.identity-header .tabs__indicator {
+  top: auto;
+  bottom: 0;
+  height: 3px;
+  border-radius: 0;
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.identity-header .tabs__tab[data-selected="true"] {
+  color: var(--foreground);
+}
+
+/* Auth panel: centered brand, credentials, then Firebase providers. */
+.auth-dialog { width: min(100%, 480px); padding: 24px 48px; }
+@media (max-width: 480px) { .auth-dialog { padding: 20px 24px; } }

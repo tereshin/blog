@@ -1,11 +1,20 @@
 import type { ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useSettings } from '@/entities/settings'
 import { useViewer } from '@/entities/session'
 import { useLoginDialog } from '@/features/login'
 import { useT } from '@/shared/i18n'
-import { Avatar, Button, ChevronDownIcon, MenuIcon, PenIcon, SearchIcon, useToast } from '@/shared/ui'
+import {
+  Avatar,
+  Button,
+  ChevronDownIcon,
+  MenuIcon,
+  PenIcon,
+  SearchIcon,
+  useToast,
+} from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
+import { HeaderSearch } from './HeaderSearch.tsx'
 
 type SiteHeaderProps = {
   /** Центр шапки: поле поиска, «назад» или пусто (`HeaderCenter`). */
@@ -30,10 +39,12 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const openLogin = useLoginDialog((state) => state.open)
   const toast = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
   const is_nav_open = useShellStore((state) => state.is_nav_open)
   const setNavOpen = useShellStore((state) => state.setNavOpen)
   const openSearch = useShellStore((state) => state.openSearch)
   const closeSearch = useShellStore((state) => state.closeSearch)
+  const is_search_open = useShellStore((state) => state.header_center.kind === 'search')
 
   const handleWrite = () => {
     if (viewer.status === 'loading') return
@@ -58,13 +69,13 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       return
     }
     closeSearch()
-    navigate('/write')
+    navigate('/write', { state: { editor_return_to: location.pathname + location.search + location.hash } })
   }
 
   const brand = settings?.name || t('common.site_name_fallback')
 
   return (
-    <div className="flex h-14 items-center gap-2 border-b border-separator bg-background px-4 max-w-[1280px] mx-auto">
+    <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-1 border-b border-separator bg-background px-2 sm:gap-2 sm:px-4 [&_.button--icon-only]:max-sm:size-9 [&_.button--icon-only]:max-sm:min-w-9">
       <Button
         variant="ghost"
         isIconOnly
@@ -76,23 +87,52 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
       >
         <MenuIcon />
       </Button>
-      <Link to="/" className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4">
-        {settings?.logo_url ? <img src={settings.logo_url} alt={brand} className="h-8 w-auto" /> : brand}
+      <Link
+        to="/"
+        className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4"
+      >
+        {settings?.logo_url ? (
+          <img src={settings.logo_url} alt={brand} className="h-8 w-auto" />
+        ) : (
+          brand
+        )}
       </Link>
-      <div className="flex min-w-0 flex-1 items-center px-2">{center}</div>
-      <div className="flex shrink-0 items-center gap-1">
-        <Button variant="ghost" isIconOnly aria-label={t('header.search')} onPress={onSearch ?? openSearch}>
+      <div className="flex min-w-0 flex-1 items-center sm:px-2">{center}</div>
+      <div className="flex shrink-0 items-center sm:gap-1">
+        <Button
+          variant="ghost"
+          isIconOnly
+          aria-label={t('header.search')}
+          aria-haspopup="dialog"
+          aria-expanded={is_search_open}
+          onPress={onSearch ?? openSearch}
+        >
           <SearchIcon />
         </Button>
         {notifications}
-        <Button variant="secondary" shape="pill" aria-label={t('header.write')} onPress={handleWrite}>
+        <Button
+          variant="secondary"
+          shape="pill"
+          className="max-sm:size-9 max-sm:min-w-9 max-sm:p-0"
+          aria-label={t('header.write')}
+          onPress={handleWrite}
+        >
           <PenIcon width={16} height={16} />
           <span className="max-[767px]:sr-only">{t('header.write')}</span>
         </Button>
         {account ??
           (viewer.status === 'member' ? (
-            <Button variant="ghost" shape="pill" aria-label={t('header.account_menu')} className="gap-1 px-1">
-              <Avatar src={viewer.profile.avatar_url} name={viewer.profile.display_name} size="sm" />
+            <Button
+              variant="ghost"
+              shape="pill"
+              aria-label={t('header.account_menu')}
+              className="gap-1 px-1"
+            >
+              <Avatar
+                src={viewer.profile.avatar_url}
+                name={viewer.profile.display_name}
+                size="sm"
+              />
               <ChevronDownIcon width={16} height={16} />
             </Button>
           ) : viewer.status === 'guest' ? (
@@ -101,6 +141,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
             </Button>
           ) : null)}
       </div>
+      {is_search_open ? <HeaderSearch /> : null}
     </div>
   )
 }

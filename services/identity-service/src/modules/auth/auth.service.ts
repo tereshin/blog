@@ -28,7 +28,7 @@ function assertPassword(password: string): void {
 }
 
 export type AuthService = {
-  register: (input: { email: string; password: string; idempotency_key: string | null; correlation_id: string }) => Promise<typeof PENDING>
+  register: (input: { email: string; password: string; display_name?: string; idempotency_key: string | null; correlation_id: string }) => Promise<typeof PENDING>
   signIn: (input: {
     body: { method: 'password'; email: string; password: string } | { method: 'id_token'; id_token: string }
     correlation_id: string
@@ -116,7 +116,7 @@ export function createAuthService(deps: {
           provider_id: 'password',
           role: 'member',
           can_publish: settings.new_members_can_publish,
-          display_name: displayNameFromEmail(email),
+          display_name: input.display_name?.trim() || displayNameFromEmail(email),
           session_id: null,
           expires_at: null,
           correlation_id: input.correlation_id,

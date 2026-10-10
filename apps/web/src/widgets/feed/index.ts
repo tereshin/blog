@@ -5,3 +5,6 @@ export { markSeenArticle } from './model/useSeenArticles.ts'
 export type { FeedSlots } from './ui/FeedItem.tsx'
 export { useFeed } from './model/useFeed.ts'
 export type { FeedState } from './model/useFeed.ts'
+
+export { ArticleFeedItem } from './ui/ArticleFeedItem.tsx'
+export { FeedSortMenu } from './ui/FeedSortMenu.tsx'

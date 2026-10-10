@@ -4,3 +4,5 @@ export { toExcerpt } from './comment.excerpt.ts'
 export { createCommentService } from './comment.service.ts'
 export type { CommentService } from './comment.types.ts'
 export { assembleCommentTree, occupiesThread, toCommentNode } from './comment.tree.ts'
+
+export { commentInteractionRoutes } from './comment-interaction.routes.ts'

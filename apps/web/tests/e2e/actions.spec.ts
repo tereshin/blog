@@ -14,15 +14,23 @@ function showsNavDrawer(page: Page): boolean {
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 
 test.describe('Жесты карточки', () => {
-  test('подписка ставится и снимается, на своих карточках и профиле кнопки нет', async ({ page }) => {
+  test('подписка ставится и снимается, на своих карточках и профиле кнопки нет', async ({
+    page,
+  }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/')
     const card = page.getByRole('main').getByRole('article').first()
     await expect(card).toBeVisible({ timeout: 15_000 })
     await card.getByRole('button', { name: 'Подписаться' }).click()
-    await expect(card.getByRole('button', { name: 'Вы подписаны' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(card.getByRole('button', { name: 'Вы подписаны' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     await card.getByRole('button', { name: 'Вы подписаны' }).click()
-    await expect(card.getByRole('button', { name: 'Подписаться' })).toHaveAttribute('aria-pressed', 'false')
+    await expect(card.getByRole('button', { name: 'Подписаться' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
 
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'author'))
     await page.goto('/')
@@ -31,10 +39,14 @@ test.describe('Жесты карточки', () => {
     await expect(own.getByRole('button', { name: 'Вы подписаны' })).toHaveCount(0)
     await page.goto('/u/anna')
     await expect(page.getByRole('main').getByRole('button', { name: 'Подписаться' })).toHaveCount(0)
-    await expect(page.getByRole('main').getByRole('button', { name: 'Вы подписаны' })).toHaveCount(0)
+    await expect(page.getByRole('main').getByRole('button', { name: 'Вы подписаны' })).toHaveCount(
+      0,
+    )
   })
 
-  test('закладка открывается из меню аватара, число совпадает, снятие убирает карточку', async ({ page }) => {
+  test('закладка открывается из меню аватара, число совпадает, снятие убирает карточку', async ({
+    page,
+  }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/')
     const card = page.getByRole('main').getByRole('article').first()
@@ -48,9 +60,13 @@ test.describe('Жесты карточки', () => {
     await expect(page).toHaveURL(/\/bookmarks$/)
     const saved_card = page.getByRole('main').getByRole('article').filter({ hasText: title })
     await expect(saved_card).toBeVisible()
-    await expect(saved_card.getByRole('button', { name: 'Убрать из закладок' })).toContainText(count)
+    await expect(saved_card.getByRole('button', { name: 'Убрать из закладок' })).toContainText(
+      count,
+    )
     if (hasLeftColumn(page)) {
-      await expect(page.getByRole('navigation', { name: 'Навигация' }).locator('[aria-current="page"]')).toHaveCount(0)
+      await expect(
+        page.getByRole('navigation', { name: 'Навигация' }).locator('[aria-current="page"]'),
+      ).toHaveCount(0)
     }
     await saved_card.getByRole('button', { name: 'Убрать из закладок' }).click()
     await expect(page.getByRole('main').getByText('Закладок пока нет')).toBeVisible()
@@ -58,7 +74,9 @@ test.describe('Жесты карточки', () => {
 
   test('гость на закладках видит просьбу войти', async ({ page }) => {
     await page.goto('/bookmarks')
-    await expect(page.getByRole('main').getByText('Войдите, чтобы видеть закладки')).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('main').getByText('Войдите, чтобы видеть закладки')).toBeVisible({
+      timeout: 15_000,
+    })
     await expect(page.getByRole('main').getByRole('button', { name: 'Войти' })).toBeVisible()
   })
 
@@ -71,19 +89,27 @@ test.describe('Жесты карточки', () => {
     expect(copied).toBe(`${new URL(page.url()).origin}/p/statya-1`)
   })
 
-  test('просмотренные прячутся при возврате, текст показывает, крестик убирает полосу', async ({ page }) => {
+  test('просмотренные прячутся при возврате, текст показывает, крестик убирает полосу', async ({
+    page,
+  }) => {
     await page.goto('/')
     const main = page.getByRole('main')
     const first = main.getByRole('article').nth(0)
     const second = main.getByRole('article').nth(1)
     const first_seen = page.waitForResponse(
-      (response) => response.url().includes('/v1/feed-seen') && response.request().method() === 'PUT' && response.ok(),
+      (response) =>
+        response.url().includes('/v1/feed-seen') &&
+        response.request().method() === 'PUT' &&
+        response.ok(),
     )
     await first.getByRole('button', { name: 'Показать полностью' }).click()
     await expect(first.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
     await first_seen
     const second_seen = page.waitForResponse(
-      (response) => response.url().includes('/v1/feed-seen') && response.request().method() === 'PUT' && response.ok(),
+      (response) =>
+        response.url().includes('/v1/feed-seen') &&
+        response.request().method() === 'PUT' &&
+        response.ok(),
     )
     await second.getByRole('button', { name: 'Показать полностью' }).click()
     await expect(second.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
@@ -138,30 +164,14 @@ test.describe('Жесты карточки', () => {
     await expect(page.getByRole('menuitem', { name: 'Пожаловаться' })).toHaveCount(0)
   })
 
-  test('покупка показов объясняет, что деньги не списываются, и оставляет статью в популярном', async ({ page }) => {
+  test('в своей статье нет покупки показов', async ({ page }) => {
     await page.addInitScript(() => {
-      const step = window.sessionStorage.getItem('actions_step')
-      if (step === 'member') {
-        window.localStorage.setItem('mock_viewer', 'member')
-        window.localStorage.removeItem('mock_article')
-        return
-      }
       window.localStorage.setItem('mock_viewer', 'author')
       window.localStorage.setItem('mock_article', 'own')
     })
     await page.goto('/p/statya-1')
-    await page.getByRole('button', { name: 'Купить показы' }).click()
-    const dialog = page.getByRole('dialog', { name: 'Купить показы' })
-    await expect(dialog).toContainText('деньги не списываются')
-    await dialog.getByRole('button', { name: 'Подтвердить' }).click()
-    await expect(page.getByText(/дополнительно участвует/)).toBeVisible()
-    if (showsNavDrawer(page)) await page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' }).click()
-    await page.getByRole('link', { name: 'Популярное', exact: true }).filter({ visible: true }).click()
-    await expect(page).toHaveURL(/\/popular$/)
-    await expect(page.getByRole('main').getByRole('heading', { name: /^Статья 1:/ })).toBeVisible()
-
-    await page.evaluate(() => window.sessionStorage.setItem('actions_step', 'member'))
-    await page.goto('/p/statya-1')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Купить показы' })).toHaveCount(0)
     await expect(page.getByText('Ваш пост может собрать больше охватов')).toHaveCount(0)
   })
 })

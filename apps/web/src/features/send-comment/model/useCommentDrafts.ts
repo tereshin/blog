@@ -10,7 +10,10 @@ function draftKey(article_id: string, parent_id: string | null): string {
  * Черновик комментария живёт в памяти вкладки. Перечитывание статьи и обсуждения
  * не очищает его: форма читает ту же Map, а не ответ сервера.
  */
-export function useCommentDrafts(article_id: string, parent_id: string | null): {
+export function useCommentDrafts(
+  article_id: string,
+  parent_id: string | null,
+): {
   text: string
   update: (value: string) => void
   clear: () => void

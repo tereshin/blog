@@ -1,15 +1,26 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useLocation } from 'react-router'
 import { useT } from '@/shared/i18n'
 import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import type { CommentsState } from '../model/useComments.ts'
 import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
+import { sortComments } from '../model/sort-comments.ts'
+import type { CommentSort } from '../model/sort-comments.ts'
+import { CommentSortMenu } from './CommentSortMenu.tsx'
 import { CommentItem } from './CommentItem.tsx'
 
 type CommentThreadProps = {
+  article_id?: string
+  sort?: CommentSort
+  onSort?: (sort: CommentSort) => void
   state: CommentsState
   renderReactions?: (comment: CommentNode) => ReactNode
-  renderActions?: (comment: CommentNode, placement: CommentPlacement) => ReactNode
+  renderActions?: (
+    comment: CommentNode,
+    placement: CommentPlacement,
+    expand: () => void,
+  ) => ReactNode
   renderReply?: (comment: CommentNode) => ReactNode
 }
 
@@ -20,13 +31,27 @@ function scrollToHash(): void {
 }
 
 /** Список корней и ответов. Загрузка, пустота и ошибка остаются в обсуждении, не на всю колонку. */
-export function CommentThread({ state, renderReactions, renderActions, renderReply }: CommentThreadProps) {
+export function CommentThread({
+  state,
+  article_id,
+  sort: server_sort,
+  onSort,
+  renderReactions,
+  renderActions,
+  renderReply,
+}: CommentThreadProps) {
   const { t } = useT()
+  const { hash } = useLocation()
+  const anchor_id = hash.startsWith('#comment-') ? hash.slice('#comment-'.length) : ''
+  const [local_sort, setSort] = useState<CommentSort>('best')
+  const sort = server_sort ?? local_sort
   const ready = state.status === 'ok'
 
   useEffect(() => {
-    if (ready) scrollToHash()
-  }, [ready])
+    if (!ready) return
+    const frame = requestAnimationFrame(scrollToHash)
+    return () => cancelAnimationFrame(frame)
+  }, [ready, hash])
 
   if (state.status === 'idle' || state.status === 'loading') {
     return (
@@ -36,15 +61,22 @@ export function CommentThread({ state, renderReactions, renderActions, renderRep
       </div>
     )
   }
-  if (state.status === 'error') return <ErrorState title={t('comment.load_error')} onRetry={state.refetch} />
+  if (state.status === 'error')
+    return <ErrorState title={t('comment.load_error')} onRetry={state.refetch} />
   if (state.status === 'empty') return <EmptyState title={t('comment.empty')} />
 
   return (
     <div>
-      {state.comments.map((comment) => (
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 border-b border-separator pb-3">
+        <h2 className="text-base font-semibold">{t('comment.discussion')}</h2>
+        <CommentSortMenu value={sort} onChange={onSort ?? setSort} />
+      </div>
+      {(article_id ? state.comments : sortComments(state.comments, sort)).map((comment) => (
         <CommentItem
           key={comment.id}
+          article_id={article_id}
           comment={comment}
+          anchor_id={anchor_id}
           placement={{ root_id: null }}
           renderReactions={renderReactions}
           renderActions={renderActions}
@@ -52,7 +84,7 @@ export function CommentThread({ state, renderReactions, renderActions, renderRep
         />
       ))}
       {state.has_next ? (
-        <Button variant="ghost" onPress={state.fetchNext}>
+        <Button variant="secondary" className="mt-3 w-full" onPress={state.fetchNext}>
           {t('feed.load_more')}
         </Button>
       ) : null}
