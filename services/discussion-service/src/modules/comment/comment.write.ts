@@ -122,7 +122,8 @@ export function createCommentWriter(
             throw new ValidationError({ message: 'Прикрепите загруженное вами изображение' })
         }
         const mention_ids = [...new Set((input.mentions ?? []).map((item) => item.user_id))]
-        if (article.visibility === 'author' && mention_ids.some((id) => id !== article.author_id))
+        const notify_readers = article.status === 'published' && article.visibility !== 'author'
+        if (!notify_readers && mention_ids.some((id) => id !== article.author_id))
           throw new ValidationError({ message: 'Участник не может читать закрытое обсуждение' })
         const mention_rows = mention_ids.length
           ? await database
@@ -142,9 +143,7 @@ export function createCommentWriter(
             and(
               eq(discussion_subscriptions.article_id, input.article_id),
               eq(users_copy.is_restricted, false),
-              article.visibility === 'author'
-                ? eq(discussion_subscriptions.user_id, article.author_id)
-                : undefined,
+              notify_readers ? undefined : eq(discussion_subscriptions.user_id, article.author_id),
             ),
           )
         const comment_id = randomUUID()
@@ -172,7 +171,8 @@ export function createCommentWriter(
           comment_id,
           author_id: input.user_id,
           parent_id: input.parent_id ?? null,
-          parent_author_id,
+          parent_author_id:
+            notify_readers || parent_author_id === article.author_id ? parent_author_id : null,
           article_author_id: article.author_id,
           excerpt: toExcerpt(input.body),
           mention_ids,
