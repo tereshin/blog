@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { Avatar, BaseIcon, Button, ErrorState } from '@/shared/ui'
+import { Avatar, BaseIcon, Button, ErrorState, Link } from '@/shared/ui'
 import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
 import { sortComments } from '../model/sort-comments.ts'
 import type { CommentSort } from '../model/sort-comments.ts'
@@ -124,10 +124,8 @@ export function CommentItem({
       {!stub && renderReactions ? <div className="mt-3">{renderReactions(comment)}</div> : null}
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         {has_replies ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1 px-0 text-accent"
+          <Link
+            className="gap-1 text-accent text-sm no-underline font-normal"
             aria-expanded={is_expanded}
             aria-controls={replies_id}
             onPress={() => setExpanded(!is_expanded)}
@@ -141,7 +139,7 @@ export function CommentItem({
               size={16}
               className={is_expanded ? 'rotate-180' : ''}
             />
-          </Button>
+          </Link>
         ) : null}
         {renderActions?.(comment, placement, () => setExpanded(true))}
       </div>

@@ -20,7 +20,7 @@ export type ProxyRoutesOptions = {
   cookies: CookieNames
 }
 
-const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH'])
+const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value

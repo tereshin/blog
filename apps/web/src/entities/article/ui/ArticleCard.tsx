@@ -53,8 +53,10 @@ function Header({ follow, menu }: HeaderProps) {
           </time>
         </div>
       </div>
-      {follow}
-      {menu}
+      <div className="flex items-center gap-1 lg:gap-2">
+        {follow}
+        {menu}
+      </div>
     </Card.Header>
   )
 }

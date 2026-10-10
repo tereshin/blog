@@ -154,6 +154,14 @@ describe('gateway: сессия, прокси, поток событий', () =>
     expect(allowed.status).toBe(200)
     expect(content_seen.at(-1)?.body).toBe('{"target_id":"x"}')
     expect(content_seen.at(-1)?.headers['x-idempotency-key']).toBe('k1')
+
+    const removed = await fetch(`${base_url}/v1/follows`, {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json', cookie: `blog_csrf=${token}`, 'x-csrf-token': token },
+      body: '{"target_id":"x"}',
+    })
+    expect(removed.status).toBe(200)
+    expect(content_seen.at(-1)?.body).toBe('{"target_id":"x"}')
   })
 
   it('действительная сессия даёт контекст участника', async () => {
