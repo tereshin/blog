@@ -19,6 +19,10 @@ import { rateLimitForPath, rateLimitGroup } from './modules/security/rate-limit.
 import { authGatewayRoutes, sessionModule } from './modules/session/index.ts'
 import type { ContextSigner, CookieNames, SessionService } from './modules/session/index.ts'
 
+declare module 'fastify' {
+  interface FastifyReply { csp_nonce: string }
+}
+
 export type AppDeps = {
   env: Env
   logger: Logger
@@ -45,9 +49,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(requestContext, { logger })
   await app.register(errorHandler)
   await app.register(helmet, { global: true, contentSecurityPolicy: false })
+  app.decorateReply('csp_nonce', '')
   const image_origin = imageOrigin(env.S3_PUBLIC_URL)
   app.addHook('onRequest', async (_request, reply) => {
     const nonce = newCspNonce()
+    reply.csp_nonce = nonce
     const emulator_host = env.APP_ENV === 'local' || env.APP_ENV === 'dev' ? env.FIREBASE_AUTH_EMULATOR_HOST : null
     reply.header(
       'Content-Security-Policy',

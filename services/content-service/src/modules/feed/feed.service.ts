@@ -52,7 +52,7 @@ export function toFeedCard(row: FeedRow, profiles_by_id: Map<string, ProfileLite
       avatar_url: row.author_avatar_url,
       slug: row.author_slug ?? String(row.author_public_number ?? ''),
     },
-    topic: { id: row.topic_id, title: row.topic_title, slug: row.topic_slug, status: row.topic_status },
+    topic: { id: row.topic_id, title: row.topic_title, slug: row.topic_slug, status: row.topic_status, avatar_url: row.topic_avatar_url ?? null },
     reaction_counts: counts.success ? counts.data : EMPTY_COUNTS,
     reaction_count: row.reaction_count,
     comment_count: row.comment_count,

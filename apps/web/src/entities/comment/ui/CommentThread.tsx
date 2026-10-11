@@ -11,6 +11,7 @@ import { CommentSortMenu } from './CommentSortMenu.tsx'
 import { CommentItem } from './CommentItem.tsx'
 
 type CommentThreadProps = {
+  toolbar?: ReactNode
   article_id?: string
   sort?: CommentSort
   onSort?: (sort: CommentSort) => void
@@ -33,6 +34,7 @@ function scrollToHash(): void {
 /** Список корней и ответов. Загрузка, пустота и ошибка остаются в обсуждении, не на всю колонку. */
 export function CommentThread({
   state,
+  toolbar,
   article_id,
   sort: server_sort,
   onSort,
@@ -63,13 +65,14 @@ export function CommentThread({
   }
   if (state.status === 'error')
     return <ErrorState title={t('comment.load_error')} onRetry={state.refetch} />
-  if (state.status === 'empty') return <EmptyState title={t('comment.empty')} icon={<CommentIcon width={28} height={28} />} className="min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none" />
+  if (state.status === 'empty') return <div><div className="flex justify-end">{toolbar}</div><EmptyState title={t('comment.empty')} icon={<CommentIcon width={28} height={28} />} className="min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none" /></div>
 
   return (
     <div>
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 border-b border-separator pb-3">
-        <h2 className="text-base font-semibold">{t('comment.discussion')}</h2>
+      <h2 className="sr-only">{t('comment.discussion')}</h2>
+      <div className="mb-1 flex items-center justify-between gap-2">
         <CommentSortMenu value={sort} onChange={onSort ?? setSort} />
+        {toolbar}
       </div>
       {(article_id ? state.comments : sortComments(state.comments, sort)).map((comment) => (
         <CommentItem

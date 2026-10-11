@@ -1,6 +1,6 @@
 import { useT } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
-import { BookmarkIcon, Button } from '@/shared/ui'
+import { ActionButton, BookmarkIcon } from '@/shared/ui'
 
 type BookmarkButtonProps = {
   count: number
@@ -13,16 +13,14 @@ type BookmarkButtonProps = {
 export function BookmarkButton({ count, is_bookmarked, onToggle, is_pending = false }: BookmarkButtonProps) {
   const { t, locale } = useT()
   return (
-    <Button
-      variant={is_bookmarked ? 'primary' : 'ghost'}
-      size="sm"
+    <ActionButton
       aria-pressed={is_bookmarked}
       aria-label={t(is_bookmarked ? 'article.unbookmark' : 'article.bookmark')}
       isDisabled={is_pending}
       onPress={onToggle}
     >
-      <BookmarkIcon className="size-5" />
+      <span className="action-control__icon"><BookmarkIcon className="size-5" icon_style={is_bookmarked ? 'fill' : 'line'} /></span>
       <span>{formatCount(count, locale)}</span>
-    </Button>
+    </ActionButton>
   )
 }

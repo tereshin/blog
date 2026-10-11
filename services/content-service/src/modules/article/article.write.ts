@@ -46,6 +46,8 @@ function toDraft(row: StoredArticle): ArticleDraft {
     comments_enabled: row.comments_enabled,
     slug: row.slug,
     status: row.status,
+    seo_title: row.seo_title ?? null,
+    seo_description: row.seo_description ?? null,
   }
 }
 
@@ -61,6 +63,8 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
       const row = await repository.insertDraft({
         author_id,
         title: input.title,
+        seo_title: input.seo_title?.trim() || null,
+        seo_description: input.seo_description?.trim() || null,
         topic_id: input.topic_id,
         blocks,
         visibility: input.visibility,
@@ -79,6 +83,8 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
       const blocks = input.blocks === undefined ? parseBlocks(current.blocks) : await sanitize(author_id, input.blocks)
       const saved = await repository.save(id, author_id, {
         title: input.title ?? current.title,
+        seo_title: input.seo_title === undefined ? current.seo_title ?? null : input.seo_title?.trim() || null,
+        seo_description: input.seo_description === undefined ? current.seo_description ?? null : input.seo_description?.trim() || null,
         topic_id: input.topic_id ?? current.topic_id,
         blocks,
         visibility: input.visibility ?? current.visibility,

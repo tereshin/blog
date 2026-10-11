@@ -1,15 +1,16 @@
+import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { BaseIcon, Button, Menu } from '@/shared/ui'
 import { COMMENT_SORTS } from '../model/sort-comments.ts'
 import type { CommentSort } from '../model/sort-comments.ts'
 
-type CommentSortMenuProps = { value: CommentSort; onChange: (value: CommentSort) => void }
+type CommentSortMenuProps = { trigger?: ReactNode; value: CommentSort; onChange: (value: CommentSort) => void }
 
-export function CommentSortMenu({ value, onChange }: CommentSortMenuProps) {
+export function CommentSortMenu({ value, onChange, trigger }: CommentSortMenuProps) {
   const { t } = useT()
   return (
     <Menu>
-      <Button
+      {trigger ?? <Button
         variant="ghost"
         size="sm"
         className="gap-1.5 px-2 text-muted"
@@ -17,7 +18,7 @@ export function CommentSortMenu({ value, onChange }: CommentSortMenuProps) {
       >
         {t(`comment.sort_${value}`)}
         <BaseIcon name="down" style="line" size={16} />
-      </Button>
+      </Button>}
       <Menu.Content
         aria-label={t('comment.sort')}
         selectionMode="single"

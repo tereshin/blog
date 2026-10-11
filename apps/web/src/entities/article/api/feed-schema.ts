@@ -12,7 +12,7 @@ export const feedCardDtoSchema = z.object({
   first_image_url: z.string().nullable(),
   published_at: z.string(),
   author: z.object({ user_id: z.string(), display_name: z.string(), avatar_url: z.string().nullable(), slug: z.string() }),
-  topic: z.object({ id: z.string(), title: z.string(), slug: z.string(), status: z.enum(['active', 'archived']) }),
+  topic: z.object({ id: z.string(), title: z.string(), slug: z.string(), status: z.enum(['active', 'archived']), avatar_url: z.string().nullable().optional() }),
   reaction_counts: z.object({ laugh: count, heart: count, thumb: count, fire: count }),
   reaction_count: count,
   comment_count: count,

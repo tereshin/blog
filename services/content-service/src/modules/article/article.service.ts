@@ -46,7 +46,7 @@ function authorOf(row: ArticleRow) {
 }
 
 function topicOf(row: ArticleRow) {
-  return { id: row.topic_id, title: row.topic_title, slug: row.topic_slug, status: row.topic_status }
+  return { id: row.topic_id, title: row.topic_title, slug: row.topic_slug, status: row.topic_status, avatar_url: row.topic_avatar_url ?? null }
 }
 
 function topCommentOf(row: ArticleRow, profiles_by_id: Map<string, { display_name: string; avatar_url: string | null }>): FeedCard['top_comment'] {

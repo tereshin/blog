@@ -1,3 +1,4 @@
+import { requestArticleCover } from '../social-cover/index.ts'
 import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Database } from '@blog/broker'
@@ -33,6 +34,8 @@ function stored(row: typeof articles.$inferSelect): StoredArticle {
     published_at: row.published_at,
     excerpt: row.excerpt,
     first_image_url: row.first_image_url,
+    seo_title: row.seo_title,
+    seo_description: row.seo_description,
   }
 }
 
@@ -73,6 +76,7 @@ export function createModerationRepository(db: NodePgDatabase): ModerationReposi
           .returning()
         if (!row) return null
         const next = stored(row)
+        await requestArticleCover(tx, row.id, input.correlation_id)
         await appendArticleEvent(tx, input.event_name, next, input.correlation_id, input.moderator_id)
         if (input.event_name !== 'content.article.deleted') {
           await appendArticleEvent(tx, 'content.article.updated', next, input.correlation_id)

@@ -1,10 +1,9 @@
 import { z } from 'zod'
+import { seoSettingsSchema, socialCoverSettingsSchema } from './seo.ts'
 
 export const localeSchema = z.enum(['ru', 'en', 'sr'])
 
-const REACTION_ORDER = ['laugh', 'heart', 'thumb', 'fire'] as const
-
-function reactionAppearance(kind: (typeof REACTION_ORDER)[number]) {
+function reactionAppearance(kind: 'laugh' | 'heart' | 'thumb' | 'fire') {
   return z.discriminatedUnion('presentation', [
     z.strictObject({
       kind: z.literal(kind),
@@ -55,6 +54,8 @@ export const publicSettingsSchema = z.strictObject({
   about: z.string(),
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
+  seo: seoSettingsSchema.optional(),
+  social_cover: socialCoverSettingsSchema.optional(),
 })
 export type PublicSettings = z.infer<typeof publicSettingsSchema>
 
@@ -68,10 +69,13 @@ export const updateSettingsSchema = z.strictObject({
   new_members_can_publish: z.boolean(),
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
+  seo: seoSettingsSchema.optional(),
+  social_cover: socialCoverSettingsSchema.optional(),
 })
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>
 
 export const adminSettingsSchema = publicSettingsSchema.extend({
+  public_origin: z.url().optional(),
   registration_open: z.boolean(),
   new_members_can_publish: z.boolean(),
 })

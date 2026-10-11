@@ -1,7 +1,8 @@
+import { requestSiteCover } from '../social-cover/index.ts'
 import { eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { profileStatusIconsSchema, reactionAppearancesSchema } from '@blog/contracts'
-import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
+import { profileStatusIconsSchema, reactionAppearancesSchema, seoSettingsSchema, socialCoverSettingsSchema } from '@blog/contracts'
+import type { ProfileStatusIcon, ReactionAppearances, SeoSettings, SocialCoverSettings } from '@blog/contracts'
 import type { Database } from '@blog/broker'
 import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
@@ -15,6 +16,8 @@ export type SettingsRow = {
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
   profile_status_icons: ProfileStatusIcon[]
+  seo?: SeoSettings
+  social_cover?: SocialCoverSettings
 }
 
 const columns = {
@@ -26,11 +29,15 @@ const columns = {
   new_members_can_publish: settings.new_members_can_publish,
   reaction_appearances: settings.reaction_appearances,
   profile_status_icons: settings.profile_status_icons,
+  seo: settings.seo,
+  social_cover: settings.social_cover,
 }
 
 function readRow(row: SettingsRow): SettingsRow {
   return {
     ...row,
+    seo: seoSettingsSchema.parse(row.seo ?? {}),
+    social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
     reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances),
     profile_status_icons: profileStatusIconsSchema.parse(row.profile_status_icons),
   }
@@ -56,6 +63,7 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
         const [row] = await database.insert(settings).values({ id: 1, ...input }).onConflictDoNothing().returning(columns)
         if (!row) return null
         await appendSettingsUpdated(database, { ...input, correlation_id })
+        await requestSiteCover(database, correlation_id)
         return readRow(row)
       })
     },
@@ -70,6 +78,7 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
           .returning(columns)
         if (!row) throw new Error('settings row was not written')
         await appendSettingsUpdated(database, { ...input, correlation_id })
+        await requestSiteCover(database, correlation_id)
         return readRow(row)
       })
     },

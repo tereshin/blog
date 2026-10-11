@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { seoKeys } from '@/entities/seo'
 import { settingsKeys, toPublicSettings } from '@/entities/settings'
 import { updateSettings } from '../api/update-settings.ts'
 import type { AdminSettings } from '../api/update-settings.ts'
@@ -11,6 +12,7 @@ export function useUpdateSettings() {
       query_client.setQueryData(settingsKeys.public(), toPublicSettings(settings))
       query_client.setQueryData(settingsKeys.admin(), settings)
       await query_client.invalidateQueries({ queryKey: settingsKeys.all })
+      await query_client.invalidateQueries({ queryKey: seoKeys.all })
     },
   })
 }

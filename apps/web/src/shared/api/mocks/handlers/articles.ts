@@ -19,6 +19,8 @@ function draftOf(article: MockArticle) {
   return {
     id: article.id,
     title: article.title,
+    seo_title: article.seo_title ?? null,
+    seo_description: article.seo_description ?? null,
     blocks: article.blocks,
     topic_id: article.topic_id,
     visibility: article.visibility,
@@ -47,11 +49,13 @@ function applySlug(article: MockArticle | null, slug: string | undefined): { slu
 
 function saveFields(
   article: MockArticle,
-  fields: { title?: string; topic_id?: string; blocks?: BlocksDocument; visibility?: MockArticle['visibility']; comments_enabled?: boolean; slug?: string },
+  fields: { title?: string; topic_id?: string; blocks?: BlocksDocument; visibility?: MockArticle['visibility']; comments_enabled?: boolean; slug?: string; seo_title?: string | null; seo_description?: string | null },
 ): MockArticle {
   return {
     ...article,
     ...(fields.title !== undefined ? { title: fields.title } : {}),
+    ...(fields.seo_title !== undefined ? { seo_title: fields.seo_title } : {}),
+    ...(fields.seo_description !== undefined ? { seo_description: fields.seo_description } : {}),
     ...(fields.topic_id !== undefined ? { topic_id: fields.topic_id } : {}),
     ...(fields.blocks !== undefined ? { blocks: fields.blocks } : {}),
     ...(fields.visibility !== undefined ? { visibility: fields.visibility } : {}),
@@ -74,6 +78,8 @@ export const articleHandlers = [
       author_name: gate.author.display_name,
       author_slug: gate.author.slug,
       title: parsed.data.title,
+      seo_title: parsed.data.seo_title ?? null,
+      seo_description: parsed.data.seo_description ?? null,
       blocks: parsed.data.blocks,
       topic_id: parsed.data.topic_id,
       visibility: parsed.data.visibility,

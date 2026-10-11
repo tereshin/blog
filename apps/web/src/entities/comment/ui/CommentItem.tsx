@@ -3,10 +3,10 @@ import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { Avatar, BaseIcon, Button, ErrorState, Link } from '@/shared/ui'
 import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
-import { sortComments } from '../model/sort-comments.ts'
-import type { CommentSort } from '../model/sort-comments.ts'
-import { useReplies } from '../model/useReplies.ts'
 import { CommentSortMenu } from './CommentSortMenu.tsx'
+import type { CommentSort } from '../model/sort-comments.ts'
+import { sortComments } from '../model/sort-comments.ts'
+import { useReplies } from '../model/useReplies.ts'
 
 type CommentItemProps = {
   article_id?: string | undefined
@@ -45,6 +45,7 @@ export function CommentItem({
     (anchor_id !== expansion.dismissed_anchor && containsAnchor(comment.replies, anchor_id))
   const setExpanded = (is_open: boolean) =>
     setExpansion({ is_open, dismissed_anchor: is_open ? '' : anchor_id })
+
   const [sort, setSort] = useState<CommentSort>('oldest')
 
   const stub =
@@ -70,7 +71,7 @@ export function CommentItem({
   return (
     <article
       id={`comment-${comment.id}`}
-      className="scroll-mt-24 py-5"
+      className="scroll-mt-24 py-3"
       aria-label={comment.author.display_name}
     >
       <div className="flex items-center gap-3">
@@ -122,10 +123,10 @@ export function CommentItem({
         </div>
       ) : null}
       {!stub && renderReactions ? <div className="mt-3">{renderReactions(comment)}</div> : null}
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         {has_replies ? (
           <Link
-            className="gap-1 text-accent text-sm no-underline font-normal"
+            className="gap-1 text-accent text-sm font-normal"
             aria-expanded={is_expanded}
             aria-controls={replies_id}
             onPress={() => setExpanded(!is_expanded)}
@@ -142,22 +143,17 @@ export function CommentItem({
           </Link>
         ) : null}
         {renderActions?.(comment, placement, () => setExpanded(true))}
+        {is_expanded && has_replies && placement.root_id === null ? <CommentSortMenu value={sort} onChange={setSort} trigger={<Button variant="ghost" size="sm" isIconOnly aria-label={t('comment.sort')} className="text-muted"><BaseIcon name="sort_descending" style="line" size={16} /></Button>} /> : null}
       </div>
       {reply_form ? <div className="mt-3">{reply_form}</div> : null}
       {has_replies ? (
         <div
           id={replies_id}
           hidden={!is_expanded}
-          className="mt-3 border-l-2 border-separator pl-3 sm:pl-5"
+          className="comment-replies relative ml-4 mt-2"
         >
           {is_expanded ? (
             <>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted">
-                  {t('comment.replies', { count: reply_count })}
-                </span>
-                <CommentSortMenu value={sort} onChange={setSort} />
-              </div>
               {article_id && query.isPending ? (
                 <p role="status" className="py-3 text-sm text-muted">
                   {t('comment.loading')}
@@ -167,16 +163,18 @@ export function CommentItem({
                 <ErrorState title={t('comment.load_error')} onRetry={() => void query.refetch()} />
               ) : null}
               {replies.map((reply) => (
-                <CommentItem
-                  key={reply.id}
-                  article_id={article_id}
-                  comment={reply}
-                  anchor_id={anchor_id}
-                  placement={{ root_id: placement.root_id ?? comment.id }}
-                  renderReactions={renderReactions}
-                  renderActions={renderActions}
-                  renderReply={renderReply}
-                />
+                <div key={reply.id} className="comment-branch relative pl-6 sm:pl-7">
+                  <button type="button" aria-label={`${t('comment.collapse_replies')}: ${reply.author.display_name}`} onClick={() => setExpanded(false)} className="comment-branch__collapse absolute -left-1 top-0 w-2 rounded-full outline-offset-2" />
+                  <CommentItem
+                    article_id={article_id}
+                    comment={reply}
+                    anchor_id={anchor_id}
+                    placement={{ root_id: placement.root_id ?? comment.id }}
+                    renderReactions={renderReactions}
+                    renderActions={renderActions}
+                    renderReply={renderReply}
+                  />
+                </div>
               ))}
               {query.hasNextPage ? (
                 <Button

@@ -4,6 +4,7 @@ import type { ServiceContext } from '@blog/contracts'
 export type StoredFile = MediaUploadResponse & { uploader_id: string }
 
 export type ObjectStore = {
+  get?: (input: { key: string; max_bytes: number }) => Promise<Uint8Array | null>
   put: (input: { key: string; body: Uint8Array; content_type: string }) => Promise<void>
 }
 

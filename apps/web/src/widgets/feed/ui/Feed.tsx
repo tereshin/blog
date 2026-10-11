@@ -43,7 +43,8 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
   const state = useFeed(mode)
   const root_ref = useRef<HTMLDivElement>(null)
   const article_ids = state.status === 'ok' ? state.article_ids : []
-  const seen = useSeenArticles(feed_key, mode === 'fresh' ? article_ids : undefined)
+  const seen = useSeenArticles(feed_key)
+  const should_hide_seen = mode !== 'fresh' && mode !== 'mine'
   const viewer_states = useArticleStates(article_ids, viewer.status === 'member')
   useFeedLive(mode, article_ids)
 
@@ -79,8 +80,8 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
   if (state.status === 'error') return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
   if (state.article_ids.length === 0) return <FeedEmpty mode={mode} />
 
-  const hidden_ids = state.article_ids.filter((id) => seen.seen_ids.has(id))
-  const visible_ids = seen.is_revealed ? state.article_ids : state.article_ids.filter((id) => !seen.seen_ids.has(id))
+  const hidden_ids = should_hide_seen ? state.article_ids.filter((id) => seen.seen_ids.has(id)) : []
+  const visible_ids = !should_hide_seen || seen.is_revealed ? state.article_ids : state.article_ids.filter((id) => !seen.seen_ids.has(id))
   const banner =
     hidden_ids.length > 0 && !seen.is_dismissed && !seen.is_auto_revealed ? (
       <SeenBanner count={hidden_ids.length} onReveal={seen.reveal} onDismiss={seen.dismiss} />

@@ -2,6 +2,7 @@ import { OutboxRelay, connectBroker, sampleQueueDepth, setConsumerMetrics } from
 import { registerShutdown } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { createServiceMetrics, startQueueMetrics, startTelemetry } from '@blog/telemetry'
+import { requestSiteCover, startSocialCoverConsumer } from './modules/social-cover/index.ts'
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
@@ -23,7 +24,9 @@ async function main(): Promise<void> {
   const relay = new OutboxRelay({ db: database.db, broker, logger })
 
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
+  await database.db.transaction(async (tx) => { await requestSiteCover(tx, 'startup:site-cover') })
   relay.start()
+  const social_covers = await startSocialCoverConsumer({ db: database.db, broker, logger })
   const copies = await startCopiesConsumers({ db: database.db, broker, logger })
   const counters = await startCountersConsumers({ db: database.db, broker, logger })
 
@@ -33,6 +36,7 @@ async function main(): Promise<void> {
     stoppers: [
       () => queues.stop(),
       () => copies.stop(),
+      () => social_covers.stop(),
       async () => {
         await Promise.all(counters.map((consumer) => consumer.stop()))
       },

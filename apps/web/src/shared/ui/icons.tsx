@@ -36,8 +36,10 @@ export function CommentIcon({ style, ...props }: IconProps) {
   return <BaseIcon name="chat_1" style="line" size={20} {...props} svg_style={style} />
 }
 
-export function BookmarkIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="bookmark" style="line" size={20} {...props} svg_style={style} />
+export function BookmarkIcon({ style, icon_style = 'line', ...props }: IconProps & { icon_style?: 'line' | 'fill' }) {
+  return icon_style === 'fill'
+    ? <BaseIcon name="bookmark" style="fill" size={20} {...props} svg_style={style} />
+    : <BaseIcon name="bookmark" style="line" size={20} {...props} svg_style={style} />
 }
 
 export function ShareIcon({ style, ...props }: IconProps) {

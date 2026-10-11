@@ -3,7 +3,7 @@ import type { JetStreamClient, JetStreamManager } from '@nats-io/jetstream'
 import { connect } from '@nats-io/transport-node'
 import type { NatsConnection } from '@nats-io/transport-node'
 
-export const EVENT_CONTEXTS = ['content', 'discussion', 'identity', 'messaging', 'notification'] as const
+export const EVENT_CONTEXTS = ['content', 'discussion', 'identity', 'messaging', 'notification', 'media'] as const
 export type EventContext = (typeof EVENT_CONTEXTS)[number]
 
 /** Потоки JetStream: `<context>-events` на `<context>.>`, DLQ — `<context>-dlq` на `dlq.<context>.>`. */

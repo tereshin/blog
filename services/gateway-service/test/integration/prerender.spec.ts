@@ -1,66 +1,60 @@
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { PageSeo } from '@blog/contracts'
 import type { ServiceClient } from '@blog/http-kit'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { prerenderRoutes } from '../../src/modules/prerender/index.ts'
+import { contentSecurityPolicy } from '../../src/modules/security/content-security-policy.ts'
 
-const PUBLIC = {
-  title: 'Публичная статья',
-  description: 'Короткое описание',
-  image_url: 'https://cdn.example/cover.png',
-  type: 'article',
-  text: 'Текст для робота',
-}
-
-const NEUTRAL = { title: 'Блог', description: '', image_url: null, type: 'website', text: '' }
-
+const image = { url: 'https://cdn.example/cover.jpg', alt: 'Обложка', width: 1200, height: 630, mime: 'image/jpeg' }
+const NEUTRAL: PageSeo = { status: 200, title: 'Блог', description: '', canonical_url: 'https://blog.example/', site_name: 'Блог', locale: 'ru', og_type: 'website', robots: 'noindex, follow', body_text: '', images: null, structured_data: { '@context': 'https://schema.org', '@graph': [] } }
+const PUBLIC: PageSeo = { ...NEUTRAL, title: 'Публичная статья', description: 'Короткое описание', canonical_url: 'https://blog.example/p/public-post', og_type: 'article', robots: 'index, follow', body_text: 'Текст для робота', images: { og: image, twitter: image, vk: { ...image, width: 1074, height: 480 } }, structured_data: { '@context': 'https://schema.org', '@graph': [{ '@type': 'BlogPosting', headline: 'Публичная статья', description: '</script><script>alert(1)</script> & \u2028' }] } }
 function contentClient(): ServiceClient {
-  return {
-    async request({ path }) {
-      if (path.includes('/article/public-post')) return { status: 200, headers: {}, body: PUBLIC }
-      if (path.includes('/article/draft-post')) return { status: 200, headers: {}, body: NEUTRAL }
-      return { status: 200, headers: {}, body: { ...NEUTRAL, description: 'О площадке' } }
-    },
-    async close() {},
-  }
+  return { async request({ path }) {
+    if (path.startsWith('/internal/seo/robots')) return { status: 200, headers: {}, body: { content_type: 'text/plain', body: 'User-agent: *\nDisallow: /\n' } }
+    if (path.startsWith('/internal/seo/sitemap')) return { status: 200, headers: {}, body: { content_type: 'application/xml', body: '<urlset></urlset>' } }
+    const page = new URL(path, 'http://content').searchParams.get('path')
+    if (page?.includes('unavailable')) return { status: 500, headers: {}, body: {} }
+    if (page?.includes('malformed')) return { status: 200, headers: {}, body: {} }
+    return { status: 200, headers: {}, body: page?.includes('public-post') ? PUBLIC : { ...NEUTRAL, status: page?.includes('missing') ? 404 : 200 } }
+  }, async close() {} }
 }
-
-describe('gateway: ответ роботам', () => {
+describe('gateway: SEO для роботов', () => {
   let app: FastifyInstance
-
   beforeAll(async () => {
     app = Fastify()
+    app.decorateReply('csp_nonce', 'test-nonce')
+    app.addHook('onRequest', async (_request, reply) => { reply.header('Content-Security-Policy', contentSecurityPolicy({ nonce: 'test-nonce', image_origin: null })) })
     await app.register(requestContext, { logger: createLogger({ service: 'gateway-test', level: 'silent' }) })
     await app.register(errorHandler)
     await app.register(prerenderRoutes, { content: contentClient() })
   })
-
-  afterAll(async () => {
-    await app.close()
-  })
-
-  it('TelegramBot получает заголовок, описание и картинку публичной статьи', async () => {
-    const response = await app.inject({ method: 'GET', url: '/p/public-post', headers: { 'user-agent': 'TelegramBot' } })
+  afterAll(async () => { await app.close() })
+  it.each(['TelegramBot', 'vkShare', 'Googlebot', 'Google-InspectionTool'])('%s получает все социальные теги, JSON-LD и текст', async (ua) => {
+    const response = await app.inject({ url: '/p/public-post?utm_source=vk', headers: { 'user-agent': ua } })
     expect(response.statusCode).toBe(200)
-    expect(response.headers['content-type']).toContain('text/html')
-    expect(response.body).toContain('Публичная статья')
-    expect(response.body).toContain('Короткое описание')
-    expect(response.body).toContain('https://cdn.example/cover.png')
+    for (const tag of ['og:title', 'og:description', 'og:image:width', 'twitter:image', 'vk:image']) expect(response.body).toContain(tag)
     expect(response.body).toContain('Текст для робота')
+    expect(response.body).toContain('nonce="test-nonce"')
+    expect(response.headers['content-security-policy']).toContain("'nonce-test-nonce'")
+    expect(response.headers['content-security-policy']).not.toContain('unsafe-inline')
+    expect(response.body).not.toContain('</script><script>')
+    const json = /<script[^>]*>(.*?)<\/script>/.exec(response.body)?.[1]
+    expect(JSON.parse(json ?? '{}')).toEqual(PUBLIC.structured_data)
   })
-
-  it('черновик отдаёт нейтральный заголовок площадки без текста', async () => {
-    const response = await app.inject({ method: 'GET', url: '/p/draft-post', headers: { 'user-agent': 'Telegrambot' } })
-    expect(response.statusCode).toBe(200)
+  it('черновик нейтрален и noindex', async () => {
+    const response = await app.inject({ url: '/p/draft-post', headers: { 'user-agent': 'TelegramBot' } })
     expect(response.body).toContain('<title>Блог</title>')
     expect(response.body).not.toContain('<article>')
+    expect(response.headers['x-robots-tag']).toBe('noindex, follow')
   })
-
-  it('запрос без User-Agent робота получает 404', async () => {
-    const response = await app.inject({ method: 'GET', url: '/p/public-post', headers: { 'user-agent': 'Mozilla/5.0' } })
-    expect(response.statusCode).toBe(404)
-    expect(response.headers['content-type']).toContain('application/problem+json')
+  it('404 для отсутствующей страницы, включая корень и общий маршрут', async () => {
+    expect((await app.inject({ url: '/missing', headers: { 'user-agent': 'vkShare' } })).statusCode).toBe(404)
+    expect((await app.inject({ url: '/', headers: { 'user-agent': 'Googlebot' } })).statusCode).toBe(200)
   })
+  it.each(['unavailable', 'malformed'])('503 для %s', async (path) => expect((await app.inject({ url: `/p/${path}`, headers: { 'user-agent': 'Googlebot' } })).statusCode).toBe(503))
+  it('обычный браузер не получает HTML для роботов', async () => expect((await app.inject({ url: '/p/public-post', headers: { 'user-agent': 'Mozilla/5.0' } })).statusCode).toBe(404))
+  it.each(['/robots.txt', '/sitemap.xml', '/sitemaps/articles-start.xml'])('%s доступен без User-Agent', async (url) => expect((await app.inject({ url })).statusCode).toBe(200))
 })

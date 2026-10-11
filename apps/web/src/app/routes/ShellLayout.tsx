@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useOutlet, useLocation, useMatches } from 'react-router'
+import { PageSeo } from '@/widgets/page-seo'
 import { FreshFeedPage } from '@/pages/fresh-feed'
 import { RestrictedNotice } from '@/entities/session'
 import { NotificationBell } from '@/widgets/notification-bell'
@@ -42,6 +43,8 @@ export function ShellLayout() {
   }, [pathname, setNavOpen])
 
   return (
+    <>
+    <PageSeo path={pathname} />
     <Shell
       header={
         <SiteHeader
@@ -71,5 +74,6 @@ export function ShellLayout() {
         </CenterErrorBoundary>
       }
     />
+    </>
   )
 }

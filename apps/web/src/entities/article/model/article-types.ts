@@ -16,7 +16,7 @@ export type ArticleCardModel = {
   /** `HH:mm` для сегодняшней статьи, иначе `дд.мм.гггг` (FR-061). */
   time_label: string
   author: { user_id: string; display_name: string; avatar_url: string | null; slug: string; href: string }
-  topic: { id: string; title: string; slug: string; status: 'active' | 'archived'; href: string }
+  topic: { id: string; title: string; slug: string; status: 'active' | 'archived'; avatar_url?: string | null; href: string }
   reaction_counts: ReactionCounts
   reaction_count: number
   comment_count: number

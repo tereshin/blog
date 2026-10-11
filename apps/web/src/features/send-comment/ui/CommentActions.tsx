@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CommentNode, CommentPlacement } from '@/entities/comment'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { Button, Dialog } from '@/shared/ui'
+import { Button, Dialog, Link } from '@/shared/ui'
 import { CommentOverflowMenu } from './CommentOverflowMenu.tsx'
 import { useDeleteComment } from '../model/useDeleteComment.ts'
 import { useEditComment } from '../model/useEditComment.ts'
@@ -73,10 +73,8 @@ export function CommentActions({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="px-2 text-muted"
+      <Link
+        className="text-sm font-normal text-muted underline underline-offset-4"
         isDisabled={!comments_enabled}
         onPress={() =>
           onReply({
@@ -87,7 +85,7 @@ export function CommentActions({
         }
       >
         {t('comment.reply')}
-      </Button>
+      </Link>
       <CommentOverflowMenu
         comment={comment}
         {...(is_own(comment.author.user_id)

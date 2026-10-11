@@ -2,6 +2,7 @@ import { baseEnvSchema, defineEnv, rejectPlaceholders } from '@blog/config'
 import { z } from 'zod'
 
 const envSchema = baseEnvSchema.extend({
+  NATS_URL: z.string().min(1).default('nats://localhost:4222'),
   HTTP_PORT: z.coerce.number().int().positive().default(3006),
   DATABASE_URL: z.string().min(1),
   SERVICE_JWT_PUBLIC_KEY: z.string().min(1),

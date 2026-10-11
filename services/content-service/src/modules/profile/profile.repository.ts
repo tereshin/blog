@@ -1,3 +1,4 @@
+import { requestAuthorCovers } from '../social-cover/index.ts'
 import { eq, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
@@ -89,6 +90,7 @@ export function createProfileRepository(db: NodePgDatabase): ProfileRepository {
           slug: fresh.slug,
           correlation_id,
         })
+        if (input.display_name !== undefined) await requestAuthorCovers(database, user_id, correlation_id)
         return toRecord(fresh)
       })
     },

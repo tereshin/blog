@@ -9,7 +9,7 @@ import { useTopics } from '@/entities/topic'
 import { useLoginDialog } from '@/features/login'
 import { PublishPanel, UnsavedChangesDialog, usePublishArticle } from '@/features/publish-article'
 import { useT } from '@/shared/i18n'
-import { Button, Dialog, EmptyState } from '@/shared/ui'
+import { CloseButton, Dialog, EmptyState } from '@/shared/ui'
 import { BlockEditor, EditorSkeleton, useEditorDocument } from '@/widgets/editor'
 
 const EMPTY_DOCUMENT = { blocks: [] }
@@ -48,15 +48,9 @@ function WindowNotice({ title, onClose }: { title: string; onClose: () => void }
   return (
     <div>
       <div className="flex justify-end px-3 pt-3">
-        <Button variant="ghost" isIconOnly aria-label={t('common.close')} onPress={onClose}>
-          <span aria-hidden="true" className="text-lg leading-none">
-            ×
-          </span>
-        </Button>
+        <CloseButton aria-label={t('common.close')} onPress={onClose} />
       </div>
-      <EmptyState title={title}>
-        <Button variant="secondary" onPress={onClose}>{t('common.close')}</Button>
-      </EmptyState>
+      <EmptyState title={title} />
     </div>
   )
 }

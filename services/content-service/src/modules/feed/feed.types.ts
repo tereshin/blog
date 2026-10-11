@@ -17,6 +17,7 @@ export type FeedRow = {
   topic_title: string
   topic_slug: string
   topic_status: 'active' | 'archived'
+  topic_avatar_url?: string | null
   reaction_counts: unknown
   reaction_count: number
   comment_count: number

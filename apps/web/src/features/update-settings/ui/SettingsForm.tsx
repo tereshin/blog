@@ -1,3 +1,4 @@
+import { seoSettingsSchema, socialCoverSettingsSchema } from '@blog/contracts'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ReactionKind } from '@/entities/reaction'
@@ -8,6 +9,9 @@ import type { AdminSettings } from '../api/update-settings.ts'
 import { appearanceErrors, appearancePayload, draftsFrom } from '../model/appearance-draft.ts'
 import type { AppearanceDraft } from '../model/appearance-draft.ts'
 import { useUpdateSettings } from '../model/useUpdateSettings.ts'
+import { SettingsSeoFields } from './SettingsSeoFields.tsx'
+import { SettingsCoverFields } from './SettingsCoverFields.tsx'
+import { SettingsCoverPreview } from './SettingsCoverPreview.tsx'
 import { SettingsStatusIcons } from './SettingsStatusIcons.tsx'
 import { SettingsReactionFields } from './SettingsReactionFields.tsx'
 
@@ -26,7 +30,7 @@ const field_class = 'rounded-lg border border-separator bg-background px-3 py-2'
 export function SettingsForm({ initial, upload, can_edit_media = true }: SettingsFormProps) {
   const { t } = useT()
   const update = useUpdateSettings()
-  const [draft, setDraft] = useState(initial)
+  const [draft, setDraft] = useState(() => ({ ...initial, seo: seoSettingsSchema.parse(initial.seo ?? {}), social_cover: socialCoverSettingsSchema.parse(initial.social_cover ?? {}) }))
   const [appearance_draft, setAppearanceDraft] = useState(() => draftsFrom(initial.reaction_appearances))
   const [appearance_errors, setAppearanceErrors] = useState<Partial<Record<ReactionKind, 'emoji' | 'image'>>>({})
   const [error, setError] = useState<string | null>(null)
@@ -51,6 +55,8 @@ export function SettingsForm({ initial, upload, can_edit_media = true }: Setting
     const reaction_appearances = can_edit_media ? appearancePayload(appearance_draft) : initial.reaction_appearances
     const profile_status_icons = can_edit_media ? draft.profile_status_icons : initial.profile_status_icons
     const logo_url = can_edit_media ? draft.logo_url : initial.logo_url
+    const parsed = seoSettingsSchema.safeParse(draft.seo)
+    if (!parsed.success) { setError(t('seo.validation_error')); return }
     update.mutate(
       { ...draft, name: draft.name.trim(), logo_url, reaction_appearances, profile_status_icons },
       { onError: (reason) => setError(reason instanceof ApiError ? reason.message : t('admin.settings.error')) },
@@ -119,6 +125,9 @@ export function SettingsForm({ initial, upload, can_edit_media = true }: Setting
         />
         {t('admin.settings.new_members_can_publish')}
       </label>
+      <SettingsSeoFields value={draft.seo} public_origin={draft.public_origin} onChange={(seo) => setDraft((current) => ({ ...current, seo }))} upload={upload} can_edit_media={can_edit_media} />
+      <SettingsCoverFields value={draft.social_cover} onChange={(social_cover) => setDraft((current) => ({ ...current, social_cover }))} upload={upload} can_edit_media={can_edit_media} />
+      <SettingsCoverPreview settings={draft.social_cover} site_name={draft.name} site_logo={draft.logo_url} upload={upload} can_edit_media={can_edit_media} />
       {error ? <p className="text-sm text-danger">{error}</p> : null}
       <Button type="submit" variant="primary" isDisabled={update.isPending || draft.name.trim().length === 0}>
         {update.isPending ? t('profile.saving') : t('common.save')}

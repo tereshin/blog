@@ -1,7 +1,7 @@
 import type { ReactionAppearance, ReactionAppearances } from '@blog/contracts'
 import { useT } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
-import { BaseIcon, Button, Menu } from '@/shared/ui'
+import { BaseIcon, Menu } from '@/shared/ui'
 import {
   FALLBACK_REACTION_APPEARANCES,
   REACTION_KINDS,
@@ -9,6 +9,7 @@ import {
   ReactionGlyph,
 } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
+import { ReactionButton } from './ReactionButton.tsx'
 
 type ReactionRowProps = {
   counts: ReactionCounts
@@ -38,52 +39,53 @@ export function ReactionRow({
   appearances = FALLBACK_REACTION_APPEARANCES,
 }: ReactionRowProps) {
   const { t, locale } = useT()
-  const visible = REACTION_KINDS.filter((kind) => counts[kind] > 0)
+  const visible = REACTION_KINDS.filter((kind) => counts[kind] > 0 || kind === my_reaction)
+  if (visible.length === 0) visible.push(appearances[0]?.kind ?? REACTION_KINDS[0])
   return (
     <div className="flex flex-wrap items-center gap-2">
       {visible.map((kind) => {
         const appearance = appearanceOf(appearances, kind)
         const label = t(REACTION_LABEL[kind])
         return (
-          <Button
+          <ReactionButton
             key={kind}
             variant={my_reaction === kind ? 'primary' : 'secondary'}
             size="sm"
-            className="h-8 min-w-0 gap-1.5 px-3 text-sm tabular-nums"
+            className="gap-1.5 text-sm tabular-nums"
             aria-pressed={my_reaction === kind}
-            aria-label={`${label} ${formatCount(counts[kind], locale)}`}
+            aria-label={counts[kind] > 0 ? `${label} ${formatCount(counts[kind], locale)}` : label}
             isDisabled={is_pending}
             onPress={() => onSelect(kind)}
           >
             <ReactionGlyph appearance={appearance} label={label} />
-            {formatCount(counts[kind], locale)}
-          </Button>
+            {counts[kind] > 0 ? formatCount(counts[kind], locale) : null}
+          </ReactionButton>
         )
       })}
       {onAdd ? (
-        <Button
+        <ReactionButton
           variant="secondary"
           size="sm"
           isIconOnly
-          className="h-8 w-8 min-w-0 text-muted"
+          className="text-muted"
           aria-label={t('reaction.add')}
           isDisabled={is_pending}
           onPress={onAdd}
         >
           <BaseIcon name="add" style="line" size={18} />
-        </Button>
+        </ReactionButton>
       ) : (
         <Menu>
-          <Button
+          <ReactionButton
             variant="secondary"
             size="sm"
             isIconOnly
-            className="h-8 w-8 min-w-0 text-muted"
+            className="text-muted"
             aria-label={t('reaction.add')}
             isDisabled={is_pending}
           >
             <BaseIcon name="add" style="line" size={18} />
-          </Button>
+          </ReactionButton>
           <Menu.Content
             aria-label={t('reaction.menu')}
             onAction={(key) => onSelect(String(key) as ReactionKind)}

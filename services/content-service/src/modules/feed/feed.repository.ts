@@ -22,6 +22,7 @@ const card_columns = {
   topic_title: topics.title,
   topic_slug: topics.slug,
   topic_status: topics.status,
+  topic_avatar_url: topics.avatar_url,
   reaction_counts: articles.reaction_counts,
   reaction_count: articles.reaction_count,
   comment_count: articles.comment_count,

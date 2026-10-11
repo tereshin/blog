@@ -1,6 +1,6 @@
 import { boolean, customType, index, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
-import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
-import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
+import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS } from '@blog/contracts'
+import type { ProfileStatusIcon, ReactionAppearances, SeoSettings, SocialCoverSettings, SocialImages } from '@blog/contracts'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -69,6 +69,8 @@ export const articles = pgTable(
       .notNull()
       .references(() => topics.id),
     title: varchar('title', { length: 150 }).notNull(),
+    seo_title: varchar('seo_title', { length: 200 }),
+    seo_description: varchar('seo_description', { length: 500 }),
     slug: text('slug').notNull(),
     blocks: jsonb('blocks').notNull().default([]),
     visibility: article_visibility('visibility').notNull().default('public'),
@@ -124,6 +126,8 @@ export const settings = pgTable('settings', {
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
   reaction_appearances: jsonb('reaction_appearances').$type<ReactionAppearances>().notNull().default(DEFAULT_REACTION_APPEARANCES),
   profile_status_icons: jsonb('profile_status_icons').$type<ProfileStatusIcon[]>().notNull().default([]),
+  seo: jsonb('seo').$type<SeoSettings>().notNull().default(DEFAULT_SEO_SETTINGS),
+  social_cover: jsonb('social_cover').$type<SocialCoverSettings>().notNull().default(DEFAULT_SOCIAL_COVER_SETTINGS),
 })
 
 export const reports = pgTable(
@@ -145,4 +149,11 @@ export const seed_runs = pgTable('seed_runs', {
   anchor_at: timestamp('anchor_at', { withTimezone: true }).notNull(),
   started_at: timestamp('started_at', { withTimezone: true }).notNull(),
   finished_at: timestamp('finished_at', { withTimezone: true }),
+})
+
+export const social_covers = pgTable('social_covers', {
+  target_id: text('target_id').primaryKey(),
+  revision: text('revision').notNull(),
+  images: jsonb('images').$type<SocialImages>(),
+  requested_at: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
 })

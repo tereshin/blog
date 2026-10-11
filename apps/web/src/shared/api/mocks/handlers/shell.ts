@@ -1,5 +1,6 @@
 import { HttpResponse, http } from 'msw'
-import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
+import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS } from '@blog/contracts'
+import type { SeoSettings, SocialCoverSettings } from '@blog/contracts'
 import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
 import settings_fixture from '../fixtures/settings.json'
@@ -17,6 +18,8 @@ type SiteSettings = {
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
   profile_status_icons: ProfileStatusIcon[]
+  seo: SeoSettings
+  social_cover: SocialCoverSettings
 }
 
 type SiteTopic = {
@@ -41,12 +44,14 @@ function initialState(): SiteState {
       new_members_can_publish: true,
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
+      seo: DEFAULT_SEO_SETTINGS,
+      social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
     },
     topics: topics_fixture.map((topic) => ({ ...topic, status: topic.status as SiteTopic['status'] })),
   }
 }
 
-function readSite(): SiteState {
+export function readSite(): SiteState {
   const raw = window.sessionStorage.getItem(SITE_KEY)
   if (!raw) return initialState()
   const parsed = JSON.parse(raw) as SiteState
@@ -65,6 +70,8 @@ function publicSettings(settings: SiteSettings) {
     about: settings.about,
     reaction_appearances: settings.reaction_appearances,
     profile_status_icons: settings.profile_status_icons,
+    seo: settings.seo,
+    social_cover: settings.social_cover,
   }
 }
 
@@ -89,7 +96,7 @@ function forbidden() {
 export const shellHandlers = [
   http.get('*/v1/settings/admin', () => {
     if (readMockViewer() !== 'superadmin') return forbidden()
-    return HttpResponse.json(readSite().settings)
+    return HttpResponse.json({ ...readSite().settings, public_origin: window.location.origin })
   }),
   http.get('*/v1/settings', () => HttpResponse.json(publicSettings(readSite().settings))),
   http.put('*/v1/settings', async ({ request }) => {

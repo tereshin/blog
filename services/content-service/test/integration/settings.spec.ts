@@ -2,7 +2,7 @@ import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { DEFAULT_REACTION_APPEARANCES, SettingsUpdatedV1 } from '@blog/contracts'
+import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS, SettingsUpdatedV1 } from '@blog/contracts'
 import type { ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -68,7 +68,9 @@ describe('content: настройки площадки', () => {
       locale: 'ru',
       about: '',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
-  profile_status_icons: [],
+      profile_status_icons: [],
+      seo: DEFAULT_SEO_SETTINGS,
+      social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
     })
   })
 
@@ -103,14 +105,16 @@ describe('content: настройки площадки', () => {
       payload: body,
     })
     expect(response.statusCode).toBe(200)
-    expect(response.json()).toEqual(body)
+    expect(response.json()).toEqual({ ...body, seo: DEFAULT_SEO_SETTINGS, social_cover: DEFAULT_SOCIAL_COVER_SETTINGS })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
       name: 'Площадка',
       logo_url: `${MEDIA}/logo.png`,
       locale: 'en',
       about: 'О проекте',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
-  profile_status_icons: [],
+      profile_status_icons: [],
+      seo: DEFAULT_SEO_SETTINGS,
+      social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
     })
     const events = await database.db.select().from(outbox).where(eq(outbox.name, 'content.settings.updated'))
     expect(events).toHaveLength(1)

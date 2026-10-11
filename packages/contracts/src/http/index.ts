@@ -128,3 +128,5 @@ export type { AdminUser, AdminUserPage, ModerationArticle, ModerationPage, Restr
 export * from './comment-interactions.ts'
 export { commentMediaSchema, commentMentionSchema, commentSortSchema } from './comments.ts'
 export type { CommentSort } from './comments.ts'
+
+export * from './seo.ts'

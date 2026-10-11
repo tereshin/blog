@@ -9,7 +9,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, topics } from '../../src/infra/db/schema.ts'
-import { prerenderRoutes } from '../../src/modules/article/index.ts'
+import { seoRoutes } from '../../src/modules/seo/index.ts'
 
 const TOPIC = '5c9d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a01'
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -57,7 +57,7 @@ describe('content: страница для робота', () => {
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'content-test', level: 'silent' }) })
     await app.register(errorHandler)
-    await app.register(prerenderRoutes, { database })
+    await app.register(seoRoutes, { database, public_origin: 'https://blog.example', app_env: 'prod' })
   }, 120_000)
 
   afterAll(async () => {
@@ -67,18 +67,19 @@ describe('content: страница для робота', () => {
   })
 
   it('публичная статья отдаёт заголовок, описание и текст, черновик — только название площадки', async () => {
-    const published = await app.inject({ method: 'GET', url: '/internal/prerender/article/public-post' })
+    const published = await app.inject({ method: 'GET', url: '/v1/seo?path=/p/public-post' })
     expect(published.statusCode).toBe(200)
     expect(published.json()).toMatchObject({
-      title: 'Публичная статья',
+      title: 'Публичная статья — Блог',
       description: 'Короткое описание',
-      image_url: 'https://cdn.example/cover.png',
-      text: 'Текст для робота',
+      canonical_url: 'https://blog.example/p/public-post',
+      robots: 'index, follow',
+      body_text: 'Текст для робота',
     })
 
-    const draft = await app.inject({ method: 'GET', url: '/internal/prerender/article/draft-post' })
+    const draft = await app.inject({ method: 'GET', url: '/internal/seo/page?path=/p/draft-post' })
     expect(draft.statusCode).toBe(200)
-    expect(draft.json()).toMatchObject({ title: 'Блог', text: '' })
+    expect(draft.json()).toMatchObject({ title: 'Блог', body_text: '', robots: 'noindex, follow' })
     expect(draft.json().description).not.toContain('секрет')
   })
 })

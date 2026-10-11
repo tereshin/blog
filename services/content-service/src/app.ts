@@ -6,8 +6,9 @@ import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
 import { lookupMediaFile } from './infra/http/media-files.ts'
+import { seoRoutes } from './modules/seo/index.ts'
 import { accessRoutes } from './modules/access/index.ts'
-import { articleRoutes, prerenderRoutes } from './modules/article/index.ts'
+import { articleRoutes } from './modules/article/index.ts'
 import { feedRoutes } from './modules/feed/index.ts'
 import { followRoutes } from './modules/follow/index.ts'
 import { moderationRoutes } from './modules/moderation/index.ts'
@@ -50,13 +51,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   await app.register(accessRoutes, { database: deps.database })
   await app.register(topicRoutes, { database: deps.database, media_url: env.MEDIA_URL })
-  await app.register(settingsRoutes, { database: deps.database, media_url: env.S3_PUBLIC_URL ?? env.MEDIA_URL })
+  await app.register(settingsRoutes, { database: deps.database, media_url: env.S3_PUBLIC_URL ?? env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN })
   await app.register(feedRoutes, { database: deps.database })
   await app.register(searchRoutes, { database: deps.database })
-  await app.register(prerenderRoutes, { database: deps.database })
+  await app.register(seoRoutes, { database: deps.database, public_origin: env.PUBLIC_ORIGIN, app_env: env.APP_ENV })
   await app.register(articleRoutes, {
     database: deps.database,
-    media_urls: [env.MEDIA_URL],
+    media_urls: [env.MEDIA_URL, ...(env.S3_PUBLIC_URL ? [env.S3_PUBLIC_URL] : [])],
     lookupFile: (url) => lookupMediaFile(media, url),
   })
   await app.register(profileRoutes, { database: deps.database, media_url: env.MEDIA_URL, public_origin: env.PUBLIC_ORIGIN, media_public_url: env.S3_PUBLIC_URL })

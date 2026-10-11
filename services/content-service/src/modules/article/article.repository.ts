@@ -1,3 +1,4 @@
+import { requestArticleCover, invalidateArticleCover } from '../social-cover/index.ts'
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
@@ -31,6 +32,7 @@ const columns = {
   topic_title: topics.title,
   topic_slug: topics.slug,
   topic_status: topics.status,
+  topic_avatar_url: topics.avatar_url,
   reaction_counts: articles.reaction_counts,
   reaction_count: articles.reaction_count,
   comment_count: articles.comment_count,
@@ -52,6 +54,8 @@ const stored_columns = {
   published_at: articles.published_at,
   excerpt: articles.excerpt,
   first_image_url: articles.first_image_url,
+  seo_title: articles.seo_title,
+  seo_description: articles.seo_description,
 }
 
 function from(db: NodePgDatabase) {
@@ -140,6 +144,8 @@ export function createArticleRepository(db: NodePgDatabase): ArticleRepository {
             author_id: input.author_id,
             topic_id: input.topic_id,
             title: input.title,
+            seo_title: input.seo_title,
+            seo_description: input.seo_description,
             slug,
             blocks: input.blocks,
             visibility: input.visibility,
@@ -165,6 +171,8 @@ export function createArticleRepository(db: NodePgDatabase): ArticleRepository {
           .update(articles)
           .set({
             title: input.title,
+            seo_title: input.seo_title,
+            seo_description: input.seo_description,
             topic_id: input.topic_id,
             blocks: input.blocks,
             visibility: input.visibility,
@@ -179,7 +187,10 @@ export function createArticleRepository(db: NodePgDatabase): ArticleRepository {
           .returning(stored_columns)
         if (!saved) return null
         const stored = saved as StoredArticle
-        if (stored.status === 'published') await appendArticleEvent(database, 'content.article.updated', stored, input.correlation_id)
+        if (stored.status === 'published') {
+          await appendArticleEvent(database, 'content.article.updated', stored, input.correlation_id)
+          await requestArticleCover(database, stored.id, input.correlation_id)
+        }
         return stored
       })
     },
@@ -209,6 +220,7 @@ export function createArticleRepository(db: NodePgDatabase): ArticleRepository {
         if (!saved) return null
         const stored = saved as StoredArticle
         if (current.status !== 'published') await appendArticleEvent(database, 'content.article.published', stored, input.correlation_id)
+        await requestArticleCover(database, stored.id, input.correlation_id)
         return stored
       })
     },
@@ -221,6 +233,7 @@ export function createArticleRepository(db: NodePgDatabase): ArticleRepository {
         const removed: StoredArticle = { ...current, status: 'deleted' }
         await appendArticleEvent(database, 'content.article.deleted', removed, correlation_id)
         await releaseSlug(database, 'article', id)
+        await invalidateArticleCover(database, id)
         // Адрес освобождён для других. В строке остаётся внутренний ключ, чтобы старый slug не нашёл удалённую статью.
         await database
           .update(articles)

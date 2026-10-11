@@ -31,7 +31,7 @@ test.describe('обсуждение на фикстурном gateway', () => {
     const root = page.getByRole('article', { name: 'Роман Читаев' }).filter({ hasText: 'Корень обсуждения' })
     await expect(root).toBeVisible()
 
-    await root.getByRole('button', { name: 'Ответить' }).first().click()
+    await root.getByRole('link', { name: 'Ответить' }).first().click()
     const reply = page.getByRole('textbox', { name: /Ответ для/ })
     await reply.fill('Текст ответа, который нельзя потерять')
     await page.evaluate(() => {
@@ -95,7 +95,7 @@ test.describe('обсуждение на локальном стеке', () => {
     await reader.getByRole('button', { name: 'Отправить' }).click()
     await expect(author.getByText('Комментарий Бориса')).toBeVisible({ timeout: 2000 })
 
-    await author.getByRole('button', { name: 'Ответить' }).click()
+    await author.getByRole('link', { name: 'Ответить' }).click()
     const reply = author.getByRole('textbox', { name: /Ответ для/ })
     await reply.fill('Черновик ответа')
     const title = await author.getByRole('heading', { level: 1 }).innerText()

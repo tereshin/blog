@@ -5,6 +5,8 @@ import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
+import { socialCoverRoutes } from './modules/social-cover/index.ts'
+import type { CoverRenderer } from './modules/social-cover/index.ts'
 import { mediaRoutes } from './modules/media/index.ts'
 import type { ObjectStore } from './modules/media/index.ts'
 
@@ -14,6 +16,8 @@ export type AppDeps = {
   metrics: ServiceMetrics
   database: DbHandle
   store: ObjectStore
+  renderer?: CoverRenderer
+  is_broker_ready?: () => boolean
 }
 
 const BODY_LIMIT = 20 * 1024 * 1024
@@ -24,9 +28,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   await app.register(requestContext, { logger })
   await app.register(errorHandler)
-  await app.register(health, { metrics: deps.metrics, checks: [{ name: 'database', check: deps.database.isReady }] })
+  await app.register(health, { metrics: deps.metrics, checks: [{ name: 'database', check: deps.database.isReady }, ...(deps.is_broker_ready ? [{ name: 'broker', check: async () => deps.is_broker_ready?.() ?? false }] : [])] })
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
   await app.register(mediaRoutes, { database: deps.database, store: deps.store, public_url: env.S3_PUBLIC_URL })
+
+  if (deps.renderer) await app.register(socialCoverRoutes, { renderer: deps.renderer, store: deps.store, public_url: env.S3_PUBLIC_URL })
 
   return app
 }

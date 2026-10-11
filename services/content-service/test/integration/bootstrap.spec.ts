@@ -30,7 +30,7 @@ describe('content: bootstrap', () => {
     expect(first).toMatchObject({ name: 'Блог', locale: 'ru', registration_open: false, new_members_can_publish: true })
     expect(second).toMatchObject({ registration_open: false })
     expect(Number((await database.pool.query<{ n: string }>('select count(*) as n from settings')).rows[0]?.n)).toBe(1)
-    const events = await database.pool.query<{ name: string; payload: { registration_open: boolean } }>('select name, payload from outbox')
+    const events = await database.pool.query<{ name: string; payload: { registration_open: boolean } }>("select name, payload from outbox where name = 'content.settings.updated'")
     expect(events.rows).toHaveLength(1)
     expect(events.rows[0]?.name).toBe('content.settings.updated')
     expect(events.rows[0]?.payload.registration_open).toBe(false)

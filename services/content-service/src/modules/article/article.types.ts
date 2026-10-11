@@ -20,6 +20,7 @@ export type ArticleRow = {
   topic_title: string
   topic_slug: string
   topic_status: 'active' | 'archived'
+  topic_avatar_url?: string | null
   reaction_counts: unknown
   reaction_count: number
   comment_count: number
@@ -41,6 +42,8 @@ export type StoredArticle = {
   published_at: Date | null
   excerpt: string
   first_image_url: string | null
+  seo_title?: string | null
+  seo_description?: string | null
 }
 
 export type NewArticle = {
@@ -53,6 +56,8 @@ export type NewArticle = {
   excerpt: string
   first_image_url: string | null
   slug?: string
+  seo_title?: string | null
+  seo_description?: string | null
 }
 
 export type ArticleSave = {
@@ -66,6 +71,8 @@ export type ArticleSave = {
   /** Заголовок и текст блоков: пишется в `search_vector`, пока статья опубликована. */
   search_text: string
   slug?: string
+  seo_title?: string | null
+  seo_description?: string | null
   correlation_id: string
 }
 

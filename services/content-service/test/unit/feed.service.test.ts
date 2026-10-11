@@ -80,6 +80,7 @@ function row(index: number, partial: Partial<FeedRow> = {}): FeedRow {
     topic_title: 'Тема',
     topic_slug: 'tema',
     topic_status: 'active',
+    topic_avatar_url: 'https://example.com/topic.png',
     reaction_counts: { laugh: 1, heart: 0, thumb: 0, fire: 0 },
     reaction_count: 1,
     comment_count: 0,
@@ -109,6 +110,7 @@ describe('feed.service', () => {
     const service = createFeedService(repositoryOf(Array.from({ length: 21 }, (_, index) => row(index + 1))))
     const page = await service.getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page.items).toHaveLength(20)
+    expect(page.items[0]?.topic.avatar_url).toBe('https://example.com/topic.png')
     expect(page.next_cursor).not.toBeNull()
     expect(decodeCursor(page.next_cursor ?? '')).toMatchObject({ k: 'time', id: page.items[19]?.id })
   })

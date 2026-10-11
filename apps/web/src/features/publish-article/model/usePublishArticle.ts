@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { ArticleDraft, BlocksDocument } from '@blog/contracts'
 import { articleKeys, createArticle, publishArticle, updateArticle } from '@/entities/article'
+import { seoKeys } from '@/entities/seo'
 import { profileKeys } from '@/entities/profile'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
@@ -13,6 +14,8 @@ export type ArticleDraftForm = {
   visibility: 'public' | 'members' | 'author'
   comments_enabled: boolean
   slug: string
+  seo_title?: string
+  seo_description?: string
 }
 
 type UsePublishArticleOptions = {
@@ -35,6 +38,7 @@ export function usePublishArticle({ article_id, read_document, on_saved }: UsePu
     await query_client.invalidateQueries({ queryKey: articleKeys.detail(draft.slug) })
     await query_client.invalidateQueries({ queryKey: articleKeys.myDrafts() })
     await query_client.invalidateQueries({ queryKey: profileKeys.all })
+    await query_client.invalidateQueries({ queryKey: seoKeys.all })
   }
 
   const mutation = useMutation({
@@ -47,6 +51,8 @@ export function usePublishArticle({ article_id, read_document, on_saved }: UsePu
         blocks,
         visibility: input.form.visibility,
         comments_enabled: input.form.comments_enabled,
+        seo_title: input.form.seo_title?.trim() || null,
+        seo_description: input.form.seo_description?.trim() || null,
         ...(slug ? { slug } : {}),
       }
       const saved = article_id ? await updateArticle(article_id, body) : await createArticle(body)

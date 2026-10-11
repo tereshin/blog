@@ -9,13 +9,15 @@ describe('маппер ленты', () => {
 
   it('превращает ответ сервера в модель карточки с адресами и подписью времени', () => {
     const [dto] = buildFeedFixture(1, now)
-    const page = toFeedPage(feedPageDtoSchema.parse({ items: [dto], next_cursor: '20' }), now)
+    if (!dto) throw new Error('Missing feed fixture')
+    const with_avatar = { ...dto, topic: { ...dto.topic, avatar_url: 'https://example.com/topic.png' } }
+    const page = toFeedPage(feedPageDtoSchema.parse({ items: [with_avatar], next_cursor: '20' }), now)
     const card = page.items[0]
     expect(page.next_cursor).toBe('20')
     expect(card).toMatchObject({
       href: '/p/statya-1',
       author: { href: '/u/anna' },
-      topic: { href: '/t/tehnologii' },
+      topic: { href: '/t/tehnologii', avatar_url: 'https://example.com/topic.png' },
     })
     expect(card?.time_label).toMatch(/^\d{2}:\d{2}$/)
   })

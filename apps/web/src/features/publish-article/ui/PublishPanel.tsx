@@ -8,11 +8,10 @@ import { useT } from '@/shared/i18n'
 import {
   Avatar,
   Button,
+  BaseIcon,
+  CloseButton,
   CommentIcon,
-  EyeIcon,
   Menu,
-  MoreIcon,
-  Popover,
   useToast,
 } from '@/shared/ui'
 import type { ArticleDraftForm } from '../model/usePublishArticle.ts'
@@ -35,7 +34,8 @@ type PublishPanelProps = {
   onSubmit: (mode: 'draft' | 'publish', form: ArticleDraftForm) => Promise<ArticleDraft | null>
 }
 
-const field_class = 'rounded-lg border border-separator bg-background px-3 py-2 text-sm'
+import { TopicPicker } from './TopicPicker.tsx'
+import { PublishSettings } from './PublishSettings.tsx'
 
 const REASON_KEY = {
   title: 'editor.error.title',
@@ -45,9 +45,11 @@ const REASON_KEY = {
 
 function formFrom(initial: ArticleDraft | null, topic_id: string): ArticleDraftForm {
   if (!initial)
-    return { title: '', topic_id, visibility: 'public', comments_enabled: true, slug: '' }
+    return { title: '', topic_id, visibility: 'public', comments_enabled: true, slug: '', seo_title: '', seo_description: '' }
   return {
     title: initial.title,
+    seo_title: initial.seo_title ?? '',
+    seo_description: initial.seo_description ?? '',
     topic_id: initial.topic_id,
     visibility: initial.visibility,
     comments_enabled: initial.comments_enabled,
@@ -61,7 +63,9 @@ function sameForm(left: ArticleDraftForm, right: ArticleDraftForm): boolean {
     left.topic_id === right.topic_id &&
     left.visibility === right.visibility &&
     left.comments_enabled === right.comments_enabled &&
-    left.slug === right.slug
+    left.slug === right.slug &&
+    (left.seo_title ?? '') === (right.seo_title ?? '') &&
+    (left.seo_description ?? '') === (right.seo_description ?? '')
   )
 }
 
@@ -128,19 +132,7 @@ export function PublishPanel({
         <Avatar src={avatar_url} name={author_name || t('header.write')} size="md" />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{author_name}</p>
-          <select
-            aria-label={t('editor.topic')}
-            value={form.topic_id}
-            onChange={(event) => update({ topic_id: event.target.value })}
-            className="max-w-48 truncate bg-transparent text-sm text-muted outline-none"
-          >
-            <option value="">{t('editor.no_topic')}</option>
-            {active.map((topic) => (
-              <option key={topic.id} value={topic.id}>
-                {topic.title}
-              </option>
-            ))}
-          </select>
+          <TopicPicker topics={active} value={form.topic_id} onChange={(topic_id) => update({ topic_id })} />
         </div>
         <Button
           variant="ghost"
@@ -149,19 +141,9 @@ export function PublishPanel({
           aria-label={t(is_fullscreen ? 'editor.collapse' : 'editor.expand')}
           onPress={onToggleFullscreen}
         >
-          <span aria-hidden="true">{is_fullscreen ? '↙' : '↗'}</span>
+          {is_fullscreen ? <BaseIcon name="fullscreen_exit_2" style="line" /> : <BaseIcon name="fullscreen_2" style="line" />}
         </Button>
-        <Button
-          variant="ghost"
-          isIconOnly
-          aria-label={t('common.close')}
-          className="rounded-full bg-surface-secondary"
-          onPress={onClose}
-        >
-          <span aria-hidden="true" className="text-lg leading-none">
-            ×
-          </span>
-        </Button>
+        <CloseButton aria-label={t('common.close')} className="rounded-full bg-surface-secondary" onPress={onClose} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-6 sm:px-8">
         <div hidden={Boolean(preview)}>{children(form.title, (title) => update({ title }))}</div>
@@ -182,80 +164,25 @@ export function PublishPanel({
           </ul>
         ) : null}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2 pl-16 pr-5 py-5 sm:pl-24 sm:pr-8">
-        <Button
-          variant="primary"
-          shape="pill"
-          isDisabled={!can_submit}
-          onPress={() => submit('publish')}
-        >
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-separator pl-16 pr-5 py-4 sm:pl-24 sm:pr-8">
+        <Button variant="primary" shape="pill" isDisabled={!can_submit} onPress={() => submit('publish')}>
           {t('editor.publish')}
         </Button>
-        <Button variant="secondary" isDisabled={!can_submit} onPress={() => submit('draft')}>
-          {t('editor.save_draft')}
-        </Button>
         <Menu>
-          <Button variant="ghost" isIconOnly aria-label={t('editor.comments_who')}>
+          <Button variant="ghost" size="sm" aria-label={t('editor.comments_who')} className="gap-1.5 px-0 text-muted">
             <CommentIcon />
+            <span className="hidden sm:inline">{t(form.comments_enabled ? 'editor.comments_all' : 'editor.comments_none')}</span>
+            <BaseIcon name="down" style="line" size={16} />
           </Button>
-          <Menu.Content aria-label={t('editor.comments_who')}>
-            <Menu.Item
-              onPress={() => update({ comments_enabled: true })}
-            >{`${t('editor.comments_all')} · ${t('editor.comments_default')}`}</Menu.Item>
-            <Menu.Item onPress={() => update({ comments_enabled: false })}>
-              {t('editor.comments_none')}
-            </Menu.Item>
+          <Menu.Content aria-label={t('editor.comments_who')} selectionMode="single" selectedKeys={[form.comments_enabled ? 'all' : 'none']} onAction={(key) => update({ comments_enabled: key === 'all' })}>
+            <Menu.Item id="all">{t('editor.comments_all')}</Menu.Item>
+            <Menu.Item id="none">{t('editor.comments_none')}</Menu.Item>
           </Menu.Content>
         </Menu>
-        <Button
-          variant="ghost"
-          isIconOnly
-          aria-label={t(preview ? 'editor.resume' : 'editor.preview')}
-          isDisabled={!editor_ready}
-          onPress={() => {
-            void handlePreview()
-          }}
-        >
-          <EyeIcon />
-        </Button>
-        <Popover>
-          <Button variant="ghost" isIconOnly aria-label={t('editor.settings')}>
-            <MoreIcon className="size-6" />
-          </Button>
-          <Popover.Content>
-            <div className="flex w-72 flex-col gap-3 p-1">
-              <label className="flex flex-col gap-1 text-sm">
-                {t('editor.visibility')}
-                <select
-                  value={form.visibility}
-                  onChange={(event) =>
-                    update({ visibility: event.target.value as ArticleDraftForm['visibility'] })
-                  }
-                  className={field_class}
-                >
-                  <option value="public">{t('editor.visibility.public')}</option>
-                  <option value="members">{t('editor.visibility.members')}</option>
-                  <option value="author">{t('editor.visibility.author')}</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                {t('editor.slug')}
-                <input
-                  value={form.slug}
-                  placeholder={initial?.slug || 'moy-adres'}
-                  aria-invalid={slug_error ? true : undefined}
-                  onChange={(event) => update({ slug: event.target.value })}
-                  className={field_class}
-                />
-                <span className="text-xs text-muted">{t('editor.slug_hint')}</span>
-                {slug_error ? <span className="text-sm text-danger">{slug_error}</span> : null}
-              </label>
-            </div>
-          </Popover.Content>
-        </Popover>
-        {show_saved ? (
-          <span className="ml-auto text-sm text-muted">{t('editor.saved')} ✓</span>
-        ) : null}
+        <div className="ml-auto flex items-center gap-2">
+          {show_saved ? <span role="status" className="text-xs text-muted">{t('editor.saved')} ✓</span> : null}
+          <PublishSettings form={form} slug={initial?.slug ?? ''} slug_error={slug_error} can_submit={can_submit} editor_ready={editor_ready} is_preview={Boolean(preview)} onChange={update} onSave={() => submit('draft')} onPreview={() => { void handlePreview() }} />
+        </div>
       </div>
     </div>
   )

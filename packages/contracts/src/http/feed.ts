@@ -39,6 +39,7 @@ export const feedCardSchema = z.strictObject({
     title: z.string(),
     slug: z.string(),
     status: topicStatusSchema,
+    avatar_url: z.string().nullable().optional(),
   }),
   reaction_counts: reactionCountsSchema,
   reaction_count: z.number().int().nonnegative(),

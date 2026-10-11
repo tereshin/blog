@@ -7,10 +7,6 @@ function hasLeftColumn(page: Page): boolean {
   return (page.viewportSize()?.width ?? 0) >= LEFT_COLUMN
 }
 
-function showsNavDrawer(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) < LEFT_COLUMN
-}
-
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 
 test.describe('Жесты карточки', () => {
@@ -92,17 +88,19 @@ test.describe('Жесты карточки', () => {
   test('просмотренные прячутся при возврате, текст показывает, крестик убирает полосу', async ({
     page,
   }) => {
-    await page.goto('/')
+    await page.goto('/popular')
     const main = page.getByRole('main')
     const first = main.getByRole('article').nth(0)
     const second = main.getByRole('article').nth(1)
+    const first_title = await first.getByRole('heading', { level: 2 }).innerText()
+    const second_title = await second.getByRole('heading', { level: 2 }).innerText()
     const first_seen = page.waitForResponse(
       (response) =>
         response.url().includes('/v1/feed-seen') &&
         response.request().method() === 'PUT' &&
         response.ok(),
     )
-    await first.getByRole('button', { name: 'Показать полностью' }).click()
+    await first.getByRole('link', { name: 'Показать полностью' }).click()
     await expect(first.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
     await first_seen
     const second_seen = page.waitForResponse(
@@ -111,24 +109,24 @@ test.describe('Жесты карточки', () => {
         response.request().method() === 'PUT' &&
         response.ok(),
     )
-    await second.getByRole('button', { name: 'Показать полностью' }).click()
+    await second.getByRole('link', { name: 'Показать полностью' }).click()
     await expect(second.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
     await second_seen
     await first.getByRole('heading', { level: 2 }).getByRole('link').click()
-    await expect(page).toHaveURL(/\/p\/statya-1$/)
+    await expect(page).toHaveURL(/\/p\/statya-\d+$/)
     await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
-    await expect(page).toHaveURL(/\/$/)
+    await expect(page).toHaveURL(/\/popular$/)
     const banner = main.getByRole('button', { name: 'Скрыто 2 просмотренных поста' })
     await expect(banner).toBeVisible()
-    await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toHaveCount(0)
-    await expect(main.getByRole('heading', { name: /^Статья 2:/ })).toHaveCount(0)
+    await expect(main.getByRole('heading', { name: first_title })).toHaveCount(0)
+    await expect(main.getByRole('heading', { name: second_title })).toHaveCount(0)
     await banner.click()
-    await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toBeVisible()
-    await expect(main.getByRole('heading', { name: /^Статья 2:/ })).toBeVisible()
+    await expect(main.getByRole('heading', { name: first_title })).toBeVisible()
+    await expect(main.getByRole('heading', { name: second_title })).toBeVisible()
     await main.getByRole('button', { name: 'Убрать полосу' }).click()
     await expect(banner).toHaveCount(0)
-    await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toHaveCount(0)
-    await expect(main.getByRole('heading', { name: /^Статья 2:/ })).toHaveCount(0)
+    await expect(main.getByRole('heading', { name: first_title })).toHaveCount(0)
+    await expect(main.getByRole('heading', { name: second_title })).toHaveCount(0)
   })
 
   test('без просмотренных полосы нет и место под неё не занято', async ({ page }) => {
@@ -174,4 +172,28 @@ test.describe('Жесты карточки', () => {
     await expect(page.getByRole('button', { name: 'Купить показы' })).toHaveCount(0)
     await expect(page.getByText('Ваш пост может собрать больше охватов')).toHaveCount(0)
   })
+})
+
+test('быстрая реакция и заполненная закладка в карточке', async ({ page }, testInfo) => {
+  await page.addInitScript(() => localStorage.setItem('mock_viewer', 'member'))
+  await page.goto('/')
+  const card = page.getByRole('main').getByRole('article').first()
+  const quick = card.getByRole('button', { name: 'Смех', exact: true })
+  await expect(quick).toBeVisible()
+  const sizes = await quick.evaluate((element) => {
+    const css = getComputedStyle(element)
+    return { height: css.height, left: css.paddingLeft, right: css.paddingRight }
+  })
+  expect(sizes).toEqual({ height: '30px', left: '8px', right: '8px' })
+  await quick.click()
+  await expect(card.getByRole('button', { name: 'Смех 1' })).toHaveAttribute('aria-pressed', 'true')
+  const bookmark = card.getByRole('button', { name: 'В закладки', exact: true })
+  const outline = await bookmark.locator('svg path').getAttribute('d')
+  expect(outline).toContain('M7 4')
+  await bookmark.click()
+  const saved = card.getByRole('button', { name: 'Убрать из закладок', exact: true })
+  const fill = await saved.locator('svg path').getAttribute('d')
+  expect(fill).not.toBe(outline)
+  await saved.hover()
+  await card.screenshot({ path: testInfo.outputPath('card-actions.png') })
 })

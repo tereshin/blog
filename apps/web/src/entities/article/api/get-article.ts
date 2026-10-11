@@ -14,7 +14,7 @@ const articleDtoSchema = z.object({
   title: z.string(),
   blocks: z.object({ blocks: z.array(blockSchema) }),
   author: z.object({ user_id: z.string(), display_name: z.string(), avatar_url: z.string().nullable(), slug: z.string() }),
-  topic: z.object({ id: z.string(), title: z.string(), slug: z.string(), status: z.enum(['active', 'archived']) }),
+  topic: z.object({ id: z.string(), title: z.string(), slug: z.string(), status: z.enum(['active', 'archived']), avatar_url: z.string().nullable().optional() }),
   published_at: z.string().nullable(),
   visibility: z.enum(['public', 'members', 'author']),
   comments_enabled: z.boolean(),

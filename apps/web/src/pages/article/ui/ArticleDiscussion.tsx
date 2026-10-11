@@ -37,8 +37,8 @@ export function ArticleDiscussion({ article }: ArticleDiscussionProps) {
         onSent={() => undefined}
         requireSession={requireSession}
       />
-      <DiscussionSubscription article_id={article.id} />
       <CommentThread
+        toolbar={<DiscussionSubscription article_id={article.id} />}
         article_id={article.id}
         sort={sort}
         onSort={setSort}

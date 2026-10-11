@@ -30,6 +30,8 @@ export type MockArticle = {
   author_name: string
   author_slug: string
   title: string
+  seo_title?: string | null
+  seo_description?: string | null
   blocks: BlocksDocument
   topic_id: string
   visibility: 'public' | 'members' | 'author'

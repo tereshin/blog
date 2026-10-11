@@ -1,4 +1,4 @@
-const BOTS = ['googlebot', 'bingbot', 'yandexbot', 'twitterbot', 'facebookexternalhit', 'telegrambot', 'slackbot', 'linkedinbot', 'discordbot', 'whatsapp']
+const BOTS = ['googlebot', 'bingbot', 'yandexbot', 'twitterbot', 'facebookexternalhit', 'telegrambot', 'slackbot', 'linkedinbot', 'discordbot', 'whatsapp', 'vkshare', 'vkbot', 'vkrobot', 'vkontakte', 'facebot', 'applebot', 'pinterestbot', 'google-inspectiontool']
 
 /** Робот поисковика или клиент превью ссылки. Пустой User-Agent — человек. */
 export function isBot(user_agent: string | undefined): boolean {

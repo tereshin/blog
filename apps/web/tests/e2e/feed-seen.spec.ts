@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 for (const all_pages of [false, true]) {
-  test(`свежее раскрывает просмотренные статьи автоматически: ${all_pages ? 'вся лента' : 'первая порция'}`, async ({ page }) => {
+  test(`свежее сохраняет просмотренные статьи: ${all_pages ? 'вся лента' : 'первая порция'}`, async ({ page }) => {
     await page.addInitScript(() => sessionStorage.setItem('bannerDismissed:fresh', '1'))
     await page.goto('/popular')
     await expect(page.getByRole('main').getByRole('article').first()).toBeVisible()
@@ -38,7 +38,7 @@ for (const all_pages of [false, true]) {
   })
 }
 
-test('свежее скрывает только просмотренные статьи и позволяет раскрыть их вручную', async ({ page }) => {
+test('свежее показывает просмотренные статьи без полосы скрытого', async ({ page }) => {
   await page.goto('/popular')
   await expect(page.getByRole('main').getByRole('article').first()).toBeVisible()
   await page.evaluate(async () => {
@@ -55,11 +55,26 @@ test('свежее скрывает только просмотренные ст
   })
   await page.getByRole('banner').locator('a[href="/"]').click()
   const main = page.getByRole('main')
-  await expect(main.getByRole('article')).toHaveCount(18)
-  await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toHaveCount(0)
-  await main.getByRole('button', { name: 'Скрыто 2 просмотренных поста' }).click()
   await expect(main.getByRole('article')).toHaveCount(20)
-  await main.getByRole('button', { name: 'Убрать полосу' }).click()
-  await expect(main.getByRole('article')).toHaveCount(18)
+  await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toBeVisible()
+  await expect(main.getByRole('button', { name: /Скрыт/ })).toHaveCount(0)
+})
+
+test('моя лента сохраняет просмотренные посты при возвращении', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('mock_viewer', 'member')
+    localStorage.setItem('mock_follows', '1')
+  })
+  await page.goto('/feed')
+  const main = page.getByRole('main')
+  const card = main.getByRole('article').first()
+  const title = await card.getByRole('heading', { level: 2 }).innerText()
+  const marked = page.waitForResponse((response) => response.url().includes('/feed-seen') && response.request().method() === 'PUT')
+  await card.getByRole('link', { name: 'Показать полностью' }).click()
+  await marked
+  await card.getByRole('heading', { level: 2 }).getByRole('link').click()
+  await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
+  await expect(page).toHaveURL(/\/feed$/)
+  await expect(main.getByRole('heading', { name: title })).toBeVisible()
   await expect(main.getByRole('button', { name: /Скрыт/ })).toHaveCount(0)
 })

@@ -16,6 +16,7 @@ const topicSchema = z.strictObject({
   title: z.string(),
   slug: z.string(),
   status: z.enum(['active', 'archived']),
+  avatar_url: z.string().nullable().optional(),
 })
 
 /** Полная статья для «Показать полностью» и страницы `/p/{slug}`. */
@@ -53,6 +54,8 @@ export const createArticleSchema = z.strictObject({
   visibility: articleVisibilitySchema.default('public'),
   comments_enabled: z.boolean().default(true),
   slug: z.string().optional(),
+  seo_title: z.string().max(200).nullable().optional(),
+  seo_description: z.string().max(500).nullable().optional(),
 })
 export type CreateArticle = z.infer<typeof createArticleSchema>
 
@@ -64,6 +67,8 @@ export const updateArticleSchema = z.strictObject({
   visibility: articleVisibilitySchema.optional(),
   comments_enabled: z.boolean().optional(),
   slug: z.string().optional(),
+  seo_title: z.string().max(200).nullable().optional(),
+  seo_description: z.string().max(500).nullable().optional(),
 })
 export type UpdateArticle = z.infer<typeof updateArticleSchema>
 
@@ -77,6 +82,8 @@ export const articleDraftSchema = z.strictObject({
   comments_enabled: z.boolean(),
   slug: z.string(),
   status: articleStatusSchema,
+  seo_title: z.string().nullable().optional(),
+  seo_description: z.string().nullable().optional(),
 })
 export type ArticleDraft = z.infer<typeof articleDraftSchema>
 

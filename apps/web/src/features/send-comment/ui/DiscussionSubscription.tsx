@@ -8,13 +8,14 @@ export function DiscussionSubscription({ article_id }: { article_id: string }) {
     <Button
       variant="ghost"
       size="sm"
-      className="self-end text-muted"
+      isIconOnly
+      aria-label={t(enabled ? 'comment.unsubscribe' : 'comment.subscribe')}
+      className={enabled ? 'text-accent' : 'text-muted'}
       aria-pressed={enabled}
       isDisabled={is_pending}
       onPress={toggle}
     >
       <BaseIcon name="notification" style={enabled ? 'fill' : 'line'} size={18} />
-      {t(enabled ? 'comment.unsubscribe' : 'comment.subscribe')}
     </Button>
   )
 }

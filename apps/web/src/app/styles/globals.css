@@ -158,3 +158,77 @@ body {
 /* Auth panel: centered brand, credentials, then Firebase providers. */
 .auth-dialog { width: min(100%, 480px); padding: 24px 48px; }
 @media (max-width: 480px) { .auth-dialog { padding: 20px 24px; } }
+
+/* В действиях карточки подсвечивается только круг вокруг иконки. */
+.action-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  min-width: 0;
+  padding: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--muted);
+}
+.action-control__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transition: background-color 150ms, color 150ms;
+}
+.action-control.button:hover,
+.action-control.button[data-hovered="true"],
+.action-control.button[data-pressed="true"] { background: transparent; }
+.action-control:hover,
+.action-control[data-hovered="true"],
+.action-control:focus-visible,
+.action-control[aria-pressed="true"] { color: var(--accent); }
+.action-control:hover .action-control__icon,
+.action-control[data-hovered="true"] .action-control__icon,
+.action-control:focus-visible .action-control__icon {
+  background: color-mix(in oklch, var(--accent) 14%, transparent);
+}
+.action-control.button svg { width: 20px; height: 20px; margin: 0; }
+.reaction-button.button { height: 30px; min-width: 30px; padding: 0 8px; }
+
+/* Ветка соединяется с центром аватара и заканчивается у последнего ответа. */
+.comment-branch::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--separator);
+}
+.comment-branch::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  border-left: 1px solid var(--separator);
+  border-bottom: 1px solid var(--separator);
+  border-bottom-left-radius: 10px;
+  pointer-events: none;
+}
+.comment-branch:last-of-type::before { bottom: calc(100% - 12px); }
+.comment-branch__collapse { bottom: 0; z-index: 1; cursor: pointer; }
+.comment-branch:last-of-type > .comment-branch__collapse { height: 28px; bottom: auto; }
+.comment-branch__collapse:hover { background: color-mix(in oklch, var(--accent) 20%, transparent); }
+
+.topic-picker-popover {
+  background: var(--overlay);
+  border: 1px solid var(--separator);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 20%);
+}
+.topic-picker-popover [data-slot="popover-dialog"] { padding: 0; outline: none; }
+.topic-picker-popover input:focus-visible { outline: none; }
+.topic-picker-popover [role="option"][aria-selected="true"],
+.topic-picker-popover [role="option"][data-hovered="true"] { background: var(--surface-secondary); }
+.topic-picker-popover [data-slot="list-box-item-indicator"] { color: var(--success); }

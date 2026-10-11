@@ -36,9 +36,16 @@ function Header({ follow, menu }: HeaderProps) {
   const article = useArticleCardModel()
   return (
     <Card.Header className="flex flex-row items-center gap-3 px-5 pt-4">
-      <Link to={article.author.href} className="shrink-0 rounded-avatar outline-offset-2" aria-label={article.author.display_name}>
-        <Avatar src={article.author.avatar_url} name={article.author.display_name} size="md" />
-      </Link>
+      <div className="relative shrink-0">
+        <Link to={article.author.href} className="block rounded-avatar outline-offset-2" aria-label={article.author.display_name}>
+          <Avatar src={article.author.avatar_url} name={article.author.display_name} size="md" />
+        </Link>
+        {article.topic.id ? (
+          <Link to={article.topic.href} className="absolute -bottom-1 -right-1 rounded-avatar outline-offset-2" aria-label={article.topic.title}>
+            <Avatar src={article.topic.avatar_url} name={article.topic.title} size="sm" className="size-5 ring-2 ring-surface" />
+          </Link>
+        ) : null}
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <Link to={article.author.href} className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline">
           {article.author.display_name}
@@ -125,18 +132,18 @@ function Actions({ bookmark, share }: ActionsProps) {
   const { t, locale } = useT()
   const article = useArticleCardModel()
   return (
-    <Card.Content className="flex flex-row items-center gap-5 px-5 pb-3 pt-2 text-sm text-muted">
+    <Card.Content className="flex flex-row items-center gap-4 px-4 pb-3 pt-2 text-base text-muted">
       <Link
         to={`${article.href}#comments`}
         aria-label={t('article.comments', { count: article.comment_count, value: formatCount(article.comment_count, locale) })}
-        className="flex items-center gap-1.5 rounded-md outline-offset-2 hover:text-foreground"
+        className="action-control outline-offset-2"
       >
-        <CommentIcon className="size-5" />
+        <span className="action-control__icon"><CommentIcon className="size-5" /></span>
         <span>{formatCount(article.comment_count, locale)}</span>
       </Link>
       {bookmark ?? (
-        <span className="flex items-center gap-1.5">
-          <BookmarkIcon className="size-5" />
+        <span className="action-control">
+          <span className="action-control__icon"><BookmarkIcon className="size-5" /></span>
           <span>{formatCount(article.bookmark_count, locale)}</span>
         </span>
       )}
