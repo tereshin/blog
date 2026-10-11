@@ -1,23 +1,56 @@
 import { useEffect, useRef } from 'react'
-import type { UIEvent } from 'react'
+import type { ReactNode, UIEvent } from 'react'
 import { useMessagesUnreadCount, useMessagesUnreadLive } from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
 import { TopicNavItem, useTopics } from '@/entities/topic'
 import { AppearanceToggle } from '@/features/toggle-appearance'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
-import { Button, ErrorState, Skeleton } from '@/shared/ui'
+import { BaseIcon, Button, ErrorState, Skeleton } from '@/shared/ui'
 import { useCurrentSection } from '../model/useCurrentSection.ts'
 import { useFeedFreshness } from '../model/useFeedFreshness.ts'
 import { useShellStore } from '../model/useShellStore.ts'
 import { LeftNavItem } from './LeftNavItem.tsx'
 
-const MODES: ReadonlyArray<{ to: string; kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'rating'; label: MessageKey }> = [
-  { to: '/popular', kind: 'popular', label: 'shell.nav.popular' },
-  { to: '/', kind: 'fresh', label: 'shell.nav.fresh' },
-  { to: '/feed', kind: 'mine', label: 'shell.nav.my_feed' },
-  { to: '/messages', kind: 'messages', label: 'shell.nav.messages' },
-  { to: '/rating', kind: 'rating', label: 'shell.nav.rating' },
+type Mode = {
+  to: string
+  kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'rating'
+  label: MessageKey
+  /** Генератор иконок видит только буквальные `name`/`style`, поэтому оба варианта заданы явно. */
+  icon: { line: ReactNode; fill: ReactNode }
+}
+
+const MODES: ReadonlyArray<Mode> = [
+  {
+    to: '/popular',
+    kind: 'popular',
+    label: 'shell.nav.popular',
+    icon: { line: <BaseIcon name="fire" style="line" size={24} />, fill: <BaseIcon name="fire" style="fill" size={24} /> },
+  },
+  {
+    to: '/',
+    kind: 'fresh',
+    label: 'shell.nav.fresh',
+    icon: { line: <BaseIcon name="sparkles" style="line" size={24} />, fill: <BaseIcon name="sparkles" style="fill" size={24} /> },
+  },
+  {
+    to: '/feed',
+    kind: 'mine',
+    label: 'shell.nav.my_feed',
+    icon: { line: <BaseIcon name="news" style="line" size={24} />, fill: <BaseIcon name="news" style="fill" size={24} /> },
+  },
+  {
+    to: '/messages',
+    kind: 'messages',
+    label: 'shell.nav.messages',
+    icon: { line: <BaseIcon name="message_1" style="line" size={24} />, fill: <BaseIcon name="message_1" style="fill" size={24} /> },
+  },
+  {
+    to: '/rating',
+    kind: 'rating',
+    label: 'shell.nav.rating',
+    icon: { line: <BaseIcon name="trophy" style="line" size={24} />, fill: <BaseIcon name="trophy" style="fill" size={24} /> },
+  },
 ]
 
 const VISIBLE_TOPICS = 8
@@ -69,11 +102,13 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
         {MODES.map((mode) => {
           const is_fresh = (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
           const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh
+          const is_selected = highlighted?.kind === mode.kind
           return (
             <LeftNavItem
               key={mode.to}
               to={mode.to}
-              is_selected={highlighted?.kind === mode.kind}
+              is_selected={is_selected}
+              icon={is_selected ? mode.icon.fill : mode.icon.line}
               has_unread={has_unread}
               unread_label={mode.kind === 'messages' ? t('shell.nav.unread') : t('shell.nav.freshness')}
             >

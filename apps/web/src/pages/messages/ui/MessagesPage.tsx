@@ -82,7 +82,7 @@ export default function MessagesPage() {
         icon={<CommentIcon width={28} height={28} />}
         className="py-16"
       >
-        <Button variant="primary" onPress={() => openLogin('required')}>
+        <Button variant="primary" size="lg" onPress={() => openLogin('required')}>
           {t('header.sign_in')}
         </Button>
       </EmptyState>

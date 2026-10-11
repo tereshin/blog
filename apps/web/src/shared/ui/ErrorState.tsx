@@ -20,7 +20,7 @@ export function ErrorState({ title, description, onRetry, className }: ErrorStat
       <p className="text-base font-medium text-foreground">{title}</p>
       {description ? <p className="max-w-sm text-sm text-muted">{description}</p> : null}
       {onRetry ? (
-        <Button variant="secondary" onPress={onRetry} className="mt-2">
+        <Button variant="secondary" size="lg" onPress={onRetry} className="mt-2">
           {t('common.retry')}
         </Button>
       ) : null}

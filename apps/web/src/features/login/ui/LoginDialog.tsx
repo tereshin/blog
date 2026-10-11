@@ -60,7 +60,7 @@ export function LoginDialog() {
     <Dialog is_open={is_open} onOpenChange={(next) => (next ? open(reason) : close())} size="sm" className="auth-dialog">
       <Dialog.CloseTrigger />
       <Dialog.Header className="items-center gap-6 pt-10 text-center">
-        <div className="flex h-20 min-w-20 items-center justify-center rounded-3xl bg-surface px-4" aria-hidden="true">
+        <div className="flex min-w-20 items-center justify-center rounded-3xl" aria-hidden="true">
           {settings?.logo_url ? <img src={settings.logo_url} alt="" className="h-14 max-w-40 object-contain" /> : <span className="text-3xl font-semibold text-accent">{brand.slice(0, 2)}</span>}
         </div>
         <Dialog.Heading className="text-2xl font-semibold">{t(reason === 'expired' ? 'login.expired_title' : panel.phase === 'register' ? 'login.register_title' : panel.phase === 'reset' ? 'login.reset_title' : 'login.title')}</Dialog.Heading>
@@ -157,20 +157,20 @@ function AuthForm({ panel, unverified }: { panel: Panel; unverified: boolean }) 
       ) : null}
       {panel.has_password && phase === 'sign_in' ? (
         <div className="flex flex-wrap justify-center gap-1">
-          <Button type="button" variant="ghost" onPress={() => panel.setPhase('register')}>
+          <Button type="button"  size="lg" variant="ghost" onPress={() => panel.setPhase('register')}>
             {t('login.register')}
           </Button>
-          <Button type="button" variant="ghost" onPress={() => panel.setPhase('reset')}>
+          <Button type="button" size="lg" variant="ghost" onPress={() => panel.setPhase('reset')}>
             {t('login.forgot_link')}
           </Button>
         </div>
       ) : null}
       {phase === 'register' || phase === 'reset' ? (
-        <Button type="button" variant="ghost" onPress={() => panel.setPhase('sign_in')}>
+        <Button type="button" size="lg" fullWidth variant="ghost" onPress={() => panel.setPhase('sign_in')}>
           {t('login.submit')}
         </Button>
       ) : null}
-      <div className="mt-8 flex flex-col gap-3 border-t border-separator pt-6">
+      <div className="mt-8 flex flex-col gap-3">
         {panel.oauth_providers.length > 0 ? <p className="text-center text-sm text-muted">{t('login.sso')}</p> : null}
         {panel.oauth_providers.map((provider) => (
           <Button key={provider.id} type="button" className="h-12 w-full text-base" variant="secondary" isDisabled={panel.is_submitting} onPress={() => void panel.submitProvider(provider.id)}>
@@ -178,7 +178,7 @@ function AuthForm({ panel, unverified }: { panel: Panel; unverified: boolean }) 
           </Button>
         ))}
         {panel.test_participants.length > 0 ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 hidden">
             <p className="text-sm text-muted">{t('login.test_participants')}</p>
             {panel.test_participants.map((participant) => (
               <Button key={participant.email} type="button" variant="ghost" onPress={() => void panel.submitTestParticipant(participant.email)}>

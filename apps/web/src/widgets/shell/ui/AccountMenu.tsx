@@ -22,7 +22,7 @@ export function AccountMenu() {
     if (viewer.status === 'loading') return null
     return (
       <div className="flex items-center gap-2">
-        <Button variant="secondary" shape="pill" onPress={() => openLogin('required')}>
+        <Button variant="primary" size="lg" shape="pill" onPress={() => openLogin('required')}>
           {t('header.sign_in')}
         </Button>
       </div>

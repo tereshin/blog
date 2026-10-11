@@ -222,7 +222,7 @@ body {
 }
 
 /* Auth panel: centered brand, credentials, then Firebase providers. */
-.auth-dialog { width: min(100%, 480px); padding: 24px 48px; }
+.auth-dialog { width: min(100%, 520px); padding: 24px 48px; }
 @media (max-width: 480px) { .auth-dialog { padding: 20px 24px; } }
 
 /* В действиях карточки подсвечивается только круг вокруг иконки. */

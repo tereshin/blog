@@ -2,6 +2,7 @@ import { useAppearance } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { cn } from '@/shared/lib'
 import { BaseIcon, Button, Menu } from '@/shared/ui'
+import { LeftNavItem } from '@/widgets/shell/ui/LeftNavItem.tsx'
 
 type AppearanceToggleProps = { as?: 'button' | 'item'; className?: string }
 
@@ -19,18 +20,12 @@ export function AppearanceToggle({ as = 'button', className }: AppearanceToggleP
     )
   }
   return (
-    <Button
-      variant="ghost"
-      aria-label={label}
-      className={cn('h-auto', className)}
+    <LeftNavItem
+      to="#"
       onPress={() => setAppearance(next)}
-    >
-      {next === 'light' ? (
-        <BaseIcon name="sun" style="line" size={20} />
-      ) : (
-        <BaseIcon name="moon" style="line" size={20} />
-      )}
-      <span>{label}</span>
-    </Button>
+      is_selected={false}
+      icon={next === 'light' ? <BaseIcon name="sun" style="line" size={20} /> : <BaseIcon name="moon" style="line" size={20} />}
+      children={label}
+    />
   )
 }

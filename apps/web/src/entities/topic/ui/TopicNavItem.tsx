@@ -16,7 +16,7 @@ export function TopicNavItem({ topic, is_selected = false }: TopicNavItemProps) 
       to={`/t/${topic.slug}`}
       aria-current={is_selected ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-2 rounded-xl px-3 py-2 text-base text-foreground outline-offset-2 hover:bg-surface-secondary',
+        'flex items-center gap-2 rounded-xl px-3 py-2 text-md text-foreground outline-offset-2 hover:bg-surface-secondary',
         is_selected && 'bg-surface-tertiary',
       )}
     >
