@@ -89,6 +89,10 @@ body {
   }
 }
 
+.text-base {
+  font-size: 15px;
+}
+
 /* Поиск совпадает с центральной колонкой Shell и не зависит от ширины логотипа и кнопок. */
 .header-search-position {
   position: fixed;
@@ -170,6 +174,7 @@ body {
   border-radius: 16px;
   background: transparent;
   color: var(--muted);
+  font-weight: 500;
 }
 .action-control__icon {
   display: grid;

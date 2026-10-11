@@ -3,7 +3,7 @@ import { Card, Skeleton } from '@/shared/ui'
 /** Заготовка статьи: карточка текста и карточка обсуждения, пока текст не пришёл. */
 export function ArticleSkeleton() {
   return (
-    <div className="flex flex-col gap-4" aria-hidden="true">
+    <div className="flex flex-col gap-4 max-w-[640px] mx-auto" aria-hidden="true">
       <Card className="gap-0">
         <div className="flex flex-col gap-3 px-5 py-4">
           <div className="flex items-center gap-3">

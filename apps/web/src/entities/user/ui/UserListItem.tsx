@@ -14,9 +14,9 @@ export function UserListItem({ user }: UserListItemProps) {
   return (
     <li className="flex items-center gap-3 py-2">
       <Link to={user.href} className="shrink-0 rounded-avatar outline-offset-2" aria-label={user.display_name}>
-        <Avatar src={user.avatar_url} name={user.display_name} size="sm" />
+        <Avatar src={user.avatar_url} name={user.display_name} size="md" />
       </Link>
-      <Link to={user.href} className="min-w-0 flex-1 truncate text-sm font-medium outline-offset-2 hover:underline">
+      <Link to={user.href} className="min-w-0 flex-1 truncate text-base font-medium outline-offset-2 hover:underline">
         {user.display_name}
       </Link>
       <span className="text-sm font-medium text-positive">{reputationLabel(user.reputation)}</span>

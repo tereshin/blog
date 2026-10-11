@@ -46,7 +46,7 @@ export function NotificationBell() {
         {has_unread ? <span role="img" aria-label={t('notification.unread')} className="absolute right-1 top-1 size-2 rounded-avatar bg-accent" /> : null}
       </Button>
       <Popover.Content>
-        <div className="flex w-80 flex-col gap-1 p-2">
+        <div className="flex w-80 flex-col gap-1">
           <div className="flex items-center justify-between px-2 py-1">
             <p className="text-sm font-medium">{t('notification.bell')}</p>
             <Button variant="ghost" size="sm" onPress={() => read_all.mutate()} isDisabled={!has_unread}>

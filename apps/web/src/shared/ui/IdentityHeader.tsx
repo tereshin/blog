@@ -55,7 +55,7 @@ function Identity({ avatar, actions }: IdentityProps) {
 
 function Content({ children }: IdentityHeaderProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-3 px-5 pb-5 pt-4 sm:px-6 sm:pb-6">{children}</div>
+    <div className="flex min-w-0 flex-col gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pb-2">{children}</div>
   )
 }
 

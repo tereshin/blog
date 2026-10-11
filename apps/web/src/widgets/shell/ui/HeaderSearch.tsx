@@ -37,7 +37,7 @@ export function HeaderSearch() {
         >
           <form
             role="search"
-            className="flex h-11 shrink-0 items-center gap-3 rounded-xl border border-border bg-overlay pl-4 pr-1 focus-within:border-accent/60"
+            className="flex h-11 shrink-0 items-center gap-3 rounded-xl  bg-overlay pl-4 pr-1 focus-within:border-accent/60"
             onSubmit={(event) => {
               event.preventDefault()
               openResults(value)
@@ -69,7 +69,7 @@ export function HeaderSearch() {
           </form>
           <div
             id="header-search-results"
-            className="min-h-0 overflow-y-auto overscroll-contain rounded-xl border border-border bg-overlay p-3 shadow-xl"
+            className="min-h-0 overflow-y-auto overscroll-contain rounded-xl  bg-overlay p-3 shadow-xl"
           >
             {q.length === 0 ? (
               <>

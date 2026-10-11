@@ -19,7 +19,8 @@ export function renderPrerenderHtml(page: PageSeo, nonce?: string): string {
   ]
   if (page.images) {
     const { og, twitter, vk } = page.images
-    tags.push(meta('og:image', og.url, true), meta('og:image:type', og.mime, true), meta('og:image:alt', og.alt, true), meta('twitter:image', twitter.url), meta('twitter:image:alt', twitter.alt), meta('vk:image', vk.url, true))
+    tags.push(meta('og:image', og.url, true), meta('og:image:alt', og.alt, true), meta('twitter:image', twitter.url), meta('twitter:image:alt', twitter.alt), meta('vk:image', vk.url, true))
+    if (og.mime) tags.push(meta('og:image:type', og.mime, true))
     if (og.width) tags.push(meta('og:image:width', String(og.width), true))
     if (og.height) tags.push(meta('og:image:height', String(og.height), true))
   }

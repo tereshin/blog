@@ -40,7 +40,7 @@ function Byline({ follow, menu }: BylineProps) {
         >
           {article.author.display_name}
         </Link>
-        <div className="flex min-w-0 items-center gap-1 text-xs text-muted">
+        <div className="flex min-w-0 items-center gap-1 text-sm text-muted">
           <Link to={article.topic.href} className="truncate outline-offset-2 hover:underline">
             {article.topic.title}
           </Link>
@@ -60,13 +60,13 @@ function Byline({ follow, menu }: BylineProps) {
 
 function Title() {
   const article = useArticleViewModel()
-  return <h1 className="text-xl font-bold leading-snug tracking-tight">{article.title}</h1>
+  return <h1 className="text-xl font-semibold leading-snug tracking-[-0.005em]">{article.title}</h1>
 }
 
 function Body() {
   const article = useArticleViewModel()
   return (
-    <div className="text-[15px] leading-6 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
+    <div className="text-md leading-7 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
       <BlockRenderer blocks={article.blocks} />
     </div>
   )

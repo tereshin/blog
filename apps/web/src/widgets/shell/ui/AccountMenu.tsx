@@ -8,7 +8,7 @@ import { EditProfileDialog } from '@/features/edit-profile'
 import { useLoginDialog } from '@/features/login'
 import { LogoutMenuItem } from '@/features/logout'
 import { useT } from '@/shared/i18n'
-import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
+import { Avatar, Button, ChevronDownIcon, Link, Menu } from '@/shared/ui'
 
 /** Меню аватара. Гость видит «Войти». Переключатель вида подключится в US16 через слот `theme`. */
 export function AccountMenu({ theme }: { theme?: ReactNode }) {
@@ -37,10 +37,10 @@ export function AccountMenu({ theme }: { theme?: ReactNode }) {
   return (
     <>
       <Menu>
-        <Button variant="ghost" shape="pill" aria-label={t('header.account_menu')} className="gap-1 px-1">
+        <Link aria-label={t('header.account_menu')} className="gap-1 px-1">
           <Avatar src={viewer.profile.avatar_url} name={viewer.profile.display_name} size="sm" />
           <ChevronDownIcon width={16} height={16} />
-        </Button>
+        </Link>
         <Menu.Content>
           <Menu.Item isDisabled>{viewer.profile.display_name}</Menu.Item>
           <Menu.Item onPress={() => navigate(`/u/${address}`)}>{t('account.my_profile')}</Menu.Item>

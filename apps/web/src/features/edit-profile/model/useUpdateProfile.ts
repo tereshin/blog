@@ -1,6 +1,7 @@
 import { useMatch, useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { profileKeys, updateProfile } from '@/entities/profile'
+import { seoKeys } from '@/entities/seo'
 import type { Profile, ProfileUpdate } from '@/entities/profile'
 import { sessionKeys } from '@/entities/session'
 import type { Session } from '@/entities/session'
@@ -21,6 +22,7 @@ export function useUpdateProfile() {
         void navigate(`/u/${slug}`, { replace: true })
       }
       await query_client.invalidateQueries({ queryKey: profileKeys.all })
+      await query_client.invalidateQueries({ queryKey: seoKeys.all })
       await query_client.invalidateQueries({ queryKey: sessionKeys.current() })
       // Копия профиля в identity обновляется событием и может отставать от ответа content.
       query_client.setQueryData<Session>(sessionKeys.current(), (session) => {

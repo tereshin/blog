@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { useSettings } from '@/entities/settings'
 import { useViewer } from '@/entities/session'
 import { useLoginDialog } from '@/features/login'
+import { Link as LinkButton } from '@/shared/ui'
 import { useT } from '@/shared/i18n'
 import {
   Avatar,
@@ -92,7 +93,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
         className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4"
       >
         {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={brand} className="h-8 w-auto" />
+          <img src={settings.logo_url} alt={brand} className="h-10 w-auto" />
         ) : (
           brand
         )}
@@ -124,9 +125,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
         </Button>
         {account ??
           (viewer.status === 'member' ? (
-            <Button
-              variant="ghost"
-              shape="pill"
+            <LinkButton
               aria-label={t('header.account_menu')}
               className="gap-1 px-1"
             >
@@ -136,7 +135,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
                 size="sm"
               />
               <ChevronDownIcon width={16} height={16} />
-            </Button>
+            </LinkButton>
           ) : viewer.status === 'guest' ? (
             <Button variant="secondary" shape="pill" onPress={() => openLogin('required')}>
               {t('header.sign_in')}

@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { UserListItem, getRating, userKeys } from '@/entities/user'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState, ErrorState } from '@/shared/ui'
+import { Button, Card, EmptyState, ErrorState } from '@/shared/ui'
 import { useShellStore } from '@/widgets/shell'
 
 export default function RatingPage() {
@@ -22,22 +22,34 @@ export default function RatingPage() {
   const items = (rating.data?.pages ?? []).flatMap((page) => page.items)
 
   return (
-    <div className="flex flex-col gap-3">
-      <h1 className="px-1 text-xl font-semibold">{t('rating.title')}</h1>
-      {rating.isError ? <ErrorState title={t('error.unknown')} onRetry={() => void rating.refetch()} /> : null}
-      {rating.data && items.length === 0 ? <EmptyState title={t('rating.empty')} description={t('rating.empty_hint')} /> : null}
-      {items.length > 0 ? (
-        <ol>
-          {items.map((user) => (
-            <UserListItem key={user.user_id} user={user} />
-          ))}
-        </ol>
-      ) : null}
+    <Card className="gap-0 max-w-[640px] mx-auto">
+      <Card.Header className="px-5 pt-5 pb-2">
+        <h1 className="text-xl font-semibold">{t('rating.title')}</h1>
+      </Card.Header>
+      <Card.Content className="px-5 pt-0 pb-4">
+        {rating.isError ? <ErrorState title={t('error.unknown')} onRetry={() => void rating.refetch()} /> : null}
+        {rating.data && items.length === 0 ? (
+          <EmptyState
+            title={t('rating.empty')}
+            description={t('rating.empty_hint')}
+            className="min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none"
+          />
+        ) : null}
+        {items.length > 0 ? (
+          <ol>
+            {items.map((user) => (
+              <UserListItem key={user.user_id} user={user} />
+            ))}
+          </ol>
+        ) : null}
+      </Card.Content>
       {rating.hasNextPage ? (
-        <Button variant="ghost" onPress={() => void rating.fetchNextPage()}>
-          {t('common.more')}
-        </Button>
+        <Card.Footer className="px-5 pb-4">
+          <Button variant="ghost" onPress={() => void rating.fetchNextPage()}>
+            {t('common.more')}
+          </Button>
+        </Card.Footer>
       ) : null}
-    </div>
+    </Card>
   )
 }

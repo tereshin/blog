@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { appendToOutbox, newEventId } from '@blog/broker'
 import type { Database } from '@blog/broker'
 import { SocialCoverGeneratedV1, SocialCoverRequestedV1 } from '@blog/contracts'
@@ -24,7 +24,7 @@ export function createCoverJobsRepository(db: Database): CoverJobsRepository {
       const [existing] = await tx.select({ status: social_cover_jobs.status }).from(social_cover_jobs).where(and(eq(social_cover_jobs.target_id, event.target_id), eq(social_cover_jobs.revision, event.revision))).limit(1)
       if (existing?.status === 'ready' || existing?.status === 'failed') {
         await tx.update(social_cover_jobs).set({ status: 'pending', event, attempts: 0, available_at: new Date(), lease_id: null, lease_until: null })
-          .where(and(eq(social_cover_jobs.target_id, event.target_id), eq(social_cover_jobs.revision, event.revision)))
+          .where(and(eq(social_cover_jobs.target_id, event.target_id), eq(social_cover_jobs.revision, event.revision), inArray(social_cover_jobs.status, ['ready', 'failed'])))
       }
     },
     async claim() {

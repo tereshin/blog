@@ -20,7 +20,7 @@ export function BookmarkButton({ count, is_bookmarked, onToggle, is_pending = fa
       onPress={onToggle}
     >
       <span className="action-control__icon"><BookmarkIcon className="size-5" icon_style={is_bookmarked ? 'fill' : 'line'} /></span>
-      <span>{formatCount(count, locale)}</span>
+      <span className="text-base">{formatCount(count, locale)}</span>
     </ActionButton>
   )
 }

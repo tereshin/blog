@@ -10,7 +10,7 @@ export function siteGraph(site: SeoSite, origin: string): SeoGraphNode[] {
 }
 
 export function pageGraph(type: string, title: string, description: string, canonical: string, origin: string, site: SeoSite): SeoGraphNode {
-  return { '@type': type, '@id': `${canonical}#webpage`, url: canonical, name: title, description, inLanguage: site.locale, isPartOf: { '@id': `${origin}/#website` } }
+  return { '@type': type, '@id': `${canonical}#webpage`, url: canonical, name: title, description, inLanguage: site.locale, isPartOf: { '@id': `${origin}/#website` }, breadcrumb: { '@id': `${canonical}#breadcrumbs` } }
 }
 
 export function breadcrumbGraph(canonical: string, items: { name: string; url: string }[]): SeoGraphNode {

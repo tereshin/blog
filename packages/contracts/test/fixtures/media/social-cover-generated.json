@@ -1,0 +1,33 @@
+{
+  "event_id": "87654321-4321-4321-8321-210987654321",
+  "name": "media.social_cover.generated",
+  "version": 1,
+  "occurred_at": "2026-10-11T00:00:00.000Z",
+  "correlation_id": "seo-fixture",
+  "causation_id": "12345678-1234-4234-8234-123456789012",
+  "target_id": "11111111-1111-4111-8111-111111111111",
+  "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "images": {
+    "og": {
+      "url": "https://media.example/social-covers/11111111-1111-4111-8111-111111111111/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/og.jpg",
+      "width": 1200,
+      "height": 630,
+      "alt": "Превью статьи",
+      "mime": "image/jpeg"
+    },
+    "twitter": {
+      "url": "https://media.example/social-covers/11111111-1111-4111-8111-111111111111/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/twitter.jpg",
+      "width": 1200,
+      "height": 630,
+      "alt": "Превью статьи",
+      "mime": "image/jpeg"
+    },
+    "vk": {
+      "url": "https://media.example/social-covers/11111111-1111-4111-8111-111111111111/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/vk.jpg",
+      "width": 1074,
+      "height": 480,
+      "alt": "Превью статьи",
+      "mime": "image/jpeg"
+    }
+  }
+}

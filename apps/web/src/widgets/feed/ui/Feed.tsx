@@ -28,7 +28,7 @@ type FeedProps = FeedSlots & {
 
 function FeedSkeletons({ count }: { count: number }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 max-w-[640px] mx-auto">
       {Array.from({ length: count }, (_, index) => (
         <ArticleCard.Skeleton key={index} />
       ))}
@@ -103,7 +103,7 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
   const List = visible_ids.length > VIRTUALIZATION_THRESHOLD ? VirtualFeedList : PlainFeedList
 
   return (
-    <div ref={root_ref} className="flex flex-col gap-4" onClick={rememberReturn}>
+    <div ref={root_ref} className="flex flex-col gap-4 max-w-[640px] mx-auto" onClick={rememberReturn}>
       {visible_ids.length > 0 ? (
         <List article_ids={visible_ids} renderItem={renderItem} onNearEnd={handleNearEnd} />
       ) : (

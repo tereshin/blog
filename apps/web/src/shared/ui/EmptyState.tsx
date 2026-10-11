@@ -20,8 +20,8 @@ export function EmptyState({ title, description, icon, children, className }: Em
         {icon ?? <InboxIcon width={28} height={28} />}
       </div>
       <div className="flex max-w-sm flex-col gap-2">
-        <p className="text-base font-semibold text-foreground">{title}</p>
-        {description ? <p className="text-sm leading-6 text-muted">{description}</p> : null}
+        <p className="text-lg font-semibold text-foreground">{title}</p>
+        {description ? <p className="text-base leading-[1.6] text-muted">{description}</p> : null}
       </div>
       {children ? <div className="mt-1 flex flex-wrap justify-center gap-2">{children}</div> : null}
     </Card>

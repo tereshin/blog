@@ -1,8 +1,10 @@
 import { http, HttpResponse } from 'msw'
 import type { PageSeo } from '@blog/contracts'
+import { SOCIAL_COVER_SIZES, socialCoverPreviewSchema } from '@blog/contracts'
 import { buildFeedFixture } from '../fixtures/feed.ts'
 import { readMockArticles } from './articles-store.ts'
 import { readSite } from './shell.ts'
+import { readMockViewer } from './session.ts'
 
 export const seoHandlers = [http.get('*/v1/seo', ({ request }) => {
   const path = new URL(request.url).searchParams.get('path')?.split(/[?#]/)[0] ?? '/'
@@ -30,4 +32,29 @@ export const seoHandlers = [http.get('*/v1/seo', ({ request }) => {
     page.structured_data['@graph'] = [{ '@type': 'ProfilePage', mainEntity: { '@type': 'Person', name: page.title } }]
   }
   return HttpResponse.json(page)
+}), http.post('*/v1/media/social-cover-preview', async ({ request }) => {
+  if (readMockViewer() !== 'superadmin') return HttpResponse.json({ code: 'forbidden', title: 'Forbidden', status: 403 }, { status: 403 })
+  const parsed = socialCoverPreviewSchema.safeParse(await request.json())
+  if (!parsed.success) return HttpResponse.json({ code: 'validation_failed', title: 'Invalid preview', status: 422 }, { status: 422 })
+  // Browser fixtures emulate the endpoint; the real service uses its Satori worker.
+  const { input, variant } = parsed.data
+  const canvas = document.createElement('canvas')
+  Object.assign(canvas, SOCIAL_COVER_SIZES[variant])
+  const context = canvas.getContext('2d')
+  if (!context) return HttpResponse.json({ status: 503 }, { status: 503 })
+  context.fillStyle = input.settings.background_color
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.fillStyle = input.settings.text_color
+  context.font = 'bold 48px sans-serif'
+  let line = '', y = 100
+  for (const word of input.title.split(' ')) {
+    if (context.measureText(`${line} ${word}`).width > canvas.width - 140) { context.fillText(line, 70, y); line = word; y += 60 }
+    else line = `${line} ${word}`.trim()
+  }
+  context.fillText(line, 70, y)
+  context.font = 'bold 26px sans-serif'
+  context.fillText(input.author_name ?? '', 70, canvas.height - 70)
+  context.textAlign = 'right'
+  context.fillText(input.site_name, canvas.width - 70, canvas.height - 70)
+  return HttpResponse.json({ image_url: canvas.toDataURL('image/jpeg') })
 })]

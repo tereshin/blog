@@ -83,4 +83,16 @@ describe('content: версии превью и индексация (PostgreSQL
     expect((await local.robots()).body).toBe('User-agent: *\nDisallow: /\n')
     expect((await local.sitemap())?.body).not.toContain('<loc>')
   })
+  it('следующая правка повторно запрашивает давно неготовую карточку той же версии', async () => {
+    await request()
+    const before = (await events()).length
+    const revision = (await events()).at(-1)?.revision
+    await database.pool.query("update social_covers set requested_at=now()-interval '3 minutes', images=null where target_id=$1", [ARTICLE])
+    await request()
+    expect(await events()).toHaveLength(before + 1)
+    expect((await events()).at(-1)?.revision).toBe(revision)
+    await request()
+    expect(await events()).toHaveLength(before + 1)
+  })
+
 })

@@ -80,7 +80,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
             </LeftNavItem>
           )
         })}
-        <h2 className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-muted">{t('shell.nav.topics')}</h2>
+        <h2 className="px-3 pb-1 pt-3 text-base text-muted">{t('shell.nav.topics')}</h2>
         {topics.isPending ? (
           <div className="flex flex-col gap-2 px-3 py-1" role="status" aria-label={t('common.loading')}>
             <Skeleton className="h-5 w-full" />

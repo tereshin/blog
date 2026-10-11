@@ -31,7 +31,7 @@ function InlineHtml({ html }: { html: string }) {
 function ListView({ items, style }: { items: ListItem[]; style: string }) {
   const Tag = style === 'ordered' ? 'ol' : 'ul'
   return (
-    <Tag className="my-2 list-inside space-y-1 pl-1">
+    <Tag className="my-2 list-disc space-y-3 pl-5">
       {items.map((item, index) => {
         if (typeof item === 'string') {
           return (
@@ -63,7 +63,7 @@ function Block({ block }: { block: ArticleBlock }) {
   switch (block.type) {
     case 'paragraph':
       return (
-        <p className="my-3 whitespace-pre-line break-words">
+        <p className="my-4 whitespace-pre-line break-words">
           <InlineHtml html={textOf(data, 'text')} />
         </p>
       )
@@ -80,14 +80,14 @@ function Block({ block }: { block: ArticleBlock }) {
       return <ListView items={Array.isArray(data?.items) ? (data.items as ListItem[]) : []} style={textOf(data, 'style')} />
     case 'quote':
       return (
-        <blockquote className="my-3 border-l-2 border-accent pl-3">
+        <blockquote className="my-4 border-l-4 border-red-400 pl-3">
           <InlineHtml html={textOf(data, 'text')} />
-          {textOf(data, 'caption') ? <footer className="mt-1 text-sm text-muted">{textOf(data, 'caption')}</footer> : null}
+          {textOf(data, 'caption') ? <footer className="mt-3 text-base" dangerouslySetInnerHTML={{ __html: textOf(data, 'caption') }} /> : null}
         </blockquote>
       )
     case 'warning':
       return (
-        <aside className="my-3 rounded-xl bg-surface-secondary p-3">
+        <aside className="my-4 rounded-xl bg-surface-secondary p-3">
           <strong>
             <InlineHtml html={textOf(data, 'title')} />
           </strong>
@@ -100,7 +100,7 @@ function Block({ block }: { block: ArticleBlock }) {
       return <hr className="my-6 border-separator" />
     case 'code':
       return (
-        <pre className="my-3 overflow-x-auto rounded-xl bg-surface-secondary p-3 text-sm">
+        <pre className="my-4 overflow-x-auto rounded-xl bg-surface-secondary p-3 text-sm">
           <code>{textOf(data, 'code')}</code>
         </pre>
       )
@@ -108,9 +108,9 @@ function Block({ block }: { block: ArticleBlock }) {
       const src = fileUrl(data)
       if (!src) return null
       return (
-        <figure className="my-3">
+        <figure className="my-4">
           <img src={src} alt={textOf(data, 'caption')} loading="lazy" className="w-full rounded-xl" />
-          {textOf(data, 'caption') ? <figcaption className="mt-1 text-sm text-muted">{textOf(data, 'caption')}</figcaption> : null}
+          {textOf(data, 'caption') ? <figcaption className="mt-3 text-base text-muted">{textOf(data, 'caption')}</figcaption> : null}
         </figure>
       )
     }
@@ -118,12 +118,12 @@ function Block({ block }: { block: ArticleBlock }) {
       const service = textOf(data, 'service')
       const src = EMBED_SERVICES.has(service) ? httpsUrl(data?.embed) : null
       if (!src) return null
-      return <iframe src={src} title={service} loading="lazy" className="my-3 aspect-video w-full rounded-xl" allow="fullscreen" />
+      return <iframe src={src} title={service} loading="lazy" className="my-4 aspect-video w-full rounded-xl" allow="fullscreen" />
     }
     case 'table': {
       const rows = Array.isArray(data?.content) ? (data.content as unknown[]) : []
       return (
-        <div className="my-3 overflow-x-auto">
+        <div className="my-4 overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <tbody>
               {rows.map((row, row_index) => (
@@ -147,7 +147,7 @@ function Block({ block }: { block: ArticleBlock }) {
       const src = fileUrl(data)
       if (!src) return null
       return (
-        <p className="my-3">
+        <p className="my-4">
           <a href={src} rel="noopener noreferrer" target="_blank" className="text-accent underline">
             {textOf(data, 'title') || src}
           </a>
@@ -157,7 +157,7 @@ function Block({ block }: { block: ArticleBlock }) {
     case 'personality': {
       const photo = httpsUrl(data?.photo)
       return (
-        <div className="my-3 flex gap-3">
+        <div className="my-4 flex gap-3">
           {photo ? <img src={photo} alt="" loading="lazy" className="size-16 rounded-avatar object-cover" /> : null}
           <div>
             <div className="font-medium">{textOf(data, 'name')}</div>

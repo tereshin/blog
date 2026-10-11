@@ -22,8 +22,8 @@ function templateTitle(site: SeoSite, title: string): string {
 
 function simpleImages(url: string | null, alt: string): SocialImages | null {
   if (!url) return null
-  const mime = /\.png(?:$|\?)/i.test(url) ? 'image/png' : /\.webp(?:$|\?)/i.test(url) ? 'image/webp' : 'image/jpeg'
-  const image = { url, alt, mime }
+  const mime = /\.png(?:$|\?)/i.test(url) ? 'image/png' : /\.webp(?:$|\?)/i.test(url) ? 'image/webp' : /\.jpe?g(?:$|\?)/i.test(url) ? 'image/jpeg' : undefined
+  const image = { url, alt, ...(mime ? { mime } : {}) }
   return { og: image, twitter: image, vk: image }
 }
 

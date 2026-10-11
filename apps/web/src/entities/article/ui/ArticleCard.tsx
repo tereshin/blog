@@ -50,7 +50,7 @@ function Header({ follow, menu }: HeaderProps) {
         <Link to={article.author.href} className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline">
           {article.author.display_name}
         </Link>
-        <div className="flex min-w-0 items-center gap-1 text-xs text-muted">
+        <div className="flex min-w-0 items-center gap-1 text-sm text-muted">
           <Link to={article.topic.href} className="truncate outline-offset-2 hover:underline">
             {article.topic.title}
           </Link>
@@ -86,7 +86,7 @@ function Excerpt() {
   if (!article.excerpt) return null
   return (
     <Card.Content className="px-5 pb-0 pt-2">
-      <p className="whitespace-pre-line break-words text-[15px] leading-6 text-foreground">{article.excerpt}</p>
+      <p className="whitespace-pre-line break-words text-md leading-[1.6] text-foreground">{article.excerpt}</p>
     </Card.Content>
   )
 }
@@ -149,7 +149,7 @@ function Actions({ bookmark, share }: ActionsProps) {
       )}
       {share ?? <ShareIcon className="size-5" />}
       <span
-        className="ml-auto flex items-center gap-1.5"
+        className="ml-auto flex items-center gap-1 font-medium"
         aria-label={t('article.views', { count: article.view_count, value: formatCount(article.view_count, locale) })}
       >
         <EyeIcon className="size-5" />
@@ -170,7 +170,7 @@ function CommentPeek() {
       <Link
         to={`${article.href}#comments`}
         aria-label={t('article.top_comment')}
-        className="flex w-full min-w-0 items-center gap-2 rounded-md text-sm outline-offset-2 hover:text-foreground"
+        className="flex w-full min-w-0 items-center gap-2 rounded-md text-base outline-offset-2 hover:text-foreground"
       >
         <Avatar src={comment.author_avatar_url} name={comment.author_name} size="sm" className="size-6 shrink-0" />
         <span className="truncate text-muted">{comment.excerpt}</span>

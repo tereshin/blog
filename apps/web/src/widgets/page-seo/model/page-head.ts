@@ -43,7 +43,7 @@ export function applyPageHead(page: PageSeo): void {
   if (page.images) {
     const { og, twitter, vk } = page.images
     meta('og:image', og.url, true)
-    meta('og:image:type', og.mime, true)
+    if (og.mime) meta('og:image:type', og.mime, true)
     meta('og:image:alt', og.alt, true)
     if (og.width) meta('og:image:width', String(og.width), true)
     if (og.height) meta('og:image:height', String(og.height), true)

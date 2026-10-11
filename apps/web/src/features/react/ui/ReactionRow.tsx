@@ -51,7 +51,7 @@ export function ReactionRow({
             key={kind}
             variant={my_reaction === kind ? 'primary' : 'secondary'}
             size="sm"
-            className="gap-1.5 text-sm tabular-nums"
+            className="gap-1 text-base tabular-nums"
             aria-pressed={my_reaction === kind}
             aria-label={counts[kind] > 0 ? `${label} ${formatCount(counts[kind], locale)}` : label}
             isDisabled={is_pending}

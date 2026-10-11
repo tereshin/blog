@@ -48,14 +48,16 @@ export async function renderSocialCover(task: RenderTask): Promise<RenderResult>
   const title_height = height - padding * 2 - 108
   const chars = Array.from(input.title).length
   while (font_size > 30 && Math.ceil(chars * font_size * 0.58 / (width - padding * 2)) * font_size * 1.3 > title_height) font_size -= 2
+  let brand_size = 26
+  while (brand_size > 14 && Math.ceil(Array.from(input.site_name).length * brand_size * 0.62 / ((width - padding * 2) * 0.24)) * brand_size * 1.25 > 90) brand_size -= 2
   const svg = await satori({ key: null, type: 'div', props: {
-    style: { width, height, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding, color: settings.text_color, fontFamily: 'Noto Sans' },
+    style: { width, height, position: 'relative', display: 'flex', color: settings.text_color, fontFamily: 'Noto Sans' },
     children: [
-      { type: 'div', props: { style: { display: 'flex', fontSize: font_size, fontWeight: 700, lineHeight: 1.25, maxHeight: title_height, wordBreak: 'break-word' }, children: input.title } },
-      { type: 'div', props: { style: { display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24 }, children: [
+      { type: 'div', props: { style: { position: 'absolute', left: padding, top: padding, width: width - padding * 2, display: 'flex', fontSize: font_size, fontWeight: 700, lineHeight: 1.25, maxHeight: title_height, overflow: 'hidden', wordBreak: 'break-word' }, children: input.title } },
+      { type: 'div', props: { style: { position: 'absolute', left: padding, bottom: padding, display: 'flex', width: width - padding * 2, justifyContent: 'space-between', alignItems: 'flex-end', gap: 24 }, children: [
         { type: 'div', props: { style: { display: 'flex', maxWidth: '72%', fontSize: variant === 'vk' ? 23 : 28, fontWeight: 700, lineHeight: 1.25, wordBreak: 'break-word' }, children: input.author_name ?? '' } },
         logo ? { type: 'img', props: { src: logo, width: 140, height: 90, style: { objectFit: 'contain' } } }
-          : { type: 'div', props: { style: { display: 'flex', maxWidth: '24%', fontSize: 26, fontWeight: 700, textAlign: 'right', wordBreak: 'break-word' }, children: input.site_name } },
+          : { type: 'div', props: { style: { display: 'flex', maxWidth: '24%', maxHeight: 90, overflow: 'hidden', fontSize: brand_size, fontWeight: 700, textAlign: 'right', wordBreak: 'break-word' }, children: input.site_name } },
       ] } },
     ],
   } }, { width, height, fonts: [{ name: 'Noto Sans', data: font_data.regular, weight: 400 }, { name: 'Noto Sans', data: font_data.bold, weight: 700 }] })

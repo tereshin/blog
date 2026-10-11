@@ -32,7 +32,7 @@ export default function TopicPage() {
   }
 
   return (
-    <Tabs variant="secondary" selectedKey="posts" className="gap-4">
+    <Tabs variant="secondary" selectedKey="posts" className="gap-4 max-w-[640px] mx-auto">
       <TopicHeader
         topic={topic.data}
         follow={
@@ -46,8 +46,8 @@ export default function TopicPage() {
           />
         }
       />
-      <Tabs.Panel id="posts" className="m-0 flex flex-col gap-4 p-0">
-        <p className="px-5 py-2 text-sm text-muted sm:px-6">{t('profile.sort.fresh')}</p>
+      <Tabs.Panel id="posts" className="m-0 flex flex-col gap-3 p-0">
+        <p className="px-5  text-sm text-muted sm:px-6">{t('profile.sort.fresh')}</p>
         <ArticleFeed mode={`topic:${topic.data.slug}`} feed_key={`topic:${topic.data.id}`} />
       </Tabs.Panel>
     </Tabs>

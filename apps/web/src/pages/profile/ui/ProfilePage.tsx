@@ -40,7 +40,7 @@ export default function ProfilePage() {
   return (
     <Tabs
       variant="secondary"
-      className="gap-4"
+      className="gap-4 max-w-[640px] mx-auto"
       selectedKey={tab}
       onSelectionChange={(key) => setTab(key === 'comments' ? 'comments' : 'posts')}
     >

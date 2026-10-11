@@ -40,7 +40,7 @@ export const socialImageSchema = z.strictObject({
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
   alt: z.string(),
-  mime: z.string().default('image/jpeg'),
+  mime: z.string().optional(),
 })
 export const socialImagesSchema = z.strictObject({ og: socialImageSchema, twitter: socialImageSchema, vk: socialImageSchema })
 export type SocialImages = z.infer<typeof socialImagesSchema>

@@ -76,7 +76,7 @@ describe('content: запись статьи', () => {
     await app.close()
     await database.close()
     await postgres.stop()
-  })
+  }, 120_000)
 
   function create(title: string, document: unknown, viewer = 'author') {
     return app.inject({
@@ -169,4 +169,22 @@ describe('content: запись статьи', () => {
     expect(published_event?.payload).toMatchObject({ article_id: draft.id, slug, status: 'published' })
     expect(updated_event?.payload).toMatchObject({ article_id: draft.id, slug, title: 'Совсем другой заголовок', status: 'published' })
   })
+  it('SEO черновика сохраняется автором, чужой участник не меняет его; публикация пишет запрос превью', async () => {
+    const response = await app.inject({ method: 'POST', url: '/v1/articles', headers: { 'x-test-viewer': 'author' }, payload: { title: 'SEO статья', topic_id: topic.id, blocks: paragraph('Описание статьи'), seo_title: 'SEO заголовок', seo_description: 'Описание для поиска' } })
+    expect(response.statusCode).toBe(201)
+    const draft = response.json() as ArticleDraft
+    expect(draft).toMatchObject({ seo_title: 'SEO заголовок', seo_description: 'Описание для поиска' })
+    expect((await app.inject({ url: `/v1/articles/${draft.id}/draft`, headers: { 'x-test-viewer': 'author' } })).json()).toMatchObject({ seo_title: 'SEO заголовок' })
+    const denied = await app.inject({ method: 'PATCH', url: `/v1/articles/${draft.id}`, headers: { 'x-test-viewer': 'other' }, payload: { seo_title: 'Чужое' } })
+    expect(denied.statusCode).toBe(404)
+    const reset = await app.inject({ method: 'PATCH', url: `/v1/articles/${draft.id}`, headers: { 'x-test-viewer': 'author' }, payload: { seo_title: '', seo_description: '' } })
+    expect(reset.json()).toMatchObject({ seo_title: null, seo_description: null })
+    expect((await app.inject({ method: 'POST', url: `/v1/articles/${draft.id}/publish`, headers: { 'x-test-viewer': 'author' } })).statusCode).toBe(200)
+    const requests = await database.db.select().from(outbox).where(eq(outbox.name, 'content.social_cover.requested'))
+    expect(requests.some((event) => event.payload['target_id'] === draft.id)).toBe(true)
+    // This isolated article should not affect the visibility assertions of the remaining scenarios.
+    await app.inject({ method: 'DELETE', url: `/v1/articles/${draft.id}`, headers: { 'x-test-viewer': 'author' } })
+  })
+
+
 })

@@ -30,7 +30,7 @@ function Reputation({ profile }: { profile: Profile }) {
   const { t } = useT()
   const year = new Date(profile.created_at).getUTCFullYear()
   return (
-    <p className="flex items-center gap-2 text-sm">
+    <p className="flex items-center gap-2 text-base">
       <span className="font-medium text-positive">{formatReputation(profile.reputation)}</span>
       <span className="text-muted">{t('profile.since', { year })}</span>
     </p>
@@ -45,11 +45,11 @@ function Bio({ profile }: { profile: Profile }) {
 function Counts({ profile, address }: { profile: Profile; address: string }) {
   const { t } = useT()
   return (
-    <p className="flex flex-wrap gap-3 text-sm">
-      <Link to={`/u/${address}/followers`} className="outline-offset-2 hover:underline">
+    <p className="flex flex-wrap gap-3 text-base">
+      <Link to={`/u/${address}/followers`} className="outline-offset-2">
         {t('profile.followers', { count: profile.followers_count })}
       </Link>
-      <Link to={`/u/${address}/following`} className="outline-offset-2 hover:underline">
+      <Link to={`/u/${address}/following`} className="outline-offset-2">
         {t('profile.following', { count: profile.following_count })}
       </Link>
     </p>
@@ -60,7 +60,7 @@ function Badges({ badges }: { badges: ProfileBadge[] }) {
   const { t } = useT()
   if (badges.length === 0) return null
   return (
-    <ul className="flex flex-wrap gap-2">
+    <ul className="flex flex-wrap gap-2 -mx-1">
       {badges.map((badge) => {
         const item = badgeCatalog[badge]
         return (

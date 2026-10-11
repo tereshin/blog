@@ -14,7 +14,7 @@ export function coverRevision(input: SocialCoverInput): string {
 async function requestCover(tx: Database, target_id: string, input: SocialCoverInput, correlation_id: string): Promise<void> {
   const revision = coverRevision(input)
   const changed = await tx.insert(social_covers).values({ target_id, revision, images: null })
-    .onConflictDoUpdate({ target: social_covers.target_id, set: { revision, images: null, requested_at: new Date() }, setWhere: sql`${social_covers.revision} <> ${revision}` })
+    .onConflictDoUpdate({ target: social_covers.target_id, set: { revision, images: null, requested_at: new Date() }, setWhere: sql`${social_covers.revision} <> ${revision} or (${social_covers.images} is null and ${social_covers.requested_at} < now() - interval '2 minutes')` })
     .returning({ target_id: social_covers.target_id })
   if (changed.length === 0) return
   await appendToOutbox(tx, SocialCoverRequestedV1.parse({

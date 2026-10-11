@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { articleKeys } from '@/entities/article'
 import { commentKeys } from '@/entities/comment'
+import { seoKeys } from '@/entities/seo'
 import { deleteModeratedArticle, deleteModeratedComment, hideArticle, hideComment, restoreArticle, restoreComment } from '../api/moderation.ts'
 import { moderationKeys } from './moderation-keys.ts'
 
@@ -9,6 +10,7 @@ export function useModerateArticle() {
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: moderationKeys.all })
     void queryClient.invalidateQueries({ queryKey: articleKeys.lists() })
+    void queryClient.invalidateQueries({ queryKey: seoKeys.all })
   }
   const hide = useMutation({ mutationFn: (article_id: string) => hideArticle(article_id), onSuccess: refresh })
   const restore = useMutation({ mutationFn: (article_id: string) => restoreArticle(article_id), onSuccess: refresh })
