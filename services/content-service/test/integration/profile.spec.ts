@@ -124,7 +124,8 @@ describe('content: профиль', () => {
     const topic_id = '11111111-1111-4111-8111-111111111111'
     const published_id = '22222222-2222-4222-8222-222222222222'
     const draft_id = '33333333-3333-4333-8333-333333333333'
-    await database.db.insert(topics).values({ id: topic_id, title: 'Технологии', slug: 'tech-profile', position: 1 })
+    const topic_avatar_url = `${S3}/topic.png`
+    await database.db.insert(topics).values({ id: topic_id, title: 'Технологии', slug: 'tech-profile', position: 1, avatar_url: topic_avatar_url })
     await database.db.insert(articles).values([
       {
         id: published_id,
@@ -144,9 +145,11 @@ describe('content: профиль', () => {
     const guest = await app.inject({ method: 'GET', url: '/v1/profiles/7/articles?sort=fresh' })
     expect(guest.statusCode).toBe(200)
     expect(guest.json().items.map((item: { title: string }) => item.title)).toEqual(['Публичная'])
+    expect(guest.json().items[0].topic.avatar_url).toBe(topic_avatar_url)
 
     const owner = await app.inject({ method: 'GET', url: '/v1/profiles/7/articles', headers: { 'x-test-viewer': 'owner' } })
     expect(owner.json().items.map((item: { status: string }) => item.status).sort()).toEqual(['draft', 'published'])
+    expect(owner.json().items.every((item: { topic: { avatar_url: string } }) => item.topic.avatar_url === topic_avatar_url)).toBe(true)
 
     const followers = await app.inject({ method: 'GET', url: '/v1/profiles/7/followers' })
     expect(followers.json().items).toEqual([expect.objectContaining({ user_id: OTHER, slug: 'taken', reputation: 0 })])

@@ -99,6 +99,12 @@ export async function request<TResponse>(
   schema: z.ZodType<TResponse>,
   options: RequestOptions = {},
 ): Promise<TResponse> {
+  if (method === 'GET' && options.signal) {
+    // StrictMode успевает отменить пробный mount до отправки в сеть; рабочий запрос
+    // стартует в следующей микрозадаче, без таймера и с обычной отменой при уходе.
+    await Promise.resolve()
+    options.signal.throwIfAborted()
+  }
   const headers: Record<string, string> = { Accept: 'application/json', ...options.headers }
   const has_body = options.body !== undefined
   if (has_body) headers['Content-Type'] = 'application/json'

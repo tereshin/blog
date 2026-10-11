@@ -17,6 +17,62 @@ async function centerScroll(page: Page): Promise<number> {
 }
 
 test.describe('Страница статьи', () => {
+  test('панель действий объединяет комментарии, закладку, ссылку и просмотры', async ({ page }, testInfo) => {
+    await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    const states_ready = page.waitForResponse((response) => response.url().includes('/v1/me/article-states'))
+    await page.goto('/p/statya-1')
+    await states_ready
+    const article = page.getByRole('main').getByRole('article').first()
+    const comments = article.getByRole('link', { name: /комментар/ })
+    const bookmark = article.getByRole('button', { name: 'В закладки', exact: true })
+    const share = article.getByRole('button', { name: 'Поделиться', exact: true })
+    const views = article.locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')
+    await expect(comments).toHaveAttribute('href', '/p/statya-1#comments')
+    await expect(views).toBeVisible()
+    const boxes = await Promise.all([comments, bookmark, share, views].map((control) => control.boundingBox()))
+    const centers = boxes.map((box) => {
+      if (!box) throw new Error('Действие статьи должно быть видимым')
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+    })
+    expect(Math.max(...centers.map(({ y }) => y)) - Math.min(...centers.map(({ y }) => y))).toBeLessThan(1)
+    for (const [index, center] of centers.entries()) {
+      const previous = centers[index - 1]
+      if (previous) expect(center.x).toBeGreaterThan(previous.x)
+    }
+
+    const initial_count = Number(await bookmark.innerText())
+    await bookmark.click()
+    const saved = article.getByRole('button', { name: 'Убрать из закладок', exact: true })
+    await expect(saved).toHaveAttribute('aria-pressed', 'true')
+    await expect(saved).toHaveText(String(initial_count + 1))
+    await saved.click()
+    await expect(bookmark).toHaveAttribute('aria-pressed', 'false')
+    await expect(bookmark).toHaveText(String(initial_count))
+
+    await share.click()
+    await expect(page.getByText('Ссылка скопирована')).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${new URL(page.url()).origin}/p/statya-1`)
+    await article.screenshot({ path: testInfo.outputPath('article-actions.png') })
+    await comments.click()
+    await expect(page).toHaveURL(/\/p\/statya-1#comments$/)
+    await expect(page.locator('#comments')).toBeInViewport()
+  })
+
+  test('показывает засчитанные просмотры и сохраняет число при повторном открытии', async ({ page }) => {
+    const view_response = page.waitForResponse((response) => response.url().endsWith('/views') && response.request().method() === 'POST')
+    await page.goto('/p/statya-1')
+    const response = await view_response
+    expect(response.status()).toBe(200)
+    const result = await response.json() as { counted: boolean; view_count: number }
+    expect(result.counted).toBe(true)
+    await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count))
+    const repeated = page.waitForResponse((next) => next.url().endsWith('/views') && next.request().method() === 'POST')
+    await page.reload()
+    expect(await (await repeated).json()).toEqual({ counted: false, view_count: result.view_count })
+    await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count))
+  })
+
   test('из ленты открывается в каркасе и возврат попадает на то же место', async ({ page }) => {
     await page.goto('/')
     const card = page.getByRole('main').getByRole('article').nth(4)

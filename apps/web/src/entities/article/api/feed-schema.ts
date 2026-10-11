@@ -9,6 +9,7 @@ export const feedCardDtoSchema = z.object({
   slug: z.string(),
   title: z.string(),
   excerpt: z.string(),
+  has_more_content: z.boolean().optional(),
   first_image_url: z.string().nullable(),
   published_at: z.string(),
   author: z.object({ user_id: z.string(), display_name: z.string(), avatar_url: z.string().nullable(), slug: z.string() }),

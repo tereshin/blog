@@ -4,7 +4,7 @@ import { hiddenArticleIds } from './moderation-store.ts'
 import { mockFeedArticles } from './feed.ts'
 import type { FeedCardFixture } from '../fixtures/feed.ts'
 import { currentMockAuthor, publishedFeedCards, readMockArticles } from './articles-store.ts'
-import { commentTree, mockCommentBookmarked, commentsForArticle, mockViewerId, patchStoredComment, readStoredComments, recordMockView, saveComment } from './discussion-store.ts'
+import { commentTree, mockCommentBookmarked, commentsForArticle, mockViewerId, patchStoredComment, readStoredComments, readMockViewCount, recordMockView, saveComment } from './discussion-store.ts'
 import type { StoredComment } from './discussion-store.ts'
 import { addMockNotification } from './notifications-store.ts'
 import { readMockViewer } from './session.ts'
@@ -154,6 +154,7 @@ export const actionHandlers = [
         ]
     return HttpResponse.json({
       ...article,
+      view_count: readMockViewCount(article),
       blocks: { time: 1, version: '2.30.0', blocks },
       status: hiddenArticleIds.has(article.id) ? 'hidden' : 'published',
       is_own: window.localStorage.getItem('mock_article') === 'own',
@@ -278,7 +279,7 @@ export const actionHandlers = [
     const items = ids.flatMap((id) => {
       if (hiddenArticleIds.has(id) && !is_staff) return []
       const card = source.find((item) => item.id === id)
-      return card ? [card] : []
+      return card ? [{ ...card, view_count: readMockViewCount(card) }] : []
     })
     return HttpResponse.json({ items })
   }),

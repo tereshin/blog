@@ -3,6 +3,7 @@ import type { UIEvent } from 'react'
 import { useMessagesUnreadCount, useMessagesUnreadLive } from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
 import { TopicNavItem, useTopics } from '@/entities/topic'
+import { AppearanceToggle } from '@/features/toggle-appearance'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
 import { Button, ErrorState, Skeleton } from '@/shared/ui'
@@ -34,7 +35,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const unread_messages = useMessagesUnreadCount(is_member)
   useMessagesUnreadLive(is_member)
   const show_unread_messages = has_unread_messages || (unread_messages.data ?? 0) > 0
-  const { highlighted } = useCurrentSection()
+  const { highlighted, section } = useCurrentSection()
   const topics = useTopics()
   const freshness = useFeedFreshness()
   const is_expanded = useShellStore((state) => state.is_topics_expanded)
@@ -107,6 +108,11 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
             ) : null}
           </>
         )}
+
+        <div className="pt-3 flex flex-col gap-1">
+          <LeftNavItem to="/about" is_selected={section.kind === 'about'}>{t('account.about')}</LeftNavItem>
+          <AppearanceToggle className="w-full justify-start rounded-xl px-3 py-2 text-base font-normal" />
+        </div>
     </div>
   )
 }

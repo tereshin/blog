@@ -38,6 +38,15 @@ function pathOf(route: { index?: boolean; path?: string }): string {
 }
 
 describe('router', () => {
+  it('каждая категория админки имеет отдельный ленивый маршрут', () => {
+    const children = shellRoute.children ?? []
+    for (const path of ['admin', 'admin/members', 'admin/settings/access', 'admin/settings/reactions', 'admin/settings/status-icons', 'admin/settings/seo', 'admin/settings/publisher', 'admin/settings/covers', 'admin/moderation/hidden', 'admin/moderation/comments', 'admin/moderation/find']) {
+      const route = children.find((item) => item.path === path)
+      expect(route, path).toBeDefined()
+      expect(isLazy(route?.element), path).toBe(true)
+    }
+  })
+
   it('ровно один родительский маршрут с каркасом', () => {
     expect(shellRoute.path).toBe('/')
     expect(isValidElement(shellRoute.element) && shellRoute.element.type).toBe(ShellLayout)

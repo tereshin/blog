@@ -110,6 +110,11 @@ body {
   outline: none;
 }
 
+/* HeroUI InputGroup обводит всё поле вместе с иконками. */
+.peer-picker input:focus-visible {
+  outline: none;
+}
+
 @media (min-width: 768px) {
   .header-search-position {
     right: 16px;
@@ -122,6 +127,63 @@ body {
     right: auto;
     left: calc(50% - 404px);
     width: 708px;
+  }
+}
+
+/* Высота нижней панели шапки с отступами: столько места оставляют под ней центр и плавающие кнопки. */
+:root {
+  --tab-bar-space: 0px;
+}
+
+/*
+ * Ниже 768px действия шапки — плавающая панель внизу экрана.
+ * У панели нет transform/filter/backdrop-filter: внутри лежит fixed-кнопка «Написать», и она должна отсчитываться от окна.
+ */
+@media (max-width: 767px) {
+  :root {
+    --tab-bar-space: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+
+  .site-header-actions {
+    position: fixed;
+    right: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    z-index: 30;
+    justify-content: space-around;
+    gap: 0;  
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 28%);
+  }
+
+  .site-header-actions .button--icon-only,
+  .site-header-tab {
+    width: 3rem;
+    height: 3rem;
+    min-width: 3rem;
+    border-radius: var(--radius-pill);
+  }
+
+  .site-header-actions .button--icon-only svg,
+  .site-header-tab svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .site-header-write {
+    position: fixed;
+    right: 1rem;
+    bottom: var(--tab-bar-space);
+    width: 3.5rem;
+    height: 3.5rem;
+    min-width: 3.5rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
   }
 }
 

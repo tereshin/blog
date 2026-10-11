@@ -5,6 +5,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Database } from '@blog/broker'
 import { ValidationError } from '@blog/errors'
 import { articles, profiles, slugs, topics, users_copy } from '../../infra/db/schema.ts'
+import { has_more_content } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../access/index.ts'
 import { RESERVED_SLUGS, SLUG_PATTERN, releaseSlug, replaceSlug, reserveSlug } from '../slug/index.ts'
 import { appendArticleEvent } from './article.events.ts'
@@ -17,6 +18,7 @@ const columns = {
   slug: articles.slug,
   title: articles.title,
   excerpt: articles.excerpt,
+  has_more_content,
   first_image_url: articles.first_image_url,
   blocks: articles.blocks,
   published_at: articles.published_at,

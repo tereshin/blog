@@ -239,7 +239,7 @@ test.describe('геометрия каркаса', () => {
 
   test('на 390px одна колонка, одна кнопка шапки открывает навигацию', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    for (const path of ['/', '/p/statya-1', '/messages']) {
+    for (const path of ['/', '/messages']) {
       await page.goto(path)
       const open = page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' })
       await expect(open).toBeVisible()
@@ -255,6 +255,22 @@ test.describe('геометрия каркаса', () => {
       await expect(page.getByRole('navigation', { name: NAV_NAME })).toHaveCount(0)
     }
     await expect(page.getByText('Подписка Plus')).toHaveCount(0)
+  })
+
+  test('на 390px действия шапки — панель внизу, на статье вместо бургера «Назад»', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    const banner = page.getByRole('banner')
+    const search_box = await banner.getByRole('button', { name: 'Поиск' }).boundingBox()
+    expect(search_box?.y ?? 0).toBeGreaterThan(844 - 100)
+    await expect(banner.getByRole('link', { name: 'Главная' })).toHaveAttribute('aria-current', 'page')
+    await expect(banner.getByRole('link', { name: 'Сообщения' })).toBeVisible()
+    await expect(banner.getByRole('button', { name: 'Написать' })).toBeVisible()
+
+    await page.goto('/p/statya-1')
+    await expect(banner.getByRole('link', { name: 'Назад' })).toBeVisible()
+    await expect(banner.getByRole('button', { name: 'Открыть навигацию' })).toHaveCount(0)
+    await expect(banner.getByRole('button', { name: 'Написать' })).toBeHidden()
   })
 
   test('прямой адрес статьи показывает столбцы ширины до текста', async ({ page }) => {

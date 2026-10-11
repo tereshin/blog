@@ -22,7 +22,6 @@ export function useRecordView(article: { id: string; slug: string } | null, from
     recorded.add(key)
     void recordView(article_id, from_moderation ? 'moderation' : undefined)
       .then((result) => {
-        if (!result.counted) return
         queryClient.setQueryData<ArticleLoad>(articleKeys.detail(slug), (data) => {
           if (!data || data.status !== 'ok' || data.article.id !== article_id) return data
           return { ...data, article: { ...data.article, view_count: result.view_count } }

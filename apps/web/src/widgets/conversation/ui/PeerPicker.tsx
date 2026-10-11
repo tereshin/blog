@@ -1,9 +1,19 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router'
-import { useSearch } from '@/entities/search'
-import { useViewer } from '@/entities/session'
+import { InputGroup } from '@heroui/react/input-group'
+import { Label } from '@heroui/react/label'
+import { Spinner } from '@heroui/react/spinner'
+import { TextField } from '@heroui/react/textfield'
 import { useT } from '@/shared/i18n'
-import { Avatar, Button, Dialog } from '@/shared/ui'
+import {
+  Avatar,
+  BaseIcon,
+  Button,
+  CloseButton,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  SearchIcon,
+} from '@/shared/ui'
+import { usePeerPicker } from '../model/usePeerPicker.ts'
 
 type PeerPickerProps = {
   is_open: boolean
@@ -13,57 +23,111 @@ type PeerPickerProps = {
 /** Поиск человека и переход к пустому диалогу с ним. */
 export function PeerPicker({ is_open, onOpenChange }: PeerPickerProps) {
   const { t } = useT()
-  const navigate = useNavigate()
-  const { viewer } = useViewer()
-  const [query, setQuery] = useState('')
-  const search = useSearch(query)
-  const my_id = viewer.status === 'member' ? viewer.user.id : null
-  const people = (search.data?.people ?? []).filter((person) => person.user_id !== my_id)
+  const { query, setQuery, input_ref, can_search, search, people, handleSelect, handleClear } =
+    usePeerPicker(onOpenChange)
 
   return (
-    <Dialog is_open={is_open} onOpenChange={onOpenChange} aria-label={t('messages.new')}>
-      <Dialog.Header>
+    <Dialog
+      is_open={is_open}
+      onOpenChange={onOpenChange}
+      size="sm"
+      aria-label={t('messages.new')}
+      className="peer-picker gap-0 overflow-hidden p-0"
+    >
+      <Dialog.Header className="relative gap-1 px-5 pt-5 pb-4 pr-14">
         <Dialog.Heading>{t('messages.new')}</Dialog.Heading>
+        <p className="text-sm text-muted">{t('messages.new_hint')}</p>
+        <CloseButton
+          aria-label={t('common.close')}
+          className="absolute top-4 right-4"
+          onPress={() => onOpenChange(false)}
+        />
       </Dialog.Header>
-      <Dialog.Body>
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="text-muted">{t('messages.search_people')}</span>
-          <input
-            value={query}
-            aria-label={t('messages.search_people')}
-            className="rounded-lg border border-separator bg-background px-3 py-2 text-foreground"
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
-        <ul className="mt-3 flex flex-col gap-1">
-          {search.deferred.length >= 2 && people.length === 0 && !search.isFetching ? (
-            <li className="px-2 py-3 text-sm text-muted">{t('messages.no_people')}</li>
-          ) : null}
-          {people.map((person) => (
-            <li key={person.user_id}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onPress={() => {
-                  onOpenChange(false)
-                  void navigate(`/messages/new?to=${encodeURIComponent(person.user_id)}`, {
-                    state: {
-                      peer: {
-                        user_id: person.user_id,
-                        display_name: person.display_name,
-                        avatar_url: person.avatar_url,
-                        slug: person.slug,
-                      },
-                    },
-                  })
-                }}
-              >
-                <Avatar src={person.avatar_url} name={person.display_name} size="sm" />
-                {person.display_name}
-              </Button>
-            </li>
-          ))}
-        </ul>
+      <Dialog.Body className="gap-0 px-5 pt-0 pb-5">
+        <TextField fullWidth value={query} onChange={setQuery}>
+          <Label className="sr-only">{t('messages.search_people')}</Label>
+          <InputGroup fullWidth variant="secondary">
+            <InputGroup.Prefix>
+              <SearchIcon className="text-muted" />
+            </InputGroup.Prefix>
+            <InputGroup.Input
+              ref={input_ref}
+              autoFocus
+              maxLength={100}
+              autoComplete="off"
+              placeholder={t('messages.search_placeholder')}
+            />
+            {query ? (
+              <InputGroup.Suffix>
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('header.search_clear_query')}
+                  onPress={handleClear}
+                >
+                  <BaseIcon name="close" size={16} />
+                </Button>
+              </InputGroup.Suffix>
+            ) : null}
+          </InputGroup>
+        </TextField>
+        <div
+          className="mt-3 max-h-[min(360px,45dvh)] min-h-40 overflow-y-auto overscroll-contain"
+          aria-busy={search.is_searching}
+        >
+          {!can_search ? (
+            <p className="px-3 py-8 text-center text-sm text-muted">{t('messages.search_hint')}</p>
+          ) : search.is_searching ? (
+            <div
+              role="status"
+              aria-label={t('common.loading')}
+              className="flex justify-center py-12"
+            >
+              <Spinner size="md" />
+            </div>
+          ) : search.isError ? (
+            <ErrorState
+              title={t('search.error')}
+              onRetry={() => void search.refetch()}
+              className="py-6"
+            />
+          ) : people.length === 0 ? (
+            <EmptyState
+              title={t('messages.no_people')}
+              description={t('messages.no_people_hint')}
+              icon={<SearchIcon />}
+              className="bg-transparent py-6 shadow-none"
+            />
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {people.map((person) => (
+                <li key={person.user_id}>
+                  <Button
+                    variant="ghost"
+                    aria-label={person.display_name}
+                    className="h-auto w-full justify-start gap-3 rounded-xl px-3 py-3 text-left"
+                    onPress={() => handleSelect(person)}
+                  >
+                    <Avatar
+                      src={person.avatar_url}
+                      name={person.display_name}
+                      size="md"
+                      className="shrink-0"
+                    />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate font-medium">{person.display_name}</span>
+                      <span className="truncate text-xs font-normal text-muted">
+                        @{person.slug}
+                      </span>
+                    </span>
+                    <BaseIcon name="right" size={16} className="shrink-0 text-muted" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Dialog.Body>
     </Dialog>
   )

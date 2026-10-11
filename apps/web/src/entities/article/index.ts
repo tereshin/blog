@@ -28,6 +28,8 @@ export type {
   ReactionCounts,
   ReactionKind,
 } from './model/article-types.ts'
+export { ArticleByline } from './ui/ArticleByline.tsx'
+export { ArticleActions } from './ui/ArticleActions.tsx'
 export { ArticleCard } from './ui/ArticleCard.tsx'
 export { ArticleCardExpand } from './ui/ArticleCardExpand.tsx'
 export { BlockRenderer } from './ui/BlockRenderer.tsx'

@@ -272,8 +272,7 @@ test('модератор обрабатывает жалобу на коммен
     },
     { comment_id: ROOT_ID },
   )
-  await page.goto('/admin/moderation')
-  await page.getByRole('tab', { name: 'Жалобы на комментарии' }).click()
+  await page.goto('/admin/moderation/comments')
   await expect(page.getByText('Спам в комментарии', { exact: false })).toBeVisible()
   await page.getByRole('button', { name: 'Скрыть', exact: true }).click()
   await expect(page.getByText('Жалоб нет', { exact: true })).toBeVisible()

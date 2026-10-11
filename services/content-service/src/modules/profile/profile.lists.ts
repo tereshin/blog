@@ -3,6 +3,7 @@ import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ServiceContext } from '@blog/contracts'
 import { articles, follows, profiles, topics, users_copy } from '../../infra/db/schema.ts'
+import { has_more_content } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../access/index.ts'
 import type { ProfileCursor } from './profile.cursor.ts'
 
@@ -14,6 +15,7 @@ const card_columns = {
   slug: articles.slug,
   title: articles.title,
   excerpt: articles.excerpt,
+  has_more_content,
   first_image_url: articles.first_image_url,
   published_at: articles.published_at,
   created_at: articles.created_at,
@@ -27,6 +29,7 @@ const card_columns = {
   topic_title: topics.title,
   topic_slug: topics.slug,
   topic_status: topics.status,
+  topic_avatar_url: topics.avatar_url,
   reaction_counts: articles.reaction_counts,
   reaction_count: articles.reaction_count,
   comment_count: articles.comment_count,
@@ -44,6 +47,7 @@ export type ProfileArticleRow = {
   slug: string
   title: string
   excerpt: string
+  has_more_content: boolean
   first_image_url: string | null
   published_at: Date | null
   created_at: Date
@@ -57,6 +61,7 @@ export type ProfileArticleRow = {
   topic_title: string
   topic_slug: string
   topic_status: 'active' | 'archived'
+  topic_avatar_url: string | null
   reaction_counts: unknown
   reaction_count: number
   comment_count: number

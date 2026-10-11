@@ -1,7 +1,8 @@
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, or, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ServiceContext, Topic, UserListItem } from '@blog/contracts'
 import { articles, profiles, topics, users_copy } from '../../infra/db/schema.ts'
+import { has_more_content } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../access/index.ts'
 import type { FeedRow } from '../feed/feed.types.ts'
 import type { SearchCursor } from './search.cursor.ts'
@@ -14,6 +15,7 @@ const card_columns = {
   slug: articles.slug,
   title: articles.title,
   excerpt: articles.excerpt,
+  has_more_content,
   first_image_url: articles.first_image_url,
   published_at: articles.published_at,
   author_id: articles.author_id,
@@ -36,7 +38,12 @@ const card_columns = {
 }
 
 export type SearchRepository = {
-  findArticles: (input: { viewer: ServiceContext; q: string; cursor: SearchCursor | null; limit: number }) => Promise<Array<FeedRow & { rank: number }>>
+  findArticles: (input: {
+    viewer: ServiceContext
+    q: string
+    cursor: SearchCursor | null
+    limit: number
+  }) => Promise<Array<FeedRow & { rank: number }>>
   findPeople: (q: string) => Promise<UserListItem[]>
   findTopics: (q: string) => Promise<Topic[]>
 }
@@ -70,10 +77,35 @@ export function createSearchRepository(db: NodePgDatabase): SearchRepository {
         )
         .orderBy(desc(rank), desc(articles.published_at), desc(articles.id))
         .limit(limit)
-      return rows.map((row) => ({ ...row, published_at: row.published_at as Date, rank: Number(row.rank) }))
+      return rows.map((row) => ({
+        ...row,
+        published_at: row.published_at as Date,
+        rank: Number(row.rank),
+      }))
     },
 
     async findPeople(q) {
+      const terms = q
+        .toLowerCase()
+        .replace(/["«»“”]/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+      if (terms.length === 0) return []
+      const matches = and(
+        ...terms.map((term) => {
+          const pattern = likePattern(term)
+          return sql`(lower(${profiles.display_name}) like ${pattern} escape '\\' or lower(coalesce(${profiles.slug}, '')) like ${pattern} escape '\\')`
+        }),
+      )
+      // Фраза требует совпадения всех слов; для одного слова сохраняем поиск с опечаткой.
+      const condition =
+        terms.length === 1
+          ? or(
+              matches,
+              sql`(${profiles.display_name} % ${terms[0]} or coalesce(${profiles.slug}, '') % ${terms[0]})`,
+            )
+          : matches
       const rows = await db
         .select({
           user_id: profiles.user_id,
@@ -84,7 +116,8 @@ export function createSearchRepository(db: NodePgDatabase): SearchRepository {
         })
         .from(profiles)
         .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-        .where(sql`(${profiles.display_name} % ${q} or coalesce(${profiles.slug}, '') % ${q})`)
+        .where(condition)
+        .orderBy(desc(sql`(${matches})`), asc(profiles.display_name), asc(profiles.user_id))
         .limit(PEOPLE_LIMIT)
       return rows
     },

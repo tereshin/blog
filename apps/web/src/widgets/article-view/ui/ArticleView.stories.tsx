@@ -47,6 +47,7 @@ function Frame({ own }: { own: boolean }) {
           <ArticleView.Byline />
           <ArticleView.Title />
           <ArticleView.Body />
+          <ArticleView.Actions />
         </ArticleView>
       </div>
     </MemoryRouter>

@@ -25,6 +25,8 @@ export const feedCardSchema = z.strictObject({
   slug: z.string(),
   title: z.string(),
   excerpt: z.string(),
+  /** Есть содержимое, которое не помещается во фрагмент и первое изображение. */
+  has_more_content: z.boolean().optional(),
   first_image_url: z.string().nullable(),
   published_at: z.iso.datetime(),
   author: z.strictObject({

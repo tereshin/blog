@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, gte, inArray, or, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { articles, follows, profiles, promotions, topics, users_copy } from '../../infra/db/schema.ts'
+import { has_more_content } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../access/index.ts'
 import { POPULAR_WINDOW_MS } from './feed.rules.ts'
 import type { FeedRepository } from './feed.types.ts'
@@ -11,6 +12,7 @@ const card_columns = {
   slug: articles.slug,
   title: articles.title,
   excerpt: articles.excerpt,
+  has_more_content,
   first_image_url: articles.first_image_url,
   published_at: articles.published_at,
   author_id: articles.author_id,

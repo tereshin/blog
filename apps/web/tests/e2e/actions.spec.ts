@@ -100,7 +100,7 @@ test.describe('Жесты карточки', () => {
         response.request().method() === 'PUT' &&
         response.ok(),
     )
-    await first.getByRole('link', { name: 'Показать полностью' }).click()
+    await first.getByRole('button', { name: 'Показать полностью' }).click()
     await expect(first.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
     await first_seen
     const second_seen = page.waitForResponse(
@@ -109,7 +109,7 @@ test.describe('Жесты карточки', () => {
         response.request().method() === 'PUT' &&
         response.ok(),
     )
-    await second.getByRole('link', { name: 'Показать полностью' }).click()
+    await second.getByRole('button', { name: 'Показать полностью' }).click()
     await expect(second.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
     await second_seen
     await first.getByRole('heading', { level: 2 }).getByRole('link').click()

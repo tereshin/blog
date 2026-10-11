@@ -23,7 +23,7 @@ const FRAME_BY_PREFIX: readonly { prefix: string; type: FrameType }[] = [
   { prefix: 'discussion.comment.', type: 'comment' },
   { prefix: 'discussion.reaction.', type: 'reaction' },
   { prefix: 'discussion.bookmark.', type: 'bookmark' },
-  { prefix: 'discussion.view.', type: 'view' },
+  { prefix: 'discussion.article_view.', type: 'view' },
   { prefix: 'notification.notification.', type: 'notification' },
   { prefix: 'messaging.message.', type: 'message' },
 ]

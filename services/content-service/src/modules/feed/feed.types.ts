@@ -6,6 +6,7 @@ export type FeedRow = {
   slug: string
   title: string
   excerpt: string
+  has_more_content?: boolean
   first_image_url: string | null
   published_at: Date
   author_id: string

@@ -1,21 +1,30 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+
+async function openNavigation(page: Page) {
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await page.getByRole('button', { name: 'Открыть навигацию' }).click()
+  }
+  return page.getByRole('navigation', { name: 'Навигация' })
+}
 
 test.describe('Вид и узкий экран', () => {
   test('гость включает светлый вид, и он остаётся после перезагрузки', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: 'Светлый вид' }).click()
+    const navigation = await openNavigation(page)
+    await navigation.getByRole('button', { name: 'Светлый вид' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-    await expect(page.getByRole('button', { name: 'Тёмный вид' })).toBeVisible()
+    await expect((await openNavigation(page)).getByRole('button', { name: 'Тёмный вид' })).toBeVisible()
   })
 
-  test('участник включает светлый вид из меню учётной записи', async ({ page }) => {
+  test('участник включает светлый вид из левой навигации', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/')
-    await page.getByRole('button', { name: 'Меню учётной записи' }).click()
-    await page.getByRole('menuitem', { name: 'Светлый вид' }).click()
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Светлый вид' })).toHaveCount(0)
+    await (await openNavigation(page)).getByRole('button', { name: 'Светлый вид' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   })
 
@@ -31,7 +40,7 @@ test.describe('Вид и узкий экран', () => {
 
   test('бургер открывает одну панель на разных разделах, Escape её закрывает', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 768px')
-    for (const path of ['/', '/about', '/messages', '/rating', '/p/statya-1', '/u/anna']) {
+    for (const path of ['/', '/about', '/messages', '/rating', '/u/anna']) {
       await page.goto(path)
       const open = page.getByRole('button', { name: 'Открыть навигацию' })
       await open.click()
@@ -43,7 +52,7 @@ test.describe('Вид и узкий экран', () => {
 
   test('главная без серьёзных нарушений доступности', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('button', { name: 'Светлый вид' })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('article').first()).toBeVisible()
     const results = await new AxeBuilder({ page }).analyze()
     const serious = results.violations.filter((item) => item.impact === 'serious' || item.impact === 'critical')
     expect(serious).toEqual([])

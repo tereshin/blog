@@ -109,6 +109,11 @@ export function commentTree(article: FeedCardFixture, viewer_id: string | null) 
   }
 }
 
+export function readMockViewCount(article: FeedCardFixture): number {
+  const rows = readJson<StoredView>(window.sessionStorage, VIEW_KEY)
+  return article.view_count + rows.filter((row) => row.article_id === article.id).reduce((sum, row) => sum + row.times, 0)
+}
+
 export function recordMockView(article: FeedCardFixture, viewer_key: string, is_author: boolean, is_moderation: boolean): { counted: boolean; view_count: number } {
   const rows = readJson<StoredView>(window.sessionStorage, VIEW_KEY)
   const extra = rows.filter((row) => row.article_id === article.id).reduce((sum, row) => sum + row.times, 0)

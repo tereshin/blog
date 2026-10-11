@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { articleKeys, mapFeedCards } from '@/entities/article'
-import type { ArticleViewerState } from '@/entities/article'
+import type { ArticleLoad, ArticleViewerState } from '@/entities/article'
 import { profileKeys } from '@/entities/profile'
 import { useViewer } from '@/entities/session'
 import { ApiError, http, sessionEvents } from '@/shared/api'
@@ -18,6 +18,10 @@ const stateSchema = z.object({
 type BookmarkTarget = { article_id: string; slug: string; count: number; is_bookmarked: boolean }
 
 function patch(queryClient: QueryClient, target: BookmarkTarget, next: { count: number; is_bookmarked: boolean }): void {
+  queryClient.setQueryData<ArticleLoad>(articleKeys.detail(target.slug), (data) => {
+    if (data?.status !== 'ok' || data.article.id !== target.article_id) return data
+    return { ...data, article: { ...data.article, bookmark_count: next.count } }
+  })
   queryClient.setQueriesData({ queryKey: profileKeys.all, predicate: (query) => query.queryKey[2] === 'articles' }, (data) =>
     mapFeedCards(data, (card) => (card.id === target.article_id ? { ...card, bookmark_count: next.count } : card)),
   )

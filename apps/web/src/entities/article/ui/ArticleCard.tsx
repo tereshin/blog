@@ -1,9 +1,11 @@
 import { Link } from 'react-router'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { cn, formatCount } from '@/shared/lib'
-import { Avatar, BookmarkIcon, Card, CommentIcon, EyeIcon, ShareIcon, Skeleton } from '@/shared/ui'
+import { cn } from '@/shared/lib'
+import { Avatar, Card, Skeleton } from '@/shared/ui'
 import type { ArticleCardModel } from '../model/article-types.ts'
+import { ArticleByline } from './ArticleByline.tsx'
+import { ArticleActions } from './ArticleActions.tsx'
 import { ArticleCardContext, useArticleCardModel } from './article-card-context.ts'
 
 type ArticleCardRootProps = { article: ArticleCardModel; children: ReactNode; className?: string }
@@ -12,7 +14,7 @@ type ArticleCardRootProps = { article: ArticleCardModel; children: ReactNode; cl
 function ArticleCardRoot({ article, children, className }: ArticleCardRootProps) {
   return (
     <ArticleCardContext value={article}>
-      <Card role="article" aria-labelledby={`article-title-${article.id}`} className={cn('gap-0', className)}>
+      <Card role="article" aria-labelledby={`article-title-${article.id}`} className={cn('gap-0 overflow-visible', className)}>
         {children}
       </Card>
     </ArticleCardContext>
@@ -35,35 +37,15 @@ type HeaderProps = {
 function Header({ follow, menu }: HeaderProps) {
   const article = useArticleCardModel()
   return (
-    <Card.Header className="flex flex-row items-center gap-3 px-5 pt-4">
-      <div className="relative shrink-0">
-        <Link to={article.author.href} className="block rounded-avatar outline-offset-2" aria-label={article.author.display_name}>
-          <Avatar src={article.author.avatar_url} name={article.author.display_name} size="md" />
-        </Link>
-        {article.topic.id ? (
-          <Link to={article.topic.href} className="absolute -bottom-1 -right-1 rounded-avatar outline-offset-2" aria-label={article.topic.title}>
-            <Avatar src={article.topic.avatar_url} name={article.topic.title} size="sm" className="size-5 ring-2 ring-surface" />
-          </Link>
-        ) : null}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Link to={article.author.href} className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline">
-          {article.author.display_name}
-        </Link>
-        <div className="flex min-w-0 items-center gap-1 text-sm text-muted">
-          <Link to={article.topic.href} className="truncate outline-offset-2 hover:underline">
-            {article.topic.title}
-          </Link>
-          <span aria-hidden="true">·</span>
-          <time dateTime={article.published_at} className="shrink-0">
-            {article.time_label}
-          </time>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 lg:gap-2">
-        {follow}
-        {menu}
-      </div>
+    <Card.Header className="flex flex-row items-center overflow-visible px-5 pt-4">
+      <ArticleByline
+        author={article.author}
+        topic={article.topic}
+        published_at={article.published_at}
+        time_label={article.time_label}
+        follow={follow}
+        menu={menu}
+      />
     </Card.Header>
   )
 }
@@ -129,34 +111,8 @@ type ActionsProps = {
 }
 
 function Actions({ bookmark, share }: ActionsProps) {
-  const { t, locale } = useT()
   const article = useArticleCardModel()
-  return (
-    <Card.Content className="flex flex-row items-center gap-4 px-4 pb-3 pt-2 text-base text-muted">
-      <Link
-        to={`${article.href}#comments`}
-        aria-label={t('article.comments', { count: article.comment_count, value: formatCount(article.comment_count, locale) })}
-        className="action-control outline-offset-2"
-      >
-        <span className="action-control__icon"><CommentIcon className="size-5" /></span>
-        <span>{formatCount(article.comment_count, locale)}</span>
-      </Link>
-      {bookmark ?? (
-        <span className="action-control">
-          <span className="action-control__icon"><BookmarkIcon className="size-5" /></span>
-          <span>{formatCount(article.bookmark_count, locale)}</span>
-        </span>
-      )}
-      {share ?? <ShareIcon className="size-5" />}
-      <span
-        className="ml-auto flex items-center gap-1 font-medium"
-        aria-label={t('article.views', { count: article.view_count, value: formatCount(article.view_count, locale) })}
-      >
-        <EyeIcon className="size-5" />
-        <span>{formatCount(article.view_count, locale)}</span>
-      </span>
-    </Card.Content>
-  )
+  return <ArticleActions article={article} bookmark={bookmark} share={share} />
 }
 
 /** Одна строка: маленький аватар и начало самого обсуждаемого комментария; без комментария не рендерится (FR-064). */

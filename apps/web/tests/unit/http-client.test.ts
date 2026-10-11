@@ -79,6 +79,21 @@ describe('http-client', () => {
     await expect(http.get('/v1/x', okSchema)).rejects.toMatchObject({ name: 'AbortError' })
   })
 
+  it('не отправляет чтение, отменённое в том же цикле, и не повторяет его', async () => {
+    const fetch_mock = mockFetch(Response.json({ ok: true }))
+    const controller = new AbortController()
+    const pending = http.get('/v1/x', okSchema, { signal: controller.signal })
+    controller.abort()
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    expect(fetch_mock).not.toHaveBeenCalled()
+  })
+
+  it('не отправляет чтение с уже отменённым сигналом', async () => {
+    const fetch_mock = mockFetch(Response.json({ ok: true }))
+    await expect(http.get('/v1/x', okSchema, { signal: AbortSignal.abort() })).rejects.toMatchObject({ name: 'AbortError' })
+    expect(fetch_mock).not.toHaveBeenCalled()
+  })
+
   it('ответ не по схеме отклоняется на границе', async () => {
     mockFetch(Response.json({ ok: 'yes' }))
     await expect(http.get('/v1/x', okSchema)).rejects.toThrow()

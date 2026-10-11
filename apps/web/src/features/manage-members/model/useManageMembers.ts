@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { restrictMember, searchMembers, setMemberPublishing, setMemberRole, unrestrictMember } from '../api/users.ts'
+import {
+  restrictMember,
+  searchMembers,
+  setMemberPublishing,
+  setMemberRole,
+  unrestrictMember,
+} from '../api/users.ts'
 import type { AdminUser } from '../api/users.ts'
 
 export const memberKeys = {
@@ -23,9 +29,14 @@ export function useManageMembers() {
     )
   }
   return {
-    setRole: useMutation({ mutationFn: (input: { id: string; role: 'member' | 'admin' }) => setMemberRole(input.id, input.role), onSuccess: refresh }),
+    setRole: useMutation({
+      mutationFn: (input: { id: string; role: 'member' | 'admin' }) =>
+        setMemberRole(input.id, input.role),
+      onSuccess: refresh,
+    }),
     setPublishing: useMutation({
-      mutationFn: (input: { id: string; can_publish: boolean }) => setMemberPublishing(input.id, input.can_publish),
+      mutationFn: (input: { id: string; can_publish: boolean }) =>
+        setMemberPublishing(input.id, input.can_publish),
       onSuccess: refresh,
     }),
     restrict: useMutation({ mutationFn: restrictMember, onSuccess: refresh }),

@@ -1,28 +1,43 @@
 import { useEffect, useRef } from 'react'
-import { Link } from 'react-router'
+import { useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { MessageBubble, conversationKeys, markConversationRead, useMessages } from '@/entities/conversation'
+import {
+  MessageBubble,
+  conversationKeys,
+  markConversationRead,
+  useMessages,
+} from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
 import { useRequireSession } from '@/features/login'
 import { MessageComposer } from '@/features/send-message'
 import { useT } from '@/shared/i18n'
-import { Button, CommentIcon, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import {
+  ArrowLeftIcon,
+  Avatar,
+  Button,
+  Card,
+  CommentIcon,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  Tooltip,
+} from '@/shared/ui'
 import { useConversationLive } from '../model/useConversationLive.ts'
 
-type Peer = { user_id: string; display_name: string }
+type Peer = { user_id: string; display_name: string; avatar_url?: string | null }
 
 type ConversationThreadProps = {
   conversation_id: string | null
   peer: Peer | null
-  show_back: boolean
 }
 
 /** Открытый диалог: подгрузка вверх, поле ввода и отметка прочитанного. */
-export function ConversationThread({ conversation_id, peer, show_back }: ConversationThreadProps) {
+export function ConversationThread({ conversation_id, peer }: ConversationThreadProps) {
   const { t } = useT()
   const { viewer } = useViewer()
   const requireSession = useRequireSession()
   const query_client = useQueryClient()
+  const navigate = useNavigate()
   const messages = useMessages(conversation_id)
   useConversationLive(conversation_id)
   const end_ref = useRef<HTMLDivElement>(null)
@@ -49,16 +64,34 @@ export function ConversationThread({ conversation_id, peer, show_back }: Convers
   }, [conversation_id, incoming?.id, query_client])
 
   return (
-    <section aria-label={peer?.display_name || t('messages.title')} className="flex min-h-0 flex-1 flex-col">
-      <header className="flex items-center gap-2 pb-3">
-        {show_back ? (
-          <Link to="/messages" className="text-sm text-accent outline-offset-2">
-            {t('messages.back')}
-          </Link>
-        ) : null}
-        <h1 className="truncate text-base font-medium">{peer?.display_name || t('messages.title')}</h1>
-      </header>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+    <Card
+      role="region"
+      aria-label={peer?.display_name || t('messages.title')}
+      className="flex min-h-0 w-full flex-1 flex-col gap-0 overflow-hidden"
+    >
+      <Card.Header className="flex shrink-0 flex-row items-center gap-3 border-b border-separator px-4 py-4">
+        <Tooltip>
+          <Button
+            isIconOnly
+            variant="ghost"
+            aria-label={t('messages.back')}
+            onPress={() => void navigate('/messages')}
+          >
+            <ArrowLeftIcon />
+          </Button>
+          <Tooltip.Content>{t('messages.back')}</Tooltip.Content>
+        </Tooltip>
+        <Avatar
+          src={peer?.avatar_url}
+          name={peer?.display_name || t('messages.title')}
+          size="sm"
+          className="shrink-0"
+        />
+        <h1 className="min-w-0 truncate text-base font-semibold">
+          {peer?.display_name || t('messages.title')}
+        </h1>
+      </Card.Header>
+      <Card.Content className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-5 min-[768px]:px-5">
         {messages.status === 'ok' && messages.has_next ? (
           <Button variant="ghost" size="sm" className="self-center" onPress={messages.fetchNext}>
             {t('messages.load_earlier')}
@@ -70,20 +103,36 @@ export function ConversationThread({ conversation_id, peer, show_back }: Convers
             <Skeleton className="ml-auto h-10 w-1/2" />
           </div>
         ) : null}
-        {messages.status === 'error' ? <ErrorState title={t('messages.error')} onRetry={messages.refetch} /> : null}
+        {messages.status === 'error' ? (
+          <ErrorState title={t('messages.error')} onRetry={messages.refetch} />
+        ) : null}
         {messages.status === 'empty' || messages.status === 'idle' ? (
           <EmptyState
             title={t('messages.thread_empty')}
             description={t('messages.thread_empty_hint')}
             icon={<CommentIcon width={28} height={28} />}
+            className="my-auto min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none"
           />
         ) : null}
         {items.map((message) => (
           <MessageBubble key={message.id} message={message} is_own={message.sender_id === my_id} />
         ))}
         <div ref={end_ref} />
-      </div>
-      <MessageComposer conversation_id={conversation_id} peer_user_id={peer?.user_id ?? null} requireSession={requireSession} />
-    </section>
+      </Card.Content>
+      <Card.Footer className="shrink-0 border-t border-separator px-4 py-3 min-[768px]:px-5">
+        <MessageComposer
+          conversation_id={conversation_id}
+          peer_user_id={peer?.user_id ?? null}
+          requireSession={requireSession}
+          onSent={(message) => {
+            if (!conversation_id)
+              void navigate(`/messages/${message.conversation_id}`, {
+                replace: true,
+                state: { peer },
+              })
+          }}
+        />
+      </Card.Footer>
+    </Card>
   )
 }

@@ -30,9 +30,12 @@ export function FeedItem({ article, viewer_state = EMPTY_VIEWER_STATE, slots, on
       <ArticleCard.Lead>{lead}</ArticleCard.Lead>
       <ArticleCard.Header follow={slots.renderFollow?.(article)} menu={slots.renderMenu?.(article)} />
       <ArticleCard.Title />
-      <ArticleCard.Excerpt />
-      <ArticleCard.Image />
-      <ArticleCard.Expand>{slots.renderExpand?.(article, onExpanded ?? (() => undefined))}</ArticleCard.Expand>
+      {slots.renderExpand ? slots.renderExpand(article, onExpanded ?? (() => undefined)) : (
+        <>
+          <ArticleCard.Excerpt />
+          <ArticleCard.Image />
+        </>
+      )}
       <ArticleCard.Reactions>{slots.renderReactions?.(article, viewer_state)}</ArticleCard.Reactions>
       <ArticleCard.Actions bookmark={slots.renderBookmark?.(article, viewer_state)} share={slots.renderShare?.(article)} />
       <ArticleCard.CommentPeek />

@@ -104,9 +104,9 @@ test.describe('Общий каркас профиля и темы', () => {
     await expect(article.getByRole('button', { name: 'Убрать из закладок' })).toHaveText(
       String(bookmark_data.bookmark_count),
     )
-    await article.getByRole('link', { name: 'Показать полностью' }).click()
+    await article.getByRole('button', { name: 'Показать полностью' }).click()
     await expect(article.getByText('Полный текст статьи для проверки раскрытия.')).toBeVisible()
-    await article.getByRole('link', { name: 'Свернуть' }).click()
+    await article.getByRole('button', { name: 'Свернуть' }).click()
     await expect(article.getByText('Полный текст статьи для проверки раскрытия.')).toHaveCount(0)
   })
 
@@ -127,7 +127,7 @@ test.describe('Общий каркас профиля и темы', () => {
     await expect(page).toHaveURL(/\/u\/new-reader$/)
     await expect(page.getByRole('heading', { name: 'Роман Новый', exact: true })).toBeVisible()
     await expect(page.getByText('Новое описание', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Меню учётной записи' }).click()
+    await page.getByRole('link', { name: 'Меню учётной записи' }).click()
     await expect(page.getByRole('menuitem', { name: 'Роман Новый', exact: true })).toBeVisible()
     await page.keyboard.press('Escape')
   })

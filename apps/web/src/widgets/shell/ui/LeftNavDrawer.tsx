@@ -24,7 +24,7 @@ export function LeftNavDrawer({ is_open, onOpenChange, children }: LeftNavDrawer
   if (!is_drawer) return null
 
   return (
-    <Drawer id="shell-nav" is_open={is_open} onOpenChange={onOpenChange} placement="left" aria-label={t('shell.navigation')}>
+    <Drawer id="shell-nav" is_open={is_open} onOpenChange={onOpenChange} placement="left" aria-label={t('shell.navigation')} className="p-0">
       <Drawer.Body>
         <nav aria-label={t('shell.navigation')}>{children}</nav>
       </Drawer.Body>

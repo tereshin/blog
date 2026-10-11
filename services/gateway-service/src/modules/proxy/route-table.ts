@@ -21,6 +21,7 @@ export const ROUTE_TABLE: readonly RouteEntry[] = [
   { prefix: '/v1/feed', service: 'content' },
   { prefix: '/v1/articles', service: 'content' },
   { prefix: '/v1/articles', suffix: '/comments', service: 'discussion' },
+  { prefix: '/v1/articles', suffix: '/views', service: 'discussion' },
   { prefix: '/v1/topics', service: 'content' },
   { prefix: '/v1/profiles', service: 'content' },
   { prefix: '/v1/follows', service: 'content' },

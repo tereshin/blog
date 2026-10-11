@@ -35,12 +35,18 @@ export function ShellLayout() {
   const background_path = previous.pathname
   const background = previous.outlet
   const skeleton = skeletonOf(useMatches())
+  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
+  const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
   const setNavOpen = useShellStore((state) => state.setNavOpen)
 
   // Панель навигации закрывается переходом; центр нового адреса начинается сверху (в `Shell` по `scroll_key`).
   useEffect(() => {
     setNavOpen(false)
-  }, [pathname, setNavOpen])
+    if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+      setHeaderCenter({ kind: 'empty' })
+      setArticleTopicId(null)
+    }
+  }, [pathname, setNavOpen, setHeaderCenter, setArticleTopicId])
 
   return (
     <>

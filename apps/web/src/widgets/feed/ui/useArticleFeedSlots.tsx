@@ -1,4 +1,4 @@
-import { ArticleCardExpand } from '@/entities/article'
+import { ArticleCard, ArticleCardExpand } from '@/entities/article'
 import { useViewer } from '@/entities/session'
 import { BookmarkControl } from '@/features/bookmark'
 import { FollowButton } from '@/features/follow'
@@ -38,7 +38,10 @@ export function useArticleFeedSlots(): FeedSlots {
       />
     ),
     renderExpand: (article, onExpanded) => (
-      <ArticleCardExpand slug={article.slug} onExpanded={onExpanded} />
+      <ArticleCardExpand slug={article.slug} has_more_content={article.has_more_content ?? true} onExpanded={onExpanded}>
+        <ArticleCard.Excerpt />
+        <ArticleCard.Image />
+      </ArticleCardExpand>
     ),
     renderMenu: (article) => (
       <ArticleOverflowMenu

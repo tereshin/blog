@@ -11,6 +11,7 @@ export type ArticleCardModel = {
   slug: string
   title: string
   excerpt: string
+  has_more_content?: boolean
   first_image_url: string | null
   published_at: string
   /** `HH:mm` для сегодняшней статьи, иначе `дд.мм.гггг` (FR-061). */

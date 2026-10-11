@@ -64,6 +64,7 @@ function toCard(row: ArticleRow, profiles_by_id: Map<string, { display_name: str
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
+    has_more_content: row.has_more_content ?? true,
     first_image_url: row.first_image_url,
     published_at: row.published_at.toISOString(),
     author: authorOf(row),

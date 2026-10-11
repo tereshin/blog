@@ -19,7 +19,9 @@ const pageSchema = z.object({
 export type AdminUser = z.infer<typeof adminUserSchema>
 
 export function searchMembers(q: string, signal?: AbortSignal): Promise<AdminUser[]> {
-  return http.get('/v1/users', pageSchema, { query: { q }, ...(signal ? { signal } : {}) }).then((page) => page.items)
+  return http
+    .get('/v1/users', pageSchema, { query: { q }, ...(signal ? { signal } : {}) })
+    .then((page) => page.items)
 }
 
 export function setMemberRole(id: string, role: 'member' | 'admin'): Promise<AdminUser> {

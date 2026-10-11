@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { articleKeys, getArticle, useArticleStates } from '@/entities/article'
 import { useViewer } from '@/entities/session'
+import { BookmarkControl } from '@/features/bookmark'
 import { FollowButton } from '@/features/follow'
 import { ReactionControl } from '@/features/react'
+import { ArticleModerationActions } from '@/features/moderate-content'
 import { ShareButton } from '@/features/share-article'
 import { useT } from '@/shared/i18n'
 import { readFeedReturn } from '@/shared/lib'
@@ -18,6 +20,7 @@ import { ArticleDiscussion } from './ArticleDiscussion.tsx'
 export default function ArticlePage() {
   const { t } = useT()
   const { slug = '' } = useParams()
+  const [search_params] = useSearchParams()
   const { viewer, is_admin } = useViewer()
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
@@ -35,6 +38,7 @@ export default function ArticlePage() {
   }, [article])
   const viewer_states = useArticleStates(article ? [article.id] : [], viewer.status === 'member')
   const mine = article ? (viewer_states.get(article.id)?.my_reaction ?? null) : null
+  const is_bookmarked = article ? (viewer_states.get(article.id)?.is_bookmarked ?? false) : false
 
   useEffect(() => {
     setHeaderCenter({ kind: 'back', title: article?.title ?? '' })
@@ -79,7 +83,7 @@ export default function ArticlePage() {
         ) : null}
         <ArticleView.Title />
         <ArticleView.Body />
-        <ArticleView.Reactions share={<ShareButton slug={loaded.slug} />}>
+        <ArticleView.Reactions>
           <ReactionControl
             target_type="article"
             target_id={loaded.id}
@@ -88,7 +92,21 @@ export default function ArticlePage() {
             my_reaction={mine}
           />
         </ArticleView.Reactions>
+        <ArticleView.Actions
+          bookmark={
+            <BookmarkControl
+              article_id={loaded.id}
+              slug={loaded.slug}
+              count={loaded.bookmark_count}
+              is_bookmarked={is_bookmarked}
+            />
+          }
+          share={<ShareButton slug={loaded.slug} />}
+        />
       </ArticleView>
+      {is_admin && search_params.get('from') === 'moderation' ? <div className="px-4">
+        <ArticleModerationActions article_id={loaded.id} status={loaded.status} />
+      </div> : null}
       <ArticleView.Discussion>
         <ArticleDiscussion article={loaded} />
       </ArticleView.Discussion>

@@ -4,17 +4,18 @@ import { useConversations } from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
 import { useLoginDialog } from '@/features/login'
 import { useT } from '@/shared/i18n'
-import { useMediaQuery } from '@/shared/lib'
 import { Button, CommentIcon, EmptyState } from '@/shared/ui'
 import { useShellStore } from '@/widgets/shell'
 
 // Гость видит только просьбу войти: список и поле подгружаются, когда зритель уже участник.
-const ConversationList = lazy(() => import('@/widgets/conversation').then((module) => ({ default: module.ConversationList })))
-const ConversationThread = lazy(() => import('@/widgets/conversation').then((module) => ({ default: module.ConversationThread })))
+const ConversationList = lazy(() =>
+  import('@/widgets/conversation').then((module) => ({ default: module.ConversationList })),
+)
+const ConversationThread = lazy(() =>
+  import('@/widgets/conversation').then((module) => ({ default: module.ConversationThread })),
+)
 
-const SPLIT_QUERY = '(min-width: 768px)'
-
-type PeerState = { user_id: string; display_name: string }
+type PeerState = { user_id: string; display_name: string; avatar_url?: string | null }
 
 function isPeerState(value: unknown): value is { peer: PeerState } {
   if (!value || typeof value !== 'object') return false
@@ -29,7 +30,6 @@ export default function MessagesPage() {
   const { viewer } = useViewer()
   const openLogin = useLoginDialog((state) => state.open)
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
-  const is_split = useMediaQuery(SPLIT_QUERY)
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
@@ -40,11 +40,17 @@ export default function MessagesPage() {
   const conversation_id = id ?? null
   const listed =
     conversations.status === 'ok'
-      ? conversations.items.find((item) => item.id === conversation_id || (to !== null && item.peer.user_id === to))
+      ? conversations.items.find(
+          (item) => item.id === conversation_id || (to !== null && item.peer.user_id === to),
+        )
       : undefined
   const from_state = isPeerState(location.state) ? location.state.peer : null
   const peer = listed
-    ? { user_id: listed.peer.user_id, display_name: listed.peer.display_name }
+    ? {
+        user_id: listed.peer.user_id,
+        display_name: listed.peer.display_name,
+        avatar_url: listed.peer.avatar_url,
+      }
     : from_state
       ? from_state
       : to
@@ -54,7 +60,9 @@ export default function MessagesPage() {
           : null
   const show_thread = Boolean(conversation_id || to)
   const existing_id =
-    to && conversations.status === 'ok' ? conversations.items.find((item) => item.peer.user_id === to)?.id : undefined
+    to && conversations.status === 'ok'
+      ? conversations.items.find((item) => item.peer.user_id === to)?.id
+      : undefined
 
   useEffect(() => {
     setHeaderCenter({ kind: 'empty' })
@@ -68,7 +76,12 @@ export default function MessagesPage() {
 
   if (viewer.status === 'guest') {
     return (
-      <EmptyState title={t('messages.sign_in')} description={t('messages.sign_in_hint')} icon={<CommentIcon width={28} height={28} />} className="py-16">
+      <EmptyState
+        title={t('messages.sign_in')}
+        description={t('messages.sign_in_hint')}
+        icon={<CommentIcon width={28} height={28} />}
+        className="py-16"
+      >
         <Button variant="primary" onPress={() => openLogin('required')}>
           {t('header.sign_in')}
         </Button>
@@ -77,15 +90,16 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-5.5rem)] min-h-0 flex-col gap-4 p-4 min-[768px]:grid min-[768px]:grid-cols-[18rem_minmax(0,1fr)] min-[768px]:p-0">
-      {is_split || !show_thread ? <ConversationList selected_id={conversation_id} /> : null}
-      {is_split || show_thread ? (
-        show_thread && peer ? (
-          <ConversationThread conversation_id={conversation_id} peer={peer} show_back={!is_split} />
-        ) : (
-          <EmptyState title={t('messages.pick')} description={t('messages.pick_hint')} icon={<CommentIcon width={28} height={28} />} className="py-16" />
-        )
-      ) : null}
+    <div className="mx-auto flex h-[calc(100dvh-5.5rem-var(--tab-bar-space))] min-h-0 w-full max-w-[640px] flex-col px-3 min-[768px]:px-0">
+      {show_thread && peer ? (
+        <ConversationThread
+          key={conversation_id ?? to}
+          conversation_id={conversation_id}
+          peer={peer}
+        />
+      ) : (
+        <ConversationList selected_id={conversation_id} />
+      )}
     </div>
   )
 }

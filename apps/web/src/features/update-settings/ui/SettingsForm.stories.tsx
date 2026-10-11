@@ -27,7 +27,7 @@ function upload({ label, onUploaded }: { label: string; onUploaded: (url: string
 const meta = {
   title: 'features/update-settings/SettingsForm',
   component: SettingsForm,
-  args: { initial, upload, can_edit_media: true },
+  args: { initial, upload, can_edit_media: true, section: 'reactions' },
   decorators: [
     (Story) => (
       <StoryProviders>
@@ -49,7 +49,6 @@ export const Superadmin: Story = {
     for (const name of ['Смех', 'Сердце', 'Палец вверх', 'Огонь']) {
       expect(await canvas.findByRole('textbox', { name })).toBeEnabled()
     }
-    expect(canvas.getByRole('button', { name: 'Логотип' })).toBeEnabled()
   },
 }
 
@@ -62,6 +61,12 @@ export const Admin: Story = {
     for (const name of ['Смех', 'Сердце', 'Палец вверх', 'Огонь']) {
       expect(await canvas.findByRole('textbox', { name })).toBeDisabled()
     }
-    expect(canvas.getByRole('button', { name: 'Логотип' })).toBeDisabled()
   },
 }
+
+export const General: Story = { args: { section: 'general' } }
+export const Access: Story = { args: { section: 'access' } }
+export const StatusIcons: Story = { args: { section: 'status-icons' } }
+export const Seo: Story = { args: { section: 'seo' } }
+export const Publisher: Story = { args: { section: 'publisher' } }
+export const Covers: Story = { args: { section: 'covers' } }

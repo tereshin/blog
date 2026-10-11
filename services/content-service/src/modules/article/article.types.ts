@@ -5,6 +5,7 @@ export type ArticleRow = {
   slug: string
   title: string
   excerpt: string
+  has_more_content?: boolean
   first_image_url: string | null
   blocks: unknown
   published_at: Date | null

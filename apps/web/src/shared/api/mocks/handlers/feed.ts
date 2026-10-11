@@ -5,6 +5,7 @@ import { publishedFeedCards } from './articles-store.ts'
 import { promotedIds } from './engagement-store.ts'
 import { hiddenArticleIds } from './moderation-store.ts'
 import { readMockViewer } from './session.ts'
+import { readMockViewCount } from './discussion-store.ts'
 
 export const MOCK_FEED_KEY = 'mock_feed'
 const PAGE_SIZE = 20
@@ -46,7 +47,7 @@ export const feedHandlers = [
     }
     const items = select(mode)
     const offset = Number(url.searchParams.get('cursor') ?? 0) || 0
-    const page = items.slice(offset, offset + PAGE_SIZE)
+    const page = items.slice(offset, offset + PAGE_SIZE).map((article) => ({ ...article, view_count: readMockViewCount(article) }))
     const next = offset + PAGE_SIZE
     return HttpResponse.json({ items: page, next_cursor: next < items.length ? String(next) : null })
   }),

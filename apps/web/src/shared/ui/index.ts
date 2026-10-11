@@ -35,8 +35,10 @@ export {
   ChevronDownIcon,
   CommentIcon,
   EyeIcon,
+  HomeIcon,
   InboxIcon,
   MenuIcon,
+  MessageIcon,
   MoreIcon,
   PenIcon,
   SearchIcon,
@@ -44,3 +46,7 @@ export {
 } from './icons.tsx'
 
 export { IdentityHeader } from './IdentityHeader.tsx'
+export { Input } from '@heroui/react/input'
+export { TextArea } from '@heroui/react/textarea'
+export { SelectField } from './SelectField.tsx'
+export { ToggleField } from './ToggleField.tsx'

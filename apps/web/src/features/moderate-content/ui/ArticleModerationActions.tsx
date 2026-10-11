@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useT } from '@/shared/i18n'
 import { Button, Dialog } from '@/shared/ui'
-import { useModerateArticle, useModerateComment } from '../model/useModerateArticle.ts'
+import { useModerateArticle } from '../model/useModerateArticle.ts'
 
 type ArticleActionsProps = {
   article_id: string
@@ -16,18 +16,39 @@ export function ArticleModerationActions({ article_id, status }: ArticleActionsP
   return (
     <div className="flex flex-wrap gap-2">
       {status === 'published' ? (
-        <Button variant="secondary" isDisabled={actions.hide.isPending} onPress={() => actions.hide.mutate(article_id)}>
+        <Button
+          variant="secondary"
+          isDisabled={
+            actions.hide.isPending || actions.restore.isPending || actions.remove.isPending
+          }
+          onPress={() => actions.hide.mutate(article_id)}
+        >
           {t('admin.moderation.hide')}
         </Button>
       ) : null}
       {status === 'hidden' ? (
-        <Button variant="secondary" isDisabled={actions.restore.isPending} onPress={() => actions.restore.mutate(article_id)}>
+        <Button
+          variant="secondary"
+          isDisabled={
+            actions.hide.isPending || actions.restore.isPending || actions.remove.isPending
+          }
+          onPress={() => actions.restore.mutate(article_id)}
+        >
           {t('admin.moderation.restore')}
         </Button>
       ) : null}
-      <Button variant="danger" onPress={() => setConfirmDelete(true)}>
+      <Button
+        variant="danger"
+        isDisabled={actions.hide.isPending || actions.restore.isPending || actions.remove.isPending}
+        onPress={() => setConfirmDelete(true)}
+      >
         {t('admin.moderation.delete')}
       </Button>
+      {actions.hide.isError || actions.restore.isError || actions.remove.isError ? (
+        <p role="alert" className="w-full text-sm text-danger">
+          {t('error.unknown')}
+        </p>
+      ) : null}
       <Dialog is_open={confirm_delete} onOpenChange={setConfirmDelete}>
         <Dialog.Header>
           <Dialog.Heading>{t('admin.moderation.delete')}</Dialog.Heading>
@@ -43,39 +64,13 @@ export function ArticleModerationActions({ article_id, status }: ArticleActionsP
             variant="danger"
             isDisabled={actions.remove.isPending}
             onPress={() => {
-              actions.remove.mutate(article_id)
-              setConfirmDelete(false)
+              actions.remove.mutate(article_id, { onSuccess: () => setConfirmDelete(false) })
             }}
           >
             {t('admin.moderation.delete')}
           </Button>
         </Dialog.Footer>
       </Dialog>
-    </div>
-  )
-}
-
-type CommentActionsProps = { article_id: string; comment_id: string; status: 'visible' | 'hidden' | 'deleted' | 'pending' }
-
-/** Скрыть, вернуть или удалить комментарий. */
-export function CommentModerationActions({ article_id, comment_id, status }: CommentActionsProps) {
-  const { t } = useT()
-  const actions = useModerateComment(article_id)
-  if (status === 'deleted' || status === 'pending') return null
-  return (
-    <div className="flex flex-wrap gap-2">
-      {status === 'visible' ? (
-        <Button variant="ghost" isDisabled={actions.hide.isPending} onPress={() => actions.hide.mutate(comment_id)}>
-          {t('admin.moderation.hide')}
-        </Button>
-      ) : (
-        <Button variant="ghost" isDisabled={actions.restore.isPending} onPress={() => actions.restore.mutate(comment_id)}>
-          {t('admin.moderation.restore')}
-        </Button>
-      )}
-      <Button variant="ghost" isDisabled={actions.remove.isPending} onPress={() => actions.remove.mutate(comment_id)}>
-        {t('admin.moderation.delete')}
-      </Button>
     </div>
   )
 }

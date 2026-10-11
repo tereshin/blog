@@ -26,11 +26,14 @@ export function draftsFrom(appearances: ReactionAppearances): AppearanceDraft[] 
   }))
 }
 
-export function appearanceErrors(drafts: readonly AppearanceDraft[]): Partial<Record<ReactionKind, 'emoji' | 'image'>> {
+export function appearanceErrors(
+  drafts: readonly AppearanceDraft[],
+): Partial<Record<ReactionKind, 'emoji' | 'image'>> {
   const errors: Partial<Record<ReactionKind, 'emoji' | 'image'>> = {}
   for (const item of drafts) {
     if (item.presentation === 'emoji' && !isSingleEmoji(item.emoji)) errors[item.kind] = 'emoji'
-    if (item.presentation === 'image' && item.image_url.trim().length === 0) errors[item.kind] = 'image'
+    if (item.presentation === 'image' && item.image_url.trim().length === 0)
+      errors[item.kind] = 'image'
   }
   return errors
 }

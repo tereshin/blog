@@ -19,7 +19,7 @@ export function BackToTop() {
       variant="secondary"
       isIconOnly
       aria-label={t('common.back_to_top')}
-      className="fixed bottom-4 left-4 z-30 size-11 rounded-full shadow-lg"
+      className="fixed bottom-[max(1rem,var(--tab-bar-space))] left-4 z-30 size-11 rounded-full shadow-lg"
       onPress={scrollShellToTop}
     >
       <ArrowUpIcon />

@@ -1,11 +1,12 @@
 import { useAppearance } from '@/entities/session'
 import { useT } from '@/shared/i18n'
+import { cn } from '@/shared/lib'
 import { BaseIcon, Button, Menu } from '@/shared/ui'
 
-type AppearanceToggleProps = { as?: 'button' | 'item' }
+type AppearanceToggleProps = { as?: 'button' | 'item'; className?: string }
 
 /** Переключает тёмный и светлый вид. Подпись называет вид, который включится. */
-export function AppearanceToggle({ as = 'button' }: AppearanceToggleProps) {
+export function AppearanceToggle({ as = 'button', className }: AppearanceToggleProps) {
   const { t } = useT()
   const { theme, setAppearance } = useAppearance()
   const next = theme === 'dark' ? 'light' : 'dark'
@@ -21,15 +22,15 @@ export function AppearanceToggle({ as = 'button' }: AppearanceToggleProps) {
     <Button
       variant="ghost"
       aria-label={label}
-      className="max-sm:size-9 max-sm:min-w-9 max-sm:p-0"
+      className={cn('h-auto', className)}
       onPress={() => setAppearance(next)}
     >
       {next === 'light' ? (
-        <BaseIcon name="sun" style="line" size={20} className="sm:hidden" />
+        <BaseIcon name="sun" style="line" size={20} />
       ) : (
-        <BaseIcon name="moon" style="line" size={20} className="sm:hidden" />
+        <BaseIcon name="moon" style="line" size={20} />
       )}
-      <span className="max-sm:sr-only">{label}</span>
+      <span>{label}</span>
     </Button>
   )
 }

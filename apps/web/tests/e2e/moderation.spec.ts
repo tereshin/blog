@@ -15,7 +15,7 @@ test.describe('Модерация', () => {
 
   test('суперадминистратор находит участника по почте', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'superadmin'))
-    await page.goto('/admin/settings')
+    await page.goto('/admin/members')
     await expect(page.getByText('Найти участника')).toBeVisible({ timeout: 15_000 })
     await page.getByRole('textbox', { name: 'Найти участника' }).fill('reader@example.test')
     await page.getByRole('button', { name: 'Открыть', exact: true }).click()

@@ -70,7 +70,7 @@ test('моя лента сохраняет просмотренные посты
   const card = main.getByRole('article').first()
   const title = await card.getByRole('heading', { level: 2 }).innerText()
   const marked = page.waitForResponse((response) => response.url().includes('/feed-seen') && response.request().method() === 'PUT')
-  await card.getByRole('link', { name: 'Показать полностью' }).click()
+  await card.getByRole('button', { name: 'Показать полностью' }).click()
   await marked
   await card.getByRole('heading', { level: 2 }).getByRole('link').click()
   await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()

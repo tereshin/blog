@@ -12,7 +12,9 @@ const reportSchema = z.object({
 })
 
 const moderationItemSchema = z.object({
-  article: feedCardDtoSchema.extend({ status: z.enum(['draft', 'published', 'hidden', 'deleted']) }),
+  article: feedCardDtoSchema.extend({
+    status: z.enum(['draft', 'published', 'hidden', 'deleted']),
+  }),
   reports: z.array(reportSchema),
 })
 
@@ -21,19 +23,45 @@ const moderationPageSchema = z.object({
   next_cursor: z.string().nullable(),
 })
 
-const statusSchema = z.object({ id: z.string(), status: z.enum(['draft', 'published', 'hidden', 'deleted']) })
+const statusSchema = z.object({
+  id: z.string(),
+  status: z.enum(['draft', 'published', 'hidden', 'deleted']),
+})
 
 export type ModerationItem = {
   article: ArticleCardModel & { status: 'draft' | 'published' | 'hidden' | 'deleted' }
-  reports: { id: string; article_id: string; reporter_id: string; created_at: string; status: 'open' | 'reviewed' }[]
+  reports: {
+    id: string
+    article_id: string
+    reporter_id: string
+    created_at: string
+    status: 'open' | 'reviewed'
+  }[]
 }
 
-export async function getModerationQueue(filter: 'reported' | 'hidden', signal?: AbortSignal): Promise<ModerationItem[]> {
-  const page = await http.get('/v1/moderation/articles', moderationPageSchema, { query: { filter }, ...(signal ? { signal } : {}) })
-  return page.items.map((item) => ({
-    article: { ...toArticleCard(item.article), status: item.article.status },
-    reports: item.reports,
-  }))
+export async function getModerationQueuePage(
+  filter: 'reported' | 'hidden',
+  cursor?: string,
+  signal?: AbortSignal,
+) {
+  const page = await http.get('/v1/moderation/articles', moderationPageSchema, {
+    query: { filter, cursor },
+    ...(signal ? { signal } : {}),
+  })
+  return {
+    next_cursor: page.next_cursor,
+    items: page.items.map((item) => ({
+      article: { ...toArticleCard(item.article), status: item.article.status },
+      reports: item.reports,
+    })),
+  }
+}
+
+export async function getModerationQueue(
+  filter: 'reported' | 'hidden',
+  signal?: AbortSignal,
+): Promise<ModerationItem[]> {
+  return (await getModerationQueuePage(filter, undefined, signal)).items
 }
 
 export function hideArticle(article_id: string): Promise<{ id: string; status: string }> {

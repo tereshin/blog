@@ -17,7 +17,8 @@ type ShellProps = {
 /**
  * Полоса 1280 по центру от этой ширины. Прокручивается документ.
  * Шапка и видимые столбцы липнут к окну. Правый столбец есть только от 1280px.
- * От 768px левый столбец остаётся. Ниже 768px одна колонка, левая навигация — из шапки.
+ * От 768px левый столбец остаётся. Ниже 768px одна колонка, левая навигация — из шапки,
+ * действия шапки — плавающая панель внизу; центр оставляет под ней место (`--tab-bar-space`).
  * Видимость столбцов задаёт CSS, не скрипт после гидрации.
  */
 export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
@@ -52,7 +53,7 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
         >
           {left}
         </nav>
-        <main className="min-w-0 pt-4">{center}</main>
+        <main className="min-w-0 pt-4 pb-[var(--tab-bar-space)]">{center}</main>
         <aside
           aria-label={t('shell.popular_comments')}
           className="sticky pt-4 top-14 hidden w-[320px] max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[1280px]:block"

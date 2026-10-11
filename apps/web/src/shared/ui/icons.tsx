@@ -42,6 +42,18 @@ export function BookmarkIcon({ style, icon_style = 'line', ...props }: IconProps
     : <BaseIcon name="bookmark" style="line" size={20} {...props} svg_style={style} />
 }
 
+export function HomeIcon({ style, icon_style = 'line', ...props }: IconProps & { icon_style?: 'line' | 'fill' }) {
+  return icon_style === 'fill'
+    ? <BaseIcon name="home_4" style="fill" size={20} {...props} svg_style={style} />
+    : <BaseIcon name="home_4" style="line" size={20} {...props} svg_style={style} />
+}
+
+export function MessageIcon({ style, icon_style = 'line', ...props }: IconProps & { icon_style?: 'line' | 'fill' }) {
+  return icon_style === 'fill'
+    ? <BaseIcon name="message_1" style="fill" size={20} {...props} svg_style={style} />
+    : <BaseIcon name="message_1" style="line" size={20} {...props} svg_style={style} />
+}
+
 export function ShareIcon({ style, ...props }: IconProps) {
   return <BaseIcon name="forward_2" style="line" size={20} {...props} svg_style={style} />
 }

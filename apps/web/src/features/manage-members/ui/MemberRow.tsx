@@ -1,5 +1,5 @@
 import { useT } from '@/shared/i18n'
-import { Button } from '@/shared/ui'
+import { Button, ToggleField } from '@/shared/ui'
 import { useManageMembers } from '../model/useManageMembers.ts'
 import type { AdminUser } from '../api/users.ts'
 
@@ -8,6 +8,16 @@ type MemberRowProps = { user: AdminUser }
 export function MemberRow({ user }: MemberRowProps) {
   const { t } = useT()
   const actions = useManageMembers()
+  const is_pending =
+    actions.setRole.isPending ||
+    actions.setPublishing.isPending ||
+    actions.restrict.isPending ||
+    actions.unrestrict.isPending
+  const has_error =
+    actions.setRole.isError ||
+    actions.setPublishing.isError ||
+    actions.restrict.isError ||
+    actions.unrestrict.isError
   const locked = user.role === 'superadmin'
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-separator px-3 py-2 text-sm">
@@ -15,29 +25,48 @@ export function MemberRow({ user }: MemberRowProps) {
       <span className="text-muted">#{user.public_number}</span>
       {locked ? <span>{t('admin.site_admin_only')}</span> : null}
       {!locked && user.role !== 'admin' ? (
-        <Button variant="secondary" onPress={() => actions.setRole.mutate({ id: user.id, role: 'admin' })}>
+        <Button
+          isDisabled={is_pending}
+          variant="secondary"
+          onPress={() => actions.setRole.mutate({ id: user.id, role: 'admin' })}
+        >
           {t('admin.members.role_admin')}
         </Button>
       ) : null}
       {!locked && user.role === 'admin' ? (
-        <Button variant="secondary" onPress={() => actions.setRole.mutate({ id: user.id, role: 'member' })}>
+        <Button
+          isDisabled={is_pending}
+          variant="secondary"
+          onPress={() => actions.setRole.mutate({ id: user.id, role: 'member' })}
+        >
           {t('admin.members.role_member')}
         </Button>
       ) : null}
       {!locked ? (
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={user.can_publish}
-            onChange={(event) => actions.setPublishing.mutate({ id: user.id, can_publish: event.target.checked })}
-          />
-          {t('admin.members.can_publish')}
-        </label>
+        <ToggleField
+          label={t('admin.members.can_publish')}
+          isSelected={user.can_publish}
+          isDisabled={is_pending}
+          onChange={(can_publish) => actions.setPublishing.mutate({ id: user.id, can_publish })}
+        />
       ) : null}
       {!locked ? (
-        <Button variant={user.is_restricted ? 'secondary' : 'danger'} onPress={() => (user.is_restricted ? actions.unrestrict.mutate(user.id) : actions.restrict.mutate(user.id))}>
+        <Button
+          isDisabled={is_pending}
+          variant={user.is_restricted ? 'secondary' : 'danger'}
+          onPress={() =>
+            user.is_restricted
+              ? actions.unrestrict.mutate(user.id)
+              : actions.restrict.mutate(user.id)
+          }
+        >
           {user.is_restricted ? t('admin.members.unrestrict') : t('admin.members.restrict')}
         </Button>
+      ) : null}
+      {has_error ? (
+        <p role="alert" className="w-full text-danger">
+          {t('error.unknown')}
+        </p>
       ) : null}
     </div>
   )

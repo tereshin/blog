@@ -96,6 +96,7 @@ export function createEventStream(deps: EventStreamDeps) {
   let flush_timer: ReturnType<typeof setTimeout> | null = null
   let reconnect_timer: ReturnType<typeof setTimeout> | null = null
   let is_stopped = true
+  let is_sync_scheduled = false
 
   const flush = (): void => {
     flush_timer = null
@@ -130,7 +131,7 @@ export function createEventStream(deps: EventStreamDeps) {
       connection_id = parsed.connection_id
       sent_key = null
       attempt = 0
-      syncSubscriptions()
+      scheduleSync()
       if (has_connected_before) for (const handler of [...reconnect_handlers]) handler()
       has_connected_before = true
       return
@@ -143,7 +144,10 @@ export function createEventStream(deps: EventStreamDeps) {
     if (is_stopped || source) return
     const next = deps.createSource(deps.url)
     source = next
-    next.listen(handleMessage, () => {
+    next.listen((raw) => {
+      if (source === next) handleMessage(raw)
+    }, () => {
+      if (source !== next) return
       next.close()
       if (source === next) source = null
       connection_id = null
@@ -174,28 +178,41 @@ export function createEventStream(deps: EventStreamDeps) {
     buffer = []
   }
 
+  // Один commit React может снять и добавить несколько владельцев, в том числе
+  // при проверке эффектов StrictMode. Отправляем только итоговый набор подписок.
+  const scheduleSync = (): void => {
+    if (is_sync_scheduled) return
+    is_sync_scheduled = true
+    void Promise.resolve().then(() => {
+      is_sync_scheduled = false
+      if (subscriptions_by_owner.size === 0) {
+        stop()
+        return
+      }
+      if (is_stopped) {
+        is_stopped = false
+        open()
+      }
+      syncSubscriptions()
+    })
+  }
+
   return {
     /** Подписывает владельца; возвращает функцию отписки. Поток живёт, пока есть хотя бы один владелец. */
     attach(subscription: StreamSubscription): { update: (next: StreamSubscription) => void; detach: () => void } {
       owner_counter += 1
       const owner = owner_counter
       subscriptions_by_owner.set(owner, subscription)
-      if (is_stopped) {
-        is_stopped = false
-        open()
-      } else {
-        syncSubscriptions()
-      }
+      scheduleSync()
       return {
         update(next) {
           if (!subscriptions_by_owner.has(owner)) return
           subscriptions_by_owner.set(owner, next)
-          syncSubscriptions()
+          scheduleSync()
         },
         detach() {
           if (!subscriptions_by_owner.delete(owner)) return
-          if (subscriptions_by_owner.size === 0) stop()
-          else syncSubscriptions()
+          scheduleSync()
         },
       }
     },
