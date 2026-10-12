@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CommentNode, CommentPlacement } from '@/entities/comment'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { Button, Dialog, Link } from '@/shared/ui'
+import { Button, Dialog, Link, Textarea } from '@/shared/ui'
 import { CommentOverflowMenu } from './CommentOverflowMenu.tsx'
 import { useDeleteComment } from '../model/useDeleteComment.ts'
 import { useEditComment } from '../model/useEditComment.ts'
@@ -46,7 +46,9 @@ export function CommentActions({
           setEditing(false)
         }}
       >
-        <textarea
+        <Textarea
+          size="base"
+          variant="secondary"
           value={text}
           maxLength={5000}
           rows={3}

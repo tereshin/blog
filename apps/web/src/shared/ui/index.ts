@@ -46,8 +46,10 @@ export {
 } from './icons.tsx'
 
 export { IdentityHeader } from './IdentityHeader.tsx'
-export { Input } from '@heroui/react/input'
-export { TextArea } from '@heroui/react/textarea'
+export { Input } from './Input.tsx'
+export type { InputProps } from './Input.tsx'
+export { Textarea, Textarea as TextArea } from './Textarea.tsx'
+export { Select } from './Select.tsx'
 export { SelectField } from './SelectField.tsx'
 export { ToggleField } from './ToggleField.tsx'
 export { FormTextField } from './FormTextField.tsx'

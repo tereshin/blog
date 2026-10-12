@@ -46,6 +46,7 @@
     "dompurify": "^3.4.16",
     "firebase": "^12.19.0",
     "react": "^19.3.0",
+    "react-aria-components": "1.22.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",
     "tailwind-merge": "^3.7.0",

@@ -1,6 +1,11 @@
 import { HttpResponse, http } from 'msw'
-import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS, reactionAppearancesSchema } from '@blog/contracts'
-import type { SeoSettings, SocialCoverSettings } from '@blog/contracts'
+import {
+  DEFAULT_REACTION_APPEARANCES,
+  DEFAULT_SEO_SETTINGS,
+  DEFAULT_SOCIAL_COVER_SETTINGS,
+  reactionAppearancesSchema,
+} from '@blog/contracts'
+import type { FaviconSettings, SeoSettings, SocialCoverSettings } from '@blog/contracts'
 import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
 import settings_fixture from '../fixtures/settings.json'
@@ -12,6 +17,8 @@ const SITE_KEY = 'mock_site'
 type SiteSettings = {
   name: string
   logo_url: string | null
+  logo_dark_url?: string | null
+  favicon?: FaviconSettings
   locale: 'ru' | 'en' | 'sr'
   about: string
   registration_open: boolean
@@ -47,7 +54,10 @@ function initialState(): SiteState {
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
     },
-    topics: topics_fixture.map((topic) => ({ ...topic, status: topic.status as SiteTopic['status'] })),
+    topics: topics_fixture.map((topic) => ({
+      ...topic,
+      status: topic.status as SiteTopic['status'],
+    })),
   }
 }
 
@@ -69,6 +79,8 @@ function publicSettings(settings: SiteSettings) {
   return {
     name: settings.name,
     logo_url: settings.logo_url,
+    logo_dark_url: settings.logo_dark_url,
+    favicon: settings.favicon,
     locale: settings.locale,
     about: settings.about,
     reaction_appearances: settings.reaction_appearances,
@@ -92,7 +104,10 @@ function longTopics(): SiteTopic[] {
 }
 
 function forbidden() {
-  return HttpResponse.json({ code: 'forbidden', title: 'Раздел доступен только администратору площадки', status: 403 }, { status: 403 })
+  return HttpResponse.json(
+    { code: 'forbidden', title: 'Раздел доступен только администратору площадки', status: 403 },
+    { status: 403 },
+  )
 }
 
 /** Данные колонок каркаса. Правки суперадминистратора живут в sessionStorage вкладки, чтобы пережить перезагрузку. */
@@ -106,21 +121,28 @@ export const shellHandlers = [
     if (readMockViewer() !== 'superadmin') return forbidden()
     const body = (await request.json()) as SiteSettings
     const state = readSite()
-    state.settings = body
+    state.settings = { ...state.settings, ...body }
     writeSite(state)
     return HttpResponse.json(state.settings)
   }),
   http.get('*/v1/topics', ({ request }) => {
     const include_archived = new URL(request.url).searchParams.get('include_archived') === '1'
     if (include_archived && readMockViewer() !== 'superadmin') return forbidden()
-    const topics = readSite().topics.filter((topic) => include_archived || topic.status === 'active')
-    const listed = window.localStorage.getItem('mock_topics') === 'long' ? [...topics, ...longTopics()] : topics
+    const topics = readSite().topics.filter(
+      (topic) => include_archived || topic.status === 'active',
+    )
+    const listed =
+      window.localStorage.getItem('mock_topics') === 'long' ? [...topics, ...longTopics()] : topics
     return HttpResponse.json([...listed].sort((a, b) => a.position - b.position))
   }),
   http.get('*/v1/topics/:slug', ({ params }) => {
-    const listed = window.localStorage.getItem('mock_topics') === 'long' ? [...readSite().topics, ...longTopics()] : readSite().topics
+    const listed =
+      window.localStorage.getItem('mock_topics') === 'long'
+        ? [...readSite().topics, ...longTopics()]
+        : readSite().topics
     const topic = listed.find((item) => item.slug === params.slug)
-    if (!topic) return HttpResponse.json({ code: 'not_found', title: 'Такой темы нет' }, { status: 404 })
+    if (!topic)
+      return HttpResponse.json({ code: 'not_found', title: 'Такой темы нет' }, { status: 404 })
     return HttpResponse.json(topic)
   }),
   http.post('*/v1/topics', async ({ request }) => {
@@ -128,7 +150,10 @@ export const shellHandlers = [
     const body = (await request.json()) as Omit<SiteTopic, 'id' | 'status' | 'position'>
     const state = readSite()
     if (state.topics.some((topic) => topic.slug === body.slug)) {
-      return HttpResponse.json({ code: 'slug_taken', title: 'Этот адрес уже занят', status: 409 }, { status: 409 })
+      return HttpResponse.json(
+        { code: 'slug_taken', title: 'Этот адрес уже занят', status: 409 },
+        { status: 409 },
+      )
     }
     const topic: SiteTopic = {
       id: crypto.randomUUID(),
@@ -149,7 +174,16 @@ export const shellHandlers = [
     const body = (await request.json()) as Partial<SiteTopic>
     const state = readSite()
     const topic = state.topics.find((item) => item.id === params.id)
-    if (!topic) return HttpResponse.json({ code: 'not_found', title: 'Такой темы нет', status: 404 }, { status: 404 })
+    if (!topic)
+      return HttpResponse.json(
+        { code: 'not_found', title: 'Такой темы нет', status: 404 },
+        { status: 404 },
+      )
+    if (body.slug && state.topics.some((item) => item.id !== topic.id && item.slug === body.slug))
+      return HttpResponse.json(
+        { code: 'slug_taken', title: 'Этот адрес уже занят' },
+        { status: 409 },
+      )
     Object.assign(topic, body)
     writeSite(state)
     return HttpResponse.json(topic)
@@ -168,7 +202,11 @@ export const shellHandlers = [
   http.get('*/v1/comments/popular', () => {
     const mode = window.localStorage.getItem('mock_rail')
     if (mode === 'empty') return HttpResponse.json([])
-    if (mode === 'error') return HttpResponse.json({ code: 'unavailable', title: 'Не удалось загрузить комментарии', status: 500 }, { status: 500 })
+    if (mode === 'error')
+      return HttpResponse.json(
+        { code: 'unavailable', title: 'Не удалось загрузить комментарии', status: 500 },
+        { status: 500 },
+      )
     return HttpResponse.json(popular_comments)
   }),
   http.put('*/v1/events/subscriptions', () => HttpResponse.json({ article_ids: [] })),

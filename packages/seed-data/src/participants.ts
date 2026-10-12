@@ -20,12 +20,12 @@ type ParticipantDef = {
 export const PARTICIPANT_DEFS: readonly ParticipantDef[] = [
   { key: 'superadmin', display_name: 'Софья Суперова', role: 'superadmin', can_publish: true, is_restricted: false, created_offset_ms: -800 * DAY_MS, avatar_index: 1 },
   { key: 'admin', display_name: 'Адам Модератов', role: 'admin', can_publish: true, is_restricted: false, created_offset_ms: -700 * DAY_MS, avatar_index: 0 },
-  { key: 'author_a', display_name: 'Анна Авторова', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_one_year_created_at, avatar_index: 3 },
-  { key: 'author_b', display_name: 'Борис Писарев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -200 * DAY_MS, avatar_index: 2 },
-  { key: 'reader', display_name: 'Роман Читаев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -150 * DAY_MS, avatar_index: 4 },
+  { key: 'author_a', display_name: 'Анна Авторова', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_one_year_created_at, avatar_index: 2 },
+  { key: 'author_b', display_name: 'Борис Писарев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -200 * DAY_MS, avatar_index: 3 },
+  { key: 'reader', display_name: 'Роман Читаев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -150 * DAY_MS, avatar_index: 7 },
   { key: 'no_publish', display_name: 'Нина Безправова', role: 'member', can_publish: false, is_restricted: false, created_offset_ms: -120 * DAY_MS, avatar_index: 5 },
-  { key: 'restricted', display_name: 'Рита Ограничева', role: 'member', can_publish: true, is_restricted: true, created_offset_ms: -100 * DAY_MS, avatar_index: 7 },
-  { key: 'newcomer', display_name: 'Наум Новиков', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_newcomer_created_at, avatar_index: 6 },
+  { key: 'restricted', display_name: 'Рита Ограничева', role: 'member', can_publish: true, is_restricted: true, created_offset_ms: -100 * DAY_MS, avatar_index: 4 },
+  { key: 'newcomer', display_name: 'Наум Новиков', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_newcomer_created_at, avatar_index: 8 },
 ]
 
 export const PARTICIPANT_KEYS = PARTICIPANT_DEFS.map((def) => def.key)

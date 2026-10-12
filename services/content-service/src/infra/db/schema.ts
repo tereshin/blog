@@ -1,6 +1,32 @@
-import { boolean, customType, index, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
-import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS } from '@blog/contracts'
-import type { ProfileStatusIcon, ReactionAppearances, SeoSettings, SocialCoverSettings, SocialImages } from '@blog/contracts'
+import type { FaviconSettings } from '@blog/contracts'
+import {
+  boolean,
+  customType,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  smallint,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core'
+import {
+  DEFAULT_REACTION_APPEARANCES,
+  DEFAULT_SEO_SETTINGS,
+  DEFAULT_SOCIAL_COVER_SETTINGS,
+} from '@blog/contracts'
+import type {
+  ProfileStatusIcon,
+  ReactionAppearances,
+  SeoSettings,
+  SocialCoverSettings,
+  SocialImages,
+} from '@blog/contracts'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -120,14 +146,28 @@ export const settings = pgTable('settings', {
   id: smallint('id').primaryKey().default(1),
   name: text('name').notNull(),
   logo_url: text('logo_url'),
+  logo_dark_url: text('logo_dark_url'),
+  favicon: jsonb('favicon')
+    .$type<FaviconSettings>()
+    .notNull()
+    .default({ png: null, svg: null, ico: null, apple: null, manifest: null }),
   locale: locale('locale').notNull().default('ru'),
   about: text('about').notNull().default(''),
   registration_open: boolean('registration_open').notNull().default(true),
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
-  reaction_appearances: jsonb('reaction_appearances').$type<ReactionAppearances>().notNull().default(DEFAULT_REACTION_APPEARANCES),
-  profile_status_icons: jsonb('profile_status_icons').$type<ProfileStatusIcon[]>().notNull().default([]),
+  reaction_appearances: jsonb('reaction_appearances')
+    .$type<ReactionAppearances>()
+    .notNull()
+    .default(DEFAULT_REACTION_APPEARANCES),
+  profile_status_icons: jsonb('profile_status_icons')
+    .$type<ProfileStatusIcon[]>()
+    .notNull()
+    .default([]),
   seo: jsonb('seo').$type<SeoSettings>().notNull().default(DEFAULT_SEO_SETTINGS),
-  social_cover: jsonb('social_cover').$type<SocialCoverSettings>().notNull().default(DEFAULT_SOCIAL_COVER_SETTINGS),
+  social_cover: jsonb('social_cover')
+    .$type<SocialCoverSettings>()
+    .notNull()
+    .default(DEFAULT_SOCIAL_COVER_SETTINGS),
 })
 
 export const reports = pgTable(

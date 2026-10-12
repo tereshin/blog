@@ -9,7 +9,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     // Отчёт о составе бандла: `ANALYZE=1 pnpm --filter web build` -> dist/stats.html
-    ...(process.env['ANALYZE'] ? [visualizer({ filename: 'dist/stats.html', gzipSize: true })] : []),
+    ...(process.env['ANALYZE']
+      ? [visualizer({ filename: 'dist/stats.html', gzipSize: true })]
+      : []),
   ],
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
@@ -17,7 +19,16 @@ export default defineConfig({
   server: {
     port: 5173,
     // Один origin в разработке: cookie сессии и CSRF работают так же, как в prod.
-    proxy: { '/v1': { target: 'http://localhost:3000', changeOrigin: false } },
+    proxy: Object.fromEntries(
+      [
+        '/v1',
+        '/favicon-96x96.png',
+        '/favicon.svg',
+        '/favicon.ico',
+        '/apple-touch-icon.png',
+        '/site.webmanifest',
+      ].map((path) => [path, { target: 'http://localhost:3000', changeOrigin: false }]),
+    ),
   },
   build: {
     // Sourcemaps в бандл не попадают (session-security.mdc).

@@ -1,3 +1,4 @@
+import type { ModerationFilters } from '@blog/contracts'
 import { z } from 'zod'
 import {
   commentBookmarkStateSchema,
@@ -89,9 +90,13 @@ export function setDiscussionSubscription(id: string, enabled: boolean) {
 export function searchCommentMentions(q: string, signal?: AbortSignal) {
   return http.get('/v1/comments/mentions', mentionSearchSchema, { query: { q }, signal })
 }
-export function getCommentReports(cursor?: string, signal?: AbortSignal) {
+export function getCommentReports(
+  cursor?: string,
+  signal?: AbortSignal,
+  filters?: ModerationFilters,
+) {
   return http.get('/v1/moderation/comments/reports', commentReportPageSchema, {
-    query: { cursor },
+    query: { ...filters, cursor },
     signal,
   })
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { faviconSettingsSchema } from './site-assets.ts'
 import { reactionKindSchema } from './feed.ts'
 import { seoSettingsSchema, socialCoverSettingsSchema } from './seo.ts'
 
@@ -38,13 +39,22 @@ export const reactionAppearancesSchema = z
   .refine((items) => items.some((item) => item.status === 'active'), {
     message: 'Нужна хотя бы одна активная реакция',
   })
-  .refine((items) => items.filter((item) => item.status === 'active').length <= MAX_ACTIVE_REACTIONS, {
-    message: 'Активных реакций не больше 20',
-  })
-  .refine((items) => {
-    const first_retired = items.findIndex((item) => item.status === 'retired')
-    return first_retired === -1 || items.slice(first_retired).every((item) => item.status === 'retired')
-  }, { message: 'Снятые реакции идут после активных' })
+  .refine(
+    (items) => items.filter((item) => item.status === 'active').length <= MAX_ACTIVE_REACTIONS,
+    {
+      message: 'Активных реакций не больше 20',
+    },
+  )
+  .refine(
+    (items) => {
+      const first_retired = items.findIndex((item) => item.status === 'retired')
+      return (
+        first_retired === -1 ||
+        items.slice(first_retired).every((item) => item.status === 'retired')
+      )
+    },
+    { message: 'Снятые реакции идут после активных' },
+  )
 export type ReactionAppearances = z.infer<typeof reactionAppearancesSchema>
 
 export const DEFAULT_REACTION_APPEARANCES = reactionAppearancesSchema.parse([
@@ -59,16 +69,20 @@ export const profileStatusIconSchema = z.strictObject({
   label: z.string().trim().min(1).max(50),
   image_url: z.url(),
 })
-export const profileStatusIconsSchema = z.array(profileStatusIconSchema).max(100).refine(
-  (icons) => new Set(icons.map((icon) => icon.id)).size === icons.length,
-  { message: 'Идентификаторы статусов должны быть уникальными' },
-)
+export const profileStatusIconsSchema = z
+  .array(profileStatusIconSchema)
+  .max(100)
+  .refine((icons) => new Set(icons.map((icon) => icon.id)).size === icons.length, {
+    message: 'Идентификаторы статусов должны быть уникальными',
+  })
 export type ProfileStatusIcon = z.infer<typeof profileStatusIconSchema>
 
 /** Публичные настройки площадки: `GET /v1/settings`. Закрытые поля (регистрация) сюда не попадают. */
 export const publicSettingsSchema = z.strictObject({
   name: z.string(),
   logo_url: z.string().nullable(),
+  logo_dark_url: z.string().nullable().optional(),
+  favicon: faviconSettingsSchema.optional(),
   locale: localeSchema,
   about: z.string(),
   reaction_appearances: reactionAppearancesSchema,
@@ -82,6 +96,8 @@ export type PublicSettings = z.infer<typeof publicSettingsSchema>
 export const updateSettingsSchema = z.strictObject({
   name: z.string().max(100),
   logo_url: z.string().nullable(),
+  logo_dark_url: z.string().nullable().optional(),
+  favicon: faviconSettingsSchema.optional(),
   locale: localeSchema,
   about: z.string(),
   registration_open: z.boolean(),

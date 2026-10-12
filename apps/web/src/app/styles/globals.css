@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "@heroui/styles";
+@import 'tailwindcss';
+@import '@heroui/styles';
 
 /*
  * Токены вида. Тему HeroUI v3 задают CSS-переменные; `data-theme` стоит на <html>.
@@ -8,7 +8,7 @@
 
 /* Светлый вид: светло-серый фон, белые карточки, текст почти чёрный, те же синие акценты. */
 :root,
-[data-theme="light"] {
+[data-theme='light'] {
   --background: oklch(96.5% 0.003 260);
   --foreground: oklch(18% 0.01 260);
   --surface: oklch(100% 0 0);
@@ -21,13 +21,13 @@
   --separator: oklch(93% 0.004 260);
   --accent: oklch(0.47 0.16 253.83);
   --accent-foreground: oklch(99% 0 0);
-  --success: oklch(58% 0.17 150);
+  --success: oklch(52% 0.17 150);
   --link: var(--accent);
   color-scheme: light;
 }
 
 /* Тёмный вид (по умолчанию): почти чёрный фон, тёмно-серые карточки, белый основной текст, серый второстепенный. */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --background: oklch(11% 0.004 270);
   --foreground: oklch(98% 0 0);
   --surface: oklch(19% 0.005 270);
@@ -151,7 +151,7 @@ body {
     left: 0.75rem;
     z-index: 30;
     justify-content: space-around;
-    gap: 0;  
+    gap: 0;
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
     background: var(--surface);
@@ -217,66 +217,95 @@ body {
   box-shadow: none;
 }
 
-.identity-header .tabs__tab[data-selected="true"] {
+.identity-header .tabs__tab[data-selected='true'] {
   color: var(--foreground);
 }
 
 /* Auth panel: centered brand, credentials, then Firebase providers. */
-.auth-dialog { width: min(100%, 520px); padding: 24px 48px; }
-@media (max-width: 480px) { .auth-dialog { padding: 20px 24px; } }
-
-/*
- * Поле формы: серое в покое, при наведении светлеет с мягким акцентным ореолом, в фокусе — акцентная рамка и ореол 4px.
- * Ореол рисуется тенью за пределами поля: у прокручиваемого контейнера должен быть отступ не меньше 4px.
- */
-.form-field {
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  background-color: var(--surface-secondary);
-  color: var(--foreground);
-  box-shadow: 0 0 0 0 transparent;
-  outline: none;
-  transition:
-    background-color 200ms ease-out,
-    border-color 200ms ease-out,
-    box-shadow 200ms ease-out;
+.auth-dialog {
+  width: min(100%, 520px);
+  padding: 24px 48px;
 }
-.form-field::placeholder {
+@media (max-width: 480px) {
+  .auth-dialog {
+    padding: 20px 24px;
+  }
+}
+
+/* One owner for field backgrounds, borders and React Aria states. */
+.form-control {
+  --field-ring: 2px;
+  border: 1px solid var(--border);
+  background: var(--field-background);
+  color: var(--foreground);
+  outline: none;
+  box-shadow: none;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+.form-control--primary {
+  --field-background: var(--surface);
+}
+.form-control--secondary {
+  --field-background: var(--surface-secondary);
+}
+.form-control--lg {
+  --field-ring: 4px;
+}
+.form-control::placeholder {
   color: var(--muted);
 }
 @media (hover: hover) {
-  .form-field:hover:not(:focus):not(:focus-within):not(:disabled):not([aria-disabled="true"]):not([data-disabled="true"]):not([readonly]) {
+  .form-control:is(:hover, [data-hovered='true']):not(
+      :disabled,
+      [aria-disabled='true'],
+      [data-disabled='true'],
+      [readonly],
+      [data-readonly='true']
+    ):not(:focus, :focus-within, [data-focus-visible='true']) {
     border-color: color-mix(in oklch, var(--accent) 30%, var(--border));
     background-color: var(--overlay);
-    box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 10%, transparent);
+    box-shadow: 0 0 0 var(--field-ring) color-mix(in oklch, var(--accent) 10%, transparent);
   }
 }
-.form-field:focus,
-.form-field:focus-within,
-.form-field:focus-visible {
+.form-control:is(:focus, :focus-within, [data-focus-visible='true']):not(
+    :disabled,
+    [data-disabled='true'],
+    [readonly],
+    [data-readonly='true']
+  ) {
   outline: none;
   border-color: var(--accent);
   background-color: var(--overlay);
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 16%, transparent);
+  box-shadow: 0 0 0 var(--field-ring) color-mix(in oklch, var(--accent) 16%, transparent);
 }
-.form-field[aria-invalid="true"],
-.form-field:user-invalid {
+.form-control:is([aria-invalid='true'], [data-invalid='true']) {
   border-color: var(--danger);
 }
-.form-field[aria-invalid="true"]:focus,
-.form-field[aria-invalid="true"]:focus-within,
-.form-field:user-invalid:focus {
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--danger) 16%, transparent);
+.form-control:is([aria-invalid='true'], [data-invalid='true']):focus-within {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 var(--field-ring) color-mix(in oklch, var(--danger) 16%, transparent);
 }
-.form-field:disabled,
-.form-field[aria-disabled="true"],
-.form-field[data-disabled="true"] {
+.form-control:is(:disabled, [aria-disabled='true'], [data-disabled='true']) {
   cursor: not-allowed;
   opacity: 0.55;
 }
-.form-field[readonly] { color: var(--muted); }
+.form-control:is([readonly], [data-readonly='true']) {
+  color: var(--muted);
+}
+.form-control__input,
+.form-control__input:is(:hover, :focus, :focus-visible) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  outline: none;
+  box-shadow: none;
+}
 @media (prefers-reduced-motion: reduce) {
-  .form-field {
+  .form-control {
     transition: none;
   }
 }
@@ -300,22 +329,36 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  transition: background-color 150ms, color 150ms;
+  transition:
+    background-color 150ms,
+    color 150ms;
 }
 .action-control.button:hover,
-.action-control.button[data-hovered="true"],
-.action-control.button[data-pressed="true"] { background: transparent; }
+.action-control.button[data-hovered='true'],
+.action-control.button[data-pressed='true'] {
+  background: transparent;
+}
 .action-control:hover,
-.action-control[data-hovered="true"],
+.action-control[data-hovered='true'],
 .action-control:focus-visible,
-.action-control[aria-pressed="true"] { color: var(--accent); }
+.action-control[aria-pressed='true'] {
+  color: var(--accent);
+}
 .action-control:hover .action-control__icon,
-.action-control[data-hovered="true"] .action-control__icon,
+.action-control[data-hovered='true'] .action-control__icon,
 .action-control:focus-visible .action-control__icon {
   background: color-mix(in oklch, var(--accent) 14%, transparent);
 }
-.action-control.button svg { width: 20px; height: 20px; margin: 0; }
-.reaction-button.button { height: 30px; min-width: 30px; padding: 0 8px; }
+.action-control.button svg {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+.reaction-button.button {
+  height: 30px;
+  min-width: 30px;
+  padding: 0 8px;
+}
 
 /* Ветка соединяется с центром аватара и заканчивается у последнего ответа. */
 .comment-branch::before {
@@ -339,10 +382,21 @@ body {
   border-bottom-left-radius: 10px;
   pointer-events: none;
 }
-.comment-branch:last-of-type::before { bottom: calc(100% - 12px); }
-.comment-branch__collapse { bottom: 0; z-index: 1; cursor: pointer; }
-.comment-branch:last-of-type > .comment-branch__collapse { height: 28px; bottom: auto; }
-.comment-branch__collapse:hover { background: color-mix(in oklch, var(--accent) 20%, transparent); }
+.comment-branch:last-of-type::before {
+  bottom: calc(100% - 12px);
+}
+.comment-branch__collapse {
+  bottom: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+.comment-branch:last-of-type > .comment-branch__collapse {
+  height: 28px;
+  bottom: auto;
+}
+.comment-branch__collapse:hover {
+  background: color-mix(in oklch, var(--accent) 20%, transparent);
+}
 
 .topic-picker-popover {
   background: var(--overlay);
@@ -350,8 +404,17 @@ body {
   border-radius: 16px;
   box-shadow: 0 12px 40px rgb(0 0 0 / 20%);
 }
-.topic-picker-popover [data-slot="popover-dialog"] { padding: 0; outline: none; }
-.topic-picker-popover input:focus-visible { outline: none; }
-.topic-picker-popover [role="option"][aria-selected="true"],
-.topic-picker-popover [role="option"][data-hovered="true"] { background: var(--surface-secondary); }
-.topic-picker-popover [data-slot="list-box-item-indicator"] { color: var(--success); }
+.topic-picker-popover [data-slot='popover-dialog'] {
+  padding: 0;
+  outline: none;
+}
+.topic-picker-popover input:focus-visible {
+  outline: none;
+}
+.topic-picker-popover [role='option'][aria-selected='true'],
+.topic-picker-popover [role='option'][data-hovered='true'] {
+  background: var(--surface-secondary);
+}
+.topic-picker-popover [data-slot='list-box-item-indicator'] {
+  color: var(--success);
+}

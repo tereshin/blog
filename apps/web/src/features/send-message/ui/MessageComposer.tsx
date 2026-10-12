@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Spinner } from '@heroui/react/spinner'
-import { TextArea } from '@heroui/react/textarea'
+import { Textarea } from '@/shared/ui'
 import type { MessageModel } from '@/entities/conversation'
 import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
@@ -63,7 +63,8 @@ export function MessageComposer({
       }}
     >
       <div className="flex items-end gap-2">
-        <TextArea
+        <Textarea
+          size="base"
           value={text}
           maxLength={MAX_LENGTH}
           rows={2}

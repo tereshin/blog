@@ -28,7 +28,7 @@ type FeedProps = FeedSlots & {
 
 function FeedSkeletons({ count }: { count: number }) {
   return (
-    <div className="flex flex-col gap-4 max-w-[640px] mx-auto">
+    <div className="flex w-full min-w-0 flex-col gap-4 max-w-[640px] mx-auto">
       {Array.from({ length: count }, (_, index) => (
         <ArticleCard.Skeleton key={index} />
       ))}
@@ -76,14 +76,19 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
     saveFeedReturn({ mode, feed_key, scroll_top: scroller?.scrollTop ?? window.scrollY })
   }
 
-  if (state.status === 'loading' || state.status === 'idle') return <FeedSkeletons count={SKELETON_COUNT} />
-  if (state.status === 'error') return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
+  if (state.status === 'loading' || state.status === 'idle')
+    return <FeedSkeletons count={SKELETON_COUNT} />
+  if (state.status === 'error')
+    return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
   if (state.article_ids.length === 0) return <FeedEmpty mode={mode} />
 
   const hidden_ids = should_hide_seen ? state.article_ids.filter((id) => seen.seen_ids.has(id)) : []
-  const visible_ids = !should_hide_seen || seen.is_revealed ? state.article_ids : state.article_ids.filter((id) => !seen.seen_ids.has(id))
+  const visible_ids =
+    !should_hide_seen || seen.is_revealed
+      ? state.article_ids
+      : state.article_ids.filter((id) => !seen.seen_ids.has(id))
   const banner =
-    hidden_ids.length > 0 && !seen.is_dismissed && !seen.is_auto_revealed ? (
+    hidden_ids.length > 0 && !seen.is_dismissed && !seen.is_revealed ? (
       <SeenBanner count={hidden_ids.length} onReveal={seen.reveal} onDismiss={seen.dismiss} />
     ) : null
   const renderItem = (article_id: string) => {
@@ -103,16 +108,28 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
   const List = visible_ids.length > VIRTUALIZATION_THRESHOLD ? VirtualFeedList : PlainFeedList
 
   return (
-    <div ref={root_ref} className="flex flex-col gap-4 max-w-[640px] mx-auto" onClick={rememberReturn}>
+    <div
+      ref={root_ref}
+      className="flex w-full min-w-0 flex-col gap-4 max-w-[640px] mx-auto"
+      onClick={rememberReturn}
+    >
       {visible_ids.length > 0 ? (
         <List article_ids={visible_ids} renderItem={renderItem} onNearEnd={handleNearEnd} />
       ) : (
-        <EmptyState title={t('feed.seen.all')} description={t('feed.seen.all_hint')} icon={<EyeIcon width={28} height={28} />}>
-          <Button variant="primary" onPress={seen.reveal}>{t('feed.seen.show')}</Button>
+        <EmptyState
+          title={t('feed.seen.all')}
+          description={t('feed.seen.all_hint')}
+          icon={<EyeIcon width={28} height={28} />}
+        >
+          <Button variant="primary" onPress={seen.reveal}>
+            {t('feed.seen.show')}
+          </Button>
         </EmptyState>
       )}
       {state.is_fetching_next ? <ArticleCard.Skeleton /> : null}
-      {state.next_error ? <ErrorState title={t('feed.load_more_error')} onRetry={state.fetchNext} className="py-4" /> : null}
+      {state.next_error ? (
+        <ErrorState title={t('feed.load_more_error')} onRetry={state.fetchNext} className="py-4" />
+      ) : null}
     </div>
   )
 }

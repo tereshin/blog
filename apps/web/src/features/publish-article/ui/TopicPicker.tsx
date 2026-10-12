@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
-import { Avatar, BaseIcon, Link, ListBox, Popover, SearchIcon } from '@/shared/ui'
+import { Avatar, BaseIcon, Link, ListBox, Popover, SearchIcon, Input } from '@/shared/ui'
 
 type TopicPickerProps = { topics: Topic[]; value: string; onChange: (topic_id: string) => void }
 
@@ -47,16 +47,17 @@ export function TopicPicker({ topics, value, onChange }: TopicPickerProps) {
         placement="bottom start"
         className="topic-picker-popover w-72 max-w-[calc(100vw-32px)] p-2"
       >
-        <label className="mb-2 flex items-center gap-2 rounded-xl border border-separator bg-surface-secondary px-3 py-2 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
-          <SearchIcon className="shrink-0 text-muted" />
-          <input
+        <label className="mb-2 block">
+          <Input
+            size="base"
+            variant="secondary"
             ref={search_ref}
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             aria-label={t('editor.topic_search')}
             placeholder={t('editor.topic_search')}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            prefix={<SearchIcon className="shrink-0 text-muted" />}
           />
         </label>
         <ListBox

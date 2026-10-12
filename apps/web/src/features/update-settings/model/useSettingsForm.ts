@@ -1,4 +1,8 @@
-import { seoSettingsSchema, socialCoverSettingsSchema } from '@blog/contracts'
+import {
+  faviconSettingsSchema,
+  seoSettingsSchema,
+  socialCoverSettingsSchema,
+} from '@blog/contracts'
 import { useState } from 'react'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
@@ -27,6 +31,7 @@ export function useSettingsForm(
   const update = useUpdateSettings()
   const [draft, setDraft] = useState(() => ({
     ...initial,
+    favicon: faviconSettingsSchema.parse(initial.favicon ?? {}),
     seo: seoSettingsSchema.parse(initial.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(initial.social_cover ?? {}),
   }))
@@ -102,6 +107,8 @@ export function useSettingsForm(
           ...draft,
           name: draft.name.trim(),
           logo_url,
+          logo_dark_url: can_edit_media ? draft.logo_dark_url : initial.logo_dark_url,
+          favicon: can_edit_media ? draft.favicon : initial.favicon,
           reaction_appearances,
           profile_status_icons,
         },

@@ -1,5 +1,4 @@
-import { ColorField } from '@heroui/react/color-field'
-import { Label } from '@heroui/react/label'
+import { ColorPickerField } from '@/shared/ui/ColorPickerField'
 import type { ReactNode } from 'react'
 import type { SocialCoverSettings } from '@blog/contracts'
 import { useT } from '@/shared/i18n'
@@ -34,20 +33,12 @@ export function SettingsCoverFields({
       />
       <div className="grid gap-4 sm:grid-cols-2">
         {(['background_color', 'text_color'] as const).map((field) => (
-          <ColorField
+          <ColorPickerField
             key={field}
+            label={t(field === 'background_color' ? 'seo.fill_color' : 'seo.text_color')}
             value={value[field]}
-            onChange={(color) => {
-              if (color) onChange({ ...value, [field]: color.toString('hex') })
-            }}
-          >
-            <Label className="text-base font-semibold">
-              {t(field === 'background_color' ? 'seo.fill_color' : 'seo.text_color')}
-            </Label>
-            <ColorField.Group className="form-field h-12 px-4">
-              <ColorField.Input className="bg-transparent text-base shadow-none" />
-            </ColorField.Group>
-          </ColorField>
+            onChange={(color) => onChange({ ...value, [field]: color })}
+          />
         ))}
       </div>
       {can_edit_media

@@ -1,89 +1,102 @@
-import { FormTextField, FormTextArea } from '@/shared/ui'
-import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { ApiError } from '@/shared/api'
+import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
-import type { MessageKey } from '@/shared/i18n'
-import { Button } from '@/shared/ui'
-import type { TopicDraft } from '../api/manage-topics.ts'
-import { useManageTopics } from '../model/useManageTopics.ts'
-
-type TopicFormProps = {
-  upload: (field: 'avatar' | 'cover', onUploaded: (url: string) => void) => ReactNode
-}
-
-const FIELD_ERROR: Record<string, MessageKey> = {
-  slug_taken: 'admin.topics.slug_taken',
-  slug_reserved: 'admin.topics.slug_reserved',
-  slug_invalid: 'profile.error.invalid',
-}
-
-const empty: TopicDraft = {
-  title: '',
-  description: '',
-  avatar_url: null,
-  cover_url: null,
-  slug: '',
-}
-
-export function TopicForm({ upload }: TopicFormProps) {
+import { Button, FormTextArea, FormTextField, SelectField } from '@/shared/ui'
+import { useTopicForm } from '../model/useTopicForm.ts'
+export type TopicUpload = (
+  field: 'avatar' | 'cover',
+  onUploaded: (url: string) => void,
+) => ReactNode
+export function TopicForm({
+  initial,
+  upload,
+  onSaved = () => undefined,
+}: {
+  initial?: Topic
+  upload?: TopicUpload
+  onSaved?: (topic: Topic) => void
+}) {
   const { t } = useT()
-  const { create } = useManageTopics()
-  const [draft, setDraft] = useState(empty)
-  const [error, setError] = useState<string | null>(null)
-
-  const save = () => {
-    if (create.isPending) return
-    setError(null)
-    create.mutate(
-      {
-        ...draft,
-        title: draft.title.trim(),
-        description: draft.description === '' ? null : draft.description,
-        slug: draft.slug.trim(),
-      },
-      {
-        onSuccess: () => setDraft(empty),
-        onError: (reason) => {
-          const code = reason instanceof ApiError ? reason.code : 'save'
-          setError(FIELD_ERROR[code] ? t(FIELD_ERROR[code]) : t('admin.topics.error'))
-        },
-      },
-    )
-  }
-
+  const { draft, setDraft, error, is_pending, save } = useTopicForm(initial, onSaved)
   return (
     <form
-      className="flex flex-col gap-8"
+      className="flex min-w-0 flex-col gap-5 p-1"
       onSubmit={(event) => {
         event.preventDefault()
         save()
       }}
     >
-      <h2 className="text-lg font-semibold">{t('admin.topics.create')}</h2>
-      <FormTextField
-        label={t('admin.topics.title')}
-        required
-        maxLength={100}
-        value={draft.title}
-        onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-      />
-      <FormTextArea
-        label={t('admin.topics.description')}
-        maxLength={500}
-        value={draft.description ?? ''}
-        onChange={(event) => setDraft({ ...draft, description: event.target.value })}
-        className="min-h-20"
-      />
-      {upload('avatar', (url) => setDraft((current) => ({ ...current, avatar_url: url })))}
-      {upload('cover', (url) => setDraft((current) => ({ ...current, cover_url: url })))}
-      <FormTextField
-        label={t('admin.topics.slug')}
-        required
-        maxLength={40}
-        value={draft.slug}
-        onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
-      />
+      <fieldset disabled={is_pending} className="flex min-w-0 flex-col gap-5 border-0 p-0">
+        <FormTextField
+          size="lg"
+          variant="secondary"
+          label={t('admin.topics.title')}
+          required
+          maxLength={100}
+          value={draft.title}
+          onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+        />
+        <FormTextArea
+          size="lg"
+          variant="secondary"
+          label={t('admin.topics.description')}
+          maxLength={500}
+          value={draft.description ?? ''}
+          onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+        />
+        <FormTextField
+          size="lg"
+          variant="secondary"
+          label={t('admin.topics.slug')}
+          required
+          minLength={3}
+          maxLength={40}
+          pattern="[a-z0-9][a-z0-9-]{1,38}[a-z0-9]"
+          value={draft.slug}
+          onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
+        />
+        {upload
+          ? (['avatar', 'cover'] as const).map((field) => {
+              const url = draft[`${field}_url`]
+              return (
+                <div key={field} className="flex flex-wrap items-center gap-3">
+                  {url ? (
+                    <img
+                      src={url}
+                      alt={t(field === 'avatar' ? 'admin.topics.avatar' : 'admin.topics.cover')}
+                      className="h-16 max-w-48 rounded-lg object-contain"
+                    />
+                  ) : null}
+                  {upload(field, (url) =>
+                    setDraft((current) => ({ ...current, [`${field}_url`]: url })),
+                  )}
+                  {url ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onPress={() => setDraft({ ...draft, [`${field}_url`]: null })}
+                    >
+                      {t('common.delete')}
+                    </Button>
+                  ) : null}
+                </div>
+              )
+            })
+          : null}
+        {initial ? (
+          <SelectField
+            label={t('admin.table.status')}
+            value={draft.status}
+            options={[
+              { value: 'active', label: t('admin.topics.active') },
+              { value: 'archived', label: t('admin.topics.archived') },
+            ]}
+            onChange={(status) =>
+              setDraft({ ...draft, status: status === 'archived' ? 'archived' : 'active' })
+            }
+          />
+        ) : null}
+      </fieldset>
       {error ? (
         <p role="alert" className="text-sm text-danger">
           {error}
@@ -93,11 +106,9 @@ export function TopicForm({ upload }: TopicFormProps) {
         type="submit"
         variant="primary"
         className="self-start"
-        isDisabled={
-          create.isPending || draft.title.trim().length === 0 || draft.slug.trim().length === 0
-        }
+        isDisabled={is_pending || !draft.title.trim() || !draft.slug.trim()}
       >
-        {create.isPending ? t('profile.saving') : t('common.save')}
+        {is_pending ? t('profile.saving') : t('common.save')}
       </Button>
     </form>
   )

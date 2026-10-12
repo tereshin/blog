@@ -1,4 +1,6 @@
+import { articleKeys } from '@/entities/article'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { seoKeys } from '@/entities/seo'
 import { getAllTopics, topicKeys } from '@/entities/topic'
 import { createTopic, reorderTopics, updateTopic } from '../api/manage-topics.ts'
 import type { TopicDraft } from '../api/manage-topics.ts'
@@ -10,8 +12,12 @@ export function useManageTopics() {
     queryFn: ({ signal }) => getAllTopics(signal),
   })
 
-  const refresh = async () => {
-    await query_client.invalidateQueries({ queryKey: topicKeys.all })
+  const refresh = () => {
+    void Promise.all([
+      query_client.invalidateQueries({ queryKey: topicKeys.all }),
+      query_client.invalidateQueries({ queryKey: seoKeys.all }),
+      query_client.invalidateQueries({ queryKey: articleKeys.all }),
+    ])
   }
 
   const create = useMutation({

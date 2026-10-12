@@ -1,5 +1,16 @@
-import { reactionAppearancesSchema, seoSettingsSchema, socialCoverSettingsSchema } from '@blog/contracts'
-import type { AdminSettings, PublicSettings, ReactionAppearances, ServiceContext, UpdateSettings } from '@blog/contracts'
+import {
+  faviconSettingsSchema,
+  reactionAppearancesSchema,
+  seoSettingsSchema,
+  socialCoverSettingsSchema,
+} from '@blog/contracts'
+import type {
+  AdminSettings,
+  PublicSettings,
+  ReactionAppearances,
+  ServiceContext,
+  UpdateSettings,
+} from '@blog/contracts'
 import { requireSuperadmin } from '../access/require-superadmin.ts'
 import { assertMediaUrl } from '../media-url.ts'
 import { DEFAULT_REACTION_APPEARANCES, assertSingleEmoji } from './reaction-appearance.ts'
@@ -24,6 +35,8 @@ function toPublic(row: SettingsRow): PublicSettings {
   return {
     name: row.name,
     logo_url: row.logo_url,
+    logo_dark_url: row.logo_dark_url ?? null,
+    favicon: faviconSettingsSchema.parse(row.favicon ?? {}),
     locale: row.locale,
     about: row.about,
     reaction_appearances: appearancesOf(row.reaction_appearances),
@@ -56,7 +69,11 @@ export const BOOTSTRAP_SETTINGS: SettingsRow = {
 export type SettingsService = {
   getPublic: () => Promise<PublicSettings>
   getAdmin: (viewer: ServiceContext) => Promise<AdminSettings>
-  update: (viewer: ServiceContext, input: UpdateSettings, correlation_id: string) => Promise<AdminSettings>
+  update: (
+    viewer: ServiceContext,
+    input: UpdateSettings,
+    correlation_id: string,
+  ) => Promise<AdminSettings>
   ensureDefaults: (correlation_id: string) => Promise<SettingsRow>
 }
 
@@ -71,7 +88,10 @@ function assertAppearances(appearances: ReactionAppearances, media_url: string):
   }
 }
 
-export function createSettingsService(repository: SettingsRepository, options: { media_url: string; public_origin?: string }): SettingsService {
+export function createSettingsService(
+  repository: SettingsRepository,
+  options: { media_url: string; public_origin?: string },
+): SettingsService {
   return {
     async getPublic() {
       const row = await repository.find()
@@ -81,26 +101,52 @@ export function createSettingsService(repository: SettingsRepository, options: {
     async getAdmin(viewer) {
       requireSuperadmin(viewer)
       const row = await repository.find()
-      return { ...(row ? toAdmin(row) : DEFAULT_SETTINGS), ...(options.public_origin ? { public_origin: options.public_origin } : {}) }
+      return {
+        ...(row ? toAdmin(row) : DEFAULT_SETTINGS),
+        ...(options.public_origin ? { public_origin: options.public_origin } : {}),
+      }
     },
 
     async update(viewer, input, correlation_id) {
       requireSuperadmin(viewer)
       const current = await repository.find()
       const seo = seoSettingsSchema.parse(input.seo ?? current?.seo ?? {})
-      const social_cover = socialCoverSettingsSchema.parse(input.social_cover ?? current?.social_cover ?? {})
+      const social_cover = socialCoverSettingsSchema.parse(
+        input.social_cover ?? current?.social_cover ?? {},
+      )
       assertMediaUrl(seo.publisher.logo_url, options.media_url, 'seo.publisher.logo_url')
       assertMediaUrl(social_cover.logo_url, options.media_url, 'social_cover.logo_url')
-      assertMediaUrl(social_cover.default_image_url, options.media_url, 'social_cover.default_image_url')
+      assertMediaUrl(
+        social_cover.default_image_url,
+        options.media_url,
+        'social_cover.default_image_url',
+      )
+      assertMediaUrl(
+        input.logo_dark_url ?? current?.logo_dark_url ?? null,
+        options.media_url,
+        'logo_dark_url',
+      )
+      const favicon = faviconSettingsSchema.parse(input.favicon ?? current?.favicon ?? {})
+      for (const [variant, url] of Object.entries(favicon))
+        assertMediaUrl(url, options.media_url, `favicon.${variant}`)
       assertMediaUrl(input.logo_url, options.media_url, 'logo_url')
       assertAppearances(input.reaction_appearances, options.media_url)
       for (const icon of input.profile_status_icons) {
-        assertMediaUrl(icon.image_url, options.media_url, `profile_status_icons.${icon.id}.image_url`)
+        assertMediaUrl(
+          icon.image_url,
+          options.media_url,
+          `profile_status_icons.${icon.id}.image_url`,
+        )
       }
       const saved = await repository.save(
         {
           name: input.name,
           logo_url: input.logo_url,
+          logo_dark_url:
+            input.logo_dark_url === undefined
+              ? (current?.logo_dark_url ?? null)
+              : input.logo_dark_url,
+          favicon,
           locale: input.locale,
           about: input.about,
           registration_open: input.registration_open,
@@ -112,13 +158,20 @@ export function createSettingsService(repository: SettingsRepository, options: {
         },
         correlation_id,
       )
-      return { ...toAdmin(saved), ...(options.public_origin ? { public_origin: options.public_origin } : {}) }
+      return {
+        ...toAdmin(saved),
+        ...(options.public_origin ? { public_origin: options.public_origin } : {}),
+      }
     },
 
     async ensureDefaults(correlation_id) {
       const existing = await repository.find()
       if (existing) return existing
-      return (await repository.insertIfAbsent(BOOTSTRAP_SETTINGS, correlation_id)) ?? (await repository.find()) ?? BOOTSTRAP_SETTINGS
+      return (
+        (await repository.insertIfAbsent(BOOTSTRAP_SETTINGS, correlation_id)) ??
+        (await repository.find()) ??
+        BOOTSTRAP_SETTINGS
+      )
     },
   }
 }

@@ -42,7 +42,7 @@ export const commentInteractionHandlers = [
     return HttpResponse.json({
       id: crypto.randomUUID(),
       url: URL.createObjectURL(bytes),
-      kind: 'image',
+      kind: new URL(request.url).searchParams.get('kind') ?? 'image',
       mime: bytes.type,
       byte_size: bytes.size,
     })
@@ -145,33 +145,58 @@ export const commentInteractionHandlers = [
     }
     return HttpResponse.json(report, { status: 201 })
   }),
-  http.get('*/v1/moderation/comments/reports', () =>
-    HttpResponse.json({
-      items: reports()
-        .filter((row) => row.status === 'open')
-        .flatMap((row) => {
-          const data = thread(row.comment_id)
-          const article = mockFeedArticles.find((item) => item.id === data?.article_id)
-          return data && article
-            ? [
-                {
-                  ...row,
-                  body: data.target.body,
-                  article_id: article.id,
-                  article_slug: article.slug,
-                },
-              ]
-            : []
-        }),
-      next_cursor: null,
-    }),
-  ),
+  http.get('*/v1/moderation/comments/reports', ({ request }) => {
+    const params = new URL(request.url).searchParams,
+      status = params.get('status') ?? 'open',
+      q = (params.get('q') ?? '').toLowerCase()
+    const items = reports()
+      .filter((row) => status === 'all' || row.status === status)
+      .flatMap((row) => {
+        const data = thread(row.comment_id),
+          article = mockFeedArticles.find((item) => item.id === data?.article_id)
+        return data &&
+          article &&
+          (!q ||
+            (data.target.body ?? '').toLowerCase().includes(q) ||
+            row.reason.toLowerCase().includes(q) ||
+            article.slug === q)
+          ? [
+              {
+                ...row,
+                body: data.target.body,
+                author_id: data.target.author.user_id,
+                author_name: data.target.author.display_name,
+                article_id: article.id,
+                article_slug: article.slug,
+              },
+            ]
+          : []
+      })
+      .filter(
+        (row) =>
+          (!params.get('from') || row.created_at.slice(0, 10) >= (params.get('from') ?? '')) &&
+          (!params.get('to') || row.created_at.slice(0, 10) <= (params.get('to') ?? '')),
+      )
+      .sort(
+        (a, b) =>
+          (params.get('sort') === 'oldest' ? 1 : -1) *
+          (a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id)),
+      )
+    const start = params.get('cursor')
+        ? items.findIndex((row) => row.id === params.get('cursor')) + 1
+        : 0,
+      page = items.slice(start, start + 50)
+    return HttpResponse.json({
+      items: page,
+      next_cursor: items.length > start + 50 ? page.at(-1)?.id : null,
+    })
+  }),
   http.patch('*/v1/moderation/comments/reports/:id', async ({ params, request }) => {
     const rows = reports()
     const row = rows.find((item) => item.id === params.id)
     if (!row) return notFound()
     const { action } = (await request.json()) as { action: string }
-    if (action !== 'dismiss')
+    if (row.status === 'open' && action !== 'dismiss')
       patchStoredComment(row.comment_id, { status: action === 'hide' ? 'hidden' : 'deleted' })
     row.status = 'reviewed'
     localStorage.setItem('mock_comment_reports', JSON.stringify(rows))

@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
-import { Button, Dialog } from '@/shared/ui'
+import { Button, Dialog, Input, Textarea } from '@/shared/ui'
 import { useUpdateProfile } from '../model/useUpdateProfile.ts'
 
 export type ProfileDraft = {
@@ -50,7 +50,12 @@ export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfil
     )
   }
 
-  const slug_message = field_error && FIELD_ERROR[field_error] ? t(FIELD_ERROR[field_error]) : field_error ? t('profile.error.save') : null
+  const slug_message =
+    field_error && FIELD_ERROR[field_error]
+      ? t(FIELD_ERROR[field_error])
+      : field_error
+        ? t('profile.error.save')
+        : null
 
   return (
     <Dialog is_open={is_open} onOpenChange={onOpenChange} size="md">
@@ -69,43 +74,62 @@ export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfil
         >
           <label className="flex flex-col gap-1 text-sm">
             {t('profile.display_name')}
-            <input
+            <Input
+              size="lg"
+              variant="secondary"
               required
               minLength={1}
               maxLength={50}
               value={draft.display_name}
               onChange={(event) => setDraft({ ...draft, display_name: event.target.value })}
-              className="form-field h-12 w-full px-4 text-base"
+              className="w-full"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             {t('profile.bio')}
-            <textarea
+            <Textarea
+              size="lg"
+              variant="secondary"
               maxLength={500}
               value={draft.bio}
               onChange={(event) => setDraft({ ...draft, bio: event.target.value })}
-              className="form-field min-h-24 w-full resize-y px-4 py-3 text-base"
+              className="min-h-24 w-full resize-y"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             {t('profile.slug')}
-            <input
+            <Input
+              size="lg"
+              variant="secondary"
               value={draft.slug}
               maxLength={40}
               minLength={3}
               pattern="[a-zA-Z0-9][a-zA-Z0-9\-]{1,38}[a-zA-Z0-9]"
               aria-invalid={slug_message ? true : undefined}
               onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
-              className="form-field h-12 w-full px-4 text-base"
+              className="w-full"
             />
             <span className="text-muted">{t('profile.slug_hint')}</span>
-            {initial.slug ? <span className="text-muted">{t('profile.slug_current', { slug: initial.slug })}</span> : null}
-            {slug_message ? <span role="alert" className="text-danger">{slug_message}</span> : null}
+            {initial.slug ? (
+              <span className="text-muted">
+                {t('profile.slug_current', { slug: initial.slug })}
+              </span>
+            ) : null}
+            {slug_message ? (
+              <span role="alert" className="text-danger">
+                {slug_message}
+              </span>
+            ) : null}
           </label>
         </form>
       </Dialog.Body>
       <Dialog.Footer>
-        <Button type="submit" form={form_id} variant="primary" isDisabled={update.isPending || draft.display_name.trim().length === 0}>
+        <Button
+          type="submit"
+          form={form_id}
+          variant="primary"
+          isDisabled={update.isPending || draft.display_name.trim().length === 0}
+        >
           {update.isPending ? t('profile.saving') : t('profile.save')}
         </Button>
         <Button variant="ghost" slot="close">

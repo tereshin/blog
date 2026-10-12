@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useCommentMentionSearch } from '../model/useCommentMentionSearch.ts'
 import { useT } from '@/shared/i18n'
-import { Avatar, BaseIcon, Button, Dialog, ErrorState } from '@/shared/ui'
+import { Avatar, BaseIcon, Button, Dialog, ErrorState, Input } from '@/shared/ui'
 import type { CommentExtras as Extras } from '../model/useCommentExtras.ts'
 export function CommentExtras({
   extras,
@@ -89,7 +89,9 @@ export function CommentExtras({
         <Dialog.Body>
           <label className="flex flex-col gap-2 text-sm">
             {t('comment.find_member')}
-            <input
+            <Input
+              size="base"
+              variant="secondary"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               maxLength={100}

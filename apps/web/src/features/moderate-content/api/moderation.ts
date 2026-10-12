@@ -1,3 +1,4 @@
+import type { ModerationFilters } from '@blog/contracts'
 import { z } from 'zod'
 import { feedCardDtoSchema, toArticleCard } from '@/entities/article'
 import type { ArticleCardModel } from '@/entities/article'
@@ -16,6 +17,7 @@ const moderationItemSchema = z.object({
     status: z.enum(['draft', 'published', 'hidden', 'deleted']),
   }),
   reports: z.array(reportSchema),
+  updated_at: z.string().optional(),
 })
 
 const moderationPageSchema = z.object({
@@ -28,7 +30,10 @@ const statusSchema = z.object({
   status: z.enum(['draft', 'published', 'hidden', 'deleted']),
 })
 
+export type ModerationPage = { items: ModerationItem[]; next_cursor: string | null }
 export type ModerationItem = {
+  report?: z.infer<typeof reportSchema>
+  updated_at?: string
   article: ArticleCardModel & { status: 'draft' | 'published' | 'hidden' | 'deleted' }
   reports: {
     id: string
@@ -40,12 +45,13 @@ export type ModerationItem = {
 }
 
 export async function getModerationQueuePage(
-  filter: 'reported' | 'hidden',
+  filter: 'reported' | 'hidden' | 'search',
   cursor?: string,
   signal?: AbortSignal,
+  filters?: ModerationFilters,
 ) {
   const page = await http.get('/v1/moderation/articles', moderationPageSchema, {
-    query: { filter, cursor },
+    query: { ...filters, filter, cursor },
     ...(signal ? { signal } : {}),
   })
   return {
@@ -53,12 +59,13 @@ export async function getModerationQueuePage(
     items: page.items.map((item) => ({
       article: { ...toArticleCard(item.article), status: item.article.status },
       reports: item.reports,
+      updated_at: item.updated_at,
     })),
   }
 }
 
 export async function getModerationQueue(
-  filter: 'reported' | 'hidden',
+  filter: 'reported' | 'hidden' | 'search',
   signal?: AbortSignal,
 ): Promise<ModerationItem[]> {
   return (await getModerationQueuePage(filter, undefined, signal)).items
@@ -88,6 +95,33 @@ export function deleteModeratedComment(comment_id: string): Promise<unknown> {
   return http.delete(`/v1/moderation/comments/${comment_id}`, z.unknown())
 }
 
-export function reviewReport(report_id: string): Promise<unknown> {
-  return http.patch(`/v1/reports/${report_id}`, reportSchema, { body: { status: 'reviewed' } })
+export function reviewReport(
+  report_id: string,
+  action: 'dismiss' | 'hide' | 'delete' = 'dismiss',
+): Promise<unknown> {
+  return http.patch(`/v1/reports/${report_id}`, reportSchema, { body: { action } })
+}
+
+export async function getArticleReportPage(
+  filters: ModerationFilters,
+  cursor?: string,
+  signal?: AbortSignal,
+): Promise<ModerationPage> {
+  const schema = z.object({
+    items: z.array(z.object({ article: moderationItemSchema.shape.article, report: reportSchema })),
+    next_cursor: z.string().nullable(),
+  })
+  const page = await http.get('/v1/moderation/articles/reports', schema, {
+    query: { ...filters, cursor },
+    signal,
+  })
+  return {
+    ...page,
+    items: page.items.map((item) => ({
+      article: { ...toArticleCard(item.article), status: item.article.status },
+      report: item.report,
+      reports: [item.report],
+      updated_at: item.report.created_at,
+    })),
+  }
 }

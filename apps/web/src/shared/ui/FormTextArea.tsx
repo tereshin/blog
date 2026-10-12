@@ -1,10 +1,10 @@
 import { useId, useState } from 'react'
 import type { ComponentProps } from 'react'
 import { cn } from '@/shared/lib'
-import { TextArea } from '@heroui/react/textarea'
+import { Textarea } from './Textarea.tsx'
 import { FieldCounter } from './FieldCounter.tsx'
 
-type FormTextAreaProps = ComponentProps<typeof TextArea> & {
+type FormTextAreaProps = ComponentProps<typeof Textarea> & {
   label: string
   hint?: string
   error?: string
@@ -44,7 +44,9 @@ export function FormTextArea({
         {label}
       </label>
       <div className="relative min-w-0">
-        <TextArea
+        <Textarea
+          size="lg"
+          variant="secondary"
           {...props}
           id={field_id}
           value={value}
@@ -53,7 +55,7 @@ export function FormTextArea({
           aria-invalid={error ? true : props['aria-invalid']}
           aria-describedby={description_ids}
           className={cn(
-            'form-field w-full text-base min-h-28 resize-y px-4 py-3',
+            'w-full min-h-28 resize-y',
             maxLength !== undefined && 'pb-9',
             className as string | undefined,
           )}

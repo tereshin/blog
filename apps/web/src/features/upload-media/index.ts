@@ -3,3 +3,5 @@ export type { UploadedMedia } from './api/upload-media.ts'
 export { useUploadMedia } from './model/useUploadMedia.ts'
 export type { UploadState } from './model/useUploadMedia.ts'
 export { ImageUploadButton } from './ui/ImageUploadButton.tsx'
+
+export { FaviconUploadButton } from './ui/FaviconUploadButton.tsx'

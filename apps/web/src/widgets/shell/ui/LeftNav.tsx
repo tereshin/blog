@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import type { ReactNode, UIEvent } from 'react'
 import { useMessagesUnreadCount, useMessagesUnreadLive } from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
@@ -11,6 +11,11 @@ import { useCurrentSection } from '../model/useCurrentSection.ts'
 import { useFeedFreshness } from '../model/useFeedFreshness.ts'
 import { useShellStore } from '../model/useShellStore.ts'
 import { LeftNavItem } from './LeftNavItem.tsx'
+
+// Keep topic administration and its table out of the public navigation bundle.
+const TopicCreateButton = lazy(() =>
+  import('@/features/manage-topics').then((module) => ({ default: module.TopicCreateButton })),
+)
 
 type Mode = {
   to: string
@@ -25,31 +30,46 @@ const MODES: ReadonlyArray<Mode> = [
     to: '/popular',
     kind: 'popular',
     label: 'shell.nav.popular',
-    icon: { line: <BaseIcon name="fire" style="line" size={24} />, fill: <BaseIcon name="fire" style="fill" size={24} /> },
+    icon: {
+      line: <BaseIcon name="fire" style="line" size={24} />,
+      fill: <BaseIcon name="fire" style="fill" size={24} />,
+    },
   },
   {
     to: '/',
     kind: 'fresh',
     label: 'shell.nav.fresh',
-    icon: { line: <BaseIcon name="sparkles" style="line" size={24} />, fill: <BaseIcon name="sparkles" style="fill" size={24} /> },
+    icon: {
+      line: <BaseIcon name="sparkles" style="line" size={24} />,
+      fill: <BaseIcon name="sparkles" style="fill" size={24} />,
+    },
   },
   {
     to: '/feed',
     kind: 'mine',
     label: 'shell.nav.my_feed',
-    icon: { line: <BaseIcon name="paper" style="line" size={24} />, fill: <BaseIcon name="paper" style="fill" size={24} /> },
+    icon: {
+      line: <BaseIcon name="paper" style="line" size={24} />,
+      fill: <BaseIcon name="paper" style="fill" size={24} />,
+    },
   },
   {
     to: '/messages',
     kind: 'messages',
     label: 'shell.nav.messages',
-    icon: { line: <BaseIcon name="chat_3" style="line" size={24} />, fill: <BaseIcon name="chat_3" style="fill" size={24} /> },
+    icon: {
+      line: <BaseIcon name="chat_3" style="line" size={24} />,
+      fill: <BaseIcon name="chat_3" style="fill" size={24} />,
+    },
   },
   {
     to: '/rating',
     kind: 'rating',
     label: 'shell.nav.rating',
-    icon: { line: <BaseIcon name="trophy" style="line" size={24} />, fill: <BaseIcon name="trophy" style="fill" size={24} /> },
+    icon: {
+      line: <BaseIcon name="trophy" style="line" size={24} />,
+      fill: <BaseIcon name="trophy" style="fill" size={24} />,
+    },
   },
 ]
 
@@ -63,7 +83,7 @@ type LeftNavProps = {
 /** Левая карточка: режимы, затем темы. Прокручивается внутри себя и не отдаёт прокрутку окну. */
 export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const { t } = useT()
-  const { viewer } = useViewer()
+  const { viewer, is_superadmin } = useViewer()
   const is_member = viewer.status === 'member'
   const unread_messages = useMessagesUnreadCount(is_member)
   useMessagesUnreadLive(is_member)
@@ -99,55 +119,80 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
 
   return (
     <div onScroll={handleScroll} className="flex flex-col gap-1 p-2">
-        {MODES.map((mode) => {
-          const is_fresh = (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
-          const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh
-          const is_selected = highlighted?.kind === mode.kind
-          return (
-            <LeftNavItem
-              key={mode.to}
-              to={mode.to}
-              is_selected={is_selected}
-              icon={is_selected ? mode.icon.fill : mode.icon.line}
-              has_unread={has_unread}
-              unread_label={mode.kind === 'messages' ? t('shell.nav.unread') : t('shell.nav.freshness')}
-            >
-              {t(mode.label)}
-            </LeftNavItem>
-          )
-        })}
-        <h2 className="px-3 pb-1 pt-3 text-base text-muted">{t('shell.nav.topics')}</h2>
-        {topics.isPending ? (
-          <div className="flex flex-col gap-2 px-3 py-1" role="status" aria-label={t('common.loading')}>
-            <Skeleton className="h-5 w-full" />
-            <Skeleton className="h-5 w-4/5" />
-            <Skeleton className="h-5 w-3/5" />
-          </div>
-        ) : topics.isError ? (
-          <ErrorState title={t('shell.nav.topics_error')} onRetry={() => void topics.refetch()} className="py-4" />
-        ) : active_topics.length === 0 ? (
-          <p className="px-3 py-2 text-sm text-muted">{t('shell.nav.topics_empty')}</p>
-        ) : (
-          <>
-            {shown_topics.map((topic) => (
-              <TopicNavItem
-                key={topic.id}
-                topic={topic}
-                is_selected={highlighted?.kind === 'topic' && highlighted.topic_id === topic.id}
-              />
-            ))}
-            {has_hidden ? (
-              <Button variant="ghost" size="sm" className="self-start" onPress={() => setTopicsExpanded(!is_expanded)}>
-                {is_expanded ? t('common.collapse') : t('common.show_all')}
-              </Button>
-            ) : null}
-          </>
-        )}
-
-        <div className="pt-3 flex flex-col gap-1">
-          <LeftNavItem to="/about" is_selected={section.kind === 'about'}>{t('account.about')}</LeftNavItem>
-          <AppearanceToggle className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal" />
+      {MODES.map((mode) => {
+        const is_fresh =
+          (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
+        const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh
+        const is_selected = highlighted?.kind === mode.kind
+        return (
+          <LeftNavItem
+            key={mode.to}
+            to={mode.to}
+            is_selected={is_selected}
+            icon={is_selected ? mode.icon.fill : mode.icon.line}
+            has_unread={has_unread}
+            unread_label={
+              mode.kind === 'messages' ? t('shell.nav.unread') : t('shell.nav.freshness')
+            }
+          >
+            {t(mode.label)}
+          </LeftNavItem>
+        )
+      })}
+      <div className="flex items-center justify-between px-3 pb-1 pt-3">
+        <h2 className="text-base text-muted">{t('shell.nav.topics')}</h2>
+        {is_superadmin ? (
+          <Suspense fallback={null}>
+            <TopicCreateButton />
+          </Suspense>
+        ) : null}
+      </div>
+      {topics.isPending ? (
+        <div
+          className="flex flex-col gap-2 px-3 py-1"
+          role="status"
+          aria-label={t('common.loading')}
+        >
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-4/5" />
+          <Skeleton className="h-5 w-3/5" />
         </div>
+      ) : topics.isError ? (
+        <ErrorState
+          title={t('shell.nav.topics_error')}
+          onRetry={() => void topics.refetch()}
+          className="py-4"
+        />
+      ) : active_topics.length === 0 ? (
+        <p className="px-3 py-2 text-sm text-muted">{t('shell.nav.topics_empty')}</p>
+      ) : (
+        <>
+          {shown_topics.map((topic) => (
+            <TopicNavItem
+              key={topic.id}
+              topic={topic}
+              is_selected={highlighted?.kind === 'topic' && highlighted.topic_id === topic.id}
+            />
+          ))}
+          {has_hidden ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="self-start"
+              onPress={() => setTopicsExpanded(!is_expanded)}
+            >
+              {is_expanded ? t('common.collapse') : t('common.show_all')}
+            </Button>
+          ) : null}
+        </>
+      )}
+
+      <div className="pt-3 flex flex-col gap-1">
+        <LeftNavItem to="/about" is_selected={section.kind === 'about'}>
+          {t('account.about')}
+        </LeftNavItem>
+        <AppearanceToggle className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal" />
+      </div>
     </div>
   )
 }

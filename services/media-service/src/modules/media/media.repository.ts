@@ -25,7 +25,16 @@ export function createMediaRepository(db: NodePgDatabase): MediaRepository {
       return row ? toStored(row) : null
     },
     async findByUrl(url) {
-      const [row] = await db.select({ uploader_id: files.uploader_id, kind: files.kind }).from(files).where(eq(files.url, url)).limit(1)
+      const [row] = await db
+        .select({
+          id: files.id,
+          mime: files.mime,
+          uploader_id: files.uploader_id,
+          kind: files.kind,
+        })
+        .from(files)
+        .where(eq(files.url, url))
+        .limit(1)
       return row ?? null
     },
     async insert(file) {

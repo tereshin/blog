@@ -118,9 +118,10 @@ test.describe('вход через эмулятор', () => {
     const body = (await config.json()) as { test_participants?: { label: string }[] }
     const label = body.test_participants?.[0]?.label
     expect(label).toBeTruthy()
+    if (!label) throw new Error('Missing test participant')
     await page.goto('/')
     await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
-    await page.getByRole('button', { name: label! }).click()
+    await page.getByRole('button', { name: label }).click()
     await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
     const dev_login = await request.post('http://localhost:3000/v1/auth/dev-login')
     expect(dev_login.status()).toBe(404)
@@ -149,9 +150,10 @@ test.describe('вход через эмулятор', () => {
     const participants = (await config.json()) as { test_participants?: { email: string }[] }
     const taken_email = participants.test_participants?.[0]?.email
     expect(taken_email).toBeTruthy()
-    await page.getByLabel('Почта').fill(taken_email!)
+    if (!taken_email || !free_text) throw new Error('Missing email verification fixture')
+    await page.getByLabel('Почта').fill(taken_email)
     await page.getByRole('button', { name: 'Указать почту' }).click()
-    await expect(page.getByText(free_text!)).toBeVisible()
+    await expect(page.getByText(free_text)).toBeVisible()
     await expect(page.getByText('занят')).toHaveCount(0)
 
     await page.keyboard.press('Escape')

@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { confirmEmailVerification, confirmPasswordReset, credentialFieldError } from '@/features/login'
+import {
+  confirmEmailVerification,
+  confirmPasswordReset,
+  credentialFieldError,
+} from '@/features/login'
 import { useT } from '@/shared/i18n'
-import { Button, EmptyState } from '@/shared/ui'
+import { Button, EmptyState, Input } from '@/shared/ui'
 import { useShellStore } from '@/widgets/shell'
 
 type ActionStatus = 'idle' | 'ok' | 'fail'
@@ -54,7 +58,10 @@ export default function AuthActionPage() {
 
   if (!oob_code || (mode !== 'verifyEmail' && mode !== 'resetPassword')) {
     return (
-      <EmptyState title={t('auth_action.invalid_link')} description={t('auth_action.invalid_link_hint')}>
+      <EmptyState
+        title={t('auth_action.invalid_link')}
+        description={t('auth_action.invalid_link_hint')}
+      >
         <Link to="/" className="text-accent underline-offset-2 hover:underline">
           {t('shell.nav.fresh')}
         </Link>
@@ -65,7 +72,13 @@ export default function AuthActionPage() {
   return (
     <div className="flex flex-col gap-3 p-4">
       {mode === 'verifyEmail' || (!is_reset && status !== 'idle') ? (
-        <p>{status === 'fail' ? t('auth_action.verify_fail') : status === 'ok' ? t('auth_action.verify_ok') : t('common.loading')}</p>
+        <p>
+          {status === 'fail'
+            ? t('auth_action.verify_fail')
+            : status === 'ok'
+              ? t('auth_action.verify_ok')
+              : t('common.loading')}
+        </p>
       ) : null}
       {mode === 'resetPassword' && status === 'idle' ? (
         <form
@@ -78,7 +91,9 @@ export default function AuthActionPage() {
           <h1 className="text-lg">{t('auth_action.reset_title')}</h1>
           <label className="flex flex-col gap-1 text-sm">
             <span>{t('login.password')}</span>
-            <input
+            <Input
+              size="base"
+              variant="secondary"
               type="password"
               autoComplete="new-password"
               value={password}

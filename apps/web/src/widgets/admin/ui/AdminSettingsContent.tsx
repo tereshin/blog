@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { settingsKeys } from '@/entities/settings'
 import { SettingsForm, getAdminSettings } from '@/features/update-settings'
 import type { SettingsSection } from '@/features/update-settings'
-import { ImageUploadButton } from '@/features/upload-media'
+import { ImageUploadButton, FaviconUploadButton } from '@/features/upload-media'
 import { useT } from '@/shared/i18n'
 import { ErrorState, Skeleton } from '@/shared/ui'
 
@@ -20,13 +20,17 @@ export function AdminSettingsContent({ section }: { section: SettingsSection }) 
       key={section}
       section={section}
       initial={settings.data}
-      upload={({ label, onUploaded }) => (
-        <ImageUploadButton
-          label={label}
-          onUploaded={onUploaded}
-          container_className="items-start"
-        />
-      )}
+      upload={({ label, onUploaded, variant }) =>
+        variant ? (
+          <FaviconUploadButton label={label} variant={variant} onUploaded={onUploaded} />
+        ) : (
+          <ImageUploadButton
+            label={label}
+            onUploaded={onUploaded}
+            container_className="items-start"
+          />
+        )
+      }
     />
   )
 }

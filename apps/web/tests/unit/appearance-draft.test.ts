@@ -7,7 +7,7 @@ import {
   moveActive,
   restoreDraft,
   retireDraft,
-} from '@/features/update-settings/model/appearance-draft.ts'
+} from '../../src/features/update-settings/model/appearance-draft.ts'
 
 const drafts = draftsFrom(DEFAULT_REACTION_APPEARANCES)
 

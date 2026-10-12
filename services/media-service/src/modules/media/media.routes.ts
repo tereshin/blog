@@ -12,7 +12,18 @@ export const mediaRoutes: FastifyPluginAsync<MediaRoutesOptions> = async (app, o
   app.removeAllContentTypeParsers()
   app.addContentTypeParser('*', (_request, payload, done) => done(null, payload))
 
-  const controller = createMediaController(createMediaService(createMediaRepository(options.database.db), options.store, options.public_url))
+  const controller = createMediaController(
+    createMediaService(
+      createMediaRepository(options.database.db),
+      options.store,
+      options.public_url,
+    ),
+  )
   app.post('/v1/media', (request, reply) => controller.upload(request, reply))
-  app.get('/internal/files', { config: { is_public: true } }, (request, reply) => controller.lookup(request, reply))
+  app.get('/internal/files/content', { config: { is_public: true } }, (request, reply) =>
+    controller.content(request, reply),
+  )
+  app.get('/internal/files', { config: { is_public: true } }, (request, reply) =>
+    controller.lookup(request, reply),
+  )
 }

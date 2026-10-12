@@ -4,7 +4,12 @@ import { ADMIN_ROUTES, getAdminRoute } from './admin-navigation.ts'
 export function getModerationReturnTo(state: unknown): string {
   if (typeof state === 'object' && state !== null && 'moderation_return_to' in state) {
     const candidate = state.moderation_return_to
-    if (typeof candidate === 'string' && getAdminRoute(candidate)?.parent === 'moderation')
+    if (
+      typeof candidate === 'string' &&
+      candidate.startsWith('/admin/moderation/') &&
+      !candidate.includes('#') &&
+      getAdminRoute(candidate.split('?')[0] ?? '')?.parent === 'moderation'
+    )
       return candidate
   }
   return ADMIN_ROUTES.articles.path

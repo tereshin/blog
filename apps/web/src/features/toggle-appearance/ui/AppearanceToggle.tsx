@@ -4,7 +4,7 @@ import type { AppearancePreference } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
 import { cn } from '@/shared/lib'
-import { BaseIcon, Button, Link, Menu } from '@/shared/ui'
+import { BaseIcon, Link, Menu } from '@/shared/ui'
 
 type AppearanceOption = {
   id: AppearancePreference

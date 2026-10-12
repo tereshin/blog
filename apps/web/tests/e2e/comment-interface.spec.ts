@@ -64,12 +64,12 @@ test('ветки свёрнуты, раскрываются и сортирую�
   await expect(root(page).locator('article').first()).toContainText('Второй ответ в ветке')
   await root(page).getByRole('link', { name: 'Скрыть ответы' }).click()
   await expect(page.getByText('Первый ответ в ветке')).toHaveCount(0)
-  await discussion(page).getByRole('button', { name: 'Сортировка комментариев' }).click()
+  await discussion(page).getByRole('link', { name: 'Сортировка комментариев' }).click()
   await page.getByRole('menu').getByText('Сначала новые', { exact: true }).click()
   await expect(discussion(page).locator('article').first()).toContainText(
     'Новый корневой комментарий',
   )
-  await discussion(page).getByRole('button', { name: 'Сортировка комментариев' }).click()
+  await discussion(page).getByRole('link', { name: 'Сортировка комментариев' }).click()
   await page.getByRole('menu').getByText('Лучшие', { exact: true }).click()
   await expect(discussion(page).locator('article').first()).toContainText(
     'Самый популярный комментарий',
@@ -82,7 +82,7 @@ test('прямая ссылка раскрывает ответ; меню пок
   await seedDiscussion(page)
   await page.goto(`/p/statya-1#comment-${REPLY_ID}`)
   await expect(page.getByText('Первый ответ в ветке')).toBeVisible()
-  await root(page).getByRole('button', { name: 'Меню комментария' }).first().click()
+  await root(page).getByRole('link', { name: 'Меню комментария' }).first().click()
   await expect(page.getByRole('menuitem', { name: 'В закладки', exact: true })).toBeEnabled()
   await expect(page.getByRole('menuitem', { name: 'Пожаловаться', exact: true })).toBeEnabled()
   await page.getByRole('menuitem', { name: 'Посмотреть реакции' }).click()
@@ -92,7 +92,7 @@ test('прямая ссылка раскрывает ответ; меню пок
   await expect(reactions).toContainText('Роман Читаев')
   await page.keyboard.press('Escape')
   await expect(reactions).toHaveCount(0)
-  await expect(root(page).getByRole('button', { name: 'Меню комментария' }).first()).toBeFocused()
+  await expect(root(page).getByRole('link', { name: 'Меню комментария' }).first()).toBeFocused()
 })
 
 test('компактное поле раскрывается, вставляет эмодзи и отправляет с клавиатуры', async ({
@@ -143,9 +143,9 @@ test('ответ открывает ветку; обсуждение досту�
 test('закладки комментариев, жалоба и подписка сохраняются через API', async ({ page }) => {
   await seedDiscussion(page)
   await page.goto('/p/statya-1')
-  await root(page).getByRole('button', { name: 'Меню комментария' }).click()
+  await root(page).getByRole('link', { name: 'Меню комментария' }).click()
   await page.getByRole('menuitem', { name: 'В закладки', exact: true }).click()
-  await root(page).getByRole('button', { name: 'Меню комментария' }).click()
+  await root(page).getByRole('link', { name: 'Меню комментария' }).click()
   await expect(
     page.getByRole('menuitem', { name: 'Убрать из закладок', exact: true }),
   ).toBeVisible()
@@ -154,7 +154,7 @@ test('закладки комментариев, жалоба и подписк�
   await expect(
     page.getByRole('button', { name: 'Не следить за обсуждением', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
-  await root(page).getByRole('button', { name: 'Меню комментария' }).click()
+  await root(page).getByRole('link', { name: 'Меню комментария' }).click()
   await page.getByRole('menuitem', { name: 'Пожаловаться', exact: true }).click()
   const report = page.getByRole('dialog', { name: 'Пожаловаться' })
   await report.getByLabel('Причина жалобы').fill('Спам в комментарии')
@@ -274,7 +274,7 @@ test('модератор обрабатывает жалобу на коммен
   )
   await page.goto('/admin/moderation/comments')
   await expect(page.getByText('Спам в комментарии', { exact: false })).toBeVisible()
-  await page.getByRole('link', { name: 'Открыть', exact: true }).click()
+  await page.getByRole('grid').getByRole('link').first().click()
   const back = page.getByRole('banner').getByRole('link', { name: 'Назад', exact: true })
   await expect(back).toHaveAttribute('href', '/admin/moderation/comments')
   await back.click()

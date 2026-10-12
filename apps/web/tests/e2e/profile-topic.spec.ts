@@ -127,7 +127,7 @@ test.describe('Общий каркас профиля и темы', () => {
     await expect(page).toHaveURL(/\/u\/new-reader$/)
     await expect(page.getByRole('heading', { name: 'Роман Новый', exact: true })).toBeVisible()
     await expect(page.getByText('Новое описание', { exact: true })).toBeVisible()
-    await page.getByRole('link', { name: 'Меню учётной записи' }).click()
+    await page.getByRole('button', { name: 'Меню учётной записи' }).click()
     await expect(page.getByRole('menuitem', { name: 'Роман Новый', exact: true })).toBeVisible()
     await page.keyboard.press('Escape')
   })

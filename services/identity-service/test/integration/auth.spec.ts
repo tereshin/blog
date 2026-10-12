@@ -251,7 +251,9 @@ describe('identity: вход через Firebase', () => {
     expect(second.statusCode).toBe(204)
     const rows = await database.db.select().from(users).where(eq(users.email, 'merge@blog.test'))
     expect(rows).toHaveLength(1)
-    const links = await database.db.select().from(auth_identities).where(eq(auth_identities.user_id, rows[0]!.id))
+    const merged = rows[0]
+    if (!merged) throw new Error('Missing merged user')
+    const links = await database.db.select().from(auth_identities).where(eq(auth_identities.user_id, merged.id))
     expect(links.map((link) => link.firebase_uid).sort()).toEqual(['uid-merge-a', 'uid-merge-b'])
   })
 

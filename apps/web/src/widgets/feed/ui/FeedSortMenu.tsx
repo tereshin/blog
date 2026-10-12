@@ -11,7 +11,7 @@ export function FeedSortMenu({ sort, onChange }: FeedSortMenuProps) {
   return (
     <div className="px-3 sm:px-4">
       <Menu>
-        <Link className="no-underline text-sm gap-1 opacity-80 hover:opacity-100 transition-opacity">
+        <Link className="no-underline text-sm gap-1 ">
           {t(`profile.sort.${sort}`)}
           <ChevronDownIcon width={16} height={16} />
         </Link>

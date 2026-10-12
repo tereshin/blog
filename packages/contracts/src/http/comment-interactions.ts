@@ -32,6 +32,9 @@ export type CommentReport = z.infer<typeof commentReportSchema>
 export const commentReportPageSchema = pageSchema(
   commentReportSchema.extend({
     body: z.string().nullable(),
+    author_id: z.uuid().optional(),
+    author_name: z.string().nullable().optional(),
+    comment_status: z.enum(['visible', 'hidden', 'deleted']).optional(),
     article_slug: z.string(),
     article_id: z.uuid(),
   }),

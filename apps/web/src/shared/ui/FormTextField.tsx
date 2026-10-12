@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import type { ComponentProps } from 'react'
 import { cn } from '@/shared/lib'
-import { Input } from '@heroui/react/input'
+import { Input } from './Input.tsx'
 import { FieldCounter } from './FieldCounter.tsx'
 
 type FormTextFieldProps = ComponentProps<typeof Input> & {
@@ -45,6 +45,8 @@ export function FormTextField({
       </label>
       <div className="relative min-w-0">
         <Input
+          size="lg"
+          variant="secondary"
           {...props}
           id={field_id}
           value={value}
@@ -53,7 +55,7 @@ export function FormTextField({
           aria-invalid={error ? true : props['aria-invalid']}
           aria-describedby={description_ids}
           className={cn(
-            'form-field w-full text-base h-12 px-4',
+            'w-full',
             maxLength !== undefined && 'pr-16',
             className as string | undefined,
           )}

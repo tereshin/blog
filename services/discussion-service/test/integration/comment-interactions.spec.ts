@@ -291,4 +291,48 @@ describe('comment interface API', () => {
     ])
     expect((await get('/v1/comments/mentions?q=Mem', 'guest')).statusCode).toBe(401)
   })
+  it('filters and paginates report history with a stable cursor, including reviewed reports', async () => {
+    for (let n = 0; n < 60; n++)
+      await database.pool.query(
+        'insert into comment_reports(id,comment_id,reporter_id,reason,created_at) values ($1,$2,$3,$4,$5)',
+        [id(1000 + n), id(102), id(2000 + n), 'Queue regression', new Date('2026-10-12T12:00:00Z')],
+      )
+    const first = await get(
+      '/v1/moderation/comments/reports?q=Queue&from=2026-10-12&to=2026-10-12',
+      'admin',
+    )
+    expect(first.statusCode).toBe(200)
+    expect(first.json().items).toHaveLength(50)
+    const second = await get(
+      `/v1/moderation/comments/reports?q=Queue&from=2026-10-12&to=2026-10-12&cursor=${first.json().next_cursor}`,
+      'admin',
+    )
+    expect(second.statusCode).toBe(200)
+    expect(second.json().items).toHaveLength(10)
+    expect(
+      new Set([...first.json().items, ...second.json().items].map((row: { id: string }) => row.id))
+        .size,
+    ).toBe(60)
+    expect(
+      (
+        await get(
+          `/v1/moderation/comments/reports?q=Queue&sort=oldest&cursor=${first.json().next_cursor}`,
+          'admin',
+        )
+      ).statusCode,
+    ).toBe(422)
+    const dismiss = () =>
+      mutate('PATCH', `/v1/moderation/comments/reports/${id(1000)}`, { action: 'dismiss' }, 'admin')
+    expect((await dismiss()).statusCode).toBe(200)
+    expect((await dismiss()).statusCode).toBe(200)
+    const reviewed = await get('/v1/moderation/comments/reports?q=Queue&status=reviewed', 'admin')
+    expect(reviewed.json().items).toHaveLength(1)
+    expect(reviewed.json().items[0]).toMatchObject({
+      author_name: 'Author',
+      comment_status: 'visible',
+    })
+    expect(
+      (await get('/v1/moderation/comments/reports?q=Queue&from=2026-10-13', 'admin')).json().items,
+    ).toHaveLength(0)
+  })
 })

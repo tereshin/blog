@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const mediaKindSchema = z.enum(['image', 'attachment'])
+export const mediaKindSchema = z.enum(['image', 'attachment', 'favicon'])
 export type MediaKind = z.infer<typeof mediaKindSchema>
 
 export const mediaUploadResponseSchema = z.strictObject({

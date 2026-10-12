@@ -1,10 +1,17 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { articleStatusSchema, moderationPageSchema, reportSchema, reviewReportSchema } from '@blog/contracts'
+import {
+  moderationArticleQuerySchema,
+  moderationFiltersSchema,
+  moderationReportPageSchema,
+  articleStatusSchema,
+  moderationPageSchema,
+  reportSchema,
+  reviewReportSchema,
+} from '@blog/contracts'
 import { createModerationService } from './moderation.service.ts'
 import type { ModerationRepository } from './moderation.repository.ts'
 
-const filterQuery = z.object({ filter: z.enum(['reported', 'hidden']).default('reported') })
 const idParams = z.object({ id: z.uuid() })
 const statusBody = z.object({ id: z.uuid(), status: articleStatusSchema })
 
@@ -12,8 +19,16 @@ export function createModerationController(repository: ModerationRepository) {
   const service = createModerationService(repository)
   return {
     async list(request: FastifyRequest, reply: FastifyReply) {
-      const query = filterQuery.parse(request.query)
-      return reply.send(moderationPageSchema.parse(await service.list(request.viewer, query.filter)))
+      const query = moderationArticleQuerySchema.parse(request.query)
+      return reply.send(
+        moderationPageSchema.parse(await service.list(request.viewer, query.filter, query)),
+      )
+    },
+    async reports(request: FastifyRequest, reply: FastifyReply) {
+      const query = moderationFiltersSchema.parse(request.query)
+      return reply.send(
+        moderationReportPageSchema.parse(await service.listReports(request.viewer, query)),
+      )
     },
     async hide(request: FastifyRequest, reply: FastifyReply) {
       const params = idParams.parse(request.params)
@@ -32,8 +47,17 @@ export function createModerationController(repository: ModerationRepository) {
     },
     async review(request: FastifyRequest, reply: FastifyReply) {
       const params = idParams.parse(request.params)
-      reviewReportSchema.parse(request.body)
-      return reply.send(reportSchema.parse(await service.review(request.viewer, params.id)))
+      const body = reviewReportSchema.parse(request.body)
+      return reply.send(
+        reportSchema.parse(
+          await service.review(
+            request.viewer,
+            params.id,
+            'action' in body ? body.action : 'dismiss',
+            request.correlation_id,
+          ),
+        ),
+      )
     },
   }
 }

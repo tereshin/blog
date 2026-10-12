@@ -36,13 +36,19 @@ export const moderationArticleSchema = z.strictObject({
     status: z.enum(['draft', 'published', 'hidden', 'deleted']),
   }),
   reports: z.array(reportSchema),
+  updated_at: z.iso.datetime().optional(),
 })
 export type ModerationArticle = z.infer<typeof moderationArticleSchema>
 
 export const moderationPageSchema = pageSchema(moderationArticleSchema)
 export type ModerationPage = z.infer<typeof moderationPageSchema>
 
-export const reviewReportSchema = z.strictObject({
-  status: z.literal('reviewed'),
-})
+export const reviewReportSchema = z.union([
+  z.strictObject({ status: z.literal('reviewed') }),
+  z.strictObject({ action: z.enum(['dismiss', 'hide', 'delete']) }),
+])
 export type ReviewReport = z.infer<typeof reviewReportSchema>
+
+export const moderationReportPageSchema = pageSchema(
+  z.strictObject({ article: moderationArticleSchema.shape.article, report: reportSchema }),
+)

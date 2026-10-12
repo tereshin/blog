@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import {
+  moderationFiltersSchema,
   commentBookmarkPageSchema,
   commentBookmarkStateSchema,
   commentReactorPageSchema,
@@ -76,7 +77,7 @@ export const commentInteractionRoutes: FastifyPluginAsync<{ database: DbHandle }
   )
   app.get('/v1/moderation/comments/reports', async (request) =>
     commentReportPageSchema.parse(
-      await service.reports(request.viewer, pageQuerySchema.parse(request.query)),
+      await service.reports(request.viewer, moderationFiltersSchema.parse(request.query)),
     ),
   )
   app.patch('/v1/moderation/comments/reports/:id', async (request) =>

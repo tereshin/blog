@@ -1,8 +1,20 @@
 import { requestSiteCover } from '../social-cover/index.ts'
 import { eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { profileStatusIconsSchema, reactionAppearancesSchema, seoSettingsSchema, socialCoverSettingsSchema } from '@blog/contracts'
-import type { ProfileStatusIcon, ReactionAppearances, SeoSettings, SocialCoverSettings } from '@blog/contracts'
+import {
+  faviconSettingsSchema,
+  profileStatusIconsSchema,
+  reactionAppearancesSchema,
+  seoSettingsSchema,
+  socialCoverSettingsSchema,
+} from '@blog/contracts'
+import type {
+  FaviconSettings,
+  ProfileStatusIcon,
+  ReactionAppearances,
+  SeoSettings,
+  SocialCoverSettings,
+} from '@blog/contracts'
 import type { Database } from '@blog/broker'
 import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
@@ -10,6 +22,8 @@ import { appendSettingsUpdated } from './settings.events.ts'
 export type SettingsRow = {
   name: string
   logo_url: string | null
+  logo_dark_url?: string | null
+  favicon?: FaviconSettings
   locale: 'ru' | 'en' | 'sr'
   about: string
   registration_open: boolean
@@ -23,6 +37,8 @@ export type SettingsRow = {
 const columns = {
   name: settings.name,
   logo_url: settings.logo_url,
+  logo_dark_url: settings.logo_dark_url,
+  favicon: settings.favicon,
   locale: settings.locale,
   about: settings.about,
   registration_open: settings.registration_open,
@@ -36,6 +52,7 @@ const columns = {
 function readRow(row: SettingsRow): SettingsRow {
   return {
     ...row,
+    favicon: faviconSettingsSchema.parse(row.favicon ?? {}),
     seo: seoSettingsSchema.parse(row.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
     reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances),
@@ -60,7 +77,11 @@ export function createSettingsRepository(db: NodePgDatabase): SettingsRepository
     async insertIfAbsent(input, correlation_id) {
       return (db as Database).transaction(async (tx) => {
         const database = tx as Database
-        const [row] = await database.insert(settings).values({ id: 1, ...input }).onConflictDoNothing().returning(columns)
+        const [row] = await database
+          .insert(settings)
+          .values({ id: 1, ...input })
+          .onConflictDoNothing()
+          .returning(columns)
         if (!row) return null
         await appendSettingsUpdated(database, { ...input, correlation_id })
         await requestSiteCover(database, correlation_id)

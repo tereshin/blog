@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, Menu } from '@/shared/ui'
+import { BaseIcon, Button, Menu, Textarea } from '@/shared/ui'
 import { CommentAttachments } from './CommentAttachments.tsx'
 import { CommentExtras } from './CommentExtras.tsx'
 import { useCommentExtras } from '../model/useCommentExtras.ts'
@@ -97,7 +97,7 @@ export function CommentForm({
       }}
     >
       <div
-        className={`border border-transparent bg-surface-secondary transition-colors focus-within:border-accent/40 focus-within:ring-2 focus-within:ring-accent/10 ${is_expanded ? 'rounded-2xl' : 'rounded-[28px]'}`}
+        className="form-control form-control--base form-control--secondary rounded-xl"
         onFocus={() => setFocused(true)}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false)
@@ -125,7 +125,9 @@ export function CommentForm({
           </div>
         ) : null}
         <div className="flex items-start gap-2 px-4 py-3">
-          <textarea
+          <Textarea
+            size="base"
+            variant="secondary"
             ref={field_ref}
             value={draft.text}
             maxLength={5000}
@@ -133,7 +135,7 @@ export function CommentForm({
             autoFocus={Boolean(parent)}
             placeholder={t('comment.placeholder')}
             aria-label={field_label}
-            className="min-w-0 flex-1 resize-none border-0 bg-transparent py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted focus-visible:outline-none"
+            className="form-control__input min-w-0 flex-1 resize-none py-1 text-[15px] leading-6"
             onChange={(event) => draft.update(event.target.value)}
             onKeyDown={(event) => {
               if (

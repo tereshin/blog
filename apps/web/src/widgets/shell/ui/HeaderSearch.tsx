@@ -1,7 +1,7 @@
 import { Modal } from '@heroui/react/modal'
 import { Spinner } from '@heroui/react/spinner'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, ErrorState, SearchIcon } from '@/shared/ui'
+import { BaseIcon, Button, ErrorState, SearchIcon, Input } from '@/shared/ui'
 import { useHeaderSearch } from '../model/useHeaderSearch.ts'
 import { HeaderSearchResults } from './HeaderSearchResults.tsx'
 
@@ -37,14 +37,15 @@ export function HeaderSearch() {
         >
           <form
             role="search"
-            className="flex h-11 shrink-0 items-center gap-3 rounded-xl  bg-overlay pl-4 pr-1 focus-within:border-accent/60"
+            className="shrink-0 p-1"
             onSubmit={(event) => {
               event.preventDefault()
               openResults(value)
             }}
           >
-            <SearchIcon className="shrink-0 text-muted" />
-            <input
+            <Input
+              size="base"
+              variant="secondary"
               ref={input_ref}
               autoFocus
               value={value}
@@ -55,17 +56,19 @@ export function HeaderSearch() {
               maxLength={100}
               autoComplete="off"
               enterKeyHint="search"
-              className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted focus-visible:outline-none"
+              prefix={<SearchIcon className="shrink-0 text-muted" />}
+              suffix={
+                <Button
+                  variant="ghost"
+                  isIconOnly
+                  aria-label={value ? t('header.search_clear_query') : t('common.close')}
+                  onPress={value ? handleClear : closeSearch}
+                  className="size-8 min-w-8 text-muted"
+                >
+                  <BaseIcon name="close" />
+                </Button>
+              }
             />
-            <Button
-              variant="ghost"
-              isIconOnly
-              aria-label={value ? t('header.search_clear_query') : t('common.close')}
-              onPress={value ? handleClear : closeSearch}
-              className="size-9 min-w-9 text-muted"
-            >
-              <BaseIcon name="close" />
-            </Button>
           </form>
           <div
             id="header-search-results"

@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto'
+import { moderationFiltersSchema } from '@blog/contracts'
+import type { ModerationFilters } from '@blog/contracts'
 import { canReadArticle, requireVerifiedEmail } from '@blog/contracts'
 import type { PageQuery, ReactionKind, ServiceContext } from '@blog/contracts'
 import {
@@ -137,14 +140,29 @@ export function createCommentInteractionService(
         throw new ForbiddenError()
       return reportDto(await repository.report(user_id, id, reason))
     },
-    async reports(viewer: ServiceContext, query: PageQuery) {
+    async reports(viewer: ServiceContext, query: PageQuery & Partial<ModerationFilters>) {
       moderator(viewer)
-      const scope = 'reports'
-      const rows = await repository.reports(cursor(query, scope), query.limit + 1)
+      const filters = moderationFiltersSchema.parse(query)
+      const scope = createHash('sha256')
+        .update(
+          JSON.stringify([
+            'reports',
+            filters.q,
+            filters.status,
+            filters.sort,
+            filters.from,
+            filters.to,
+          ]),
+        )
+        .digest('hex')
+      const rows = await repository.reports(cursor(filters, scope), filters.limit + 1, filters)
       return {
         items: rows.slice(0, query.limit).map((row) => ({
           ...reportDto(row),
           body: row.body,
+          author_id: row.author_id,
+          author_name: row.author_name,
+          comment_status: row.comment_status,
           article_id: row.article_id,
           article_slug: row.article_slug,
         })),

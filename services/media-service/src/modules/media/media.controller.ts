@@ -17,17 +17,25 @@ export function createMediaController(service: MediaService) {
       const file = await service.upload({
         viewer: request.viewer,
         kind: query.kind,
+        variant: query.variant,
         idempotency_key: header(request.headers[IDEMPOTENCY_KEY_HEADER]),
         body: request.body as Readable,
         content_length: length === undefined ? undefined : Number(length),
       })
-      return reply.code(201).send(mediaUploadResponseSchema.parse({
-        id: file.id,
-        url: file.url,
-        kind: file.kind,
-        mime: file.mime,
-        byte_size: file.byte_size,
-      }))
+      return reply.code(201).send(
+        mediaUploadResponseSchema.parse({
+          id: file.id,
+          url: file.url,
+          kind: file.kind,
+          mime: file.mime,
+          byte_size: file.byte_size,
+        }),
+      )
+    },
+    async content(request: FastifyRequest, reply: FastifyReply) {
+      const { url } = fileLookupQuerySchema.parse(request.query)
+      const file = await service.content(url)
+      return reply.type(file.mime).header('X-Content-Type-Options', 'nosniff').send(file.body)
     },
     async lookup(request: FastifyRequest, reply: FastifyReply) {
       const query = fileLookupQuerySchema.parse(request.query)

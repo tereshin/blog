@@ -7,6 +7,7 @@ import { PayloadTooLargeError } from './media.errors.ts'
 
 export const MEDIA_LIMITS: Record<MediaKind, number> = {
   image: 8 * 1024 * 1024,
+  favicon: 1024 * 1024,
   attachment: 20 * 1024 * 1024,
 }
 
@@ -42,7 +43,8 @@ function looksLikeText(bytes: Buffer): boolean {
 export async function sniff(bytes: Buffer, kind: MediaKind): Promise<string | null> {
   const found = await fileTypeFromBuffer(bytes)
   if (kind === 'image') return found && IMAGE_MIME.has(found.mime) ? found.mime : null
-  if (found?.mime === 'application/pdf' || found?.mime === DOC_MIME || found?.mime === DOCX_MIME) return found.mime
+  if (found?.mime === 'application/pdf' || found?.mime === DOC_MIME || found?.mime === DOCX_MIME)
+    return found.mime
   if (found?.mime === 'application/zip' && bytes.includes(Buffer.from('word/'))) return DOCX_MIME
   if (!found && looksLikeText(bytes)) return 'text/plain'
   return null

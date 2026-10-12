@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -20,7 +21,20 @@ const PNG = Buffer.from(
 
 const viewers: Record<string, ServiceContext> = {
   guest: { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' },
-  member: { user_id: MEMBER, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${MEMBER}` },
+  superadmin: {
+    user_id: MEMBER,
+    role: 'superadmin',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${MEMBER}`,
+  },
+  member: {
+    user_id: MEMBER,
+    role: 'member',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${MEMBER}`,
+  },
 }
 
 describe('media: загрузка файла', () => {
@@ -28,8 +42,13 @@ describe('media: загрузка файла', () => {
   let database: DbHandle
   let app: FastifyInstance
   const puts: { key: string; byte_size: number }[] = []
+  const objects = new Map<string, Uint8Array>()
   const store: ObjectStore = {
+    async get({ key }) {
+      return objects.get(key) ?? null
+    },
     async put(input) {
+      objects.set(input.key, input.body)
       puts.push({ key: input.key, byte_size: input.body.byteLength })
     },
   }
@@ -39,11 +58,14 @@ describe('media: загрузка файла', () => {
     database = openDatabase(postgres.url)
     await migrate(database.pool)
     app = Fastify()
-    await app.register(requestContext, { logger: createLogger({ service: 'media-test', level: 'silent' }) })
+    await app.register(requestContext, {
+      logger: createLogger({ service: 'media-test', level: 'silent' }),
+    })
     await app.register(errorHandler)
     app.decorateRequest('viewer', undefined as unknown as ServiceContext)
     app.addHook('onRequest', async (request) => {
-      request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
+      request.viewer =
+        viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
     await app.register(mediaRoutes, { database, store, public_url: 'http://files.test/media' })
   }, 120_000)
@@ -58,7 +80,11 @@ describe('media: загрузка файла', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/v1/media?kind=image',
-      headers: { 'content-type': 'application/octet-stream', 'x-idempotency-key': 'text', 'x-test-viewer': 'member' },
+      headers: {
+        'content-type': 'application/octet-stream',
+        'x-idempotency-key': 'text',
+        'x-test-viewer': 'member',
+      },
       payload: Buffer.from('привет'),
     })
     expect(response.statusCode).toBe(415)
@@ -85,7 +111,11 @@ describe('media: загрузка файла', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/v1/media?kind=image',
-      headers: { 'content-type': 'application/octet-stream', 'x-idempotency-key': 'png-1', 'x-test-viewer': 'member' },
+      headers: {
+        'content-type': 'application/octet-stream',
+        'x-idempotency-key': 'png-1',
+        'x-test-viewer': 'member',
+      },
       payload: PNG,
     })
     expect(response.statusCode).toBe(201)
@@ -97,14 +127,21 @@ describe('media: загрузка файла', () => {
     const again = await app.inject({
       method: 'POST',
       url: '/v1/media?kind=image',
-      headers: { 'content-type': 'application/octet-stream', 'x-idempotency-key': 'png-1', 'x-test-viewer': 'member' },
+      headers: {
+        'content-type': 'application/octet-stream',
+        'x-idempotency-key': 'png-1',
+        'x-test-viewer': 'member',
+      },
       payload: PNG,
     })
     expect(again.statusCode).toBe(201)
     expect(again.json()).toMatchObject({ id: body.id })
     expect(puts).toHaveLength(1)
 
-    const lookup = await app.inject({ method: 'GET', url: `/internal/files?url=${encodeURIComponent(body.url)}` })
+    const lookup = await app.inject({
+      method: 'GET',
+      url: `/internal/files?url=${encodeURIComponent(body.url)}`,
+    })
     expect(lookup.json()).toEqual({ uploader_id: MEMBER, kind: 'image' })
   })
 
@@ -116,5 +153,38 @@ describe('media: загрузка файла', () => {
       payload: PNG,
     })
     expect(response.statusCode).toBe(401)
+  })
+  it('only superadmin uploads favicon; the saved icon is served with its real MIME', async () => {
+    const payload = await sharp({
+      create: { width: 96, height: 96, channels: 4, background: '#0485F7' },
+    })
+      .png()
+      .toBuffer()
+    const upload = (role: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/v1/media?kind=favicon&variant=png',
+        headers: {
+          'content-type': 'application/octet-stream',
+          'x-idempotency-key': 'site-icon',
+          'x-test-viewer': role,
+        },
+        payload,
+      })
+    expect((await upload('member')).statusCode).toBe(403)
+    const saved = await upload('superadmin')
+    expect(saved.statusCode).toBe(201)
+    const file = saved.json<{ url: string; mime: string }>()
+    expect(file.mime).toBe('image/png')
+    const served = await app.inject({
+      url: `/internal/files/content?url=${encodeURIComponent(file.url)}`,
+    })
+    expect(served.statusCode).toBe(200)
+    expect(served.headers['content-type']).toBe('image/png')
+    expect(served.rawPayload).toEqual(payload)
+    expect(
+      (await app.inject({ url: '/internal/files/content?url=http%3A%2F%2Funknown.example' }))
+        .statusCode,
+    ).toBe(404)
   })
 })

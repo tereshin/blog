@@ -11,16 +11,23 @@ import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import { eventsRoutes } from './modules/events/index.ts'
 import type { EventsService } from './modules/events/index.ts'
+import { siteAssetRoutes } from './modules/site-assets/index.ts'
 import { prerenderRoutes } from './modules/prerender/index.ts'
 import { proxyRoutes } from './modules/proxy/index.ts'
 import type { ProxyService } from './modules/proxy/index.ts'
-import { contentSecurityPolicy, imageOrigin, newCspNonce } from './modules/security/content-security-policy.ts'
+import {
+  contentSecurityPolicy,
+  imageOrigin,
+  newCspNonce,
+} from './modules/security/content-security-policy.ts'
 import { rateLimitForPath, rateLimitGroup } from './modules/security/rate-limit.ts'
 import { authGatewayRoutes, sessionModule } from './modules/session/index.ts'
 import type { ContextSigner, CookieNames, SessionService } from './modules/session/index.ts'
 
 declare module 'fastify' {
-  interface FastifyReply { csp_nonce: string }
+  interface FastifyReply {
+    csp_nonce: string
+  }
 }
 
 export type AppDeps = {
@@ -36,7 +43,11 @@ export type AppDeps = {
 }
 
 export function cookieNames(env: Env): CookieNames {
-  return { session: env.SESSION_COOKIE_NAME, guest: env.GUEST_COOKIE_NAME, csrf: env.CSRF_COOKIE_NAME }
+  return {
+    session: env.SESSION_COOKIE_NAME,
+    guest: env.GUEST_COOKIE_NAME,
+    csrf: env.CSRF_COOKIE_NAME,
+  }
 }
 
 /** Сборка Fastify: плагины и хуки, маршруты модулей. Бизнес-логики здесь нет. */
@@ -44,7 +55,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const { env, logger } = deps
   const cookies = cookieNames(env)
 
-  const app: FastifyInstance = Fastify({ loggerInstance: logger as FastifyBaseLogger, trustProxy: true })
+  const app: FastifyInstance = Fastify({
+    loggerInstance: logger as FastifyBaseLogger,
+    trustProxy: true,
+  })
 
   await app.register(requestContext, { logger })
   await app.register(errorHandler)
@@ -54,10 +68,16 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.addHook('onRequest', async (_request, reply) => {
     const nonce = newCspNonce()
     reply.csp_nonce = nonce
-    const emulator_host = env.APP_ENV === 'local' || env.APP_ENV === 'dev' ? env.FIREBASE_AUTH_EMULATOR_HOST : null
+    const emulator_host =
+      env.APP_ENV === 'local' || env.APP_ENV === 'dev' ? env.FIREBASE_AUTH_EMULATOR_HOST : null
     reply.header(
       'Content-Security-Policy',
-      contentSecurityPolicy({ nonce, image_origin, auth_domain: env.FIREBASE_AUTH_DOMAIN, emulator_host }),
+      contentSecurityPolicy({
+        nonce,
+        image_origin,
+        auth_domain: env.FIREBASE_AUTH_DOMAIN,
+        emulator_host,
+      }),
     )
   })
   await app.register(cors, {
@@ -80,11 +100,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     metrics: deps.metrics,
     checks: [{ name: 'broker', check: async () => deps.is_broker_ready() }],
   })
-  await app.register(sessionModule, { cookies, sessions: deps.sessions, signer: deps.signer, logger })
+  await app.register(sessionModule, {
+    cookies,
+    sessions: deps.sessions,
+    signer: deps.signer,
+    logger,
+  })
 
   // Каждый модуль маршрутов — отдельный контекст: у proxy тело идёт потоком, у events — разбирается как JSON.
   await app.register(eventsRoutes, { events: deps.events })
   await app.register(authGatewayRoutes, { proxy: deps.proxy, cookies, sessions: deps.sessions })
+  await app.register(siteAssetRoutes, { content: deps.content, proxy: deps.proxy })
   await app.register(prerenderRoutes, { content: deps.content })
   await app.register(proxyRoutes, { proxy: deps.proxy, cookies })
 

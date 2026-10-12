@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, ilike, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { ReactionKind, ServiceContext } from '@blog/contracts'
+import type { ModerationFilters, ReactionKind, ServiceContext } from '@blog/contracts'
 import {
   articles_copy,
   comment_bookmarks,
@@ -93,7 +93,7 @@ export function createCommentInteractionRepository(db: NodePgDatabase) {
       if (!row) throw new Error('Comment report was not saved')
       return row
     },
-    async reports(cursor: Cursor, limit: number) {
+    async reports(cursor: Cursor, limit: number, filters: ModerationFilters) {
       return db
         .select({
           id: comment_reports.id,
@@ -103,21 +103,44 @@ export function createCommentInteractionRepository(db: NodePgDatabase) {
           status: comment_reports.status,
           created_at: comment_reports.created_at,
           body: comments.body,
+          author_id: comments.author_id,
+          author_name: users_copy.display_name,
+          comment_status: comments.status,
           article_id: comments.article_id,
           article_slug: articles_copy.slug,
         })
         .from(comment_reports)
         .innerJoin(comments, eq(comments.id, comment_reports.comment_id))
         .innerJoin(articles_copy, eq(articles_copy.article_id, comments.article_id))
+        .leftJoin(users_copy, eq(users_copy.user_id, comments.author_id))
         .where(
           and(
-            eq(comment_reports.status, 'open'),
+            filters.status !== 'all' ? eq(comment_reports.status, filters.status) : undefined,
+            filters.q
+              ? or(
+                  ilike(comments.body, `%${filters.q.replace(/[\\%_]/g, '\\$&')}%`),
+                  ilike(comment_reports.reason, `%${filters.q.replace(/[\\%_]/g, '\\$&')}%`),
+                  eq(articles_copy.slug, filters.q),
+                )
+              : undefined,
+            filters.from
+              ? sql`${comment_reports.created_at} >= ${new Date(`${filters.from}T00:00:00.000Z`)}`
+              : undefined,
+            filters.to
+              ? sql`${comment_reports.created_at} < ${new Date(new Date(`${filters.to}T00:00:00.000Z`).getTime() + 86_400_000)}`
+              : undefined,
             cursor
-              ? sql`(${comment_reports.created_at}, ${comment_reports.id}) < (${new Date(cursor.t)}, ${cursor.id})`
+              ? filters.sort === 'oldest'
+                ? sql`(${comment_reports.created_at}, ${comment_reports.id}) > (${new Date(cursor.t)}, ${cursor.id})`
+                : sql`(${comment_reports.created_at}, ${comment_reports.id}) < (${new Date(cursor.t)}, ${cursor.id})`
               : undefined,
           ),
         )
-        .orderBy(desc(comment_reports.created_at), desc(comment_reports.id))
+        .orderBy(
+          ...(filters.sort === 'oldest'
+            ? [asc(comment_reports.created_at), asc(comment_reports.id)]
+            : [desc(comment_reports.created_at), desc(comment_reports.id)]),
+        )
         .limit(limit)
     },
     async subscription(user_id: string, article_id: string, enabled?: boolean) {

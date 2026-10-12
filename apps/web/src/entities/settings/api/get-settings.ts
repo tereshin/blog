@@ -1,5 +1,9 @@
-import { profileStatusIconsSchema, reactionAppearancesSchema } from '@blog/contracts'
-import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
+import {
+  faviconSettingsSchema,
+  profileStatusIconsSchema,
+  reactionAppearancesSchema,
+} from '@blog/contracts'
+import type { FaviconSettings, ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import { z } from 'zod'
 import { http } from '@/shared/api'
 
@@ -7,6 +11,8 @@ import { http } from '@/shared/api'
 export const publicSettingsSchema = z.object({
   name: z.string(),
   logo_url: z.string().nullable(),
+  logo_dark_url: z.string().nullable().optional(),
+  favicon: faviconSettingsSchema.optional(),
   locale: z.enum(['ru', 'en', 'sr']).catch('ru'),
   about: z.string().nullable().optional(),
   reaction_appearances: reactionAppearancesSchema,
@@ -18,6 +24,8 @@ type PublicSettingsDto = z.infer<typeof publicSettingsSchema>
 export type PublicSettings = {
   name: string
   logo_url: string | null
+  logo_dark_url?: string | null
+  favicon?: FaviconSettings
   locale: 'ru' | 'en' | 'sr'
   about: string
   reaction_appearances: ReactionAppearances
@@ -28,6 +36,8 @@ export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
   return {
     name: dto.name.trim(),
     logo_url: dto.logo_url,
+    logo_dark_url: dto.logo_dark_url ?? null,
+    favicon: faviconSettingsSchema.parse(dto.favicon ?? {}),
     locale: dto.locale,
     about: dto.about ?? '',
     reaction_appearances: dto.reaction_appearances,

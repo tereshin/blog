@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, Link, Menu } from '@/shared/ui'
+import { BaseIcon, Link, Menu } from '@/shared/ui'
 import { COMMENT_SORTS } from '../model/sort-comments.ts'
 import type { CommentSort } from '../model/sort-comments.ts'
 

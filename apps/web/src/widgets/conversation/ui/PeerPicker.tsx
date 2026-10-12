@@ -1,9 +1,7 @@
-import { InputGroup } from '@heroui/react/input-group'
-import { Label } from '@heroui/react/label'
 import { Spinner } from '@heroui/react/spinner'
-import { TextField } from '@heroui/react/textfield'
 import { useT } from '@/shared/i18n'
 import {
+  Input,
   Avatar,
   BaseIcon,
   Button,
@@ -44,34 +42,32 @@ export function PeerPicker({ is_open, onOpenChange }: PeerPickerProps) {
         />
       </Dialog.Header>
       <Dialog.Body className="gap-0 px-5 pt-0 pb-5">
-        <TextField fullWidth value={query} onChange={setQuery}>
-          <Label className="sr-only">{t('messages.search_people')}</Label>
-          <InputGroup fullWidth variant="secondary">
-            <InputGroup.Prefix>
-              <SearchIcon className="text-muted" />
-            </InputGroup.Prefix>
-            <InputGroup.Input
-              ref={input_ref}
-              autoFocus
-              maxLength={100}
-              autoComplete="off"
-              placeholder={t('messages.search_placeholder')}
-            />
-            {query ? (
-              <InputGroup.Suffix>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="ghost"
-                  aria-label={t('header.search_clear_query')}
-                  onPress={handleClear}
-                >
-                  <BaseIcon name="close" size={16} />
-                </Button>
-              </InputGroup.Suffix>
-            ) : null}
-          </InputGroup>
-        </TextField>
+        <Input
+          size="base"
+          variant="secondary"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          ref={input_ref}
+          autoFocus
+          maxLength={100}
+          autoComplete="off"
+          aria-label={t('messages.search_people')}
+          placeholder={t('messages.search_placeholder')}
+          prefix={<SearchIcon className="shrink-0 text-muted" />}
+          suffix={
+            query ? (
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label={t('header.search_clear_query')}
+                onPress={handleClear}
+              >
+                <BaseIcon name="close" size={16} />
+              </Button>
+            ) : null
+          }
+        />
         <div
           className="mt-3 max-h-[min(360px,45dvh)] min-h-40 overflow-y-auto overscroll-contain"
           aria-busy={search.is_searching}

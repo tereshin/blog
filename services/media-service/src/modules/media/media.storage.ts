@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import type { ObjectStore } from './media.types.ts'
 
@@ -16,9 +17,22 @@ export function createS3Store(input: {
     maxAttempts: 3,
   })
   return {
+    async stream(key) {
+      try {
+        const result = await client.send(new GetObjectCommand({ Bucket: input.bucket, Key: key }), {
+          abortSignal: AbortSignal.timeout(10_000),
+        })
+        return result.Body ? Readable.fromWeb(result.Body.transformToWebStream()) : null
+      } catch (error) {
+        if (error instanceof Error && ['NoSuchKey', 'NotFound'].includes(error.name)) return null
+        throw error
+      }
+    },
     async get({ key, max_bytes }) {
       try {
-        const result = await client.send(new GetObjectCommand({ Bucket: input.bucket, Key: key }), { abortSignal: AbortSignal.timeout(10_000) })
+        const result = await client.send(new GetObjectCommand({ Bucket: input.bucket, Key: key }), {
+          abortSignal: AbortSignal.timeout(10_000),
+        })
         if (!result.Body) return null
         const stream = result.Body.transformToWebStream()
         const reader = stream.getReader()
@@ -34,14 +48,28 @@ export function createS3Store(input: {
             chunks.push(value)
           }
           return Buffer.concat(chunks)
-        } finally { await reader.cancel(); reader.releaseLock() }
+        } finally {
+          await reader.cancel()
+          reader.releaseLock()
+        }
       } catch (error) {
         if (error instanceof Error && ['NoSuchKey', 'NotFound'].includes(error.name)) return null
         throw error
       }
     },
     async put({ key, body, content_type }) {
-      await client.send(new PutObjectCommand({ Bucket: input.bucket, Key: key, Body: body, ContentType: content_type, ...(key.startsWith('social-covers/') ? { CacheControl: 'public, max-age=31536000, immutable' } : {}) }), { abortSignal: AbortSignal.timeout(10_000) })
+      await client.send(
+        new PutObjectCommand({
+          Bucket: input.bucket,
+          Key: key,
+          Body: body,
+          ContentType: content_type,
+          ...(key.startsWith('social-covers/')
+            ? { CacheControl: 'public, max-age=31536000, immutable' }
+            : {}),
+        }),
+        { abortSignal: AbortSignal.timeout(10_000) },
+      )
     },
   }
 }

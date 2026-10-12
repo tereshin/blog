@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, Popover } from '@/shared/ui'
+import { BaseIcon, Button, Popover, Input, Textarea, Select } from '@/shared/ui'
 import type { ArticleDraftForm } from '../model/usePublishArticle.ts'
 
 type PublishSettingsProps = {
@@ -14,7 +14,7 @@ type PublishSettingsProps = {
   onSave: () => void
   onPreview: () => void
 }
-const FIELD_CLASS = 'rounded-lg border border-separator bg-background px-3 py-2 text-sm'
+const FIELD_CLASS = 'w-full'
 
 export function PublishSettings({
   form,
@@ -59,23 +59,25 @@ export function PublishSettings({
           >
             {t(is_preview ? 'editor.resume' : 'editor.preview')}
           </Button>
-          <label className="flex flex-col gap-1 text-sm">
-            {t('editor.visibility')}
-            <select
-              value={form.visibility}
-              onChange={(event) =>
-                onChange({ visibility: event.target.value as ArticleDraftForm['visibility'] })
-              }
-              className={FIELD_CLASS}
-            >
-              <option value="public">{t('editor.visibility.public')}</option>
-              <option value="members">{t('editor.visibility.members')}</option>
-              <option value="author">{t('editor.visibility.author')}</option>
-            </select>
-          </label>
+          <Select
+            size="base"
+            variant="secondary"
+            label={t('editor.visibility')}
+            value={form.visibility}
+            options={(['public', 'members', 'author'] as const).map((value) => ({
+              value,
+              label: t(`editor.visibility.${value}`),
+            }))}
+            onChange={(visibility) => {
+              if (visibility === 'public' || visibility === 'members' || visibility === 'author')
+                onChange({ visibility })
+            }}
+          />
           <label className="flex flex-col gap-1 text-sm">
             {t('editor.slug')}
-            <input
+            <Input
+              size="base"
+              variant="secondary"
               value={form.slug}
               placeholder={slug || 'moy-adres'}
               aria-invalid={slug_error ? true : undefined}
@@ -90,11 +92,26 @@ export function PublishSettings({
             <p className="text-xs text-muted">{t('seo.editor_hint')}</p>
             <label className="flex flex-col gap-1 text-sm">
               {t('seo.title')}
-              <input maxLength={200} value={form.seo_title ?? ''} placeholder={form.title} onChange={(event) => onChange({ seo_title: event.target.value })} className={FIELD_CLASS} />
+              <Input
+                size="base"
+                variant="secondary"
+                maxLength={200}
+                value={form.seo_title ?? ''}
+                placeholder={form.title}
+                onChange={(event) => onChange({ seo_title: event.target.value })}
+                className={FIELD_CLASS}
+              />
             </label>
             <label className="flex flex-col gap-1 text-sm">
               {t('seo.description')}
-              <textarea maxLength={500} value={form.seo_description ?? ''} onChange={(event) => onChange({ seo_description: event.target.value })} className={FIELD_CLASS} />
+              <Textarea
+                size="base"
+                variant="secondary"
+                maxLength={500}
+                value={form.seo_description ?? ''}
+                onChange={(event) => onChange({ seo_description: event.target.value })}
+                className={FIELD_CLASS}
+              />
             </label>
           </fieldset>
         </div>

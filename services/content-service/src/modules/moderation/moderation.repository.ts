@@ -1,5 +1,10 @@
+import { moderationFiltersSchema } from '@blog/contracts'
+import type { ModerationFilters } from '@blog/contracts'
+import { createModerationReader } from './moderation.read.ts'
+import { createArticleReportReviewer } from './moderation.report-write.ts'
+import type { ModerationCursor } from './moderation.cursor.ts'
 import { requestArticleCover } from '../social-cover/index.ts'
-import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Database } from '@blog/broker'
 import { articles, profiles, reports, topics, users_copy } from '../../infra/db/schema.ts'
@@ -14,10 +19,27 @@ export type ModerationArticle = {
 }
 
 export type ModerationRepository = {
-  list: (filter: 'reported' | 'hidden', limit: number) => Promise<{ articles: ModerationArticle[]; reports: (typeof reports.$inferSelect)[] }>
+  listReports: (
+    limit: number,
+    filters: ModerationFilters,
+    cursor: ModerationCursor | null,
+  ) => Promise<(ModerationArticle & { report: typeof reports.$inferSelect })[]>
+  reviewAction: ReturnType<typeof createArticleReportReviewer>
+  list: (
+    filter: 'reported' | 'hidden' | 'search',
+    limit: number,
+    filters?: ModerationFilters,
+    cursor?: ModerationCursor | null,
+  ) => Promise<{ articles: ModerationArticle[]; reports: (typeof reports.$inferSelect)[] }>
   find: (id: string) => Promise<StoredArticle | null>
-  transition: (input: { id: string; status: StoredArticle['status']; event_name: 'content.article.hidden' | 'content.article.restored' | 'content.article.deleted'; correlation_id: string; moderator_id: string }) => Promise<StoredArticle | null>
-  reviewReport: (id: string) => Promise<(typeof reports.$inferSelect) | null>
+  transition: (input: {
+    id: string
+    status: StoredArticle['status']
+    event_name: 'content.article.hidden' | 'content.article.restored' | 'content.article.deleted'
+    correlation_id: string
+    moderator_id: string
+  }) => Promise<StoredArticle | null>
+  reviewReport: (id: string) => Promise<typeof reports.$inferSelect | null>
 }
 
 function stored(row: typeof articles.$inferSelect): StoredArticle {
@@ -40,25 +62,12 @@ function stored(row: typeof articles.$inferSelect): StoredArticle {
 }
 
 export function createModerationRepository(db: NodePgDatabase): ModerationRepository {
+  const reader = createModerationReader(db)
   return {
-    async list(filter, limit) {
-      const condition =
-        filter === 'hidden'
-          ? eq(articles.status, 'hidden')
-          : sql`exists (select 1 from ${reports} r where r.article_id = ${articles.id} and r.status = 'open')`
-      const rows = await db
-        .select({ article: articles, topic: topics, profile: profiles, user: users_copy })
-        .from(articles)
-        .innerJoin(topics, eq(topics.id, articles.topic_id))
-        .leftJoin(profiles, eq(profiles.user_id, articles.author_id))
-        .leftJoin(users_copy, eq(users_copy.user_id, articles.author_id))
-        .where(and(condition, ne(articles.status, 'deleted')))
-        .orderBy(desc(articles.updated_at))
-        .limit(limit)
-      const ids = rows.map((row) => row.article.id)
-      const report_rows = ids.length === 0 ? [] : await db.select().from(reports).where(inArray(reports.article_id, ids))
-      return { articles: rows, reports: report_rows }
-    },
+    listReports: reader.reports,
+    reviewAction: createArticleReportReviewer(db),
+    list: (filter, limit, filters = moderationFiltersSchema.parse({}), cursor = null) =>
+      reader.articles(filter, limit, filters, cursor),
 
     async find(id) {
       const [row] = await db.select().from(articles).where(eq(articles.id, id)).limit(1)
@@ -77,7 +86,13 @@ export function createModerationRepository(db: NodePgDatabase): ModerationReposi
         if (!row) return null
         const next = stored(row)
         await requestArticleCover(tx, row.id, input.correlation_id)
-        await appendArticleEvent(tx, input.event_name, next, input.correlation_id, input.moderator_id)
+        await appendArticleEvent(
+          tx,
+          input.event_name,
+          next,
+          input.correlation_id,
+          input.moderator_id,
+        )
         if (input.event_name !== 'content.article.deleted') {
           await appendArticleEvent(tx, 'content.article.updated', next, input.correlation_id)
         }
@@ -86,7 +101,11 @@ export function createModerationRepository(db: NodePgDatabase): ModerationReposi
     },
 
     async reviewReport(id) {
-      const [row] = await db.update(reports).set({ status: 'reviewed' }).where(eq(reports.id, id)).returning()
+      const [row] = await db
+        .update(reports)
+        .set({ status: 'reviewed' })
+        .where(eq(reports.id, id))
+        .returning()
       return row ?? null
     },
   }

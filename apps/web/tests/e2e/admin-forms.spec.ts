@@ -18,8 +18,9 @@ test('формы внутри одной карточки: поля, состо�
   if (info.project.name === 'wide-light') {
     await page
       .getByRole('navigation', { name: 'Навигация', exact: true })
-      .getByText('Светлый вид', { exact: true })
+      .getByRole('link', { name: 'Тёмная тема', exact: true })
       .click()
+    await page.getByRole('menu').getByText('Светлая', { exact: true }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   }
   const main = page.getByRole('main')

@@ -18,6 +18,8 @@ export function mergeSettingsSection(
         ...current,
         name: draft.name,
         logo_url: draft.logo_url,
+        logo_dark_url: draft.logo_dark_url,
+        favicon: draft.favicon,
         locale: draft.locale,
         about: draft.about,
       }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useT } from '@/shared/i18n'
-import { Button } from '@/shared/ui'
+import { Button, Textarea } from '@/shared/ui'
 export function CommentReportForm({
   onSubmit,
   is_pending,
@@ -22,7 +22,9 @@ export function CommentReportForm({
     >
       <label className="flex flex-col gap-2 text-sm">
         {t('comment.report_reason')}
-        <textarea
+        <Textarea
+          size="base"
+          variant="secondary"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           minLength={3}

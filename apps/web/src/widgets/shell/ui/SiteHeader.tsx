@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useMessagesUnreadCount } from '@/entities/conversation'
 import { useSettings } from '@/entities/settings'
-import { useViewer } from '@/entities/session'
+import { useViewer, useAppearance } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { cn } from '@/shared/lib'
 import { Button, MenuIcon, PenIcon, SearchIcon } from '@/shared/ui'
@@ -39,6 +39,9 @@ const HOME_SECTIONS = new Set(['fresh', 'popular', 'my_feed', 'topic'])
 export function SiteHeader({ center, notifications, onSearch, onWrite, account }: SiteHeaderProps) {
   const { t } = useT()
   const { data: settings } = useSettings()
+  const { theme } = useAppearance()
+  const logo_url =
+    theme === 'dark' ? (settings?.logo_dark_url ?? settings?.logo_url) : settings?.logo_url
   const { viewer } = useViewer()
   const unread_messages = useMessagesUnreadCount(viewer.status === 'member')
   const { section } = useCurrentSection()
@@ -47,7 +50,9 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const openSearch = useShellStore((state) => state.openSearch)
   const is_search_open = useShellStore((state) => state.header_center.kind === 'search')
   const has_back = useShellStore(
-    (state) => (state.header_center.kind === 'search' ? state.previous_center : state.header_center).kind === 'back',
+    (state) =>
+      (state.header_center.kind === 'search' ? state.previous_center : state.header_center).kind ===
+      'back',
   )
   const handleWrite = useWriteAction(onWrite)
 
@@ -75,14 +80,12 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
           to="/"
           className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4 max-[767px]:absolute max-[767px]:top-2 max-[767px]:left-1/2 max-[767px]:-translate-x-1/2"
         >
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt={brand} className="h-10 w-auto" />
-          ) : (
-            brand
-          )}
+          {logo_url ? <img src={logo_url} alt={brand} className="h-10 w-auto" /> : brand}
         </Link>
       </div>
-      <div className="flex min-w-0 flex-1 items-center sm:px-2 max-[767px]:hidden max-w-[640px] mx-auto">{center}</div>
+      <div className="flex min-w-0 flex-1 items-center sm:px-2 max-[767px]:hidden max-w-[640px] mx-auto">
+        {center}
+      </div>
       <div className="site-header-actions flex shrink-0 items-center sm:gap-3">
         <HeaderTab
           to="/"
@@ -114,7 +117,10 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
           variant="tertiary"
           shape="pill"
           size="lg"
-          className={cn('site-header-write', (has_back || section.kind === 'messages') && 'max-[767px]:hidden')}
+          className={cn(
+            'site-header-write',
+            (has_back || section.kind === 'messages') && 'max-[767px]:hidden',
+          )}
           aria-label={t('header.write')}
           onPress={handleWrite}
         >

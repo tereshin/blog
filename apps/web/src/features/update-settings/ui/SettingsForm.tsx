@@ -1,3 +1,4 @@
+import type { FaviconVariant } from '@blog/contracts'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { Button, ToggleField } from '@/shared/ui'
@@ -12,7 +13,11 @@ import { SettingsCoverPreview } from './SettingsCoverPreview.tsx'
 import { SettingsStatusIcons } from './SettingsStatusIcons.tsx'
 import { SettingsReactionFields } from './SettingsReactionFields.tsx'
 
-type UploadSlot = (options: { label: string; onUploaded: (url: string) => void }) => ReactNode
+type UploadSlot = (options: {
+  label: string
+  variant?: FaviconVariant
+  onUploaded: (url: string) => void
+}) => ReactNode
 type SettingsFormProps = {
   initial: AdminSettings
   section: SettingsSection
