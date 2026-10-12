@@ -1,5 +1,5 @@
 import { HttpResponse, http } from 'msw'
-import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS } from '@blog/contracts'
+import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS, reactionAppearancesSchema } from '@blog/contracts'
 import type { SeoSettings, SocialCoverSettings } from '@blog/contracts'
 import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
@@ -55,7 +55,10 @@ export function readSite(): SiteState {
   const raw = window.sessionStorage.getItem(SITE_KEY)
   if (!raw) return initialState()
   const parsed = JSON.parse(raw) as SiteState
-  return { ...parsed, settings: { ...initialState().settings, ...parsed.settings } }
+  const settings = { ...initialState().settings, ...parsed.settings }
+  const appearances = reactionAppearancesSchema.safeParse(settings.reaction_appearances)
+  if (!appearances.success) settings.reaction_appearances = DEFAULT_REACTION_APPEARANCES
+  return { ...parsed, settings }
 }
 
 function writeSite(state: SiteState): void {

@@ -1,18 +1,9 @@
 import { Link } from 'react-router'
-import type { ReactionKind } from '@blog/contracts'
 import { useT } from '@/shared/i18n'
-import type { MessageKey } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
 import { Avatar, FallbackImage } from '@/shared/ui'
 import type { PopularCommentModel } from '../api/comment-schema.ts'
 import { useCommentReactionGlyphs } from '../model/comment-reaction-glyphs.tsx'
-
-const REACTION_NAME: Record<ReactionKind, MessageKey> = {
-  laugh: 'reaction.laugh',
-  heart: 'reaction.heart',
-  thumb: 'reaction.thumb',
-  fire: 'reaction.fire',
-}
 
 type PopularCommentItemProps = { comment: PopularCommentModel }
 
@@ -20,7 +11,7 @@ type PopularCommentItemProps = { comment: PopularCommentModel }
 export function PopularCommentItem({ comment }: PopularCommentItemProps) {
   const { t, locale } = useT()
   const appearances = useCommentReactionGlyphs()
-  const reactions = appearances.filter((appearance) => comment.reaction_counts[appearance.kind] > 0)
+  const reactions = appearances.filter((appearance) => (comment.reaction_counts[appearance.kind] ?? 0) > 0)
   return (
     <li>
       <Link
@@ -51,7 +42,7 @@ export function PopularCommentItem({ comment }: PopularCommentItemProps) {
               {reactions.map((appearance) => (
                 <span
                   key={appearance.kind}
-                  aria-label={`${t(REACTION_NAME[appearance.kind])} ${formatCount(comment.reaction_counts[appearance.kind], locale)}`}
+                  aria-label={`${appearance.label} ${formatCount(comment.reaction_counts[appearance.kind] ?? 0, locale)}`}
                   className="inline-flex items-center"
                 >
                   {appearance.presentation === 'emoji' ? (
@@ -59,7 +50,7 @@ export function PopularCommentItem({ comment }: PopularCommentItemProps) {
                   ) : (
                     <FallbackImage
                       src={appearance.image_url}
-                      label={t(REACTION_NAME[appearance.kind])}
+                      label={appearance.label}
                       className="inline-block size-4 object-contain"
                     />
                   )}

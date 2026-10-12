@@ -18,8 +18,8 @@ export function SettingsCoverFields({
 }) {
   const { t } = useT()
   return (
-    <fieldset className="flex flex-col gap-3 border-t border-separator pt-4">
-      <legend className="text-lg font-semibold">{t('seo.covers')}</legend>
+    <fieldset className="flex flex-col gap-8 border-0 p-0">
+      <legend className="sr-only">{t('seo.covers')}</legend>
       <p className="text-xs text-muted">{t('seo.covers_hint')}</p>
       <SelectField
         label={t('seo.background')}
@@ -41,9 +41,11 @@ export function SettingsCoverFields({
               if (color) onChange({ ...value, [field]: color.toString('hex') })
             }}
           >
-            <Label>{t(field === 'background_color' ? 'seo.fill_color' : 'seo.text_color')}</Label>
-            <ColorField.Group>
-              <ColorField.Input />
+            <Label className="text-base font-semibold">
+              {t(field === 'background_color' ? 'seo.fill_color' : 'seo.text_color')}
+            </Label>
+            <ColorField.Group className="form-field h-12 px-4">
+              <ColorField.Input className="bg-transparent text-base shadow-none" />
             </ColorField.Group>
           </ColorField>
         ))}

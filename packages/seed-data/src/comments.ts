@@ -27,21 +27,21 @@ type CommentInput = {
  */
 export function buildSmallComments(anchor: Date): SeedComment[] {
   const inputs: CommentInput[] = [
-    { name: 'root_with_replies', article_key: 'published_long_with_image', author_key: 'reader', body: 'Отличный текст, особенно про границы между слоями.', hours_ago: 20 },
-    { name: 'reply_by_author', article_key: 'published_long_with_image', author_key: 'author_a', parent: 'root_with_replies', body: 'Спасибо! Границы — самое недооценённое.', hours_ago: 18 },
-    { name: 'reply_by_other', article_key: 'published_long_with_image', author_key: 'author_b', parent: 'root_with_replies', body: 'Добавлю: их стоит проверять линтером.', hours_ago: 16 },
+    { name: 'root_with_replies', article_key: 'published_long_with_image', author_key: 'reader', body: 'Отличный текст, особенно про вывеску булочной.', hours_ago: 20 },
+    { name: 'reply_by_author', article_key: 'published_long_with_image', author_key: 'author_a', parent: 'root_with_replies', body: 'Спасибо! Булочная как раз и заставила остановиться.', hours_ago: 18 },
+    { name: 'reply_by_other', article_key: 'published_long_with_image', author_key: 'author_b', parent: 'root_with_replies', body: 'Добавлю: вечером те же вывески читаются совсем иначе.', hours_ago: 16 },
     { name: 'deleted_with_replies', article_key: 'published_long_with_image', author_key: 'author_b', status: 'deleted', body: '', hours_ago: 15 },
-    { name: 'reply_to_deleted', article_key: 'published_long_with_image', author_key: 'reader', parent: 'deleted_with_replies', body: 'Жаль, что комментарий удалили — он был полезным.', hours_ago: 14 },
+    { name: 'reply_to_deleted', article_key: 'published_long_with_image', author_key: 'reader', parent: 'deleted_with_replies', body: 'Жаль, что комментарий удалили — там был адрес мастерской.', hours_ago: 14 },
     { name: 'hidden_by_moderator', article_key: 'published_long_with_image', author_key: 'no_publish', status: 'hidden', body: '', hours_ago: 12 },
-    { name: 'edited', article_key: 'published_long_with_image', author_key: 'author_b', body: 'Поправил формулировку: речь именно о границах модулей.', hours_ago: 10, edited: true },
-    { name: 'popular_root', article_key: 'published_long_with_image', author_key: 'admin', body: 'Закрепил бы это в руководстве для новых людей.', hours_ago: 8 },
+    { name: 'edited', article_key: 'published_long_with_image', author_key: 'author_b', body: 'Поправил формулировку: речь именно о вывесках на углу.', hours_ago: 10, edited: true },
+    { name: 'popular_root', article_key: 'published_long_with_image', author_key: 'admin', body: 'Закрепил бы это в подборке городских заметок.', hours_ago: 8 },
     { name: 'short_root', article_key: 'published_short', author_key: 'reader', body: 'Коротко и по делу.', hours_ago: 40 },
     { name: 'short_reply', article_key: 'published_short', author_key: 'author_a', parent: 'short_root', body: 'Рада, что пригодилось.', hours_ago: 38 },
     { name: 'legacy_before_off', article_key: 'published_comments_off', author_key: 'reader', body: 'Написано, пока комментарии были включены.', hours_ago: 90 },
     { name: 'members_comment', article_key: 'published_members_only', author_key: 'author_b', body: 'Читаю как участник.', hours_ago: 60 },
-    { name: 'promoted_root', article_key: 'published_promoted', author_key: 'reader', body: 'Хороший пример продвижения.', hours_ago: 100 },
-    { name: 'promoted_other', article_key: 'published_promoted', author_key: 'author_a', body: 'Интересно, сколько людей дошло до конца.', hours_ago: 96 },
-    { name: 'attachment_root', article_key: 'published_with_attachment', author_key: 'admin', body: 'Вложение открылось, всё в порядке.', hours_ago: 110 },
+    { name: 'promoted_root', article_key: 'published_promoted', author_key: 'reader', body: 'Во второй раз карман и правда важнее развязки.', hours_ago: 100 },
+    { name: 'promoted_other', article_key: 'published_promoted', author_key: 'author_a', body: 'Интересно, сколько людей досидело до титров.', hours_ago: 96 },
+    { name: 'attachment_root', article_key: 'published_with_attachment', author_key: 'admin', body: 'Файл открылся, схема полки на месте.', hours_ago: 110 },
     { name: 'filler_root', article_key: 'small:001', author_key: 'reader', body: 'Любопытная заметка.', hours_ago: 130 },
   ]
   const ids = new Map(inputs.map((input) => [input.name, commentId(`small:${input.name}`)]))

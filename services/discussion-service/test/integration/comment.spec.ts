@@ -106,7 +106,7 @@ describe('discussion: GET /v1/comments/popular', () => {
     const list = await popular('guest')
     expect(list).toHaveLength(2)
     expect(list.every((item) => item.article_slug === 'public')).toBe(true)
-    expect(list[0]).toMatchObject({ id: id(101), reaction_count: 5, reaction_counts: { laugh: 0, heart: 1, thumb: 4, fire: 0 }, author_name: 'Анна', article_title: 'Публичная' })
+    expect(list[0]).toMatchObject({ id: id(101), reaction_count: 5, reaction_counts: { heart: 1, thumb: 4 }, author_name: 'Анна', article_title: 'Публичная' })
     expect(list.map((item) => item.id)).toEqual([id(101), id(134)])
     expect(list.map((item) => item.id)).not.toContain(id(150))
     expect(list.map((item) => item.id)).not.toContain(id(106))
@@ -133,7 +133,7 @@ describe('discussion: GET /v1/comments/popular', () => {
     expect(response.statusCode).toBe(200)
     await database.db.insert(comments).values({ id: id(300), article_id: id(1), author_id: OTHER, body: 'Новый', reaction_count: 1000, created_at: new Date('2026-10-09T10:00:00Z') })
     await database.db.insert(reactions).values({ user_id: AUTHOR, target_type: 'comment', target_id: id(300), kind: 'fire' })
-    expect((await popular('guest'))[0]).toMatchObject({ id: id(300), author_name: 'Участник', author_avatar_url: null, reaction_count: 1, reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 1 } })
+    expect((await popular('guest'))[0]).toMatchObject({ id: id(300), author_name: 'Участник', author_avatar_url: null, reaction_count: 1, reaction_counts: { fire: 1 } })
   })
 
   it('toExcerpt схлопывает пробелы и режет по границе слова', () => {

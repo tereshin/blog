@@ -17,7 +17,7 @@ export type UserRepository = {
   setPublishing: (input: { id: string; can_publish: boolean; correlation_id: string }) => Promise<AccountRow | null>
   restrict: (input: { id: string; correlation_id: string }) => Promise<AccountRow | null>
   unrestrict: (input: { id: string; correlation_id: string }) => Promise<AccountRow | null>
-  setAppearance: (input: { id: string; appearance: 'light' | 'dark'; correlation_id: string }) => Promise<'light' | 'dark' | null>
+  setAppearance: (input: { id: string; appearance: UpdateAppearance['appearance']; correlation_id: string }) => Promise<UpdateAppearance | null>
 }
 
 export type UserService = {

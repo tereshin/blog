@@ -74,7 +74,7 @@ export function CommentActions({
   return (
     <>
       <Link
-        className="text-sm font-normal text-muted underline underline-offset-4"
+        className="text-sm font-normal text-muted underline-offset-4 no-underline"
         isDisabled={!comments_enabled}
         onPress={() =>
           onReply({

@@ -59,9 +59,13 @@ describe('discussion: миграция (PostgreSQL в контейнере)', ()
     await expect(database.pool.query(insert, [ARTICLE, USER, 'x'.repeat(5001)])).rejects.toThrow()
   })
 
-  it('вид реакции ограничен четырьмя значениями', async () => {
-    await expect(
-      database.pool.query("insert into reactions (user_id, target_type, target_id, kind) values ($1, 'comment', $2, 'sad')", [USER, ARTICLE]),
-    ).rejects.toThrow()
+  it('вид реакции хранится текстом, каталог изначально содержит четыре вида', async () => {
+    const catalog = await database.pool.query<{ kind: string }>('select kind from reaction_catalog order by kind')
+    expect(catalog.rows.map((row) => row.kind)).toEqual(['fire', 'heart', 'laugh', 'thumb'])
+    const inserted = await database.pool.query(
+      "insert into reactions (user_id, target_type, target_id, kind) values ($1, 'comment', $2, $3)",
+      [USER, ARTICLE, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
+    )
+    expect(inserted.rowCount).toBe(1)
   })
 })

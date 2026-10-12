@@ -84,8 +84,8 @@ describe('content: seed (PostgreSQL в контейнере)', () => {
   })
 
   it('полнотекстовый вектор заполнен и ищет по заголовку', async () => {
-    const found = await database.pool.query("select title from articles where search_vector @@ plainto_tsquery('simple', 'интерфейсы') and status = 'published'")
-    expect(found.rows.map((row: { title: string }) => row.title)).toContain('Длинный текст про интерфейсы')
+    const found = await database.pool.query("select title from articles where search_vector @@ plainto_tsquery('simple', 'вывески') and status = 'published'")
+    expect(found.rows.map((row: { title: string }) => row.title)).toContain('Вывески, которые хочется сфотографировать')
   })
 
   it('повторный запуск не меняет ни одной таблицы', async () => {

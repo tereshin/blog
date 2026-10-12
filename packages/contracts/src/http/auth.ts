@@ -9,6 +9,7 @@ export const sessionUserSchema = z.strictObject({
   role: z.enum(['member', 'admin', 'superadmin']),
   can_publish: z.boolean(),
   is_restricted: z.boolean(),
+  /** `null` — участник не выбирал вид или выбрал системный: вид следует устройству. */
   appearance: z.enum(['light', 'dark']).nullable(),
   /** Своя почта или `null`, пока адрес не указан и поставщик его не подтвердил. */
   email: z.string().nullable(),
@@ -31,9 +32,9 @@ export const sessionResponseSchema = z.discriminatedUnion('status', [
 ])
 export type SessionResponse = z.infer<typeof sessionResponseSchema>
 
-/** `PATCH /v1/users/me/appearance`: выбор вида хранится в учётной записи. */
+/** `PATCH /v1/users/me/appearance`: выбор вида хранится в учётной записи; `null` — вид следует устройству. */
 export const updateAppearanceSchema = z.strictObject({
-  appearance: z.enum(['light', 'dark']),
+  appearance: z.enum(['light', 'dark']).nullable(),
 })
 export type UpdateAppearance = z.infer<typeof updateAppearanceSchema>
 

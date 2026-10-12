@@ -68,9 +68,9 @@ export function createUserService(repository: UserRepository): UserService {
 
     async setAppearance(viewer, body, correlation_id) {
       if (viewer.user_id === undefined) throw new UnauthorizedError()
-      const appearance = await repository.setAppearance({ id: viewer.user_id, appearance: body.appearance, correlation_id })
-      if (!appearance) throw new NotFoundError()
-      return { appearance }
+      const saved = await repository.setAppearance({ id: viewer.user_id, appearance: body.appearance, correlation_id })
+      if (!saved) throw new NotFoundError()
+      return saved
     },
   }
 }

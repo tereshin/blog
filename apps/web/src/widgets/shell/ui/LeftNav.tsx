@@ -37,13 +37,13 @@ const MODES: ReadonlyArray<Mode> = [
     to: '/feed',
     kind: 'mine',
     label: 'shell.nav.my_feed',
-    icon: { line: <BaseIcon name="news" style="line" size={24} />, fill: <BaseIcon name="news" style="fill" size={24} /> },
+    icon: { line: <BaseIcon name="paper" style="line" size={24} />, fill: <BaseIcon name="paper" style="fill" size={24} /> },
   },
   {
     to: '/messages',
     kind: 'messages',
     label: 'shell.nav.messages',
-    icon: { line: <BaseIcon name="message_1" style="line" size={24} />, fill: <BaseIcon name="message_1" style="fill" size={24} /> },
+    icon: { line: <BaseIcon name="chat_3" style="line" size={24} />, fill: <BaseIcon name="chat_3" style="fill" size={24} /> },
   },
   {
     to: '/rating',
@@ -146,7 +146,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
 
         <div className="pt-3 flex flex-col gap-1">
           <LeftNavItem to="/about" is_selected={section.kind === 'about'}>{t('account.about')}</LeftNavItem>
-          <AppearanceToggle className="w-full justify-start rounded-xl px-3 py-2 text-base font-normal" />
+          <AppearanceToggle className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal" />
         </div>
     </div>
   )

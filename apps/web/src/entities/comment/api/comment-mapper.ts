@@ -1,13 +1,7 @@
+import { reactionCountsSchema, reactionKindSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { formatTime } from '@/shared/lib'
 import type { CommentNode } from '../model/comment-types.ts'
-
-const counts = z.object({
-  laugh: z.number(),
-  heart: z.number(),
-  thumb: z.number(),
-  fire: z.number(),
-})
 
 export const commentReplySchema = z.object({
   id: z.string(),
@@ -23,9 +17,9 @@ export const commentReplySchema = z.object({
   body: z.string().nullable(),
   status: z.enum(['visible', 'deleted', 'hidden']),
   edited_at: z.string().nullable(),
-  reaction_counts: counts,
+  reaction_counts: reactionCountsSchema,
   reaction_count: z.number(),
-  my_reaction: z.enum(['laugh', 'heart', 'thumb', 'fire']).nullable(),
+  my_reaction: reactionKindSchema.nullable(),
   created_at: z.string(),
 })
 

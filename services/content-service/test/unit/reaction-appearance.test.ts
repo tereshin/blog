@@ -8,10 +8,10 @@ const zwj_family = '👨‍👩‍👧‍👦'
 describe('вид реакции', () => {
   it('пока суперадминистратор не сохранял, значения 😄 ❤️ 👍 🔥', () => {
     expect(DEFAULT_REACTION_APPEARANCES).toEqual([
-      { kind: 'laugh', presentation: 'emoji', emoji: '😄' },
-      { kind: 'heart', presentation: 'emoji', emoji: '❤️' },
-      { kind: 'thumb', presentation: 'emoji', emoji: '👍' },
-      { kind: 'fire', presentation: 'emoji', emoji: '🔥' },
+      { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '😄' },
+      { kind: 'heart', label: 'Сердце', status: 'active', presentation: 'emoji', emoji: '❤️' },
+      { kind: 'thumb', label: 'Палец вверх', status: 'active', presentation: 'emoji', emoji: '👍' },
+      { kind: 'fire', label: 'Огонь', status: 'active', presentation: 'emoji', emoji: '🔥' },
     ])
     for (const appearance of DEFAULT_REACTION_APPEARANCES) {
       if (appearance.presentation === 'emoji') expect(assertSingleEmoji(appearance.emoji)).toBe(appearance.emoji)

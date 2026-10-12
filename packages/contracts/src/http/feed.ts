@@ -1,17 +1,28 @@
 import { z } from 'zod'
 import { pageSchema } from './pagination.ts'
 
+/** Четыре исходных вида. Новые реакции получают UUID, эти slug остаются у уже поставленных. */
 export const REACTION_KINDS = ['laugh', 'heart', 'thumb', 'fire'] as const
-export const reactionKindSchema = z.enum(REACTION_KINDS)
+
+const LEGACY_REACTION_KINDS = new Set<string>(REACTION_KINDS)
+
+/** Стабильный идентификатор: `laugh` | `heart` | `thumb` | `fire` либо UUID новой реакции. */
+export const reactionKindSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .refine((value) => LEGACY_REACTION_KINDS.has(value) || z.uuid().safeParse(value).success, {
+    message: 'Идентификатор реакции должен быть одним из четырёх исходных или UUID',
+  })
 export type ReactionKind = z.infer<typeof reactionKindSchema>
 
-export const reactionCountsSchema = z.strictObject({
-  laugh: z.number().int().nonnegative(),
-  heart: z.number().int().nonnegative(),
-  thumb: z.number().int().nonnegative(),
-  fire: z.number().int().nonnegative(),
-})
+/** Числа по видам. Ключа нет — реакций этого вида ноль. */
+export const reactionCountsSchema = z.record(reactionKindSchema, z.number().int().nonnegative())
 export type ReactionCounts = z.infer<typeof reactionCountsSchema>
+
+export function sumReactionCounts(counts: ReactionCounts): number {
+  return Object.values(counts).reduce((sum, count) => sum + count, 0)
+}
 
 /** `fresh` | `popular` | `mine` | `topic:{slug}` — параметр `mode` у `GET /v1/feed`. */
 export const feedModeSchema = z.union([z.enum(['fresh', 'popular', 'mine']), z.string().regex(/^topic:[a-z0-9][a-z0-9-]*$/)])

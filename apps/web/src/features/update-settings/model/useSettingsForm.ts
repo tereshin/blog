@@ -1,12 +1,19 @@
 import { seoSettingsSchema, socialCoverSettingsSchema } from '@blog/contracts'
 import { useState } from 'react'
-import type { ReactionKind } from '@/entities/reaction'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
 import type { AdminSettings } from '../api/update-settings.ts'
-import { appearanceErrors, appearancePayload, draftsFrom } from './appearance-draft.ts'
-import type { AppearanceDraft } from './appearance-draft.ts'
+import {
+  appendDraft,
+  appearanceErrors,
+  appearancePayload,
+  draftsFrom,
+  moveActive,
+  restoreDraft,
+  retireDraft,
+} from './appearance-draft.ts'
+import type { AppearanceDraft, AppearanceFieldError } from './appearance-draft.ts'
 import type { SettingsSection } from './settings-sections.ts'
 import { useUpdateSettings } from './useUpdateSettings.ts'
 
@@ -27,28 +34,50 @@ export function useSettingsForm(
     draftsFrom(initial.reaction_appearances),
   )
   const [appearance_errors, setAppearanceErrors] = useState<
-    Partial<Record<ReactionKind, 'emoji' | 'image'>>
+    Partial<Record<string, AppearanceFieldError>>
   >({})
   const [error, setError] = useState<string | null>(null)
 
-  const patchAppearance = (
-    kind: ReactionKind,
-    patch: Partial<Pick<AppearanceDraft, 'presentation' | 'emoji' | 'image_url'>>,
-  ) => {
-    setAppearanceDraft((current) =>
-      current.map((item) => (item.kind === kind ? { ...item, ...patch } : item)),
-    )
+  const clearAppearanceError = (kind: string) => {
     setAppearanceErrors((current) => {
       if (current[kind] === undefined) return current
-      const next: Partial<Record<ReactionKind, 'emoji' | 'image'>> = {}
-      for (const [key, value] of Object.entries(current) as [ReactionKind, 'emoji' | 'image'][]) {
-        if (key !== kind) next[key] = value
+      const next: Partial<Record<string, AppearanceFieldError>> = {}
+      for (const [key, value] of Object.entries(current)) {
+        if (key !== kind && value) next[key] = value
       }
       return next
     })
   }
 
+  const patchAppearance = (
+    kind: string,
+    patch: Partial<Pick<AppearanceDraft, 'presentation' | 'emoji' | 'image_url' | 'label'>>,
+  ) => {
+    setAppearanceDraft((current) =>
+      current.map((item) => (item.kind === kind ? { ...item, ...patch } : item)),
+    )
+    clearAppearanceError(kind)
+  }
+
+  const reorderAppearances = (from_kind: string, to_kind: string) => {
+    setAppearanceDraft((current) => moveActive(current, from_kind, to_kind))
+  }
+
+  const retireAppearance = (kind: string) => {
+    setAppearanceDraft((current) => retireDraft(current, kind))
+    clearAppearanceError(kind)
+  }
+
+  const restoreAppearance = (kind: string) => {
+    setAppearanceDraft((current) => restoreDraft(current, kind))
+  }
+
+  const addAppearance = (draft: AppearanceDraft) => {
+    setAppearanceDraft((current) => appendDraft(current, draft))
+  }
+
   const save = () => {
+    if (update.isPending) return
     setError(null)
     const field_errors = can_edit_media ? appearanceErrors(appearance_draft) : {}
     setAppearanceErrors(field_errors)
@@ -92,6 +121,10 @@ export function useSettingsForm(
     appearance_errors,
     error,
     patchAppearance,
+    reorderAppearances,
+    retireAppearance,
+    restoreAppearance,
+    addAppearance,
     save,
     is_pending: update.isPending,
   }

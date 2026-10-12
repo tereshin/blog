@@ -1,5 +1,9 @@
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
+import { ADMIN_ROUTES } from '@/entities/admin'
+import type { AdminRouteId } from '@/entities/admin'
+import { AdminGeneralPage } from '@/pages/admin-general'
+import { AdminArticleReportsPage } from '@/pages/admin-article-reports'
 import { AdminHomePage } from '@/pages/admin-home'
 import { AdminMembersPage } from '@/pages/admin-members'
 import { AdminAccessPage } from '@/pages/admin-access'
@@ -43,6 +47,25 @@ function child(
   return { path, element, handle: { skeleton } satisfies ShellHandle }
 }
 
+const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
+  home: <AdminHomePage />,
+  settings: <AdminSettingsPage />,
+  moderation: <AdminModerationPage />,
+  members: <AdminMembersPage />,
+  topics: <AdminTopicsPage />,
+  general: <AdminGeneralPage />,
+  access: <AdminAccessPage />,
+  reactions: <AdminReactionsPage />,
+  'status-icons': <AdminStatusIconsPage />,
+  seo: <AdminSeoPage />,
+  publisher: <AdminPublisherPage />,
+  covers: <AdminCoversPage />,
+  articles: <AdminArticleReportsPage />,
+  comments: <AdminCommentReportsPage />,
+  hidden: <AdminHiddenPage />,
+  find: <AdminFindArticlePage />,
+}
+
 /**
  * Один родительский маршрут каркаса. Все публичные и административные адреса — его дети,
  * каждый загружается лениво. Панели (вход, профиль, настройки, предупреждение) маршрутами не являются.
@@ -69,20 +92,9 @@ export const shellRoute: RouteObject = {
     child('auth/action', <AuthActionPage />, 'article'),
     child('write', <EditorPage />, 'article'),
     child('write/:id', <EditorPage />, 'article'),
-    child('admin', <AdminHomePage />, 'feed'),
-    child('admin/members', <AdminMembersPage />, 'feed'),
-    child('admin/settings/access', <AdminAccessPage />, 'feed'),
-    child('admin/settings/reactions', <AdminReactionsPage />, 'feed'),
-    child('admin/settings/status-icons', <AdminStatusIconsPage />, 'feed'),
-    child('admin/settings/seo', <AdminSeoPage />, 'feed'),
-    child('admin/settings/publisher', <AdminPublisherPage />, 'feed'),
-    child('admin/settings/covers', <AdminCoversPage />, 'feed'),
-    child('admin/moderation/hidden', <AdminHiddenPage />, 'feed'),
-    child('admin/moderation/comments', <AdminCommentReportsPage />, 'feed'),
-    child('admin/moderation/find', <AdminFindArticlePage />, 'feed'),
-    child('admin/moderation', <AdminModerationPage />, 'feed'),
-    child('admin/topics', <AdminTopicsPage />, 'feed'),
-    child('admin/settings', <AdminSettingsPage />, 'feed'),
+    ...(Object.keys(ADMIN_ROUTES) as AdminRouteId[]).map((id) =>
+      child(ADMIN_ROUTES[id].path.slice(1), ADMIN_PAGES[id], 'feed'),
+    ),
     { path: '*', element: <NotFoundPage />, handle: { skeleton: 'feed' } satisfies ShellHandle },
   ],
 }

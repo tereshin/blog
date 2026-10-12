@@ -2,7 +2,7 @@ import type { Profile } from '@/entities/profile'
 import { useSettings } from '@/entities/settings'
 import { useUpdateProfile } from '@/features/edit-profile'
 import { useT } from '@/shared/i18n'
-import { Button, Menu } from '@/shared/ui'
+import { BaseIcon, Button, Menu } from '@/shared/ui'
 
 export function ProfileStatus({ profile }: { profile: Profile }) {
   const { t } = useT()
@@ -19,10 +19,10 @@ export function ProfileStatus({ profile }: { profile: Profile }) {
   return (
     <div className="shrink-0">
       <Menu>
-        <Button variant="ghost" isIconOnly isDisabled={update.isPending} aria-label={t('profile.status_choose')} className="size-7 min-h-7 min-w-7 p-0">
+        <Button variant="ghost" size="sm" isIconOnly isDisabled={update.isPending} aria-label={t('profile.status_choose')} className="size-7 min-h-7 min-w-7 p-0 top-[2px]">
           {selected ? (
-            <img src={selected.image_url} alt={selected.label} width={28} height={28} className="size-7 object-contain" />
-          ) : <span aria-hidden="true" className="text-xl">＋</span>}
+            <img src={selected.image_url} alt={selected.label} width={22} height={22} className="size-5 object-contain" />
+          ) : <BaseIcon name="add" style="fill" size={22} />}
         </Button>
         <Menu.Content
           aria-label={t('profile.status_choose')}

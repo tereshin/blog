@@ -40,6 +40,18 @@ describe('seed-data: участники', () => {
     expect(users.filter((user) => user.role === 'member').length).toBeGreaterThan(1)
   })
 
+  it('портрет HeroUI совпадает с полом имени', () => {
+    const by = Object.fromEntries(users.map((user) => [user.key, user.avatar_url]))
+    expect(by.admin).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=0')
+    expect(by.superadmin).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=1')
+    expect(by.author_b).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=2')
+    expect(by.author_a).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=3')
+    expect(by.reader).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=4')
+    expect(by.no_publish).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=5')
+    expect(by.newcomer).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=6')
+    expect(by.restricted).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=7')
+  })
+
   it('author_a появился больше года назад, newcomer — только что', () => {
     const by = Object.fromEntries(users.map((user) => [user.key, user]))
     expect(anchor.getTime() - (by.author_a?.created_at.getTime() ?? 0)).toBeGreaterThan(365 * DAY_MS)
@@ -56,8 +68,8 @@ describe('seed-data: участники', () => {
 })
 
 describe('seed-data: темы, профили, адреса, настройки', () => {
-  const topics = buildTopics(DEFAULT_SEED_OPTIONS)
-  const profiles = buildProfiles(users, DEFAULT_SEED_OPTIONS)
+  const topics = buildTopics()
+  const profiles = buildProfiles(users)
 
   it('три активные темы и одна архивная, адреса seed-topic-*', () => {
     expect(topics.filter((topic) => topic.status === 'active')).toHaveLength(3)

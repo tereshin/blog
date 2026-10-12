@@ -58,7 +58,7 @@ export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfil
       <Dialog.Header>
         <Dialog.Heading>{t('profile.edit_title')}</Dialog.Heading>
       </Dialog.Header>
-      <Dialog.Body>
+      <Dialog.Body className="-mx-2 px-2 py-2">
         <form
           id={form_id}
           className="flex flex-col gap-3"
@@ -75,7 +75,7 @@ export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfil
               maxLength={50}
               value={draft.display_name}
               onChange={(event) => setDraft({ ...draft, display_name: event.target.value })}
-              className="rounded-lg border border-separator bg-background px-3 py-2"
+              className="form-field h-12 w-full px-4 text-base"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -84,7 +84,7 @@ export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfil
               maxLength={500}
               value={draft.bio}
               onChange={(event) => setDraft({ ...draft, bio: event.target.value })}
-              className="min-h-24 rounded-lg border border-separator bg-background px-3 py-2"
+              className="form-field min-h-24 w-full resize-y px-4 py-3 text-base"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -96,7 +96,7 @@ export function EditProfileDialog({ is_open, onOpenChange, initial }: EditProfil
               pattern="[a-zA-Z0-9][a-zA-Z0-9\-]{1,38}[a-zA-Z0-9]"
               aria-invalid={slug_message ? true : undefined}
               onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
-              className="rounded-lg border border-separator bg-background px-3 py-2"
+              className="form-field h-12 w-full px-4 text-base"
             />
             <span className="text-muted">{t('profile.slug_hint')}</span>
             {initial.slug ? <span className="text-muted">{t('profile.slug_current', { slug: initial.slug })}</span> : null}

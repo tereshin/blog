@@ -13,9 +13,9 @@ export function buildSmallMessages(anchor: Date): SeedMessage[] {
   const inputs: MessageInput[] = [
     { name: 'a1', conversation: 'reader-author_a', sender: 'reader', body: 'Здравствуйте! Можно задать вопрос по вашей статье?', hours_ago: 30, is_read: true },
     { name: 'a2', conversation: 'reader-author_a', sender: 'author_a', body: 'Конечно, спрашивайте.', hours_ago: 28, is_read: true },
-    { name: 'a3', conversation: 'reader-author_a', sender: 'author_a', body: 'Кстати, я дописала раздел про границы.', hours_ago: 4, is_read: false },
+    { name: 'a3', conversation: 'reader-author_a', sender: 'author_a', body: 'Кстати, дописала про булочную на углу.', hours_ago: 4, is_read: false },
     { name: 'a4', conversation: 'reader-author_a', sender: 'author_a', body: 'Посмотрите, когда будет время.', hours_ago: 3, is_read: false },
-    { name: 'b1', conversation: 'reader-author_b', sender: 'reader', body: 'Спасибо за заметку про команды.', hours_ago: 72, is_read: true },
+    { name: 'b1', conversation: 'reader-author_b', sender: 'reader', body: 'Спасибо за заметку про фильм.', hours_ago: 72, is_read: true },
     { name: 'b2', conversation: 'reader-author_b', sender: 'author_b', body: 'Рад, что пригодилось!', hours_ago: 70, is_read: true },
   ]
   return inputs.map((input) => {

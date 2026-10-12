@@ -16,7 +16,7 @@ export type MediaSeedInput = SeedContext & {
 
 /**
  * Кладёт байты `seed/*` в хранилище под фиксированными именами и пишет `files`
- * с теми же URL, что стоят в блоках статей и аватарах. Существующий объект пропускается.
+ * с теми же URL, что стоят в логотипе и вложении. Существующий объект пропускается.
  * События не публикует.
  */
 export async function seedMedia(input: MediaSeedInput): Promise<void> {

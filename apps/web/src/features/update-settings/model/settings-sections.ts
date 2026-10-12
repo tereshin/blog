@@ -1,24 +1,8 @@
 import { seoSettingsSchema } from '@blog/contracts'
-import type { MessageKey } from '@/shared/i18n'
+import type { AdminSettingsRouteId } from '@/entities/admin'
 import type { AdminSettings } from '../api/update-settings.ts'
 
-export type SettingsSection =
-  'general' | 'access' | 'reactions' | 'status-icons' | 'seo' | 'publisher' | 'covers'
-export const SETTINGS_SECTIONS: Record<
-  SettingsSection,
-  { title: MessageKey; description: MessageKey }
-> = {
-  general: { title: 'admin.settings.general', description: 'admin.settings.general_hint' },
-  access: { title: 'admin.settings.access', description: 'admin.settings.access_hint' },
-  reactions: { title: 'admin.settings.reactions', description: 'admin.settings.reactions_hint' },
-  'status-icons': {
-    title: 'admin.settings.status_icons',
-    description: 'admin.settings.status_icons_hint',
-  },
-  seo: { title: 'seo.settings', description: 'admin.settings.seo_hint' },
-  publisher: { title: 'seo.publisher', description: 'seo.publisher_hint' },
-  covers: { title: 'seo.covers', description: 'seo.covers_hint' },
-}
+export type SettingsSection = AdminSettingsRouteId
 
 /** The API accepts a full document. Merge only the current category into fresh server settings. */
 export function mergeSettingsSection(

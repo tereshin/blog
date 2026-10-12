@@ -18,10 +18,10 @@ export function SelectField({ label, value, options, onChange, isDisabled }: Sel
         if (typeof key === 'string') onChange(key)
       }}
       isDisabled={isDisabled}
-      className="w-full"
+      className="w-full max-w-lg gap-3"
     >
-      <Label>{label}</Label>
-      <Select.Trigger>
+      <Label className="text-base font-semibold">{label}</Label>
+      <Select.Trigger className="form-field h-12 w-full px-4 text-base">
         <Select.Value />
         <Select.Indicator />
       </Select.Trigger>

@@ -21,7 +21,7 @@ export type FeedCardFixture = {
   published_at: string
   author: { user_id: string; display_name: string; avatar_url: string | null; slug: string }
   topic: { id: string; title: string; slug: string; status: 'active' | 'archived' }
-  reaction_counts: { laugh: number; heart: number; thumb: number; fire: number }
+  reaction_counts: Record<string, number>
   reaction_count: number
   comment_count: number
   bookmark_count: number

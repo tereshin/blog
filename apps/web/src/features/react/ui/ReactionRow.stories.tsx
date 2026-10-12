@@ -12,17 +12,17 @@ const image_url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 const broken_url = 'data:image/png;base64,not-an-image'
 
 const images: ReactionAppearances = [
-  { kind: 'laugh', presentation: 'image', image_url },
-  { kind: 'heart', presentation: 'image', image_url },
-  { kind: 'thumb', presentation: 'image', image_url },
-  { kind: 'fire', presentation: 'image', image_url },
+  { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'image', image_url },
+  { kind: 'heart', label: 'Сердце', status: 'active', presentation: 'image', image_url },
+  { kind: 'thumb', label: 'Палец вверх', status: 'active', presentation: 'image', image_url },
+  { kind: 'fire', label: 'Огонь', status: 'active', presentation: 'image', image_url },
 ]
 
 const broken: ReactionAppearances = [
-  { kind: 'laugh', presentation: 'image', image_url: broken_url },
-  { kind: 'heart', presentation: 'image', image_url: broken_url },
-  { kind: 'thumb', presentation: 'image', image_url: broken_url },
-  { kind: 'fire', presentation: 'image', image_url: broken_url },
+  { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'image', image_url: broken_url },
+  { kind: 'heart', label: 'Сердце', status: 'active', presentation: 'image', image_url: broken_url },
+  { kind: 'thumb', label: 'Палец вверх', status: 'active', presentation: 'image', image_url: broken_url },
+  { kind: 'fire', label: 'Огонь', status: 'active', presentation: 'image', image_url: broken_url },
 ]
 
 function Row({

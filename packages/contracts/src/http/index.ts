@@ -21,6 +21,7 @@ export {
   feedPageSchema,
   reactionCountsSchema,
   reactionKindSchema,
+  sumReactionCounts,
   topicStatusSchema,
 } from './feed.ts'
 export type { FeedCard, FeedMode, FeedPage, ReactionCounts, ReactionKind } from './feed.ts'
@@ -32,9 +33,12 @@ export { recordViewSchema, viewCountSchema } from './views.ts'
 export type { RecordView, ViewCount } from './views.ts'
 export {
   DEFAULT_REACTION_APPEARANCES,
+  MAX_ACTIVE_REACTIONS,
+  MAX_REACTION_APPEARANCES,
   adminSettingsSchema,
   localeSchema,
   publicSettingsSchema,
+  reactionAppearanceSchema,
   reactionAppearancesSchema,
   profileStatusIconSchema,
   profileStatusIconsSchema,

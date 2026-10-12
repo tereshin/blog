@@ -1,4 +1,5 @@
-import { Link } from 'react-router'
+import { createModerationReturnState } from '@/entities/admin'
+import { Link, useLocation } from 'react-router'
 import { ArticleCard } from '@/entities/article'
 import { useT } from '@/shared/i18n'
 import { Button, Card, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
@@ -7,6 +8,7 @@ import { ArticleModerationActions } from './ArticleModerationActions.tsx'
 
 export function ArticleModerationQueue({ filter }: { filter: 'reported' | 'hidden' }) {
   const { t } = useT()
+  const { pathname } = useLocation()
   const { query, items } = useArticleModerationQueue(filter)
   if (query.isPending) return <Skeleton className="h-56" aria-label={t('common.loading')} />
   if (query.isError)
@@ -33,13 +35,22 @@ export function ArticleModerationQueue({ filter }: { filter: 'reported' | 'hidde
           <Card.Content>
             <ArticleCard article={item.article}>
               <ArticleCard.Header />
-              <ArticleCard.Title />
+              <ArticleCard.Title>
+                <Link
+                  className="text-foreground outline-offset-2 hover:underline"
+                  to={`/p/${encodeURIComponent(item.article.slug)}?from=moderation`}
+                  state={createModerationReturnState(pathname)}
+                >
+                  {item.article.title}
+                </Link>
+              </ArticleCard.Title>
               <ArticleCard.Excerpt />
             </ArticleCard>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <ArticleModerationActions article_id={item.article.id} status={item.article.status} />
               <Link
                 className="rounded text-sm text-accent"
+                state={createModerationReturnState(pathname)}
                 to={`/p/${encodeURIComponent(item.article.slug)}?from=moderation`}
               >
                 {t('admin.moderation.open')}

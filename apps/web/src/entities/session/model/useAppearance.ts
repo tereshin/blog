@@ -3,14 +3,16 @@ import { useSyncExternalStore } from 'react'
 import { z } from 'zod'
 import { http } from '@/shared/api'
 import type { Session } from '../api/get-session.ts'
-import { readStoredTheme, storeTheme } from './appearance-storage.ts'
-import type { Theme } from './appearance-storage.ts'
+import { readStoredAppearance, storeAppearance } from './appearance-storage.ts'
+import type { AppearancePreference, Theme } from './appearance-storage.ts'
 import { sessionKeys } from './session-keys.ts'
 import { useViewer } from './useViewer.ts'
 
-const appearanceSchema = z.object({ appearance: z.enum(['light', 'dark']) })
+const appearanceSchema = z.object({ appearance: z.enum(['light', 'dark']).nullable() })
 
-let guest_theme: Theme = readStoredTheme()
+const DARK_QUERY = '(prefers-color-scheme: dark)'
+
+let guest_preference: AppearancePreference = readStoredAppearance()
 const listeners = new Set<() => void>()
 
 function subscribe(listener: () => void): () => void {
@@ -18,14 +20,34 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-function readGuestTheme(): Theme {
-  return guest_theme
+function readGuestPreference(): AppearancePreference {
+  return guest_preference
 }
 
-function writeGuestTheme(theme: Theme): void {
-  guest_theme = theme
-  storeTheme(theme)
+function writeGuestPreference(preference: AppearancePreference): void {
+  guest_preference = preference
+  storeAppearance(preference)
   for (const listener of listeners) listener()
+}
+
+function darkQuery(): MediaQueryList | null {
+  return typeof window.matchMedia === 'function' ? window.matchMedia(DARK_QUERY) : null
+}
+
+function subscribeSystem(listener: () => void): () => void {
+  const query = darkQuery()
+  query?.addEventListener('change', listener)
+  return () => query?.removeEventListener('change', listener)
+}
+
+function readSystemTheme(): Theme {
+  const query = darkQuery()
+  if (!query) return 'dark'
+  return query.matches ? 'dark' : 'light'
+}
+
+function resolveTheme(preference: AppearancePreference): Theme {
+  return preference === 'system' ? readSystemTheme() : preference
 }
 
 function applyTheme(theme: Theme): void {
@@ -35,41 +57,55 @@ function applyTheme(theme: Theme): void {
   root.classList.add(theme)
 }
 
-function withAppearance(current: Session | undefined, appearance: Theme): Session | undefined {
-  if (!current || current.status !== 'member') return current
-  return { ...current, user: { ...current.user, appearance } }
+function memberPreference(session: Session | undefined): AppearancePreference | null {
+  if (session?.status !== 'member') return null
+  return session.user.appearance ?? 'system'
 }
 
-/** Участник берёт вид из сессии, гость — с устройства. Смена у участника уходит на сервер. */
-export function useAppearance(): { theme: Theme; setAppearance: (theme: Theme) => void } {
+function withAppearance(current: Session | undefined, preference: AppearancePreference): Session | undefined {
+  if (!current || current.status !== 'member') return current
+  return { ...current, user: { ...current.user, appearance: preference === 'system' ? null : preference } }
+}
+
+/**
+ * Участник берёт вид из сессии, гость — с устройства. Смена у участника уходит на сервер.
+ * `theme` — применённый вид, `preference` — выбор, где `system` следует устройству.
+ */
+export function useAppearance(): {
+  theme: Theme
+  preference: AppearancePreference
+  setAppearance: (preference: AppearancePreference) => void
+} {
   const { viewer } = useViewer()
   const queryClient = useQueryClient()
-  const guest = useSyncExternalStore(subscribe, readGuestTheme, () => 'dark' as Theme)
-  const theme: Theme = viewer.status === 'member' ? (viewer.user.appearance ?? 'dark') : guest
+  const guest = useSyncExternalStore(subscribe, readGuestPreference, () => 'system' as AppearancePreference)
+  const system_theme = useSyncExternalStore(subscribeSystem, readSystemTheme, () => 'dark' as Theme)
+  const preference: AppearancePreference = viewer.status === 'member' ? (viewer.user.appearance ?? 'system') : guest
+  const theme: Theme = preference === 'system' ? system_theme : preference
 
   const mutation = useMutation({
-    mutationFn: (appearance: Theme) => http.patch('/v1/users/me/appearance', appearanceSchema, { body: { appearance } }),
-    onMutate: (appearance: Theme) => {
+    mutationFn: (next: AppearancePreference) =>
+      http.patch('/v1/users/me/appearance', appearanceSchema, { body: { appearance: next === 'system' ? null : next } }),
+    onMutate: (next: AppearancePreference) => {
       const previous = queryClient.getQueryData<Session>(sessionKeys.current())
-      queryClient.setQueryData(sessionKeys.current(), withAppearance(previous, appearance))
-      applyTheme(appearance)
+      queryClient.setQueryData(sessionKeys.current(), withAppearance(previous, next))
+      applyTheme(resolveTheme(next))
       return { previous }
     },
-    onError: (_error, _appearance, context) => {
+    onError: (_error, _next, context) => {
       queryClient.setQueryData(sessionKeys.current(), context?.previous)
-      const restored = context?.previous?.status === 'member' ? (context.previous.user.appearance ?? 'dark') : readGuestTheme()
-      applyTheme(restored)
+      applyTheme(resolveTheme(memberPreference(context?.previous) ?? readGuestPreference()))
     },
   })
 
-  const setAppearance = (next: Theme) => {
+  const setAppearance = (next: AppearancePreference) => {
     if (viewer.status === 'member') {
       mutation.mutate(next)
       return
     }
-    applyTheme(next)
-    writeGuestTheme(next)
+    applyTheme(resolveTheme(next))
+    writeGuestPreference(next)
   }
 
-  return { theme, setAppearance }
+  return { theme, preference, setAppearance }
 }

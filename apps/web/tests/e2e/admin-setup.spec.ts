@@ -31,10 +31,14 @@ test.describe('Настройки площадки', () => {
   })
 
   test('загруженный логотип виден гостю в шапке', async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'superadmin'))
-    await page.goto('/admin/settings')
-    await page.getByRole('button', { name: 'Логотип', exact: true }).locator('..').locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG })
+    await page.addInitScript(() => { if (!window.localStorage.getItem('mock_viewer')) window.localStorage.setItem('mock_viewer', 'superadmin') })
+    await page.goto('/admin/settings/general')
+    await page.getByRole('button', { name: 'Загрузить логотип', exact: true }).locator('..').locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG })
+    await expect(page.getByRole('main').locator('img')).toHaveCount(1)
+    const saved = page.waitForResponse((response) => response.url().endsWith('/v1/settings') && response.request().method() === 'PUT')
     await page.getByRole('button', { name: 'Сохранить' }).click()
+    expect((await saved).ok()).toBe(true)
+    await expect(page.getByText('Настройки сохранены')).toBeVisible()
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'guest'))
     await page.goto('/')
     await expect(page.getByRole('banner').getByRole('img', { name: 'Блог' })).toBeVisible()
@@ -43,7 +47,7 @@ test.describe('Настройки площадки', () => {
   test('смена языка на английский меняет подписи, заголовки статей остаются', async ({ page }) => {
     test.skip(!hasLeftColumn(page), 'Левый столбец виден от 768px')
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'superadmin'))
-    await page.goto('/admin/settings')
+    await page.goto('/admin/settings/general')
     await page.getByRole('button', { name: 'Язык' }).click()
     await page.getByRole('option', { name: 'English' }).click()
     await page.getByRole('button', { name: 'Сохранить' }).click()

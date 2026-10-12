@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { Card, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import { EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import { useManageTopics } from '../model/useManageTopics.ts'
 import { TopicForm } from './TopicForm.tsx'
 import { TopicRow } from './TopicRow.tsx'
@@ -38,11 +38,9 @@ export function TopicManagement({
           />
         ))}
       </ul>
-      <Card>
-        <Card.Content>
-          <TopicForm upload={upload} />
-        </Card.Content>
-      </Card>
+      <div className="border-t border-separator pt-6">
+        <TopicForm upload={upload} />
+      </div>
     </div>
   )
 }

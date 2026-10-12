@@ -1,3 +1,4 @@
+import { reactionCountsSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { ApiError, http } from '@/shared/api'
 import type { ArticleLoad, ArticleModel } from '../model/article-types.ts'
@@ -19,7 +20,7 @@ const articleDtoSchema = z.object({
   visibility: z.enum(['public', 'members', 'author']),
   comments_enabled: z.boolean(),
   status: z.enum(['draft', 'published', 'hidden', 'deleted']),
-  reaction_counts: z.object({ laugh: z.number(), heart: z.number(), thumb: z.number(), fire: z.number() }),
+  reaction_counts: reactionCountsSchema,
   reaction_count: z.number(),
   comment_count: z.number(),
   bookmark_count: z.number(),

@@ -1,2 +1,2 @@
-export { readStoredTheme, storeTheme } from '@/entities/session'
-export type { Theme } from '@/entities/session'
+export { readStoredAppearance, storeAppearance } from '@/entities/session'
+export type { AppearancePreference, Theme } from '@/entities/session'

@@ -1,3 +1,5 @@
+import { getAdminRoute, getAdminParentPath } from '@/entities/admin'
+import { useT } from '@/shared/i18n'
 import { Suspense, useEffect, useState } from 'react'
 import { useOutlet, useLocation, useMatches } from 'react-router'
 import { PageSeo } from '@/widgets/page-seo'
@@ -27,6 +29,7 @@ function skeletonOf(matches: ReturnType<typeof useMatches>): CenterSkeletonKind 
 
 /** Единственный layout-маршрут: шапка и обе карточки не размонтируются при переходах, меняется только центр. */
 export function ShellLayout() {
+  const { t } = useT()
   const { pathname } = useLocation()
   const outlet = useOutlet()
   const is_editor = /^\/write(?:\/|$)/.test(pathname)
@@ -42,44 +45,49 @@ export function ShellLayout() {
   // Панель навигации закрывается переходом; центр нового адреса начинается сверху (в `Shell` по `scroll_key`).
   useEffect(() => {
     setNavOpen(false)
-    if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-      setHeaderCenter({ kind: 'empty' })
+    const admin_route = getAdminRoute(pathname)
+    if (admin_route) {
+      setHeaderCenter({
+        kind: 'back',
+        title: t(admin_route.title),
+        to: getAdminParentPath(admin_route),
+      })
       setArticleTopicId(null)
     }
-  }, [pathname, setNavOpen, setHeaderCenter, setArticleTopicId])
+  }, [pathname, t, setNavOpen, setHeaderCenter, setArticleTopicId])
 
   return (
     <>
-    <PageSeo path={pathname} />
-    <Shell
-      header={
-        <SiteHeader
-          center={<HeaderCenter />}
-          notifications={<NotificationBell />}
-          account={<AccountMenu />}
-        />
-      }
-      left={<LeftNav />}
-      right={<RightRail />}
-      scroll_key={is_editor ? background_path : pathname}
-      center={
-        <CenterErrorBoundary key={is_editor ? background_path : pathname}>
-          <Suspense fallback={<CenterSkeleton kind={skeleton} />}>
-            <RestrictedNotice />
-            {is_editor ? (
-              background_path.startsWith('/write') ? (
-                <FreshFeedPage />
+      <PageSeo path={pathname} />
+      <Shell
+        header={
+          <SiteHeader
+            center={<HeaderCenter />}
+            notifications={<NotificationBell />}
+            account={<AccountMenu />}
+          />
+        }
+        left={<LeftNav />}
+        right={<RightRail />}
+        scroll_key={is_editor ? background_path : pathname}
+        center={
+          <CenterErrorBoundary key={is_editor ? background_path : pathname}>
+            <Suspense fallback={<CenterSkeleton kind={skeleton} />}>
+              <RestrictedNotice />
+              {is_editor ? (
+                background_path.startsWith('/write') ? (
+                  <FreshFeedPage />
+                ) : (
+                  background
+                )
               ) : (
-                background
-              )
-            ) : (
-              outlet
-            )}
-            {is_editor ? outlet : null}
-          </Suspense>
-        </CenterErrorBoundary>
-      }
-    />
+                outlet
+              )}
+              {is_editor ? outlet : null}
+            </Suspense>
+          </CenterErrorBoundary>
+        }
+      />
     </>
   )
 }

@@ -1,6 +1,7 @@
+import { getModerationReturnTo } from '@/entities/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useParams, useSearchParams, useLocation } from 'react-router'
 import { articleKeys, getArticle, useArticleStates } from '@/entities/article'
 import { useViewer } from '@/entities/session'
 import { BookmarkControl } from '@/features/bookmark'
@@ -21,7 +22,12 @@ export default function ArticlePage() {
   const { t } = useT()
   const { slug = '' } = useParams()
   const [search_params] = useSearchParams()
+  const location = useLocation()
   const { viewer, is_admin } = useViewer()
+  const moderation_return_to =
+    is_admin && search_params.get('from') === 'moderation'
+      ? getModerationReturnTo(location.state)
+      : undefined
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
   const query = useQuery({
@@ -41,13 +47,17 @@ export default function ArticlePage() {
   const is_bookmarked = article ? (viewer_states.get(article.id)?.is_bookmarked ?? false) : false
 
   useEffect(() => {
-    setHeaderCenter({ kind: 'back', title: article?.title ?? '' })
+    setHeaderCenter({
+      kind: 'back',
+      title: article?.title ?? '',
+      ...(moderation_return_to ? { to: moderation_return_to } : {}),
+    })
     setArticleTopicId(article?.topic.id ?? null)
     return () => {
       setHeaderCenter({ kind: 'empty' })
       setArticleTopicId(null)
     }
-  }, [article, setHeaderCenter, setArticleTopicId])
+  }, [article, moderation_return_to, setHeaderCenter, setArticleTopicId])
 
   if (query.isPending) return <ArticleSkeleton />
   if (query.isError || !query.data || query.data.status !== 'ok') {
@@ -104,9 +114,11 @@ export default function ArticlePage() {
           share={<ShareButton slug={loaded.slug} />}
         />
       </ArticleView>
-      {is_admin && search_params.get('from') === 'moderation' ? <div className="px-4">
-        <ArticleModerationActions article_id={loaded.id} status={loaded.status} />
-      </div> : null}
+      {is_admin && search_params.get('from') === 'moderation' ? (
+        <div className="px-4">
+          <ArticleModerationActions article_id={loaded.id} status={loaded.status} />
+        </div>
+      ) : null}
       <ArticleView.Discussion>
         <ArticleDiscussion article={loaded} />
       </ArticleView.Discussion>

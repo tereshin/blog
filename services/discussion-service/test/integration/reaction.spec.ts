@@ -3,10 +3,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
 import type { ServiceContext } from '@blog/contracts'
+import { ValidationError } from '@blog/errors'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles_copy, reactions } from '../../src/infra/db/schema.ts'
+import { articles_copy, reaction_catalog, reactions } from '../../src/infra/db/schema.ts'
 import { createReactionRepository, createReactionService } from '../../src/modules/reaction/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -68,5 +69,38 @@ describe('discussion: реакции (PostgreSQL в контейнере)', () =
     expect(row).not.toHaveProperty('image_url')
     expect(row).not.toHaveProperty('presentation')
     expect(Object.keys(replay).sort()).toEqual(['my_reaction', 'reaction_count', 'reaction_counts'])
+  })
+
+  it('новый вид ставится только пока он в каталоге, снятый не ставится, своя снятая реакция снимается', async () => {
+    const service = createReactionService(createReactionRepository(database.db))
+    const rocket = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const before = await database.db.select().from(reactions)
+    const place = (user_id: string, kind: string, idempotency_key: string) =>
+      service.react({
+        viewer: viewer(user_id),
+        body: { target_type: 'article', target_id: ARTICLE, kind },
+        idempotency_key,
+        correlation_id: 'c',
+      })
+
+    await expect(place(ALICE, rocket, 'alice-unknown')).rejects.toThrow(ValidationError)
+    expect(await database.db.select().from(reactions)).toEqual(before)
+
+    await database.db.insert(reaction_catalog).values({ kind: rocket })
+    const placed = await place(ALICE, rocket, 'alice-rocket')
+    expect(placed.my_reaction).toBe(rocket)
+    expect(placed.reaction_counts[rocket]).toBe(1)
+    expect(placed.reaction_counts['laugh']).toBe(1)
+
+    await database.db.delete(reaction_catalog).where(eq(reaction_catalog.kind, rocket))
+    await expect(place(BORIS, rocket, 'boris-rocket')).rejects.toThrow(ValidationError)
+    const removed = await place(ALICE, rocket, 'alice-rocket-off')
+    expect(removed.my_reaction).toBeNull()
+    expect(removed.reaction_counts[rocket]).toBeUndefined()
+
+    const heart = await place(ALICE, 'heart', 'alice-heart')
+    expect(heart.my_reaction).toBe('heart')
+    expect(heart.reaction_counts['heart']).toBe(1)
+    expect(heart.reaction_counts['laugh']).toBe(1)
   })
 })

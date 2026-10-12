@@ -1,19 +1,16 @@
 import { and, eq, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { reactionResponseSchema } from '@blog/contracts'
+import { reactionResponseSchema, sumReactionCounts } from '@blog/contracts'
 import type { ReactionCounts, ReactionKind, ReactionResponse } from '@blog/contracts'
-import { REACTION_KINDS } from '@blog/contracts'
+import { ValidationError } from '@blog/errors'
 import type { Database } from '@blog/broker'
 import { articles_copy, comments, idempotency_keys, reactions } from '../../infra/db/schema.ts'
 import { loadArticleCounters } from '../article-snapshot/index.ts'
+import { isActiveKind } from '../reaction-catalog/index.ts'
 import { recomputeReputation } from '../reputation/index.ts'
 import { appendReactionEvents } from './reaction.events.ts'
 import { applyOne } from './reaction.rules.ts'
 import type { CommitReaction, ReactionRepository, ReactionTarget } from './reaction.types.ts'
-
-function emptyCounts(): ReactionCounts {
-  return { laugh: 0, heart: 0, thumb: 0, fire: 0 }
-}
 
 async function lock(tx: Database, key: string): Promise<void> {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${key}))`)
@@ -25,10 +22,8 @@ async function countKinds(tx: Database, target_type: 'article' | 'comment', targ
     .from(reactions)
     .where(and(eq(reactions.target_type, target_type), eq(reactions.target_id, target_id)))
     .groupBy(reactions.kind)
-  const counts = emptyCounts()
-  for (const row of rows) {
-    if ((REACTION_KINDS as readonly string[]).includes(row.kind)) counts[row.kind] = Number(row.total)
-  }
+  const counts: ReactionCounts = {}
+  for (const row of rows) counts[row.kind] = Number(row.total)
   return counts
 }
 
@@ -108,7 +103,15 @@ export function createReactionRepository(db: NodePgDatabase): ReactionRepository
             ),
           )
           .limit(1)
-        const decision = applyOne(current_row?.kind ?? null, input.kind)
+        const current_kind = current_row?.kind ?? null
+        const allowed = await isActiveKind(database, input.kind)
+        if (!allowed && current_kind !== input.kind) {
+          throw new ValidationError({
+            message: 'Этого вида реакции нет среди активных',
+            details: { field: 'kind' },
+          })
+        }
+        const decision = applyOne(current_kind, input.kind)
         if (decision.next === null) {
           await database
             .delete(reactions)
@@ -140,7 +143,7 @@ export function createReactionRepository(db: NodePgDatabase): ReactionRepository
         }
 
         const reaction_counts = await countKinds(database, input.target.target_type, input.target.target_id)
-        const reaction_count = REACTION_KINDS.reduce((sum, kind) => sum + reaction_counts[kind], 0)
+        const reaction_count = sumReactionCounts(reaction_counts)
         if (input.target.target_type === 'comment') {
           await database.update(comments).set({ reaction_count }).where(eq(comments.id, input.target.target_id))
         }

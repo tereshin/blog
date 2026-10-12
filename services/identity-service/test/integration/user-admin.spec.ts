@@ -174,4 +174,17 @@ describe('identity: управление участниками', () => {
     const after = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.updated'))
     expect(after).toHaveLength(events.length)
   })
+
+  it('участник возвращает системный вид: в учётной записи снова null', async () => {
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/v1/users/me/appearance',
+      headers: { 'x-test-viewer': 'member' },
+      payload: { appearance: null },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ appearance: null })
+    const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
+    expect(stored?.appearance).toBeNull()
+  })
 })

@@ -70,17 +70,19 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
           <MenuIcon className="size-6" />
         </Button>
       )}
-      <Link
-        to="/"
-        className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4 max-[767px]:absolute max-[767px]:left-1/2 max-[767px]:-translate-x-1/2"
-      >
-        {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={brand} className="h-10 w-auto" />
-        ) : (
-          brand
-        )}
-      </Link>
-      <div className="flex min-w-0 flex-1 items-center sm:px-2 max-[767px]:hidden">{center}</div>
+      <div className="lg:min-w-[200px]">
+        <Link
+          to="/"
+          className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4 max-[767px]:absolute max-[767px]:top-2 max-[767px]:left-1/2 max-[767px]:-translate-x-1/2"
+        >
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt={brand} className="h-10 w-auto" />
+          ) : (
+            brand
+          )}
+        </Link>
+      </div>
+      <div className="flex min-w-0 flex-1 items-center sm:px-2 max-[767px]:hidden max-w-[640px] mx-auto">{center}</div>
       <div className="site-header-actions flex shrink-0 items-center sm:gap-3">
         <HeaderTab
           to="/"

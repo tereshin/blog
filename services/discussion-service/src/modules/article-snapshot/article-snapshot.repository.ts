@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, or, sql } from 'drizzle-orm'
 import type { ArticleCountersUpdatedV1 } from '@blog/contracts'
 import type { Database } from '@blog/broker'
-import { REACTION_KINDS } from '@blog/contracts'
+import { sumReactionCounts } from '@blog/contracts'
 import type { ReactionCounts } from '@blog/contracts'
 import { bookmarks, comments, reactions, views } from '../../infra/db/schema.ts'
 
@@ -9,10 +9,6 @@ export type ArticleCounterSnapshot = Pick<
   ArticleCountersUpdatedV1,
   'article_id' | 'reaction_counts' | 'reaction_count' | 'comment_count' | 'view_count' | 'bookmark_count' | 'top_comment'
 >
-
-function emptyCounts(): ReactionCounts {
-  return { laugh: 0, heart: 0, thumb: 0, fire: 0 }
-}
 
 async function countOf(tx: Database, table: typeof bookmarks, article_id: string): Promise<number> {
   const [row] = await tx
@@ -41,11 +37,9 @@ export async function loadArticleCounters(tx: Database, article_id: string): Pro
     .from(reactions)
     .where(and(eq(reactions.target_type, 'article'), eq(reactions.target_id, article_id)))
     .groupBy(reactions.kind)
-  const reaction_counts = emptyCounts()
-  for (const row of kind_rows) {
-    if (REACTION_KINDS.includes(row.kind)) reaction_counts[row.kind] = Number(row.total)
-  }
-  const reaction_count = REACTION_KINDS.reduce((sum, kind) => sum + reaction_counts[kind], 0)
+  const reaction_counts: ReactionCounts = {}
+  for (const row of kind_rows) reaction_counts[row.kind] = Number(row.total)
+  const reaction_count = sumReactionCounts(reaction_counts)
 
   const [comment_row] = await tx
     .select({ total: sql<number>`count(*)::int` })

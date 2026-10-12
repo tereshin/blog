@@ -5,8 +5,6 @@ const COMMENT_KEY = 'mock_discussion_comments'
 const VIEW_KEY = 'mock_discussion_views'
 const WINDOW_MS = 30 * 60 * 1000
 
-type Kind = 'laugh' | 'heart' | 'thumb' | 'fire'
-
 export type StoredComment = {
   id: string
   article_id: string
@@ -17,9 +15,9 @@ export type StoredComment = {
   body: string
   status: 'visible' | 'deleted' | 'hidden'
   edited_at: string | null
-  reaction_counts: Record<Kind, number>
+  reaction_counts: Record<string, number>
   /** Реакция зрителя: ключ — id участника. */
-  reactions: Record<string, Kind>
+  reactions: Record<string, string>
   created_at: string
 }
 

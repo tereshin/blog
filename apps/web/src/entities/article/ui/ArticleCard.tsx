@@ -14,7 +14,11 @@ type ArticleCardRootProps = { article: ArticleCardModel; children: ReactNode; cl
 function ArticleCardRoot({ article, children, className }: ArticleCardRootProps) {
   return (
     <ArticleCardContext value={article}>
-      <Card role="article" aria-labelledby={`article-title-${article.id}`} className={cn('gap-0 overflow-visible', className)}>
+      <Card
+        role="article"
+        aria-labelledby={`article-title-${article.id}`}
+        className={cn('gap-0 overflow-visible', className)}
+      >
         {children}
       </Card>
     </ArticleCardContext>
@@ -50,14 +54,19 @@ function Header({ follow, menu }: HeaderProps) {
   )
 }
 
-function Title() {
+function Title({ children }: { children?: ReactNode }) {
   const article = useArticleCardModel()
   return (
     <Card.Content className="px-5 pb-0 pt-3">
-      <h2 id={`article-title-${article.id}`} className="text-xl font-semibold leading-snug tracking-[-0.005em]">
-        <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
-          {article.title}
-        </Link>
+      <h2
+        id={`article-title-${article.id}`}
+        className="text-xl font-semibold leading-snug tracking-[-0.005em]"
+      >
+        {children ?? (
+          <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
+            {article.title}
+          </Link>
+        )}
       </h2>
     </Card.Content>
   )
@@ -68,7 +77,9 @@ function Excerpt() {
   if (!article.excerpt) return null
   return (
     <Card.Content className="px-5 pb-0 pt-2">
-      <p className="whitespace-pre-line break-words text-md leading-[1.6] text-foreground">{article.excerpt}</p>
+      <p className="whitespace-pre-line break-words text-md leading-[1.6] text-foreground">
+        {article.excerpt}
+      </p>
     </Card.Content>
   )
 }
@@ -128,7 +139,12 @@ function CommentPeek() {
         aria-label={t('article.top_comment')}
         className="flex w-full min-w-0 items-center gap-2 rounded-md text-base outline-offset-2 hover:text-foreground"
       >
-        <Avatar src={comment.author_avatar_url} name={comment.author_name} size="sm" className="size-6 shrink-0" />
+        <Avatar
+          src={comment.author_avatar_url}
+          name={comment.author_name}
+          size="sm"
+          className="size-6 shrink-0"
+        />
         <span className="truncate text-muted">{comment.excerpt}</span>
       </Link>
     </Card.Footer>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CommentNode } from '@/entities/comment'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, Dialog, Menu, useToast } from '@/shared/ui'
+import { BaseIcon, Button, Dialog, Link, Menu, useToast } from '@/shared/ui'
 import { useCommentInteractions } from '../model/useCommentInteractions.ts'
 import { CommentReactors } from './CommentReactors.tsx'
 import { CommentReportForm } from './CommentReportForm.tsx'
@@ -27,15 +27,12 @@ export function CommentOverflowMenu({ comment, onEdit, onDelete }: CommentOverfl
   return (
     <>
       <Menu>
-        <Button
-          variant="ghost"
-          size="sm"
-          isIconOnly
-          className="text-muted"
+        <Link
+          className="text-muted hover:text-foreground"
           aria-label={t('comment.more')}
         >
-          <BaseIcon name="more_1" style="line" size={20} />
-        </Button>
+          <BaseIcon name="more_1" style="line" size={24} />
+        </Link>
         <Menu.Content
           aria-label={t('comment.more')}
           onAction={(key) => {

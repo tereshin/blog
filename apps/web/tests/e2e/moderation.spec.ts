@@ -5,7 +5,7 @@ test.describe('Модерация', () => {
 
   test('администратор скрывает статью из жалоб, и она уходит из ленты', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'admin'))
-    await page.goto('/admin/moderation')
+    await page.goto('/admin/moderation/articles')
     await expect(page.getByRole('heading', { name: /^Статья 1:/ })).toBeVisible({ timeout: 15_000 })
     await page.getByRole('button', { name: 'Скрыть' }).click()
     await expect(page.getByRole('button', { name: 'Вернуть' })).toBeVisible()

@@ -126,7 +126,7 @@ export function CommentItem({
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         {has_replies ? (
           <Link
-            className="gap-1 text-accent text-sm font-normal"
+            className="gap-1 text-accent text-sm font-normal no-underline"
             aria-expanded={is_expanded}
             aria-controls={replies_id}
             onPress={() => setExpanded(!is_expanded)}

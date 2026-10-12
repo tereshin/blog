@@ -145,7 +145,7 @@ describe('content: настройки площадки', () => {
         ...body,
         name: 'Чужая',
         reaction_appearances: [
-          { kind: 'laugh', presentation: 'emoji', emoji: '🎉' },
+          { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '🎉' },
           DEFAULT_REACTION_APPEARANCES[1],
           DEFAULT_REACTION_APPEARANCES[2],
           DEFAULT_REACTION_APPEARANCES[3],
@@ -166,7 +166,7 @@ describe('content: настройки площадки', () => {
       payload: {
         ...body,
         reaction_appearances: [
-          { kind: 'laugh', presentation: 'image', image_url: 'https://evil.test/laugh.png' },
+          { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'image', image_url: 'https://evil.test/laugh.png' },
           DEFAULT_REACTION_APPEARANCES[1],
           DEFAULT_REACTION_APPEARANCES[2],
           DEFAULT_REACTION_APPEARANCES[3],
@@ -188,7 +188,7 @@ describe('content: настройки площадки', () => {
         payload: {
           ...body,
           reaction_appearances: [
-            { kind: 'laugh', presentation: 'emoji', emoji },
+            { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji },
             DEFAULT_REACTION_APPEARANCES[1],
             DEFAULT_REACTION_APPEARANCES[2],
             DEFAULT_REACTION_APPEARANCES[3],
@@ -223,10 +223,10 @@ describe('content: настройки площадки', () => {
 
   it('успех публикует событие с необязательным полем, гость читает вид', async () => {
     const saved_appearances = [
-      { kind: 'laugh' as const, presentation: 'emoji' as const, emoji: '🎉' },
-      { kind: 'heart' as const, presentation: 'emoji' as const, emoji: '❤️' },
-      { kind: 'thumb' as const, presentation: 'image' as const, image_url: `${MEDIA}/thumb.png` },
-      { kind: 'fire' as const, presentation: 'emoji' as const, emoji: '🔥' },
+      { kind: 'laugh' as const, label: 'Laugh', status: 'active' as const, presentation: 'emoji' as const, emoji: '🎉' },
+      { kind: 'heart' as const, label: 'Heart', status: 'active' as const, presentation: 'emoji' as const, emoji: '❤️' },
+      { kind: 'thumb' as const, label: 'Thumbs up', status: 'active' as const, presentation: 'image' as const, image_url: `${MEDIA}/thumb.png` },
+      { kind: 'fire' as const, label: 'Fire', status: 'retired' as const, presentation: 'emoji' as const, emoji: '🔥' },
     ]
     const before_count = (await database.db.select().from(outbox).where(eq(outbox.name, 'content.settings.updated'))).length
     const response = await app.inject({
@@ -272,6 +272,33 @@ describe('content: настройки площадки', () => {
     })
     expect(denied.statusCode).toBe(422)
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json().profile_status_icons).toEqual([icon])
+  })
+
+  it('пустой набор и 21-я активная реакция не сохраняются', async () => {
+    const before_rows = await database.db.select().from(settings)
+    const retired = DEFAULT_REACTION_APPEARANCES.map((item) => ({ ...item, status: 'retired' as const }))
+    const empty = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: { ...body, reaction_appearances: retired },
+    })
+    expect(empty.statusCode).toBe(422)
+    const extra = Array.from({ length: 21 }, (_, index) => ({
+      kind: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      label: `Вид ${index + 1}`,
+      status: 'active' as const,
+      presentation: 'emoji' as const,
+      emoji: '⭐',
+    }))
+    const overflow = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: { ...body, reaction_appearances: extra },
+    })
+    expect(overflow.statusCode).toBe(422)
+    expect(await database.db.select().from(settings)).toEqual(before_rows)
   })
 
 })

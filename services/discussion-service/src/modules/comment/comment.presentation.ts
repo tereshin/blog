@@ -1,6 +1,5 @@
 import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '@blog/broker'
-import { REACTION_KINDS } from '@blog/contracts'
 import type { Comment, ReactionCounts, ReactionKind } from '@blog/contracts'
 import { comments, reactions, users_copy } from '../../infra/db/schema.ts'
 import { CommentNotFoundError } from './comment.errors.ts'
@@ -47,7 +46,7 @@ export async function present(tx: Database, comment_id: string, user_id: string)
   const facts = new Map<string, ReactionCounts>()
   for (const kind_row of kind_rows) {
     const counts = facts.get(kind_row.target_id) ?? emptyCounts()
-    if (REACTION_KINDS.includes(kind_row.kind)) counts[kind_row.kind] = Number(kind_row.total)
+    counts[kind_row.kind] = Number(kind_row.total)
     facts.set(kind_row.target_id, counts)
   }
   const mine_rows = await tx

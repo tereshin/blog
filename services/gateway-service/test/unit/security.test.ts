@@ -27,6 +27,7 @@ describe('CSP', () => {
     expect(policy).toContain("default-src 'self'")
     expect(policy).toContain("script-src 'self' 'nonce-abc'")
     expect(policy).toContain('http://localhost:9000')
+    expect(policy).toContain('https://img.heroui.chat')
     expect(policy).toContain('data:')
     expect(policy).toContain('https://www.youtube.com')
     expect(policy).toContain('https://identitytoolkit.googleapis.com')

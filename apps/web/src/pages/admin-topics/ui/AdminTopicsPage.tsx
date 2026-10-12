@@ -6,7 +6,7 @@ import { AdminScreen } from '@/widgets/admin'
 export default function AdminTopicsPage() {
   const { t } = useT()
   return (
-    <AdminScreen role="superadmin" title="admin.topics">
+    <AdminScreen route="topics">
       <TopicManagement
         upload={(field, onUploaded) => (
           <ImageUploadButton

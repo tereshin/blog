@@ -1,5 +1,6 @@
-export type ReactionKind = 'laugh' | 'heart' | 'thumb' | 'fire'
-export type ReactionCounts = Record<ReactionKind, number>
+import type { ReactionCounts, ReactionKind } from '@blog/contracts'
+
+export type { ReactionCounts, ReactionKind }
 
 export type CommentStatus = 'visible' | 'deleted' | 'hidden' | 'pending'
 

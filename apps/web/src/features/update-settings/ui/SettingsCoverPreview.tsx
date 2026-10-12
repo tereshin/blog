@@ -1,4 +1,4 @@
-import { Input } from '@/shared/ui'
+import { FormTextField } from '@/shared/ui'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { SOCIAL_COVER_SIZES } from '@blog/contracts'
@@ -32,16 +32,20 @@ export function SettingsCoverPreview({
     settings: { ...settings, logo_url: settings.logo_url ?? site_logo },
   })
   return (
-    <fieldset className="flex flex-col gap-3 border-t border-separator pt-4">
+    <fieldset className="flex min-w-0 flex-col gap-8 border-t border-separator pt-6">
       <legend className="text-lg font-semibold">{t('seo.preview')}</legend>
-      <label className="flex flex-col gap-1 text-sm">
-        {t('seo.sample_heading')}
-        <Input maxLength={150} value={title} onChange={(event) => setTitle(event.target.value)} />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        {t('seo.sample_byline')}
-        <Input maxLength={50} value={author} onChange={(event) => setAuthor(event.target.value)} />
-      </label>
+      <FormTextField
+        label={t('seo.sample_heading')}
+        maxLength={150}
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+      />
+      <FormTextField
+        label={t('seo.sample_byline')}
+        maxLength={50}
+        value={author}
+        onChange={(event) => setAuthor(event.target.value)}
+      />
       {can_edit_media && settings.background_mode === 'image'
         ? upload({ label: t('seo.sample_image'), onUploaded: setImageUrl })
         : null}
@@ -53,6 +57,7 @@ export function SettingsCoverPreview({
       <Button
         type="button"
         variant="secondary"
+        className="self-start"
         isDisabled={preview.is_pending || !can_edit_media}
         onPress={preview.generate}
       >

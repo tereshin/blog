@@ -274,7 +274,13 @@ test('модератор обрабатывает жалобу на коммен
   )
   await page.goto('/admin/moderation/comments')
   await expect(page.getByText('Спам в комментарии', { exact: false })).toBeVisible()
-  await page.getByRole('button', { name: 'Скрыть', exact: true }).click()
+  await page.getByRole('link', { name: 'Открыть', exact: true }).click()
+  const back = page.getByRole('banner').getByRole('link', { name: 'Назад', exact: true })
+  await expect(back).toHaveAttribute('href', '/admin/moderation/comments')
+  await back.click()
+  await expect(page).toHaveURL('/admin/moderation/comments')
+  await expect(page.getByRole('heading', { name: 'Жалобы на комментарии', level: 1, exact: true })).toBeVisible()
+  await page.getByRole('main').getByRole('button', { name: 'Скрыть', exact: true }).click()
   await expect(page.getByText('Жалоб нет', { exact: true })).toBeVisible()
   await expect
     .poll(() =>

@@ -1,7 +1,8 @@
-export type FeedMode = 'fresh' | 'popular' | 'mine' | `topic:${string}`
+import type { ReactionCounts, ReactionKind } from '@blog/contracts'
 
-export type ReactionKind = 'laugh' | 'heart' | 'thumb' | 'fire'
-export type ReactionCounts = Record<ReactionKind, number>
+export type { ReactionCounts, ReactionKind }
+
+export type FeedMode = 'fresh' | 'popular' | 'mine' | `topic:${string}`
 
 export type ArticleVisibility = 'public' | 'members' | 'author'
 

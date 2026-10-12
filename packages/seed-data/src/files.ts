@@ -3,7 +3,7 @@ import { deflateSync } from 'node:zlib'
 import { seedId } from './ids.ts'
 import { mediaUrl } from './options.ts'
 import type { SeedOptions } from './options.ts'
-import { PARTICIPANT_KEYS, userId } from './participants.ts'
+import { userId } from './participants.ts'
 import type { SeedFile } from './types.ts'
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
@@ -60,25 +60,18 @@ export function generateFileBytes(object_name: string): Buffer {
   return object_name.endsWith('.pdf') ? generatePdf() : generatePng(object_name)
 }
 
-const SITE_IMAGES = [
-  'logo', 'cover-design', 'article-1', 'article-2', 'article-3',
-  'topic-design', 'topic-engineering', 'topic-product', 'topic-archive',
-]
-
-/** Список объектов MinIO с фиксированными именами: аватары участников, картинки тем и статей, вложение. */
+/** Логотип площадки. Портреты и картинки статей лежат на img.heroui.chat и в бакет не кладутся. */
 export function buildFiles(options: SeedOptions): SeedFile[] {
-  const avatars = PARTICIPANT_KEYS.map((key) => ({ name: `seed/avatar-${key.replaceAll('_', '-')}.png`, uploader: userId(key) }))
-  const site = SITE_IMAGES.map((name) => ({ name: `seed/${name}.png`, uploader: userId('superadmin') }))
-  const images = [...avatars, ...site].map<SeedFile>((item) => ({
-    id: seedId('file', item.name),
-    object_name: item.name,
-    uploader_id: item.uploader,
-    kind: 'image',
-    mime: 'image/png',
-    url: mediaUrl(options, item.name),
-  }))
+  const logo = 'seed/logo.png'
   return [
-    ...images,
+    {
+      id: seedId('file', logo),
+      object_name: logo,
+      uploader_id: userId('superadmin'),
+      kind: 'image',
+      mime: 'image/png',
+      url: mediaUrl(options, logo),
+    },
     {
       id: seedId('file', 'seed/attachment-spec.pdf'),
       object_name: 'seed/attachment-spec.pdf',

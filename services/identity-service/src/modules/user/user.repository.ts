@@ -116,11 +116,11 @@ export function createUserRepository(db: NodePgDatabase): UserRepository {
       return (db as Database).transaction(async (tx) => {
         const [current] = await tx.select().from(users).where(eq(users.id, input.id)).limit(1)
         if (!current) return null
-        if (current.appearance === input.appearance) return current.appearance
+        if (current.appearance === input.appearance) return { appearance: current.appearance }
         const [row] = await tx.update(users).set({ appearance: input.appearance }).where(eq(users.id, input.id)).returning()
         if (!row) return null
         await appendToOutbox(tx, UserUpdatedV1.parse({ ...envelope('identity.user.updated', input.correlation_id), ...snapshot(toRow(row)) }))
-        return row.appearance
+        return { appearance: row.appearance }
       })
     },
 

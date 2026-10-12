@@ -24,7 +24,7 @@ const DESCRIPTION_KEY: Record<LoginReason, MessageKey> = {
   unknown_error: 'login.error.unknown',
 }
 
-const FIELD_CLASS = 'h-14 w-full rounded-2xl border border-separator bg-surface px-4 text-base outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20'
+const FIELD_CLASS = 'form-field h-14 w-full px-4 text-base'
 
 /** Диалог входа поверх текущего раздела; монтируется один раз в `AppProviders`. */
 export function LoginDialog() {
@@ -65,7 +65,7 @@ export function LoginDialog() {
         </div>
         <Dialog.Heading className="text-2xl font-semibold">{t(reason === 'expired' ? 'login.expired_title' : panel.phase === 'register' ? 'login.register_title' : panel.phase === 'reset' ? 'login.reset_title' : 'login.title')}</Dialog.Heading>
       </Dialog.Header>
-      <Dialog.Body className="px-0 pb-8 pt-8">
+      <Dialog.Body className="-mx-2 px-2 pb-8 pt-8">
         <div className="flex flex-col gap-3">
           {reason !== 'required' ? <p className={is_failure ? 'text-danger' : 'text-muted'}>{t(DESCRIPTION_KEY[reason])}</p> : null}
           {unverified ? <p className="text-sm text-muted">{t('login.email_unverified')}</p> : null}
@@ -178,7 +178,7 @@ function AuthForm({ panel, unverified }: { panel: Panel; unverified: boolean }) 
           </Button>
         ))}
         {panel.test_participants.length > 0 ? (
-          <div className="flex flex-col gap-2 hidden">
+          <div className="flex flex-col gap-2">
             <p className="text-sm text-muted">{t('login.test_participants')}</p>
             {panel.test_participants.map((participant) => (
               <Button key={participant.email} type="button" variant="ghost" onPress={() => void panel.submitTestParticipant(participant.email)}>

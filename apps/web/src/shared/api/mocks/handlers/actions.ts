@@ -8,23 +8,30 @@ import { commentTree, mockCommentBookmarked, commentsForArticle, mockViewerId, p
 import type { StoredComment } from './discussion-store.ts'
 import { addMockNotification } from './notifications-store.ts'
 import { readMockViewer } from './session.ts'
+import { readSite } from './shell.ts'
 import session_fixtures from '../fixtures/session.json'
 
-const KINDS = ['laugh', 'heart', 'thumb', 'fire'] as const
-type Kind = (typeof KINDS)[number]
-
-const mine = new Map<string, Kind>()
+const mine = new Map<string, string>()
 const bookmarks = new Set<string>()
 const bookmark_order: string[] = []
 const follows = new Set<string>()
 const seen_by_key = new Map<string, string[]>()
 
-function isKind(value: unknown): value is Kind {
-  return typeof value === 'string' && (KINDS as readonly string[]).includes(value)
+function isKind(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 64
 }
 
-function reactionBody(article: FeedCardFixture, my_reaction: Kind | null) {
-  const reaction_count = KINDS.reduce((sum, kind) => sum + article.reaction_counts[kind], 0)
+function canPlace(kind: string, current: string | null): boolean {
+  if (current === kind) return true
+  return readSite().settings.reaction_appearances.some((item) => item.status === 'active' && item.kind === kind)
+}
+
+function sumCounts(counts: Record<string, number>): number {
+  return Object.values(counts).reduce((sum, count) => sum + count, 0)
+}
+
+function reactionBody(article: FeedCardFixture, my_reaction: string | null) {
+  const reaction_count = sumCounts(article.reaction_counts)
   article.reaction_count = reaction_count
   return { reaction_counts: { ...article.reaction_counts }, reaction_count, my_reaction }
 }
@@ -50,7 +57,7 @@ function actorOf(request: Request) {
   return currentMockAuthor()
 }
 
-function emptyCounts(): Record<Kind, number> {
+function emptyCounts(): Record<string, number> {
   return { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 }
 
@@ -287,7 +294,7 @@ export const actionHandlers = [
   http.get('*/v1/me/article-states', ({ request }) => {
     if (readMockViewer() === 'guest') return HttpResponse.json({ states: {} })
     const ids = new URL(request.url).searchParams.get('article_ids')?.split(',').filter(Boolean) ?? []
-    const states: Record<string, { my_reaction: Kind | null; is_bookmarked: boolean }> = {}
+    const states: Record<string, { my_reaction: string | null; is_bookmarked: boolean }> = {}
     for (const id of ids) states[id] = { my_reaction: mine.get(id) ?? null, is_bookmarked: bookmarks.has(id) }
     return HttpResponse.json({ states })
   }),
@@ -299,31 +306,35 @@ export const actionHandlers = [
     const kind = typeof body === 'object' && body && 'kind' in body ? body.kind : null
     const actor = currentMockAuthor()
     if (actor?.is_restricted) return restricted()
-    if (!isKind(kind)) return HttpResponse.json({ code: 'validation_failed', title: 'Данные не прошли проверку', status: 422 }, { status: 422 })
     const comment = readStoredComments().find((item) => item.id === target_id && item.status === 'visible')
+    const article = mockFeedArticles.find((item) => item.id === target_id)
+    const current = comment && actor ? (comment.reactions[actor.id] ?? null) : article ? (mine.get(article.id) ?? null) : null
+    if (!isKind(kind) || !canPlace(kind, current)) {
+      return HttpResponse.json({ code: 'validation_failed', title: 'Данные не прошли проверку', status: 422 }, { status: 422 })
+    }
     if (comment && actor) {
       const counts = { ...comment.reaction_counts }
-      const current = comment.reactions[actor.id] ?? null
-      if (current) counts[current] = Math.max(0, counts[current] - 1)
+      if (current) counts[current] = Math.max(0, (counts[current] ?? 0) - 1)
       const next = current === kind ? null : kind
-      if (next) counts[next] += 1
-      const reactions: Record<string, Kind> = {}
+      if (next) counts[next] = (counts[next] ?? 0) + 1
+      const reactions: Record<string, string> = {}
       for (const [id, value] of Object.entries(comment.reactions)) {
         if (id !== actor.id && isKind(value)) reactions[id] = value
       }
       if (next) reactions[actor.id] = next
       const saved = patchStoredComment(comment.id, { reaction_counts: counts, reactions })
       emitLive('reaction', { article_id: comment.article_id })
-      const reaction_count = KINDS.reduce((sum, item) => sum + counts[item], 0)
-      return HttpResponse.json({ reaction_counts: saved?.reaction_counts ?? counts, reaction_count, my_reaction: next })
+      return HttpResponse.json({
+        reaction_counts: saved?.reaction_counts ?? counts,
+        reaction_count: sumCounts(counts),
+        my_reaction: next,
+      })
     }
-    const article = mockFeedArticles.find((item) => item.id === target_id)
     if (!article) return HttpResponse.json({ code: 'validation_failed', title: 'Данные не прошли проверку', status: 422 }, { status: 422 })
-    const current = mine.get(article.id) ?? null
-    if (current) article.reaction_counts[current] = Math.max(0, article.reaction_counts[current] - 1)
+    if (current) article.reaction_counts[current] = Math.max(0, (article.reaction_counts[current] ?? 0) - 1)
     const next = current === kind ? null : kind
     if (next) {
-      article.reaction_counts[next] += 1
+      article.reaction_counts[next] = (article.reaction_counts[next] ?? 0) + 1
       mine.set(article.id, next)
     } else mine.delete(article.id)
     return HttpResponse.json(reactionBody(article, next))

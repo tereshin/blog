@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
+import { reactionCountsSchema, reactionKindSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { articleKeys, mapFeedCards } from '@/entities/article'
 import { commentKeys } from '@/entities/comment'
@@ -14,9 +15,9 @@ import { useT } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
 
 const responseSchema = z.object({
-  reaction_counts: z.object({ laugh: z.number(), heart: z.number(), thumb: z.number(), fire: z.number() }),
+  reaction_counts: reactionCountsSchema,
   reaction_count: z.number(),
-  my_reaction: z.enum(['laugh', 'heart', 'thumb', 'fire']).nullable(),
+  my_reaction: reactionKindSchema.nullable(),
 })
 
 export type ReactionTarget = {

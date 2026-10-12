@@ -1,6 +1,6 @@
 import { DAY_MS, ANCHOR_OFFSETS, at } from './anchor.ts'
 import { seedId } from './ids.ts'
-import { mediaUrl } from './options.ts'
+import { avatarUrl } from './images.ts'
 import type { SeedOptions } from './options.ts'
 import type { Role, SeedUser } from './types.ts'
 
@@ -12,18 +12,20 @@ type ParticipantDef = {
   is_restricted: boolean
   /** Смещение `created_at` от якоря (мс). */
   created_offset_ms: number
+  /** Индекс портрета: чётный — мужчина, нечётный — женщина. */
+  avatar_index: number
 }
 
 /** Восемь участников малого набора (`contracts/seed.md`). Порядок задаёт публичные номера 1–8. */
 export const PARTICIPANT_DEFS: readonly ParticipantDef[] = [
-  { key: 'superadmin', display_name: 'Софья Суперова', role: 'superadmin', can_publish: true, is_restricted: false, created_offset_ms: -800 * DAY_MS },
-  { key: 'admin', display_name: 'Адам Модератов', role: 'admin', can_publish: true, is_restricted: false, created_offset_ms: -700 * DAY_MS },
-  { key: 'author_a', display_name: 'Анна Авторова', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_one_year_created_at },
-  { key: 'author_b', display_name: 'Борис Писарев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -200 * DAY_MS },
-  { key: 'reader', display_name: 'Роман Читаев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -150 * DAY_MS },
-  { key: 'no_publish', display_name: 'Нина Безправова', role: 'member', can_publish: false, is_restricted: false, created_offset_ms: -120 * DAY_MS },
-  { key: 'restricted', display_name: 'Рита Ограничева', role: 'member', can_publish: true, is_restricted: true, created_offset_ms: -100 * DAY_MS },
-  { key: 'newcomer', display_name: 'Наум Новиков', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_newcomer_created_at },
+  { key: 'superadmin', display_name: 'Софья Суперова', role: 'superadmin', can_publish: true, is_restricted: false, created_offset_ms: -800 * DAY_MS, avatar_index: 1 },
+  { key: 'admin', display_name: 'Адам Модератов', role: 'admin', can_publish: true, is_restricted: false, created_offset_ms: -700 * DAY_MS, avatar_index: 0 },
+  { key: 'author_a', display_name: 'Анна Авторова', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_one_year_created_at, avatar_index: 3 },
+  { key: 'author_b', display_name: 'Борис Писарев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -200 * DAY_MS, avatar_index: 2 },
+  { key: 'reader', display_name: 'Роман Читаев', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -150 * DAY_MS, avatar_index: 4 },
+  { key: 'no_publish', display_name: 'Нина Безправова', role: 'member', can_publish: false, is_restricted: false, created_offset_ms: -120 * DAY_MS, avatar_index: 5 },
+  { key: 'restricted', display_name: 'Рита Ограничева', role: 'member', can_publish: true, is_restricted: true, created_offset_ms: -100 * DAY_MS, avatar_index: 7 },
+  { key: 'newcomer', display_name: 'Наум Новиков', role: 'member', can_publish: true, is_restricted: false, created_offset_ms: ANCHOR_OFFSETS.member_newcomer_created_at, avatar_index: 6 },
 ]
 
 export const PARTICIPANT_KEYS = PARTICIPANT_DEFS.map((def) => def.key)
@@ -49,7 +51,7 @@ export function buildUser(
     can_publish: def.can_publish,
     restricted_at: def.is_restricted ? at(anchor, -10 * DAY_MS) : null,
     created_at: at(anchor, def.created_offset_ms),
-    avatar_url: mediaUrl(options, `seed/avatar-${def.key.replaceAll('_', '-')}.png`),
+    avatar_url: avatarUrl(def.avatar_index),
   }
 }
 

@@ -20,7 +20,6 @@ export const article_visibility = pgEnum('article_visibility', ['public', 'membe
 export const article_status = pgEnum('article_status', ['draft', 'published', 'hidden', 'deleted'])
 export const comment_status = pgEnum('comment_status', ['visible', 'deleted', 'hidden'])
 export const reaction_target_type = pgEnum('reaction_target_type', ['article', 'comment'])
-export const reaction_kind = pgEnum('reaction_kind', ['laugh', 'heart', 'thumb', 'fire'])
 
 /** Копия статьи из content: только то, что нужно для проверки доступа и заголовков. */
 export const articles_copy = pgTable('articles_copy', {
@@ -73,11 +72,16 @@ export const reactions = pgTable(
     user_id: uuid('user_id').notNull(),
     target_type: reaction_target_type('target_type').notNull(),
     target_id: uuid('target_id').notNull(),
-    kind: reaction_kind('kind').notNull(),
+    kind: text('kind').notNull(),
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.user_id, table.target_type, table.target_id] })],
 )
+
+/** Активные виды из настроек content. Снятый вид сюда не попадает, уже поставленные строки остаются. */
+export const reaction_catalog = pgTable('reaction_catalog', {
+  kind: text('kind').primaryKey(),
+})
 
 export const views = pgTable(
   'views',

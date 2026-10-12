@@ -34,18 +34,22 @@ export function SettingsForm({
     appearance_errors,
     error,
     patchAppearance,
+    reorderAppearances,
+    retireAppearance,
+    restoreAppearance,
+    addAppearance,
     save,
     is_pending,
   } = useSettingsForm(initial, section, can_edit_media)
   return (
     <form
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-8"
       onSubmit={(event) => {
         event.preventDefault()
         save()
       }}
     >
-      <fieldset disabled={is_pending} className="flex min-w-0 flex-col gap-5 border-0 p-0">
+      <fieldset disabled={is_pending} className="flex min-w-0 flex-col gap-8 border-0 p-0">
         {section === 'general' ? (
           <SettingsGeneralFields
             value={draft}
@@ -77,6 +81,10 @@ export function SettingsForm({
             can_edit_media={can_edit_media}
             upload={upload}
             onPatch={patchAppearance}
+            onReorder={reorderAppearances}
+            onRetire={retireAppearance}
+            onRestore={restoreAppearance}
+            onAdd={addAppearance}
           />
         ) : null}
         {section === 'status-icons' ? (
@@ -130,14 +138,16 @@ export function SettingsForm({
           {error}
         </p>
       ) : null}
-      <Button
-        type="submit"
-        variant="primary"
-        className="self-start"
-        isDisabled={is_pending || draft.name.trim().length === 0}
-      >
-        {is_pending ? t('profile.saving') : t('common.save')}
-      </Button>
+      <div className="border-t border-separator pt-6">
+        <Button
+          type="submit"
+          variant="primary"
+          className="self-start"
+          isDisabled={is_pending || draft.name.trim().length === 0}
+        >
+          {is_pending ? t('profile.saving') : t('common.save')}
+        </Button>
+      </div>
     </form>
   )
 }

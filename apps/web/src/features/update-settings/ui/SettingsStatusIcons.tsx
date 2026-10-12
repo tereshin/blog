@@ -1,4 +1,4 @@
-import { Input } from '@/shared/ui'
+import { FormTextField } from '@/shared/ui'
 import type { ProfileStatusIcon } from '@blog/contracts'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
@@ -19,25 +19,28 @@ export function SettingsStatusIcons({
 }: SettingsStatusIconsProps) {
   const { t } = useT()
   return (
-    <fieldset className="flex flex-col gap-3 border-0 p-0">
-      <legend className="text-sm font-medium">{t('admin.settings.status_icons')}</legend>
+    <fieldset className="flex flex-col gap-8 border-0 p-0">
+      <legend className="sr-only">{t('admin.settings.status_icons')}</legend>
       <p className="text-sm text-muted">{t('admin.settings.status_icons_hint')}</p>
       {icons.map((icon) => (
-        <div key={icon.id} className="flex flex-wrap items-center gap-2">
+        <div
+          key={icon.id}
+          className="grid max-w-lg grid-cols-[32px_minmax(0,1fr)] items-end gap-4 border-b border-separator pb-6"
+        >
           <img
             src={icon.image_url}
             alt=""
             width={32}
             height={32}
-            className="size-8 object-contain"
+            className="mb-2 size-8 object-contain"
           />
-          <Input
+          <FormTextField
+            label={t('admin.settings.status_label')}
             required
             maxLength={50}
             value={icon.label}
             disabled={!can_edit_media}
             aria-label={t('admin.settings.status_label')}
-            className="min-w-0 flex-1"
             onChange={(event) => {
               const label = event.target.value
               onChange((current) =>
@@ -46,7 +49,7 @@ export function SettingsStatusIcons({
             }}
           />
           {can_edit_media ? (
-            <>
+            <div className="col-span-2 flex flex-wrap items-center gap-2">
               {upload({
                 label: t('admin.settings.status_replace'),
                 onUploaded: (image_url) =>
@@ -61,7 +64,7 @@ export function SettingsStatusIcons({
               >
                 {t('admin.settings.status_remove')}
               </Button>
-            </>
+            </div>
           ) : null}
         </div>
       ))}

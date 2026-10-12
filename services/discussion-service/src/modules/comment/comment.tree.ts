@@ -1,5 +1,5 @@
 import type { Comment, ReactionCounts, ReactionKind } from '@blog/contracts'
-import { REACTION_KINDS } from '@blog/contracts'
+import { sumReactionCounts } from '@blog/contracts'
 
 const ANONYMOUS_NAME = 'Участник'
 
@@ -24,7 +24,7 @@ export type CommentRow = {
 }
 
 export function emptyCounts(): ReactionCounts {
-  return { laugh: 0, heart: 0, thumb: 0, fire: 0 }
+  return {}
 }
 
 /** Удалённый и скрытый комментарий остаётся в дереве только если на него есть ответы. */
@@ -58,7 +58,7 @@ export function toCommentNode(
     status: row.status,
     edited_at: row.edited_at ? row.edited_at.toISOString() : null,
     reaction_counts: countsOf(facts, row.id),
-    reaction_count: REACTION_KINDS.reduce((sum, kind) => sum + countsOf(facts, row.id)[kind], 0),
+    reaction_count: sumReactionCounts(countsOf(facts, row.id)),
     my_reaction: mine.get(row.id) ?? null,
     created_at: row.created_at.toISOString(),
     replies,

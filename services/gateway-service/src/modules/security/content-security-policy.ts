@@ -58,7 +58,7 @@ export function contentSecurityPolicy(input: {
   auth_domain?: string | null
   emulator_host?: string | null
 }): string {
-  const images = ["'self'", 'data:', ...(input.image_origin ? [input.image_origin] : [])]
+  const images = ["'self'", 'data:', 'https://img.heroui.chat', ...(input.image_origin ? [input.image_origin] : [])]
   const emulator = emulatorOrigin(input.emulator_host)
   const auth_origin = authDomainOrigin(input.auth_domain)
   const connect = ["'self'", ...FIREBASE_CONNECT_ORIGINS, ...(emulator ? [emulator] : [])]

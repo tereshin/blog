@@ -10,10 +10,12 @@ export function ReactionControl(props: ReactionTarget) {
   const { viewer } = useViewer()
   const { data } = useSettings()
   const { react, is_pending } = useReaction(props)
-  const ask_login = viewer.status === 'guest' ? () => react(props.my_reaction ?? 'laugh') : undefined
+  const appearances = data?.reaction_appearances ?? FALLBACK_REACTION_APPEARANCES
+  const first_active = appearances.find((item) => item.status === 'active')?.kind ?? 'laugh'
+  const ask_login = viewer.status === 'guest' ? () => react(props.my_reaction ?? first_active) : undefined
   return (
     <ReactionRow
-      appearances={data?.reaction_appearances ?? FALLBACK_REACTION_APPEARANCES}
+      appearances={appearances}
       counts={props.counts}
       my_reaction={props.my_reaction}
       onSelect={react}

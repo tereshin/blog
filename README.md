@@ -1,10 +1,28 @@
-# Блог
+# The Blogging Platform v1.0
 
-Площадка публикаций и обсуждений. Браузер говорит только с gateway. Сервисы не видят cookie сессии.
+An open source blogging platform. People publish articles, read the feed, discuss posts, and keep profiles inside one shell: a header, navigation on the left, content in the center, and popular comments on the right.
 
-## Запуск
+![Home: the Design topic, the article feed, and popular comments](cover.png)
 
-Нужны Node.js 22, pnpm и Docker Compose v2.
+## Stack
+
+The browser talks only to the gateway. Requests then go to the identity, content, discussion, messaging, notification, and media services. Each service has its own database, services exchange events, and files are stored separately.
+
+
+| Layer    | Contents                                                                                             |
+| -------- | ---------------------------------------------------------------------------------------------------- |
+| Client   | React 19, TypeScript, Vite, Tailwind CSS 4, HeroUI, TanStack Query, Zustand, React Router, Editor.js |
+| Services | Node.js 22, TypeScript, Fastify, Drizzle ORM, Zod                                                    |
+| Data     | PostgreSQL 16, one database per service                                                              |
+| Events   | NATS JetStream                                                                                       |
+| Files    | MinIO                                                                                                |
+| Sign-in  | Firebase Authentication; an emulator in local and dev                                                |
+| Runtime  | pnpm, Docker Compose                                                                                 |
+
+
+## Installation
+
+You need Node.js 22, pnpm 9.15, and Docker with Compose v2. Run the commands from the repository root.
 
 ```bash
 pnpm install
@@ -12,34 +30,31 @@ cp infra/env/local.env.example infra/env/local.env
 pnpm local
 ```
 
-`pnpm local` поднимает окружение `local` и загружает малый набор данных. Клиент — http://localhost:8080, gateway — http://localhost:3000, тестовый вход — http://mock-google.localhost:8081.
+`pnpm local` starts the services, databases, NATS, MinIO, the client, and the Firebase Auth emulator, then loads the small set of test data. In `local`, the `CHANGE_ME` placeholders from the template are fine.
+
+The site opens at [http://localhost:8080](http://localhost:8080), and the gateway at [http://localhost:3000](http://localhost:3000). Sign in opens the emulator page, where you pick a test participant.
+
+The large set is 500+ articles and thousands of comments:
 
 ```bash
-pnpm infra:up local
-pnpm infra:down local
-pnpm infra:seed local small
-pnpm infra:bootstrap-prod
-pnpm --filter web dev
-pnpm --filter <service> dev
-pnpm test:infra
+pnpm infra:seed local large
 ```
 
-`pnpm --filter web dev` открывает http://localhost:5173. `VITE_API_MOCK=1` включает фикстурный gateway. Сервис с хоста берёт переменные из `infra/env/local.host.env`.
+Stop the containers:
 
-## Prod
+```bash
+pnpm infra:down local
+```
 
-Внешний вход в репозитории не описан. Он должен отдавать клиент и gateway с одного origin по HTTPS. `/v1/*`, включая `GET /v1/events`, идёт в gateway без буферизации и с таймаутом простоя не меньше 60 секунд. Запросы роботов и превью ко всем маршрутам страниц (включая `/`, `/popular`, `/rating`, `/about` и неизвестные адреса) идут в gateway. `/robots.txt`, `/sitemap.xml` и `/sitemaps/*.xml` всегда идут в gateway независимо от User-Agent. Статика `/assets/*` и страницы обычных браузеров идут в контейнер клиента. Список User-Agent должен соответствовать `services/gateway-service/src/modules/prerender/bot-detector.ts`, включая VK; ответы страниц имеют `Vary: User-Agent`, их нельзя смешивать в CDN-кэше. Резервные копии томов PostgreSQL и MinIO делаются вне репозитория.
+`pnpm infra:down local -- --volumes` stops the environment and deletes the data volumes.
 
-В `prod` нет `mock-google`. `pnpm infra:up prod` не стартует без `infra/env/prod.env` и отказывается от заглушек `CHANGE_ME`.
+## Features
 
-Подробности окружений — в `specs/001-community-blog-platform/contracts/environments.md`, сценарии проверки — в `specs/001-community-blog-platform/quickstart.md`.
+- **Feeds and topics.** A guest reads Fresh and Popular, topic pages, public profiles, the rating, and About. My feed is built from subscriptions to authors and topics. An article can be expanded in its card or opened on its own page. Posts you have already seen are tucked behind a Hidden bar, and confirmed impressions keep a post in Popular for seven days.
+- **Publishing.** A member who can publish writes in a block editor: paragraphs and headings, lists, quotes, code, captioned images, tables, attachments, and person cards. Links to YouTube, Vimeo, X, GitHub, and CodePen get a preview. A draft is visible only to its author. A published article has an audience — everyone, signed-in members only, or the author only — and comments can be turned on or off separately.
+- **Discussion.** Articles and comments take reactions from the site catalog. Comments reply to each other, and an article counts views, bookmarks, and shares. People who already have the page open see new comments, reactions, views, and the author's edits without a reload.
+- **People.** A profile stores a name, description, avatar, cover, and short address. It shows reputation, the year joined, badges, followers, following, posts, and comments. Members exchange direct messages, receive notifications, and search for articles, people, and topics.
+- **Appearance and language.** Light and dark mode are the same screen layout. Interface labels switch to Russian, English, or Serbian; articles and comments that people have already written stay as they are. On a narrow screen there is one column, and the left navigation opens from the header.
+- **Administration.** Sign-in goes through Firebase Authentication. A superadmin sets the name and logo, the language, the About text, topics, the reaction and badge catalogs, social covers, registration rules, and whether new members can publish right away. An admin hides, restores, and deletes articles and comments and handles reports. A restricted member can read what they are allowed to see, and cannot publish, comment, react, or send messages.
 
-## SEO и социальные превью
-
-В `/admin/settings` суперадминистратор задаёт SEO сайта и страниц, издателя и оформление обложек; `PUBLIC_ORIGIN` отображается только для чтения. В параметрах статьи автор может переопределить SEO-заголовок и описание. Пустые поля используют текст статьи. `GET /v1/seo?path=/p/slug` отдаёт тот же `PageSeo`, что использует HTML роботов. Локальное и dev-окружения всегда закрыты от индексации.
-
-Публикация сразу возвращает результат. Транзакционный outbox отправляет `content.social_cover.requested`; media сохраняет задачу, рендерит её в worker threads и записывает JPEG в MinIO, затем отправляет `media.social_cover.generated` через собственный outbox. Пока комплект не готов, используются общая обложка или карточка сайта. `social_cover_jobs` хранит попытки, аренду задачи и окончательную ошибку; после пяти ошибок задача имеет статус `failed`. Метрики `consumer_duration{subject="social-cover-render"}`, `consumer_lag{durable="media-social-cover-jobs"}` и `dlq_depth{stream="media-social-cover-jobs"}` показывают время, очередь и окончательные сбои.
-
-Миграции запускаются штатными `<service>-migrate` перед content/media. Сборка media включает Satori, Sharp, отдельный worker и шрифты Noto Sans с лицензией OFL. Старые статьи массово не пересоздаются: генерация запрашивается при публикации, правке или восстановлении публичного доступа. Изменение имени автора обновляет только ранее запрошенные карточки. Файлы имеют версию входных данных и неизменяемый URL. Закрытие статьи исключает её изображения из SEO, запоздавшие результаты не принимаются.
-
-После выкладки проверить публичную статью и профиль в Google Rich Results Test, отправить `/sitemap.xml` в Search Console и проверить внешний вход запросами с `Googlebot`, `TelegramBot` и `vkShare`. JSON-LD в HTML использует nonce действующей CSP; `unsafe-inline` не требуется.
+Tags: движок платфомы vc.ru, движок блог платформы, блог-платформа, скрипт сайта dtf.ru

@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 
 /** Что стоит в центре шапки: пусто, поле поиска или «назад» с названием. */
-export type HeaderCenterMode = { kind: 'empty' } | { kind: 'search' } | { kind: 'back'; title: string }
+export type HeaderCenterMode =
+  { kind: 'empty' } | { kind: 'search' } | { kind: 'back'; title: string; to?: string }
 
 type ShellState = {
   is_nav_open: boolean
@@ -63,18 +64,27 @@ export const useShellStore = create<ShellState>((set) => ({
     }),
   openSearch: () =>
     set((state) => ({
-      previous_center: state.header_center.kind === 'search' ? state.previous_center : state.header_center,
+      previous_center:
+        state.header_center.kind === 'search' ? state.previous_center : state.header_center,
       header_center: { kind: 'search' },
     })),
   closeSearch: () =>
-    set((state) => ({ header_center: state.previous_center.kind === 'search' ? { kind: 'empty' } : state.previous_center })),
+    set((state) => ({
+      header_center:
+        state.previous_center.kind === 'search' ? { kind: 'empty' } : state.previous_center,
+    })),
   setArticleTopicId: (article_topic_id) => set({ article_topic_id }),
   setTopicsExpanded: (is_topics_expanded) => set({ is_topics_expanded }),
   rememberSearch: (query) =>
     set((state) => {
       const text = query.trim()
       if (text.length < 2) return state
-      return { recent_searches: [text, ...state.recent_searches.filter((item) => item !== text)].slice(0, 8) }
+      return {
+        recent_searches: [text, ...state.recent_searches.filter((item) => item !== text)].slice(
+          0,
+          8,
+        ),
+      }
     }),
   clearRecentSearches: () => set({ recent_searches: [] }),
   markFeedSeen: (mode) => {

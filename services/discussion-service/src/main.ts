@@ -6,6 +6,7 @@ import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
 import { startCopiesConsumers } from './modules/copies/index.ts'
+import { startReactionCatalogConsumer } from './modules/reaction-catalog/index.ts'
 
 const SERVICE = 'discussion-service'
 
@@ -24,6 +25,7 @@ async function main(): Promise<void> {
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
   relay.start()
   const copies = await startCopiesConsumers({ db: database.db, broker, logger })
+  const reaction_catalog = await startReactionCatalogConsumer({ db: database.db, broker, logger })
 
   registerShutdown({
     app,
@@ -31,6 +33,7 @@ async function main(): Promise<void> {
     stoppers: [
       () => queues.stop(),
       () => copies.stop(),
+      () => reaction_catalog.stop(),
       () => relay.stop(),
       () => broker.close(),
       () => database.close(),

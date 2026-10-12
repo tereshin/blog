@@ -1,30 +1,31 @@
 import { useState } from 'react'
 import { useCommentReactors } from '../model/useCommentReactors.ts'
 import type { CommentNode } from '@/entities/comment'
-import { REACTION_KINDS, REACTION_LABEL } from '@/entities/reaction'
+import { useSettings } from '@/entities/settings'
+import { FALLBACK_REACTION_APPEARANCES, reactionCount } from '@/entities/reaction'
 import { useT } from '@/shared/i18n'
 import { Avatar, Button, ErrorState } from '@/shared/ui'
 
 export function CommentReactors({ comment }: { comment: CommentNode }) {
   const { t } = useT()
-  const [kind, setKind] = useState(
-    comment.my_reaction ??
-      REACTION_KINDS.find((value) => comment.reaction_counts[value] > 0) ??
-      'heart',
+  const { data } = useSettings()
+  const appearances = (data?.reaction_appearances ?? FALLBACK_REACTION_APPEARANCES).filter(
+    (item) => reactionCount(comment.reaction_counts, item.kind) > 0,
   )
+  const [kind, setKind] = useState(comment.my_reaction ?? appearances[0]?.kind ?? 'heart')
   const { query, items } = useCommentReactors(comment.id, kind)
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2" role="group" aria-label={t('comment.view_reactions')}>
-        {REACTION_KINDS.map((value) => (
+        {appearances.map((item) => (
           <Button
-            key={value}
+            key={item.kind}
             size="sm"
-            variant={value === kind ? 'secondary' : 'ghost'}
-            aria-pressed={value === kind}
-            onPress={() => setKind(value)}
+            variant={item.kind === kind ? 'secondary' : 'ghost'}
+            aria-pressed={item.kind === kind}
+            onPress={() => setKind(item.kind)}
           >
-            {t(REACTION_LABEL[value])} {comment.reaction_counts[value]}
+            {item.label} {reactionCount(comment.reaction_counts, item.kind)}
           </Button>
         ))}
       </div>

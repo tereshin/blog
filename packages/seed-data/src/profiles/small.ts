@@ -22,9 +22,9 @@ import { buildSmallViews } from '../views.ts'
 /** Малый набор: несколько десятков записей, каждая сущность и каждое состояние из таблицы покрытия. */
 export function buildSmall(anchor: Date, options: SeedOptions): DatasetBody {
   const users = buildParticipants(anchor, options)
-  const profiles = buildProfiles(users, options)
-  const topics = buildTopics(options)
-  const articles = [...buildNamedArticles(anchor, options), ...buildFillerArticles(anchor, options)]
+  const profiles = buildProfiles(users)
+  const topics = buildTopics()
+  const articles = [...buildNamedArticles(anchor, options), ...buildFillerArticles(anchor)]
   return {
     users,
     profiles,

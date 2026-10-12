@@ -12,21 +12,20 @@ export function readMockViewer(): MockViewer {
   return VIEWERS.find((viewer) => viewer === stored) ?? 'guest'
 }
 
-const appearance_by_viewer = new Map<MockViewer, 'light' | 'dark'>()
+const appearance_by_viewer = new Map<MockViewer, 'light' | 'dark' | null>()
 
 export const sessionHandlers = [
   http.get('*/v1/auth/session', () => {
     const viewer = readMockViewer()
     const fixture = fixtures[viewer]
-    const appearance = appearance_by_viewer.get(viewer)
-    if (!appearance || !('user' in fixture)) return HttpResponse.json(fixture)
-    return HttpResponse.json({ ...fixture, user: { ...fixture.user, appearance } })
+    if (!appearance_by_viewer.has(viewer) || !('user' in fixture)) return HttpResponse.json(fixture)
+    return HttpResponse.json({ ...fixture, user: { ...fixture.user, appearance: appearance_by_viewer.get(viewer) ?? null } })
   }),
   http.patch('*/v1/users/me/appearance', async ({ request }) => {
     const viewer = readMockViewer()
     if (viewer === 'guest') return HttpResponse.json({ code: 'unauthorized' }, { status: 401 })
-    const body = (await request.json()) as { appearance?: 'light' | 'dark' }
-    if (body.appearance !== 'light' && body.appearance !== 'dark') {
+    const body = (await request.json()) as { appearance?: 'light' | 'dark' | null }
+    if (body.appearance !== 'light' && body.appearance !== 'dark' && body.appearance !== null) {
       return HttpResponse.json({ code: 'validation_failed' }, { status: 422 })
     }
     appearance_by_viewer.set(viewer, body.appearance)

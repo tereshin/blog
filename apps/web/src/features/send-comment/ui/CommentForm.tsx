@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { BaseIcon, Button, Menu } from '@/shared/ui'
@@ -36,7 +36,6 @@ export function CommentForm({
   const draft = useCommentDrafts(article_id, parent?.id ?? null)
   const [is_focused, setFocused] = useState(false)
   const field_ref = useRef<HTMLTextAreaElement>(null)
-  const hint_id = useId()
   const is_expanded =
     is_focused ||
     draft.text.length > 0 ||
@@ -134,7 +133,6 @@ export function CommentForm({
             autoFocus={Boolean(parent)}
             placeholder={t('comment.placeholder')}
             aria-label={field_label}
-            aria-describedby={is_expanded ? hint_id : undefined}
             className="min-w-0 flex-1 resize-none border-0 bg-transparent py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-muted focus-visible:outline-none"
             onChange={(event) => draft.update(event.target.value)}
             onKeyDown={(event) => {
@@ -180,12 +178,8 @@ export function CommentForm({
         </div>
         <CommentAttachments extras={extras} />
         {is_expanded ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3">
-            <div id={hint_id} className="text-xs text-muted">
-              <span className="hidden sm:inline">{t('comment.send_hint')} · </span>
-              {t('comment.counter', { count: draft.text.length })}
-            </div>
-            <Button type="submit" variant="primary" size="sm" isDisabled={!can_send}>
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 px-4 py-3">
+            <Button type="submit" variant="primary" size="lg" isDisabled={!can_send}>
               <BaseIcon name="send_plane" style="line" size={16} />
               {send.is_pending
                 ? t('comment.sending')

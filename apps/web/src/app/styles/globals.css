@@ -225,6 +225,62 @@ body {
 .auth-dialog { width: min(100%, 520px); padding: 24px 48px; }
 @media (max-width: 480px) { .auth-dialog { padding: 20px 24px; } }
 
+/*
+ * Поле формы: серое в покое, при наведении светлеет с мягким акцентным ореолом, в фокусе — акцентная рамка и ореол 4px.
+ * Ореол рисуется тенью за пределами поля: у прокручиваемого контейнера должен быть отступ не меньше 4px.
+ */
+.form-field {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background-color: var(--surface-secondary);
+  color: var(--foreground);
+  box-shadow: 0 0 0 0 transparent;
+  outline: none;
+  transition:
+    background-color 200ms ease-out,
+    border-color 200ms ease-out,
+    box-shadow 200ms ease-out;
+}
+.form-field::placeholder {
+  color: var(--muted);
+}
+@media (hover: hover) {
+  .form-field:hover:not(:focus):not(:focus-within):not(:disabled):not([aria-disabled="true"]):not([data-disabled="true"]):not([readonly]) {
+    border-color: color-mix(in oklch, var(--accent) 30%, var(--border));
+    background-color: var(--overlay);
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 10%, transparent);
+  }
+}
+.form-field:focus,
+.form-field:focus-within,
+.form-field:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background-color: var(--overlay);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 16%, transparent);
+}
+.form-field[aria-invalid="true"],
+.form-field:user-invalid {
+  border-color: var(--danger);
+}
+.form-field[aria-invalid="true"]:focus,
+.form-field[aria-invalid="true"]:focus-within,
+.form-field:user-invalid:focus {
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--danger) 16%, transparent);
+}
+.form-field:disabled,
+.form-field[aria-disabled="true"],
+.form-field[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.form-field[readonly] { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  .form-field {
+    transition: none;
+  }
+}
+
 /* В действиях карточки подсвечивается только круг вокруг иконки. */
 .action-control {
   display: inline-flex;

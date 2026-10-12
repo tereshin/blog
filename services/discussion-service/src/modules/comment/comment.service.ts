@@ -1,4 +1,4 @@
-import { REACTION_KINDS, canReadArticle, requireVerifiedEmail } from '@blog/contracts'
+import { canReadArticle, requireVerifiedEmail, sumReactionCounts } from '@blog/contracts'
 import type { CommentSort, ReactionCounts, ReactionKind, ServiceContext } from '@blog/contracts'
 import {
   EmailUnverifiedError,
@@ -32,7 +32,7 @@ function indexCounts(
   const facts = new Map<string, ReactionCounts>()
   for (const row of rows) {
     const counts = facts.get(row.target_id) ?? emptyCounts()
-    if (REACTION_KINDS.includes(row.kind)) counts[row.kind] = row.total
+    counts[row.kind] = row.total
     facts.set(row.target_id, counts)
   }
   return facts
@@ -131,7 +131,7 @@ export function createCommentService(
           article_slug: row.article_slug,
           excerpt: toExcerpt(row.body),
           reaction_counts,
-          reaction_count: REACTION_KINDS.reduce((sum, kind) => sum + reaction_counts[kind], 0),
+          reaction_count: sumReactionCounts(reaction_counts),
         }
       })
     },

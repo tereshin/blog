@@ -1,4 +1,4 @@
-import { Input } from '@/shared/ui'
+import { FormTextField } from '@/shared/ui'
 import { useState } from 'react'
 import { useT } from '@/shared/i18n'
 import { Button, EmptyState, ErrorState } from '@/shared/ui'
@@ -16,20 +16,22 @@ export function MemberSearch() {
   return (
     <section className="flex flex-col gap-4">
       <form
-        className="flex gap-2"
+        className="flex flex-col gap-4 sm:flex-row sm:items-end"
         onSubmit={(event) => {
           event.preventDefault()
           setSubmitted(q.trim())
         }}
       >
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-          {t('admin.members.search')}
-          <Input value={q} onChange={(event) => setQuery(event.target.value)} className="w-full" />
-        </label>
+        <FormTextField
+          label={t('admin.members.search')}
+          value={q}
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full"
+        />
         <Button
           type="submit"
           variant="primary"
-          className="self-end"
+          className="self-start sm:self-end"
           isDisabled={!q.trim() || result.isFetching}
         >
           {t('admin.moderation.open')}

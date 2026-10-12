@@ -1,38 +1,57 @@
 import { z } from 'zod'
+import { reactionKindSchema } from './feed.ts'
 import { seoSettingsSchema, socialCoverSettingsSchema } from './seo.ts'
 
 export const localeSchema = z.enum(['ru', 'en', 'sr'])
 
-function reactionAppearance(kind: 'laugh' | 'heart' | 'thumb' | 'fire') {
-  return z.discriminatedUnion('presentation', [
-    z.strictObject({
-      kind: z.literal(kind),
-      presentation: z.literal('emoji'),
-      emoji: z.string().min(1),
-    }),
-    z.strictObject({
-      kind: z.literal(kind),
-      presentation: z.literal('image'),
-      image_url: z.string().min(1),
-    }),
-  ])
+export const MAX_ACTIVE_REACTIONS = 20
+export const MAX_REACTION_APPEARANCES = 100
+
+const reactionAppearanceFields = {
+  kind: reactionKindSchema,
+  label: z.string().trim().min(1).max(50),
+  status: z.enum(['active', 'retired']),
 }
 
-/** Ровно четыре вида в порядке laugh, heart, thumb, fire. */
-export const reactionAppearancesSchema = z.tuple([
-  reactionAppearance('laugh'),
-  reactionAppearance('heart'),
-  reactionAppearance('thumb'),
-  reactionAppearance('fire'),
+/** Вид реакции в каталоге площадки. Порядок массива — порядок выбора; снятые идут после активных. */
+export const reactionAppearanceSchema = z.discriminatedUnion('presentation', [
+  z.strictObject({
+    ...reactionAppearanceFields,
+    presentation: z.literal('emoji'),
+    emoji: z.string().min(1),
+  }),
+  z.strictObject({
+    ...reactionAppearanceFields,
+    presentation: z.literal('image'),
+    image_url: z.string().min(1),
+  }),
 ])
-export type ReactionAppearance = z.infer<ReturnType<typeof reactionAppearance>>
+export type ReactionAppearance = z.infer<typeof reactionAppearanceSchema>
+
+export const reactionAppearancesSchema = z
+  .array(reactionAppearanceSchema)
+  .min(1)
+  .max(MAX_REACTION_APPEARANCES)
+  .refine((items) => new Set(items.map((item) => item.kind)).size === items.length, {
+    message: 'Идентификаторы реакций должны быть уникальными',
+  })
+  .refine((items) => items.some((item) => item.status === 'active'), {
+    message: 'Нужна хотя бы одна активная реакция',
+  })
+  .refine((items) => items.filter((item) => item.status === 'active').length <= MAX_ACTIVE_REACTIONS, {
+    message: 'Активных реакций не больше 20',
+  })
+  .refine((items) => {
+    const first_retired = items.findIndex((item) => item.status === 'retired')
+    return first_retired === -1 || items.slice(first_retired).every((item) => item.status === 'retired')
+  }, { message: 'Снятые реакции идут после активных' })
 export type ReactionAppearances = z.infer<typeof reactionAppearancesSchema>
 
 export const DEFAULT_REACTION_APPEARANCES = reactionAppearancesSchema.parse([
-  { kind: 'laugh', presentation: 'emoji', emoji: '😄' },
-  { kind: 'heart', presentation: 'emoji', emoji: '❤️' },
-  { kind: 'thumb', presentation: 'emoji', emoji: '👍' },
-  { kind: 'fire', presentation: 'emoji', emoji: '🔥' },
+  { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '😄' },
+  { kind: 'heart', label: 'Сердце', status: 'active', presentation: 'emoji', emoji: '❤️' },
+  { kind: 'thumb', label: 'Палец вверх', status: 'active', presentation: 'emoji', emoji: '👍' },
+  { kind: 'fire', label: 'Огонь', status: 'active', presentation: 'emoji', emoji: '🔥' },
 ])
 
 export const profileStatusIconSchema = z.strictObject({

@@ -1,4 +1,4 @@
-import { Input, TextArea } from '@/shared/ui'
+import { FormTextField, FormTextArea } from '@/shared/ui'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { SeoSettings } from '@blog/contracts'
@@ -19,17 +19,14 @@ export function SettingsPublisherFields({
   const { t } = useT()
   const [links, setLinks] = useState(() => value.same_as.join('\n'))
   return (
-    <fieldset className="flex flex-col gap-3 border-t border-separator pt-4">
-      <legend className="text-lg font-semibold">{t('seo.publisher')}</legend>
+    <fieldset aria-label={t('seo.publisher')} className="flex min-w-0 flex-col gap-8 border-0 p-0">
       <p className="text-xs text-muted">{t('seo.publisher_hint')}</p>
-      <label className="flex flex-col gap-1 text-sm">
-        {t('seo.publisher_name')}
-        <Input
-          maxLength={100}
-          value={value.name}
-          onChange={(event) => onChange({ ...value, name: event.target.value })}
-        />
-      </label>
+      <FormTextField
+        label={t('seo.publisher_name')}
+        maxLength={100}
+        value={value.name}
+        onChange={(event) => onChange({ ...value, name: event.target.value })}
+      />
       {can_edit_media
         ? upload({
             label: t('seo.publisher_logo'),
@@ -49,23 +46,21 @@ export function SettingsPublisherFields({
           </Button>
         </div>
       ) : null}
-      <label className="flex flex-col gap-1 text-sm">
-        {t('seo.same_as')}
-        <TextArea
-          value={links}
-          onChange={(event) => {
-            setLinks(event.target.value)
-            onChange({
-              ...value,
-              same_as: event.target.value
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean),
-            })
-          }}
-        />
-        <span className="text-xs text-muted">{t('seo.same_as_hint')}</span>
-      </label>
+      <FormTextArea
+        label={t('seo.same_as')}
+        hint={t('seo.same_as_hint')}
+        value={links}
+        onChange={(event) => {
+          setLinks(event.target.value)
+          onChange({
+            ...value,
+            same_as: event.target.value
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean),
+          })
+        }}
+      />
     </fieldset>
   )
 }

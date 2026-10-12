@@ -4,7 +4,7 @@ import { useAppearance } from '@/entities/session'
 
 /**
  * Вид ставится атрибутом `data-theme` и классом на `<html>`. Вошедший берёт вид из учётной записи,
- * гость — с устройства; пока выбора не было, вид тёмный. При входе выбор учётной записи важнее.
+ * гость — с устройства; пока выбора не было, вид следует настройке устройства. При входе выбор учётной записи важнее.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { theme } = useAppearance()

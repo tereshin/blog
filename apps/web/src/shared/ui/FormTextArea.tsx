@@ -1,0 +1,85 @@
+import { useId, useState } from 'react'
+import type { ComponentProps } from 'react'
+import { cn } from '@/shared/lib'
+import { TextArea } from '@heroui/react/textarea'
+import { FieldCounter } from './FieldCounter.tsx'
+
+type FormTextAreaProps = ComponentProps<typeof TextArea> & {
+  label: string
+  hint?: string
+  error?: string
+}
+
+export function FormTextArea({
+  label,
+  hint,
+  error,
+  id,
+  maxLength,
+  value,
+  defaultValue,
+  onChange,
+  className,
+  'aria-describedby': described_by,
+  ...props
+}: FormTextAreaProps) {
+  const generated_id = useId()
+  const field_id = id ?? generated_id
+  const [uncontrolled_length, setUncontrolledLength] = useState(
+    () => String(defaultValue ?? '').length,
+  )
+  const length = value === undefined ? uncontrolled_length : String(value).length
+  const description_ids =
+    [
+      described_by,
+      hint ? `${field_id}-hint` : null,
+      error ? `${field_id}-error` : null,
+      maxLength === undefined ? null : `${field_id}-counter`,
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined
+  return (
+    <div className="flex w-full min-w-0 max-w-lg flex-col gap-3">
+      <label htmlFor={field_id} className="text-base font-semibold">
+        {label}
+      </label>
+      <div className="relative min-w-0">
+        <TextArea
+          {...props}
+          id={field_id}
+          value={value}
+          defaultValue={defaultValue}
+          maxLength={maxLength}
+          aria-invalid={error ? true : props['aria-invalid']}
+          aria-describedby={description_ids}
+          className={cn(
+            'form-field w-full text-base min-h-28 resize-y px-4 py-3',
+            maxLength !== undefined && 'pb-9',
+            className as string | undefined,
+          )}
+          onChange={(event) => {
+            setUncontrolledLength(event.target.value.length)
+            onChange?.(event)
+          }}
+        />
+        {maxLength !== undefined ? (
+          <FieldCounter
+            id={`${field_id}-counter`}
+            remaining={Math.max(0, maxLength - length)}
+            className="bottom-3"
+          />
+        ) : null}
+      </div>
+      {hint ? (
+        <p id={`${field_id}-hint`} className="text-sm leading-relaxed text-muted">
+          {hint}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={`${field_id}-error`} role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  )
+}

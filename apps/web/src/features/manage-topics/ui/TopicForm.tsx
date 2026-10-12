@@ -1,4 +1,4 @@
-import { Input, TextArea } from '@/shared/ui'
+import { FormTextField, FormTextArea } from '@/shared/ui'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { ApiError } from '@/shared/api'
@@ -33,6 +33,7 @@ export function TopicForm({ upload }: TopicFormProps) {
   const [error, setError] = useState<string | null>(null)
 
   const save = () => {
+    if (create.isPending) return
     setError(null)
     create.mutate(
       {
@@ -53,46 +54,45 @@ export function TopicForm({ upload }: TopicFormProps) {
 
   return (
     <form
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-8"
       onSubmit={(event) => {
         event.preventDefault()
         save()
       }}
     >
       <h2 className="text-lg font-semibold">{t('admin.topics.create')}</h2>
-      <label className="flex flex-col gap-1 text-sm">
-        {t('admin.topics.title')}
-        <Input
-          required
-          maxLength={100}
-          value={draft.title}
-          onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        {t('admin.topics.description')}
-        <TextArea
-          maxLength={500}
-          value={draft.description ?? ''}
-          onChange={(event) => setDraft({ ...draft, description: event.target.value })}
-          className="min-h-20"
-        />
-      </label>
+      <FormTextField
+        label={t('admin.topics.title')}
+        required
+        maxLength={100}
+        value={draft.title}
+        onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+      />
+      <FormTextArea
+        label={t('admin.topics.description')}
+        maxLength={500}
+        value={draft.description ?? ''}
+        onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+        className="min-h-20"
+      />
       {upload('avatar', (url) => setDraft((current) => ({ ...current, avatar_url: url })))}
       {upload('cover', (url) => setDraft((current) => ({ ...current, cover_url: url })))}
-      <label className="flex flex-col gap-1 text-sm">
-        {t('admin.topics.slug')}
-        <Input
-          required
-          maxLength={40}
-          value={draft.slug}
-          onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
-        />
-      </label>
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      <FormTextField
+        label={t('admin.topics.slug')}
+        required
+        maxLength={40}
+        value={draft.slug}
+        onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
+      />
+      {error ? (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
       <Button
         type="submit"
         variant="primary"
+        className="self-start"
         isDisabled={
           create.isPending || draft.title.trim().length === 0 || draft.slug.trim().length === 0
         }

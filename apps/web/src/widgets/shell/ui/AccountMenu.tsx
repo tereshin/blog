@@ -1,3 +1,4 @@
+import { ADMIN_ROUTES } from '@/entities/admin'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useProfile } from '@/entities/profile'
@@ -43,7 +44,7 @@ export function AccountMenu() {
           <Menu.Item onPress={() => navigate('/bookmarks')}>{t('account.bookmarks')}</Menu.Item>
           <Menu.Item onPress={() => setEditing(true)}>{t('account.edit_profile')}</Menu.Item>
           {viewer.user.email_verified ? null : <Menu.Item onPress={() => openLogin('required')}>{t('login.confirm_email')}</Menu.Item>}
-          {is_admin ? <Menu.Item onPress={() => navigate('/admin')}>{t('admin.title')}</Menu.Item> : null}
+          {is_admin ? <Menu.Item onPress={() => navigate(ADMIN_ROUTES.home.path)}>{t('admin.title')}</Menu.Item> : null}
           <LogoutMenuItem />
         </Menu.Content>
       </Menu>

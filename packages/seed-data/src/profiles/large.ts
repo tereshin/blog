@@ -1,15 +1,16 @@
 import { DAY_MS, at } from '../anchor.ts'
 import { articleId, makeArticle } from '../articles.ts'
-import { doc, imageBlock, paragraphBlock } from '../blocks.ts'
+import { doc } from '../blocks.ts'
+import { CATALOG, entryBlocks } from '../catalog.ts'
 import { commentId } from '../comments.ts'
-import { mediaUrl } from '../options.ts'
+import { avatarUrl } from '../images.ts'
 import type { SeedOptions } from '../options.ts'
 import { buildUser } from '../participants.ts'
 import { int, mulberry32, pick } from '../prng.ts'
 import type { Prng } from '../prng.ts'
 import { ReactionSet } from '../reactions.ts'
 import { buildSlugs } from '../slugs.ts'
-import { commentBody, paragraph, title } from '../text.ts'
+import { commentBody } from '../text.ts'
 import { buildLargeTopics } from '../topics.ts'
 import { REACTION_KINDS } from '../types.ts'
 import type { DatasetBody, SeedArticle, SeedBookmark, SeedComment, SeedFeedSeen, SeedFollow, SeedProfile, SeedUser, SeedView } from '../types.ts'
@@ -22,8 +23,11 @@ const READER_COUNT = 60
 const ARTICLE_COUNT = 520
 const COMMENT_COUNT = 3200
 
-const FIRST_NAMES = ['Алексей', 'Мария', 'Игорь', 'Ольга', 'Дмитрий', 'Елена', 'Сергей', 'Татьяна', 'Павел', 'Ирина']
-const LAST_NAMES = ['Орлов', 'Лисова', 'Ветров', 'Громова', 'Зайцев', 'Крылова', 'Мартынов', 'Сафонова', 'Титов', 'Фролова']
+/** Имя и портрет одного пола. Индекс совпадает с `u` аватарки: чётный — мужчина, нечётный — женщина. */
+const PEOPLE = [
+  'Алексей Орлов', 'Мария Лисова', 'Игорь Ветров', 'Ольга Громова', 'Дмитрий Зайцев', 'Елена Крылова',
+  'Сергей Мартынов', 'Татьяна Сафонова', 'Павел Титов', 'Ирина Фролова', 'Никита Белов', 'Дарья Соколова',
+] as const
 
 function largeUsers(anchor: Date, options: SeedOptions, first_number: number, random: Prng): { users: SeedUser[]; profiles: SeedProfile[]; authors: SeedUser[]; readers: SeedUser[] } {
   const defs = [
@@ -31,14 +35,14 @@ function largeUsers(anchor: Date, options: SeedOptions, first_number: number, ra
     ...Array.from({ length: READER_COUNT }, (_, index) => `large-reader-${String(index + 1).padStart(3, '0')}`),
   ]
   const users = defs.map((key, index) => {
+    const person = index % PEOPLE.length
     const user = buildUser(
-      { key, display_name: `${pick(random, FIRST_NAMES)} ${pick(random, LAST_NAMES)}`, role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -int(random, 30, 700) * DAY_MS },
+      { key, display_name: PEOPLE[person] ?? PEOPLE[0], role: 'member', can_publish: true, is_restricted: false, created_offset_ms: -int(random, 30, 700) * DAY_MS, avatar_index: person },
       first_number + index,
       anchor,
       options,
     )
-    // Файлов под каждого нет: аватар берётся из общих.
-    return { ...user, avatar_url: mediaUrl(options, 'seed/avatar-reader.png'), email: `${key}@blog.test` }
+    return { ...user, avatar_url: avatarUrl(person), email: `${key}@blog.test` }
   })
   const profiles = users.map<SeedProfile>((user) => ({
     user_id: user.id, display_name: user.display_name, bio: null, avatar_url: user.avatar_url, cover_url: null, slug: null,
@@ -55,7 +59,7 @@ export function buildLarge(anchor: Date, options: SeedOptions): DatasetBody {
   const small = buildSmall(anchor, options)
   const random = mulberry32(LARGE_SEED)
   const { users, profiles, authors, readers } = largeUsers(anchor, options, small.users.length + 1, random)
-  const topics = buildLargeTopics(options, small.topics.length)
+  const topics = buildLargeTopics(small.topics.length)
   const active_topics = [...small.topics.filter((topic) => topic.status === 'active'), ...topics]
   const actors = [...small.users.filter((user) => user.restricted_at === null && user.key !== 'newcomer'), ...readers]
 
@@ -63,11 +67,14 @@ export function buildLarge(anchor: Date, options: SeedOptions): DatasetBody {
     const number = String(index + 1).padStart(4, '0')
     const key = `large:${number}`
     const author = pick(random, authors)
-    const topic = pick(random, active_topics)
+    const piece = CATALOG[index % CATALOG.length]
+    if (!piece) throw new Error('Каталог статей пуст')
+    // Тексты крутятся по каталогу, темы — по всем активным, иначе большой набор не выходит за четыре раздела.
+    const topic = active_topics[index % active_topics.length]
+    if (!topic) throw new Error('Нет активных тем')
     const offset_ms = -(int(random, 1, 400) * DAY_MS + int(random, 0, 23) * 3_600_000)
-    const blocks = [paragraphBlock(paragraph(random, 3)), ...(index % 7 === 0 ? [paragraphBlock(paragraph(random, 4))] : [])]
     const article = makeArticle(
-      { key, author_key: author.key, topic_key: topic.key, title: title(random), slug: `seed-large-${number}`, offset_ms, blocks: index % 6 === 0 ? [imageBlock(mediaUrl(options, `seed/article-${(index % 3) + 1}.png`), 'Иллюстрация'), ...blocks] : blocks },
+      { key, author_key: author.key, topic_key: topic.key, title: piece.title, slug: `seed-large-${number}`, offset_ms, blocks: entryBlocks(piece) },
       anchor,
     )
     // `makeArticle` берёт автора и тему по ключам малого набора: подставляем идентификаторы новых записей.
@@ -94,7 +101,7 @@ export function buildLarge(anchor: Date, options: SeedOptions): DatasetBody {
       parent_id: parent?.id ?? null,
       body: status === 'visible' ? commentBody(random) : '',
       status,
-      edited_at: status === 'visible' && random() < 0.05 ? new Date(created_at.getTime() + 600_000) : null,
+      edited_at: status === 'visible' && random() < 0.05 ? new Date(Math.min(created_at.getTime() + 600_000, anchor.getTime())) : null,
       created_at,
     }
     comments.push(comment)
@@ -115,7 +122,7 @@ export function buildLarge(anchor: Date, options: SeedOptions): DatasetBody {
   }
   for (const comment of comments) {
     if (comment.status !== 'visible' || random() >= 0.15) continue
-    for (let count = int(random, 1, 3); count > 0; count -= 1) react('comment', comment.id, pick(random, actors).id, new Date(comment.created_at.getTime() + 600_000))
+    for (let count = int(random, 1, 3); count > 0; count -= 1) react('comment', comment.id, pick(random, actors).id, new Date(Math.min(comment.created_at.getTime() + 600_000, anchor.getTime())))
   }
 
   const bookmarks: SeedBookmark[] = []

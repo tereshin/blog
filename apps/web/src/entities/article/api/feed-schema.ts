@@ -1,3 +1,4 @@
+import { reactionCountsSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { formatTime } from '@/shared/lib'
 import type { ArticleCardModel, FeedPageModel } from '../model/article-types.ts'
@@ -14,7 +15,7 @@ export const feedCardDtoSchema = z.object({
   published_at: z.string(),
   author: z.object({ user_id: z.string(), display_name: z.string(), avatar_url: z.string().nullable(), slug: z.string() }),
   topic: z.object({ id: z.string(), title: z.string(), slug: z.string(), status: z.enum(['active', 'archived']), avatar_url: z.string().nullable().optional() }),
-  reaction_counts: z.object({ laugh: count, heart: count, thumb: count, fire: count }),
+  reaction_counts: reactionCountsSchema,
   reaction_count: count,
   comment_count: count,
   bookmark_count: count,

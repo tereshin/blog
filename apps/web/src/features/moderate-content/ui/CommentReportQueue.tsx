@@ -1,9 +1,11 @@
-import { Link } from 'react-router'
+import { createModerationReturnState } from '@/entities/admin'
+import { Link, useLocation } from 'react-router'
 import { useCommentReportQueue } from '../model/useCommentReportQueue.ts'
 import { useT } from '@/shared/i18n'
 import { Button, Card, EmptyState, ErrorState } from '@/shared/ui'
 export function CommentReportQueue() {
   const { t } = useT()
+  const { pathname } = useLocation()
   const { query, mutation, items } = useCommentReportQueue()
   if (query.isPending) return <p role="status">{t('common.loading')}</p>
   if (query.isError)
@@ -26,6 +28,7 @@ export function CommentReportQueue() {
             </p>
             <Link
               className="my-3 block text-sm text-accent"
+              state={createModerationReturnState(pathname)}
               to={`/p/${encodeURIComponent(item.article_slug)}?from=moderation#comment-${item.comment_id}`}
             >
               {t('admin.moderation.open')}
