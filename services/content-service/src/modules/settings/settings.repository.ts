@@ -6,6 +6,7 @@ import {
   profileStatusIconsSchema,
   reactionAppearancesSchema,
   seoSettingsSchema,
+  shellVisibilitySchema,
   socialCoverSettingsSchema,
 } from '@blog/contracts'
 import type {
@@ -13,6 +14,7 @@ import type {
   ProfileStatusIcon,
   ReactionAppearances,
   SeoSettings,
+  ShellVisibility,
   SocialCoverSettings,
 } from '@blog/contracts'
 import type { Database } from '@blog/broker'
@@ -20,33 +22,35 @@ import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
 
 export type SettingsRow = {
+  welcome_content?: import('@blog/contracts').WelcomeContent | null
   name: string
   logo_url: string | null
   logo_dark_url?: string | null
   favicon?: FaviconSettings
   locale: 'ru' | 'en' | 'sr'
-  about: string
   registration_open: boolean
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
   profile_status_icons: ProfileStatusIcon[]
   seo?: SeoSettings
   social_cover?: SocialCoverSettings
+  shell?: ShellVisibility
 }
 
 const columns = {
+  welcome_content: settings.welcome_content,
   name: settings.name,
   logo_url: settings.logo_url,
   logo_dark_url: settings.logo_dark_url,
   favicon: settings.favicon,
   locale: settings.locale,
-  about: settings.about,
   registration_open: settings.registration_open,
   new_members_can_publish: settings.new_members_can_publish,
   reaction_appearances: settings.reaction_appearances,
   profile_status_icons: settings.profile_status_icons,
   seo: settings.seo,
   social_cover: settings.social_cover,
+  shell: settings.shell,
 }
 
 function readRow(row: SettingsRow): SettingsRow {
@@ -57,6 +61,7 @@ function readRow(row: SettingsRow): SettingsRow {
     social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
     reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances),
     profile_status_icons: profileStatusIconsSchema.parse(row.profile_status_icons),
+    shell: shellVisibilitySchema.parse(row.shell ?? {}),
   }
 }
 

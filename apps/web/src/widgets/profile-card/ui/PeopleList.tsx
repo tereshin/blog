@@ -30,7 +30,7 @@ export function PeopleList({ title_key, query_key, load }: PeopleListProps) {
   const title = profile.data ? `${t(title_key)} · ${profile.data.display_name}` : t(title_key)
 
   return (
-    <Card className="gap-0 max-w-[640px] mx-auto">
+    <Card className="gap-0 max-w-[var(--shell-content-width,640px)] mx-auto">
       <Card.Header className="px-5 pt-5 pb-2">
         <h1 className="text-xl font-semibold">{title}</h1>
       </Card.Header>

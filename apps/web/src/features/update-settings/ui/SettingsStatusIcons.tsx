@@ -68,17 +68,6 @@ export function SettingsStatusIcons({
           ) : null}
         </div>
       ))}
-      {can_edit_media && icons.length < 100
-        ? upload({
-            label: t('admin.settings.status_add'),
-            onUploaded: (image_url) =>
-              onChange((current) =>
-                current.length < 100
-                  ? [...current, { id: crypto.randomUUID(), label: t('profile.status'), image_url }]
-                  : current,
-              ),
-          })
-        : null}
     </fieldset>
   )
 }

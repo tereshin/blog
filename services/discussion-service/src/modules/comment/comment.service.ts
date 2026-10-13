@@ -193,6 +193,15 @@ export function createCommentService(
       const rows = await repository.listByAuthor(viewer, author_id, sort, cursor, query.limit + 1)
       const page = rows.slice(0, query.limit)
       const last = page.at(-1)
+      const ids = page.map((row) => row.id)
+      const [counts, mine_rows, saved_ids] = await Promise.all([
+        repository.countReactions(ids),
+        viewer.user_id ? repository.findMine(viewer.user_id, ids) : [],
+        viewer.user_id ? repository.findBookmarks(viewer.user_id, ids) : [],
+      ])
+      const facts = indexCounts(counts)
+      const mine = new Map(mine_rows.map((row) => [row.target_id, row.kind]))
+      const saved = new Set(saved_ids)
       return {
         items: page.map((row) => ({
           id: row.id,
@@ -202,6 +211,9 @@ export function createCommentService(
           article_slug: row.article_slug,
           created_at: row.created_at.toISOString(),
           reaction_count: row.reaction_count,
+          reaction_counts: facts.get(row.id) ?? emptyCounts(),
+          my_reaction: mine.get(row.id) ?? null,
+          is_bookmarked: saved.has(row.id),
         })),
         next_cursor:
           rows.length > query.limit && last

@@ -27,8 +27,8 @@ describe('getSectionFromPath', () => {
     ['/admin/moderation', { kind: 'admin_moderation' }],
     ['/admin/topics', { kind: 'admin_topics' }],
     ['/admin/settings', { kind: 'admin_settings' }],
-    ['/about', { kind: 'about' }],
-    ['/что-то-неизвестное', { kind: 'about' }],
+    ['/about', { kind: 'other' }],
+    ['/что-то-неизвестное', { kind: 'other' }],
   ])('%s', (pathname, expected) => {
     expect(section(pathname)).toEqual(expected)
   })

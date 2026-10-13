@@ -9,7 +9,6 @@ import type {
 export type SeoSite = {
   favicon?: FaviconSettings
   name: string
-  about: string
   logo_url: string | null
   locale: 'ru' | 'en' | 'sr'
   seo: SeoSettings
@@ -49,6 +48,7 @@ export type SeoTopic = {
   slug: string
 }
 export type SeoRepository = {
+  simplePage?: (slug: string) => Promise<import('@blog/contracts').PublicPage | null>
   site: () => Promise<SeoSite>
   article: (slug: string) => Promise<SeoArticle | null>
   profile: (slug: string) => Promise<SeoProfile | null>

@@ -8,7 +8,6 @@ const LABELS = {
     home: 'Свежее',
     popular: 'Популярное',
     rating: 'Рейтинг',
-    about: 'О проекте',
     feed: 'Моя лента',
     search: 'Поиск',
     bookmarks: 'Закладки',
@@ -24,7 +23,6 @@ const LABELS = {
     home: 'Fresh',
     popular: 'Popular',
     rating: 'Rating',
-    about: 'About',
     feed: 'My feed',
     search: 'Search',
     bookmarks: 'Bookmarks',
@@ -40,7 +38,6 @@ const LABELS = {
     home: 'Sveže',
     popular: 'Popularno',
     rating: 'Rang lista',
-    about: 'O projektu',
     feed: 'Moj feed',
     search: 'Pretraga',
     bookmarks: 'Sačuvano',
@@ -108,7 +105,7 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
         favicon: site.favicon,
         status: 200,
         title: site.seo.title || site.name,
-        description: site.seo.description || shortDescription(site.about),
+        description: site.seo.description || '',
         canonical_url: canonical,
         robots: 'noindex, follow',
         site_name: site.name,
@@ -152,8 +149,8 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
         },
       })
       const static_key = (
-        { '/': 'home', '/popular': 'popular', '/rating': 'rating', '/about': 'about' } as const
-      )[path as '/' | '/popular' | '/rating' | '/about']
+        { '/': 'home', '/popular': 'popular', '/rating': 'rating' } as const
+      )[path as '/' | '/popular' | '/rating']
       if (static_key) {
         const override = site.seo.pages[static_key]
         const name =
@@ -161,11 +158,22 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
           (static_key === 'home' ? site.seo.title || site.name : labels[static_key])
         const page = makePage(
           name,
-          override.description || site.seo.description || shortDescription(site.about),
-          static_key === 'about' ? 'AboutPage' : 'CollectionPage',
+          override.description || site.seo.description || '',
+          'CollectionPage',
         )
         if (static_key === 'home') page.title = name
-        page.body_text = static_key === 'about' ? plainText(site.about) : name
+        page.body_text = name
+        return page
+      }
+      const simple_match = /^\/pages\/([^/]+)$/.exec(path)
+      if (simple_match?.[1]) {
+        const simple = await repository.simplePage?.(decodeURIComponent(simple_match[1]))
+        if (!simple) return missing()
+        const body = documentText(simple.blocks)
+        const page = makePage(simple.title, shortDescription(body), 'WebPage')
+        page.body_text = body
+        page.modified_at = simple.updated_at
+        page.published_at = simple.published_at
         return page
       }
       const article_match = /^\/p\/([^/]+)$/.exec(path)

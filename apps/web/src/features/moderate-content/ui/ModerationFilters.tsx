@@ -1,7 +1,7 @@
 import type { ModerationFilters as Filters } from '@blog/contracts'
 import { useTopics } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
-import { Input, Select } from '@/shared/ui'
+import { FormTextField, Select } from '@/shared/ui'
 export function ModerationFilters({
   value,
   onChange,
@@ -16,18 +16,15 @@ export function ModerationFilters({
   const { t } = useT()
   const topics = useTopics()
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 p-1 sm:grid-cols-2 lg:grid-cols-3">
-      <label className="flex min-w-0 flex-col gap-2 text-sm">
-        <span>{t('admin.filters.search')}</span>
-        <Input
-          size="base"
-          variant="secondary"
-          type="search"
-          value={value.q}
-          maxLength={200}
-          onChange={(event) => onChange('q', event.target.value)}
-        />
-      </label>
+    <div className="moderation-filters grid min-w-0 grid-cols-1 items-start gap-4 p-1 sm:grid-cols-2 lg:grid-cols-3">
+      <FormTextField
+        label={t('admin.filters.search')}
+        size="base"
+        variant="secondary"
+        type="search"
+        value={value.q}
+        onChange={(event) => onChange('q', event.target.value)}
+      />
       {report_filters ? (
         <Select
           label={t('admin.table.status')}
@@ -53,18 +50,17 @@ export function ModerationFilters({
         onChange={(value) => onChange('sort', value)}
       />
       {(['from', 'to'] as const).map((field) => (
-        <label key={field} className="flex flex-col gap-2 text-sm">
-          <span>{t(`admin.filters.${field}`)}</span>
-          <Input
-            size="base"
-            variant="secondary"
-            type="date"
-            value={value[field] ?? ''}
-            max={field === 'from' ? value.to : undefined}
-            min={field === 'to' ? value.from : undefined}
-            onChange={(event) => onChange(field, event.target.value)}
-          />
-        </label>
+        <FormTextField
+          key={field}
+          label={t(`admin.filters.${field}`)}
+          size="base"
+          variant="secondary"
+          type="date"
+          value={value[field] ?? ''}
+          max={field === 'from' ? value.to : undefined}
+          min={field === 'to' ? value.from : undefined}
+          onChange={(event) => onChange(field, event.target.value)}
+        />
       ))}
       {article_filters ? (
         <>

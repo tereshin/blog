@@ -44,7 +44,7 @@ export function HeaderSearch() {
             }}
           >
             <Input
-              size="base"
+              size="lg"
               variant="secondary"
               ref={input_ref}
               autoFocus
@@ -72,7 +72,7 @@ export function HeaderSearch() {
           </form>
           <div
             id="header-search-results"
-            className="min-h-0 overflow-y-auto overscroll-contain rounded-xl  bg-overlay p-3 shadow-xl"
+            className="min-h-0 overflow-y-auto overscroll-contain rounded-2xl  bg-overlay p-3 shadow-xl"
           >
             {q.length === 0 ? (
               <>

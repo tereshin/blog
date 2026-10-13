@@ -7,6 +7,7 @@ import { AdminArticleReportsPage } from '@/pages/admin-article-reports'
 import { AdminHomePage } from '@/pages/admin-home'
 import { AdminMembersPage } from '@/pages/admin-members'
 import { AdminAccessPage } from '@/pages/admin-access'
+import { AdminLayoutPage } from '@/pages/admin-layout'
 import { AdminReactionsPage } from '@/pages/admin-reactions'
 import { AdminStatusIconsPage } from '@/pages/admin-status-icons'
 import { AdminSeoPage } from '@/pages/admin-seo'
@@ -15,7 +16,11 @@ import { AdminCoversPage } from '@/pages/admin-covers'
 import { AdminHiddenPage } from '@/pages/admin-hidden'
 import { AdminCommentReportsPage } from '@/pages/admin-comment-reports'
 import { AdminFindArticlePage } from '@/pages/admin-find-article'
-import { AboutPage } from '@/pages/about'
+import { AdminPagesPage } from '@/pages/admin-pages'
+import { AdminNavSectionsPage } from '@/pages/admin-nav-sections'
+import { AdminPageNewPage } from '@/pages/admin-page-new'
+import { AdminPageEditPage } from '@/pages/admin-page-edit'
+import { SimplePage } from '@/pages/simple-page'
 import { AuthActionPage } from '@/pages/auth-action'
 import { AdminModerationPage } from '@/pages/admin-moderation'
 import { AdminSettingsPage } from '@/pages/admin-settings'
@@ -48,6 +53,8 @@ function child(
 }
 
 const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
+  pages: <AdminPagesPage />,
+  sections: <AdminNavSectionsPage />,
   home: <AdminHomePage />,
   settings: <AdminSettingsPage />,
   moderation: <AdminModerationPage />,
@@ -55,6 +62,7 @@ const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
   topics: <AdminTopicsPage />,
   general: <AdminGeneralPage />,
   access: <AdminAccessPage />,
+  layout: <AdminLayoutPage />,
   reactions: <AdminReactionsPage />,
   'status-icons': <AdminStatusIconsPage />,
   seo: <AdminSeoPage />,
@@ -88,7 +96,9 @@ export const shellRoute: RouteObject = {
     child('rating', <RatingPage />, 'feed'),
     child('bookmarks', <BookmarksPage />, 'feed'),
     child('search', <SearchPage />, 'feed'),
-    child('about', <AboutPage />, 'article'),
+    child('pages/:slug', <SimplePage />, 'article'),
+    child('admin/pages/new', <AdminPageNewPage />, 'article'),
+    child('admin/pages/:id', <AdminPageEditPage />, 'article'),
     child('auth/action', <AuthActionPage />, 'article'),
     child('write', <EditorPage />, 'article'),
     child('write/:id', <EditorPage />, 'article'),

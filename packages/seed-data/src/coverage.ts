@@ -79,5 +79,5 @@ export const COVERAGE_RULES: readonly CoverageRule[] = [
   ]),
   { entity: 'Диалог и сообщение', value: 'прочитанное сообщение', find: (d) => d.messages.find((m) => m.read_at !== null) },
   { entity: 'Диалог и сообщение', value: 'непрочитанное сообщение', find: (d) => d.messages.find((m) => m.read_at === null) },
-  { entity: 'Настройки площадки', value: 'название, логотип, язык, «О проекте», регистрация, право публикации', find: (d) => (d.settings.name && d.settings.logo_url && d.settings.locale && d.settings.about ? d.settings : undefined) },
+  { entity: 'Настройки площадки', value: 'название, логотип, язык, регистрация, право публикации', find: (d) => (d.settings.name && d.settings.logo_url && d.settings.locale ? d.settings : undefined) },
 ]

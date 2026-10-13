@@ -90,7 +90,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-5.5rem-var(--tab-bar-space))] min-h-0 w-full max-w-[640px] flex-col px-3 min-[768px]:px-0">
+    <div className="mx-auto flex h-[calc(100dvh-5.5rem-var(--tab-bar-space))] min-h-0 w-full max-w-[var(--shell-content-width,640px)] flex-col px-3 min-[768px]:px-0">
       {show_thread && peer ? (
         <ConversationThread
           key={conversation_id ?? to}

@@ -3,8 +3,7 @@ import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import { BaseIcon, Button } from '@/shared/ui'
 import { TopicDialog } from './TopicDialog.tsx'
-import type { TopicUpload } from './TopicForm.tsx'
-export function TopicSettingsButton({ topic, upload }: { topic: Topic; upload: TopicUpload }) {
+export function TopicSettingsButton({ topic }: { topic: Topic }) {
   const { t } = useT()
   const [is_open, setOpen] = useState(false)
   return (
@@ -17,7 +16,7 @@ export function TopicSettingsButton({ topic, upload }: { topic: Topic; upload: T
       >
         <BaseIcon name="settings_3" />
       </Button>
-      <TopicDialog initial={topic} upload={upload} is_open={is_open} onOpenChange={setOpen} />
+      <TopicDialog initial={topic} is_open={is_open} onOpenChange={setOpen} />
     </>
   )
 }

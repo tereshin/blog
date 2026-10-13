@@ -61,7 +61,7 @@ export function createCopiesHandler(repository: CopiesRepository = copiesReposit
       }
       case 'content.profile.updated': {
         const parsed = ProfileUpdatedV1.parse(event)
-        await repository.upsertUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name, avatar_url: parsed.avatar_url })
+        await repository.upsertUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name, avatar_url: parsed.avatar_url, slug: parsed.slug })
         return
       }
       default:

@@ -31,7 +31,6 @@
     "@editorjs/inline-code": "^1.5.2",
     "@editorjs/list": "^2.0.9",
     "@editorjs/marker": "^1.4.0",
-    "@editorjs/personality": "^2.0.2",
     "@editorjs/quote": "^2.7.6",
     "@editorjs/table": "^2.4.6",
     "@editorjs/underline": "^1.2.1",

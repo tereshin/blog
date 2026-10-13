@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
+import { AuthorStatusIconsProvider } from '@/entities/article'
 import { CommentReactionGlyphsProvider } from '@/entities/comment'
 import { useSettings, useSettingsLive } from '@/entities/settings'
 import { LoginDialog, useSessionExpiredListener } from '@/features/login'
@@ -16,9 +17,11 @@ function LocaleProvider({ children }: { children: ReactNode }) {
   const { data } = useSettings()
   useSettingsLive()
   return (
-    <CommentReactionGlyphsProvider appearances={data?.reaction_appearances ?? DEFAULT_REACTION_APPEARANCES}>
-      <I18nProvider locale={data?.locale ?? 'ru'}>{children}</I18nProvider>
-    </CommentReactionGlyphsProvider>
+    <AuthorStatusIconsProvider icons={data?.profile_status_icons ?? []}>
+      <CommentReactionGlyphsProvider appearances={data?.reaction_appearances ?? DEFAULT_REACTION_APPEARANCES}>
+        <I18nProvider locale={data?.locale ?? 'ru'}>{children}</I18nProvider>
+      </CommentReactionGlyphsProvider>
+    </AuthorStatusIconsProvider>
   )
 }
 

@@ -2,6 +2,7 @@ import {
   adminSettingsSchema,
   seoSettingsSchema,
   DEFAULT_REACTION_APPEARANCES,
+  DEFAULT_SHELL_VISIBILITY,
 } from '@blog/contracts'
 import { describe, expect, it } from 'vitest'
 import { mergeSettingsSection } from '../../src/features/update-settings/model/settings-sections.ts'
@@ -11,7 +12,6 @@ const initial = adminSettingsSchema.parse({
   name: 'Blog',
   logo_url: null,
   locale: 'ru',
-  about: '',
   registration_open: true,
   new_members_can_publish: true,
   profile_status_icons: [],
@@ -52,5 +52,13 @@ describe('saving settings categories', () => {
     }
     const result = mergeSettingsSection(server, draft, 'publisher')
     expect(result.seo).toEqual({ ...server.seo, publisher: draft.seo.publisher })
+  })
+  it('layout saving replaces only shell visibility', () => {
+    const server = { ...initial, name: 'Fresh name' }
+    const shell = { ...DEFAULT_SHELL_VISIBILITY, popular: false, popular_comments: false }
+    const result = mergeSettingsSection(server, { ...initial, shell }, 'layout')
+    expect(result.name).toBe('Fresh name')
+    expect(result.shell).toEqual(shell)
+    expect(result.registration_open).toBe(server.registration_open)
   })
 })

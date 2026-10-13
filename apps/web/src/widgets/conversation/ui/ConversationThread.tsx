@@ -12,8 +12,8 @@ import { useRequireSession } from '@/features/login'
 import { MessageComposer } from '@/features/send-message'
 import { useT } from '@/shared/i18n'
 import {
-  ArrowLeftIcon,
   Avatar,
+  BaseIcon,
   Button,
   Card,
   CommentIcon,
@@ -77,7 +77,7 @@ export function ConversationThread({ conversation_id, peer }: ConversationThread
             aria-label={t('messages.back')}
             onPress={() => void navigate('/messages')}
           >
-            <ArrowLeftIcon />
+            <BaseIcon name="left" style="line" className="size-6 text-muted" size={28} />
           </Button>
           <Tooltip.Content>{t('messages.back')}</Tooltip.Content>
         </Tooltip>

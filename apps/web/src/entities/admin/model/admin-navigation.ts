@@ -1,11 +1,14 @@
 import type { MessageKey } from '@/shared/i18n'
 export type AdminIcon =
+  | 'pages'
+  | 'sections'
   | 'moderation'
   | 'settings'
   | 'members'
   | 'topics'
   | 'general'
   | 'access'
+  | 'layout'
   | 'reactions'
   | 'status'
   | 'seo'
@@ -18,8 +21,17 @@ export type AdminIcon =
 
 export type AdminCatalogId = 'home' | 'settings' | 'moderation'
 export type AdminSettingsRouteId =
-  'general' | 'access' | 'reactions' | 'status-icons' | 'seo' | 'publisher' | 'covers'
+  | 'general'
+  | 'access'
+  | 'layout'
+  | 'reactions'
+  | 'status-icons'
+  | 'seo'
+  | 'publisher'
+  | 'covers'
 export type AdminRouteId =
+  | 'pages'
+  | 'sections'
   | AdminCatalogId
   | AdminSettingsRouteId
   | 'members'
@@ -81,6 +93,22 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
     icon: 'topics',
     role: 'superadmin',
   },
+  pages: {
+    path: '/admin/pages',
+    parent: 'home',
+    title: 'pages.title',
+    description: 'pages.description',
+    icon: 'pages',
+    role: 'superadmin',
+  },
+  sections: {
+    path: '/admin/sections',
+    parent: 'home',
+    title: 'nav.sections.title',
+    description: 'nav.sections.description',
+    icon: 'sections',
+    role: 'superadmin',
+  },
   general: {
     path: '/admin/settings/general',
     parent: 'settings',
@@ -95,6 +123,14 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
     title: 'admin.settings.access',
     description: 'admin.settings.access_hint',
     icon: 'access',
+    role: 'superadmin',
+  },
+  layout: {
+    path: '/admin/settings/layout',
+    parent: 'settings',
+    title: 'admin.settings.layout',
+    description: 'admin.settings.layout_hint',
+    icon: 'layout',
     role: 'superadmin',
   },
   reactions: {
@@ -173,10 +209,12 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
 
 export function getAdminRoute(pathname: string): AdminRoute | undefined {
   const path = pathname.replace(/\/$/, '')
+  if (path.startsWith('/admin/pages/')) return { ...ADMIN_ROUTES.pages, path }
   return Object.values(ADMIN_ROUTES).find((route) => route.path === path)
 }
 
 export function getAdminParentPath(route: AdminRoute): string {
+  if (route.path.startsWith('/admin/pages/')) return '/admin/pages'
   return route.parent ? ADMIN_ROUTES[route.parent].path : '/'
 }
 

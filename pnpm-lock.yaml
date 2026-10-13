@@ -109,9 +109,6 @@ importers:
       '@editorjs/marker':
         specifier: ^1.4.0
         version: 1.4.0
-      '@editorjs/personality':
-        specifier: ^2.0.2
-        version: 2.0.2
       '@editorjs/quote':
         specifier: ^2.7.6
         version: 2.7.6
@@ -270,6 +267,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      saxes:
+        specifier: ^6.0.0
+        version: 6.0.0
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -1025,9 +1025,6 @@ packages:
 
   '@editorjs/marker@1.4.0':
     resolution: {integrity: sha512-5ipEXfL44jTTRzgNp/p/YjMO7jT08S5z4V8qA3FFJTfdhKgQyM3mvP1zpdYKw47ZZpVWMCncvk5Nto3BxihEtg==}
-
-  '@editorjs/personality@2.0.2':
-    resolution: {integrity: sha512-CnQ15cW14bHQrjUT6qWQHJJOrTyAbTlIOeARQcQ1COU3OFWuJOmMsWFUFYpz5POMmQk30Cgi9qdFyyFfZf0asA==}
 
   '@editorjs/quote@2.7.6':
     resolution: {integrity: sha512-D01KUMSDj2r+6Z+xjDkQqI+y6URpeHCvj0+P4pah+GtkG040lWjFb2H4pgHFXuol2cbfyAoraYSw85fuPheCvw==}
@@ -6830,8 +6827,6 @@ snapshots:
   '@editorjs/marker@1.4.0':
     dependencies:
       '@codexteam/icons': 0.0.5
-
-  '@editorjs/personality@2.0.2': {}
 
   '@editorjs/quote@2.7.6':
     dependencies:

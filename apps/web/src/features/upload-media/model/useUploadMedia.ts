@@ -7,7 +7,7 @@ import type { UploadedMedia } from '../api/upload-media.ts'
 export type UploadState =
   { status: 'idle' } | { status: 'uploading' } | { status: 'error'; reason: string }
 
-export function useUploadMedia() {
+export function useUploadMedia(onError?: (message: string) => void) {
   const [state, setState] = useState<UploadState>({ status: 'idle' })
 
   async function upload(
@@ -23,6 +23,7 @@ export function useUploadMedia() {
     } catch (error) {
       const reason = error instanceof ApiError ? (error.detail ?? error.message) : 'upload_failed'
       setState({ status: 'error', reason })
+      onError?.(reason)
       return null
     }
   }

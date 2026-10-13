@@ -1,21 +1,23 @@
-import { lazy, Suspense, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ReactNode, UIEvent } from 'react'
+import { useLocation } from 'react-router'
 import { useMessagesUnreadCount, useMessagesUnreadLive } from '@/entities/conversation'
+import { useSettings } from '@/entities/settings'
 import { useViewer } from '@/entities/session'
-import { TopicNavItem, useTopics } from '@/entities/topic'
+import { useNavSections } from '@/entities/nav-section'
 import { AppearanceToggle } from '@/features/toggle-appearance'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
-import { BaseIcon, Button, ErrorState, Skeleton } from '@/shared/ui'
+import { BaseIcon, ErrorState } from '@/shared/ui'
+import { TOPICS_SECTION_ID, themeHostSectionId } from '../lib/nav-sections.ts'
 import { useCurrentSection } from '../model/useCurrentSection.ts'
 import { useFeedFreshness } from '../model/useFeedFreshness.ts'
+import { useNavSectionCollapsed } from '../model/useNavSectionCollapsed.ts'
 import { useShellStore } from '../model/useShellStore.ts'
 import { LeftNavItem } from './LeftNavItem.tsx'
-
-// Keep topic administration and its table out of the public navigation bundle.
-const TopicCreateButton = lazy(() =>
-  import('@/features/manage-topics').then((module) => ({ default: module.TopicCreateButton })),
-)
+import { NavSection } from './NavSection.tsx'
+import { NavSectionLink } from './NavSectionLink.tsx'
+import { TopicsSection } from './TopicsSection.tsx'
 
 type Mode = {
   to: string
@@ -73,29 +75,34 @@ const MODES: ReadonlyArray<Mode> = [
   },
 ]
 
-const VISIBLE_TOPICS = 8
+const theme_toggle = (
+  <AppearanceToggle className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal" />
+)
 
 type LeftNavProps = {
   /** Есть непрочитанные диалоги: у «Сообщений» появляется признак. */
   has_unread_messages?: boolean
 }
 
-/** Левая карточка: режимы, затем темы. Прокручивается внутри себя и не отдаёт прокрутку окну. */
+/** Левая карточка: режимы, затем секции. Прокручивается внутри себя и не отдаёт прокрутку окну. */
 export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const { t } = useT()
-  const { viewer, is_superadmin } = useViewer()
+  const { data: settings } = useSettings()
+  const { pathname } = useLocation()
+  const { viewer } = useViewer()
   const is_member = viewer.status === 'member'
   const unread_messages = useMessagesUnreadCount(is_member)
   useMessagesUnreadLive(is_member)
   const show_unread_messages = has_unread_messages || (unread_messages.data ?? 0) > 0
-  const { highlighted, section } = useCurrentSection()
-  const topics = useTopics()
+  const { highlighted } = useCurrentSection()
   const freshness = useFeedFreshness()
-  const is_expanded = useShellStore((state) => state.is_topics_expanded)
-  const setTopicsExpanded = useShellStore((state) => state.setTopicsExpanded)
+  const sections = useNavSections()
+  const collapsed = useNavSectionCollapsed()
   const setLeftScrollTop = useShellStore((state) => state.setLeftScrollTop)
   const frame_ref = useRef<number | null>(null)
   const latest_top_ref = useRef(0)
+  const custom = sections.data?.items ?? []
+  const host_id = sections.isPending ? null : themeHostSectionId(custom.map((section) => section.id))
 
   const handleScroll = (event: UIEvent<HTMLElement>) => {
     latest_top_ref.current = event.currentTarget.scrollTop
@@ -113,13 +120,9 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
     [],
   )
 
-  const active_topics = (topics.data ?? []).filter((topic) => topic.status === 'active')
-  const shown_topics = is_expanded ? active_topics : active_topics.slice(0, VISIBLE_TOPICS)
-  const has_hidden = active_topics.length > VISIBLE_TOPICS
-
   return (
     <div onScroll={handleScroll} className="flex flex-col gap-1 p-2">
-      {MODES.map((mode) => {
+      {MODES.filter((mode) => settings?.shell[mode.kind] !== false).map((mode) => {
         const is_fresh =
           (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
         const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh
@@ -139,60 +142,40 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
           </LeftNavItem>
         )
       })}
-      <div className="flex items-center justify-between px-3 pb-1 pt-3">
-        <h2 className="text-base text-muted">{t('shell.nav.topics')}</h2>
-        {is_superadmin ? (
-          <Suspense fallback={null}>
-            <TopicCreateButton />
-          </Suspense>
-        ) : null}
-      </div>
-      {topics.isPending ? (
-        <div
-          className="flex flex-col gap-2 px-3 py-1"
-          role="status"
-          aria-label={t('common.loading')}
-        >
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-4/5" />
-          <Skeleton className="h-5 w-3/5" />
-        </div>
-      ) : topics.isError ? (
+      <TopicsSection
+        is_expanded={!collapsed.isCollapsed(TOPICS_SECTION_ID)}
+        onToggle={() => collapsed.toggle(TOPICS_SECTION_ID)}
+        hosts_theme={host_id === TOPICS_SECTION_ID}
+      />
+      {sections.isError ? (
         <ErrorState
-          title={t('shell.nav.topics_error')}
-          onRetry={() => void topics.refetch()}
+          title={t('shell.nav.sections_error')}
+          onRetry={() => void sections.refetch()}
           className="py-4"
         />
-      ) : active_topics.length === 0 ? (
-        <p className="px-3 py-2 text-sm text-muted">{t('shell.nav.topics_empty')}</p>
       ) : (
-        <>
-          {shown_topics.map((topic) => (
-            <TopicNavItem
-              key={topic.id}
-              topic={topic}
-              is_selected={highlighted?.kind === 'topic' && highlighted.topic_id === topic.id}
-            />
-          ))}
-          {has_hidden ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="self-start"
-              onPress={() => setTopicsExpanded(!is_expanded)}
-            >
-              {is_expanded ? t('common.collapse') : t('common.show_all')}
-            </Button>
-          ) : null}
-        </>
+        custom.map((section) => (
+          <NavSection
+            key={section.id}
+            title={section.title}
+            is_expanded={!collapsed.isCollapsed(section.id)}
+            onToggle={() => collapsed.toggle(section.id)}
+          >
+            {section.items.map((item) => (
+              <NavSectionLink
+                key={item.id}
+                href={item.href}
+                is_external={item.is_external}
+                is_selected={!item.is_external && pathname === item.href}
+                icon={item.icon}
+              >
+                {item.title}
+              </NavSectionLink>
+            ))}
+            {host_id === section.id ? theme_toggle : null}
+          </NavSection>
+        ))
       )}
-
-      <div className="pt-3 flex flex-col gap-1">
-        <LeftNavItem to="/about" is_selected={section.kind === 'about'}>
-          {t('account.about')}
-        </LeftNavItem>
-        <AppearanceToggle className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal" />
-      </div>
     </div>
   )
 }

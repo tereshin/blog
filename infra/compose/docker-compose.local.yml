@@ -153,10 +153,12 @@ services:
     volumes:
       - ../../apps/web/src:/repo/apps/web/src:ro
       - ../../apps/web/public:/repo/apps/web/public:ro
+      - ../../apps/web/vite.config.ts:/repo/apps/web/vite.config.ts:ro
     ports:
       - "8080:8080"
     environment:
       VITE_API_BASE_URL: http://localhost:3000
+      API_PROXY_TARGET: http://gateway:3000
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 

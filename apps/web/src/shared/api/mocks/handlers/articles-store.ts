@@ -13,7 +13,6 @@ const RESERVED_SLUGS = new Set([
   'api',
   'write',
   'me',
-  'about',
   'rating',
   'bookmarks',
   'search',
@@ -148,8 +147,13 @@ export function hasMockContent(blocks: BlocksDocument): boolean {
       case 'image':
       case 'embed':
       case 'attaches':
-      case 'personality':
         return true
+      case 'personality':
+        return (
+          plain(block.data.name).length > 0 ||
+          plain(block.data.position ?? '').length > 0 ||
+          Boolean(block.data.photo?.trim())
+        )
       case 'delimiter':
         return false
     }
@@ -178,7 +182,7 @@ export function publishedFeedCards(): FeedCardFixture[] {
         excerpt: excerptOf(article.blocks),
         first_image_url: imageOf(article.blocks),
         published_at: article.published_at ?? new Date(0).toISOString(),
-        author: { user_id: author.id, display_name: author.display_name, avatar_url: null, slug: author.slug },
+        author: { user_id: author.id, display_name: author.display_name, avatar_url: null, slug: author.slug, status_icon_id: null },
         topic: { id: found.id, title: found.title, slug: found.slug, status: found.status === 'archived' ? 'archived' : 'active' },
         reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 0 },
         reaction_count: 0,

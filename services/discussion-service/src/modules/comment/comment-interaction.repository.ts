@@ -177,10 +177,11 @@ export function createCommentInteractionRepository(db: NodePgDatabase) {
           user_id: users_copy.user_id,
           display_name: users_copy.display_name,
           avatar_url: users_copy.avatar_url,
+          slug: users_copy.slug,
         })
         .from(users_copy)
         .where(
-          and(eq(users_copy.is_restricted, false), ilike(users_copy.display_name, `%${escaped}%`)),
+          and(eq(users_copy.is_restricted, false), or(ilike(users_copy.display_name, `%${escaped}%`), ilike(users_copy.slug, `%${escaped}%`))),
         )
         .orderBy(users_copy.display_name, users_copy.user_id)
         .limit(10)

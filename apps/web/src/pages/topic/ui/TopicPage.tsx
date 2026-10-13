@@ -4,10 +4,10 @@ import { useTopic } from '@/entities/topic'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
 import { useViewer } from '@/entities/session'
-import { TopicSettingsButton } from '@/features/manage-topics'
+import { TopicSettingsButton, useManageTopics } from '@/features/manage-topics'
 import { ImageUploadButton } from '@/features/upload-media'
 import { FollowButton } from '@/features/follow'
-import { EmptyState, ErrorState, IdentityHeader, Tabs } from '@/shared/ui'
+import { BaseIcon, EmptyState, ErrorState, IdentityHeader, Tabs } from '@/shared/ui'
 import { ArticleFeed } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 import { TopicHeader } from '@/widgets/topic-header'
@@ -17,6 +17,7 @@ export default function TopicPage() {
   const { t } = useT()
   const topic = useTopic(slug)
   const { is_superadmin } = useViewer()
+  const { update } = useManageTopics()
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
 
@@ -40,22 +41,47 @@ export default function TopicPage() {
   }
 
   return (
-    <Tabs variant="secondary" selectedKey="posts" className="w-full min-w-0 gap-4 max-w-[640px] mx-auto">
+    <Tabs
+      variant="secondary"
+      selectedKey="posts"
+      className="w-full min-w-0 gap-4 max-w-[var(--shell-content-width,640px)] mx-auto"
+    >
       <TopicHeader
         topic={topic.data}
+        cover_action={
+          is_superadmin ? (
+            <ImageUploadButton
+              label={t(topic.data.cover_url ? 'profile.change_cover' : 'profile.add_cover')}
+              is_disabled={update.isPending}
+              onUploaded={async (cover_url) => {
+                await update.mutateAsync({ id: topic.data.id, body: { cover_url } })
+              }}
+            />
+          ) : null
+        }
+        avatar_action={
+          is_superadmin ? (
+            <ImageUploadButton
+              label={t('profile.change_avatar')}
+              container_className="size-full"
+              className="group/avatar-upload size-full min-w-0 rounded-avatar bg-transparent p-0 text-white shadow-none transition-colors hover:bg-black/50 focus-visible:bg-black/50 [@media(hover:none)]:bg-black/35"
+              is_disabled={update.isPending}
+              onUploaded={async (avatar_url) => {
+                await update.mutateAsync({ id: topic.data.id, body: { avatar_url } })
+              }}
+            >
+              <BaseIcon
+                name="camera"
+                style="line"
+                size={28}
+                className="opacity-0 transition-opacity group-hover/avatar-upload:opacity-100 group-focus-visible/avatar-upload:opacity-100 [@media(hover:none)]:opacity-100"
+              />
+            </ImageUploadButton>
+          ) : null
+        }
         follow={
           <div className="flex items-center gap-2">
-            {is_superadmin ? (
-              <TopicSettingsButton
-                topic={topic.data}
-                upload={(field, onUploaded) => (
-                  <ImageUploadButton
-                    label={t(field === 'avatar' ? 'admin.topics.avatar' : 'admin.topics.cover')}
-                    onUploaded={onUploaded}
-                  />
-                )}
-              />
-            ) : null}
+            {is_superadmin ? <TopicSettingsButton topic={topic.data} /> : null}
             <FollowButton
               variant="primary"
               size="md"

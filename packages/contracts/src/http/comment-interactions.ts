@@ -42,4 +42,4 @@ export const commentReportPageSchema = pageSchema(
 export const reviewCommentReportSchema = z.strictObject({
   action: z.enum(['dismiss', 'hide', 'delete']),
 })
-export const mentionSearchSchema = z.array(commentAuthorSchema).max(10)
+export const mentionSearchSchema = z.array(commentAuthorSchema.extend({ slug: z.string().nullable().optional() })).max(10)

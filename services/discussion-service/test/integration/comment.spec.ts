@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { popularCommentListSchema } from '@blog/contracts'
+import { popularCommentListSchema, userCommentPageSchema } from '@blog/contracts'
 import type { ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -11,7 +11,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles_copy, comments, outbox, reactions, users_copy } from '../../src/infra/db/schema.ts'
+import { articles_copy, comment_bookmarks, comments, outbox, reactions, users_copy } from '../../src/infra/db/schema.ts'
 import { commentRoutes, toExcerpt } from '../../src/modules/comment/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -152,6 +152,43 @@ describe('discussion: GET /v1/comments/popular', () => {
     expect(slugs).not.toContain('members')
     expect(slugs).not.toContain('hidden')
     expect(slugs).not.toContain('draft')
+  })
+
+  it.each(['fresh', 'popular'] as const)('профиль: курсор %s проходит все страницы без пропусков и повторов', async (sort) => {
+    const read = async (limit: number, cursor?: string) => {
+      const query = new URLSearchParams({ sort, limit: String(limit) })
+      if (cursor) query.set('cursor', cursor)
+      const response = await app.inject({ method: 'GET', url: `/v1/users/${AUTHOR}/comments?${query}`, headers: { 'x-test-viewer': 'guest' } })
+      expect(response.statusCode).toBe(200)
+      return userCommentPageSchema.parse(response.json())
+    }
+    const all = await read(100)
+    const ids: string[] = []
+    let cursor: string | null = null
+    do {
+      const page = await read(4, cursor ?? undefined)
+      expect(page.items.length).toBeLessThanOrEqual(4)
+      ids.push(...page.items.map((item) => item.id))
+      cursor = page.next_cursor
+      if (cursor) expect(ids.length).toBeLessThan(all.items.length)
+    } while (cursor)
+    expect(ids).toEqual(all.items.map((item) => item.id))
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('профиль возвращает виды реакций, реакцию зрителя и состояние закладки', async () => {
+    await database.db.insert(reactions).values({ user_id: OTHER, target_type: 'comment', target_id: id(101), kind: 'fire' })
+    await database.db.insert(comment_bookmarks).values({ user_id: OTHER, comment_id: id(101) })
+    for (const viewer of ['guest', 'member']) {
+      const response = await app.inject({ method: 'GET', url: `/v1/users/${AUTHOR}/comments?sort=fresh&limit=100`, headers: { 'x-test-viewer': viewer } })
+      expect(response.statusCode).toBe(200)
+      const page = userCommentPageSchema.parse(response.json())
+      expect(page.items.find((item) => item.id === id(101))).toMatchObject({
+        reaction_counts: { heart: 1, thumb: 4, fire: 1 },
+        my_reaction: viewer === 'member' ? 'fire' : null,
+        is_bookmarked: viewer === 'member',
+      })
+    }
   })
 
   it('выключенные комментарии отклоняют новый, уже написанный остаётся в обсуждении', async () => {

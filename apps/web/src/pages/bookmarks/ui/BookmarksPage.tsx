@@ -88,7 +88,7 @@ export default function BookmarksPage() {
     setHeaderCenter({ kind: 'empty' })
   }, [setHeaderCenter])
   return (
-    <div className="flex flex-col gap-4 max-w-[640px] mx-auto">
+    <div className="flex flex-col gap-4 max-w-[var(--shell-content-width,640px)] mx-auto">
       {viewer.status === 'member' ? (
         <Tabs selectedKey={tab} onSelectionChange={(key) => setTab(String(key))}>
           <Tabs.List aria-label={t('comment.bookmark')}>

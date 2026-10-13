@@ -2,11 +2,19 @@ import { HttpResponse, http } from 'msw'
 import {
   DEFAULT_REACTION_APPEARANCES,
   DEFAULT_SEO_SETTINGS,
+  DEFAULT_SHELL_VISIBILITY,
   DEFAULT_SOCIAL_COVER_SETTINGS,
   reactionAppearancesSchema,
+  shellVisibilitySchema,
 } from '@blog/contracts'
-import type { FaviconSettings, SeoSettings, SocialCoverSettings } from '@blog/contracts'
-import type { ProfileStatusIcon, ReactionAppearances } from '@blog/contracts'
+import type {
+  FaviconSettings,
+  ProfileStatusIcon,
+  ReactionAppearances,
+  SeoSettings,
+  ShellVisibility,
+  SocialCoverSettings,
+} from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
 import settings_fixture from '../fixtures/settings.json'
 import topics_fixture from '../fixtures/topics.json'
@@ -15,18 +23,19 @@ import { readMockViewer } from './session.ts'
 const SITE_KEY = 'mock_site'
 
 type SiteSettings = {
+  welcome_content?: import('@blog/contracts').WelcomeContent | null
   name: string
   logo_url: string | null
   logo_dark_url?: string | null
   favicon?: FaviconSettings
   locale: 'ru' | 'en' | 'sr'
-  about: string
   registration_open: boolean
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
   profile_status_icons: ProfileStatusIcon[]
   seo: SeoSettings
   social_cover: SocialCoverSettings
+  shell: ShellVisibility
 }
 
 type SiteTopic = {
@@ -53,6 +62,7 @@ function initialState(): SiteState {
       profile_status_icons: [],
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
+      shell: DEFAULT_SHELL_VISIBILITY,
     },
     topics: topics_fixture.map((topic) => ({
       ...topic,
@@ -68,6 +78,7 @@ export function readSite(): SiteState {
   const settings = { ...initialState().settings, ...parsed.settings }
   const appearances = reactionAppearancesSchema.safeParse(settings.reaction_appearances)
   if (!appearances.success) settings.reaction_appearances = DEFAULT_REACTION_APPEARANCES
+  settings.shell = shellVisibilitySchema.parse(settings.shell ?? {})
   return { ...parsed, settings }
 }
 
@@ -77,16 +88,17 @@ function writeSite(state: SiteState): void {
 
 function publicSettings(settings: SiteSettings) {
   return {
+    welcome_content: settings.welcome_content ?? null,
     name: settings.name,
     logo_url: settings.logo_url,
     logo_dark_url: settings.logo_dark_url,
     favicon: settings.favicon,
     locale: settings.locale,
-    about: settings.about,
     reaction_appearances: settings.reaction_appearances,
     profile_status_icons: settings.profile_status_icons,
     seo: settings.seo,
     social_cover: settings.social_cover,
+    shell: settings.shell,
   }
 }
 

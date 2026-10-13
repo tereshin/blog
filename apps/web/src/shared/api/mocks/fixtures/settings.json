@@ -2,7 +2,6 @@
   "name": "Блог",
   "logo_url": null,
   "locale": "ru",
-  "about": "Площадка для статей и обсуждений.",
   "reaction_appearances": [
     { "kind": "laugh", "label": "Смех", "status": "active", "presentation": "emoji", "emoji": "😄" },
     { "kind": "heart", "label": "Сердце", "status": "active", "presentation": "emoji", "emoji": "❤️" },

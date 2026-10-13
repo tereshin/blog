@@ -29,7 +29,7 @@ describe('content: миграция (PostgreSQL в контейнере)', () =>
     expect(tables.rows.map((row) => row.table_name)).toEqual(
       expect.arrayContaining([
         'users_copy', 'profiles', 'slugs', 'topics', 'articles', 'follows', 'promotions', 'settings', 'reports',
-        'outbox', 'processed_events', 'seed_runs',
+        'outbox', 'processed_events', 'seed_runs', 'pages', 'nav_sections', 'nav_section_items',
       ]),
     )
     const extensions = await database.pool.query<{ extname: string }>("select extname from pg_extension where extname = 'pg_trgm'")
@@ -70,6 +70,24 @@ describe('content: миграция (PostgreSQL в контейнере)', () =>
   it('отклоняет неизвестный статус и пустое имя профиля', async () => {
     await expect(database.pool.query("update articles set status = 'archived'")).rejects.toThrow()
     await expect(database.pool.query("insert into profiles (user_id, display_name) values (gen_random_uuid(), '')")).rejects.toThrow()
+  })
+
+  it('пункт секции хранит svg иконку и отклоняет короткое имя', async () => {
+    const section_id = '11111111-1111-4111-8111-111111111111'
+    const item_id = '22222222-2222-4222-8222-222222222222'
+    const icon =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>'
+    await database.pool.query('insert into nav_sections (id, title, position) values ($1, $2, 0)', [
+      section_id,
+      'Секция',
+    ])
+    await database.pool.query(
+      'insert into nav_section_items (id, section_id, title, icon, position) values ($1, $2, $3, $4, 0)',
+      [item_id, section_id, 'Пункт', icon],
+    )
+    await expect(
+      database.pool.query('update nav_section_items set icon = $1 where id = $2', ['link', item_id]),
+    ).rejects.toThrow()
   })
 
   it('seed_runs принимает только профили small и large', async () => {

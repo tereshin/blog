@@ -14,6 +14,7 @@ export type FeedRow = {
   author_avatar_url: string | null
   author_slug: string | null
   author_public_number: number | null
+  author_status_icon_id: string | null
   topic_id: string
   topic_title: string
   topic_slug: string

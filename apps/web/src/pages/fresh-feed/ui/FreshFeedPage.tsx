@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { WelcomeCard } from '@/widgets/welcome'
 import { ArticleFeed } from '@/widgets/feed'
 import { useShellStore } from '@/widgets/shell'
 
@@ -11,5 +12,10 @@ export default function FreshFeedPage() {
     markFeedSeen('fresh')
   }, [markFeedSeen, setHeaderCenter])
 
-  return <ArticleFeed mode="fresh" />
+  return (
+    <>
+      <WelcomeCard />
+      <ArticleFeed mode="fresh" />
+    </>
+  )
 }

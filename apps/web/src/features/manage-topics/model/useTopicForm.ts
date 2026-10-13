@@ -50,17 +50,28 @@ export function useTopicForm(initial: Topic | undefined, onSaved: (topic: Topic)
         )
       },
     }
-    if (initial) void update.mutateAsync({ id: initial.id, body }).then(callbacks.onSuccess, callbacks.onError)
+    if (initial)
+      void update
+        .mutateAsync({
+          id: initial.id,
+          body: {
+            title: body.title,
+            description: body.description,
+            slug: body.slug,
+            status: body.status,
+          },
+        })
+        .then(callbacks.onSuccess, callbacks.onError)
     else
-      void create.mutateAsync(
-        {
+      void create
+        .mutateAsync({
           title: body.title,
           description: body.description,
           slug: body.slug,
           avatar_url: body.avatar_url,
           cover_url: body.cover_url,
-        },
-      ).then(callbacks.onSuccess, callbacks.onError)
+        })
+        .then(callbacks.onSuccess, callbacks.onError)
   }
   return { draft, setDraft, error, is_pending, save }
 }

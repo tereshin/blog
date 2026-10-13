@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { updateMentionRanges } from '../lib/comment-mentions.ts'
+import type { CommentMentionRange } from '../lib/comment-mentions.ts'
 
-const drafts = new Map<string, string>()
+type CommentDraft = { text: string; mention_ranges: CommentMentionRange[] }
+const drafts = new Map<string, CommentDraft>()
 
 function draftKey(article_id: string, parent_id: string | null): string {
   return `${article_id}:${parent_id ?? ''}`
@@ -15,22 +18,29 @@ export function useCommentDrafts(
   parent_id: string | null,
 ): {
   text: string
-  update: (value: string) => void
+  mention_ranges: CommentMentionRange[]
+  update: (value: string, ranges?: CommentMentionRange[]) => void
   clear: () => void
 } {
   const key = draftKey(article_id, parent_id)
-  const [text, setText] = useState(() => drafts.get(key) ?? '')
+  const [draft, setDraft] = useState<CommentDraft>(
+    () => drafts.get(key) ?? { text: '', mention_ranges: [] },
+  )
 
   return {
-    text,
-    update: (value) => {
-      const next = value.slice(0, 5000)
+    ...draft,
+    update: (value, ranges) => {
+      const text = value.slice(0, 5000)
+      const next = {
+        text,
+        mention_ranges: ranges ?? updateMentionRanges(draft.text, text, draft.mention_ranges),
+      }
       drafts.set(key, next)
-      setText(next)
+      setDraft(next)
     },
     clear: () => {
       drafts.delete(key)
-      setText('')
+      setDraft({ text: '', mention_ranges: [] })
     },
   }
 }

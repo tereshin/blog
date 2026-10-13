@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { formatTime } from '@/shared/lib'
 import { Avatar } from '@/shared/ui'
+import { useAuthorStatusIcon } from '../model/author-status-icons.tsx'
 import type { ArticleCardModel } from '../model/article-types.ts'
 
 type ArticleBylineProps = {
@@ -14,9 +15,10 @@ type ArticleBylineProps = {
   menu?: ReactNode
 }
 
-/** Автор и тема: аватар автора с бейджем темы, имя, ссылка на тему и время. */
+/** Автор и тема: аватар автора с бейджем темы, имя со статусом, ссылка на тему и время. */
 export function ArticleByline({ author, topic, published_at, time_label, follow, menu }: ArticleBylineProps) {
   const label = time_label ?? (published_at ? formatTime(published_at) : '')
+  const status = useAuthorStatusIcon(author.status_icon_id)
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -35,20 +37,31 @@ export function ArticleByline({ author, topic, published_at, time_label, follow,
         ) : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Link
-          to={author.href}
-          className="truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline"
-        >
-          {author.display_name}
-        </Link>
-        <div className="flex min-w-0 items-center gap-1 text-sm text-muted">
+        <div className="flex min-w-0 items-center gap-1">
+          <Link
+            to={author.href}
+            className="min-w-0 truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline"
+          >
+            {author.display_name}
+          </Link>
+          {status ? (
+            <img
+              src={status.image_url}
+              alt={status.label}
+              title={status.label}
+              width={18}
+              height={18}
+              className="size-[18px] shrink-0 object-contain"
+            />
+          ) : null}
+        </div>
+        <div className="flex min-w-0 items-center gap-1 text-[13px] text-muted">
           <Link to={topic.href} className="truncate outline-offset-2 hover:underline">
             {topic.title}
           </Link>
           {published_at && label ? (
             <>
-              <span aria-hidden="true">·</span>
-              <time dateTime={published_at} className="shrink-0">
+              <time dateTime={published_at} className="shrink-0 ml-px">
                 {label}
               </time>
             </>

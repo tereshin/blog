@@ -58,6 +58,7 @@ export { recordViewSchema, viewCountSchema } from './views.ts'
 export type { RecordView, ViewCount } from './views.ts'
 export {
   DEFAULT_REACTION_APPEARANCES,
+  DEFAULT_SHELL_VISIBILITY,
   MAX_ACTIVE_REACTIONS,
   MAX_REACTION_APPEARANCES,
   adminSettingsSchema,
@@ -67,6 +68,7 @@ export {
   reactionAppearancesSchema,
   profileStatusIconSchema,
   profileStatusIconsSchema,
+  shellVisibilitySchema,
   updateSettingsSchema,
 } from './settings.ts'
 export type {
@@ -75,6 +77,7 @@ export type {
   PublicSettings,
   ReactionAppearance,
   ReactionAppearances,
+  ShellVisibility,
   UpdateSettings,
 } from './settings.ts'
 export {
@@ -243,3 +246,10 @@ export type { FaviconSettings, FaviconVariant } from './site-assets.ts'
 export { moderationFiltersSchema, moderationArticleQuerySchema } from './moderation-filters.ts'
 export type { ModerationFilters, ModerationArticleQuery } from './moderation-filters.ts'
 export { moderationReportPageSchema } from './admin.ts'
+
+export * from './pages.ts'
+export * from './nav-sections.ts'
+
+export { safeEmbedUrl } from './embed-url.ts'
+export { welcomeContentSchema } from './settings.ts'
+export type { WelcomeContent } from './settings.ts'

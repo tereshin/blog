@@ -96,7 +96,7 @@ body {
 /* Поиск совпадает с центральной колонкой Shell и не зависит от ширины логотипа и кнопок. */
 .header-search-position {
   position: fixed;
-  top: 6px;
+  top: 2px;
   right: 8px;
   left: 8px;
   width: auto;
@@ -125,8 +125,8 @@ body {
 @media (min-width: 1280px) {
   .header-search-position {
     right: auto;
-    left: calc(50% - 404px);
-    width: 708px;
+    left: calc(50% - 367px);
+    width: 640px;
   }
 }
 
@@ -155,7 +155,7 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
     background: var(--surface);
-    box-shadow: 0 8px 32px rgb(0 0 0 / 28%);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 2%);
   }
 
   .site-header-actions .button--icon-only,
@@ -394,8 +394,12 @@ body {
   height: 28px;
   bottom: auto;
 }
-.comment-branch__collapse:hover {
-  background: color-mix(in oklch, var(--accent) 20%, transparent);
+.comment-branch:has(> .comment-branch__collapse:is(:hover, :focus-visible))::before,
+.comment-branch:has(+ .comment-branch > .comment-branch__collapse:is(:hover, :focus-visible))::before {
+  background: var(--accent);
+}
+.comment-branch:has(> .comment-branch__collapse:is(:hover, :focus-visible))::after {
+  border-color: var(--accent);
 }
 
 .topic-picker-popover {
@@ -417,4 +421,180 @@ body {
 }
 .topic-picker-popover [data-slot='list-box-item-indicator'] {
   color: var(--success);
+}
+
+/* Comment composer: one row at rest, text above actions while editing. */
+.comment-composer__control {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 8px 14px 8px 18px;
+  border-radius: 28px;
+  --field-ring: 3px;
+}
+.comment-composer__control[data-expanded='true'] {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px 10px 10px 18px;
+  background: var(--surface);
+}
+.comment-composer__field {
+  min-width: 0;
+}
+.comment-composer__input {
+  display: block;
+  width: 100%;
+  min-height: 26px;
+  max-height: 240px;
+  resize: none;
+  border-radius: 0;
+  font-size: 17px;
+  line-height: 26px;
+}
+.comment-composer .comment-composer__input,
+.comment-composer .comment-composer__input:is(:hover, :focus, :focus-visible, [data-focus-visible='true']) {
+  border: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+.comment-composer__control[data-expanded='true'] .comment-composer__input {
+  padding-right: 8px;
+}
+.comment-composer__toolbar,
+.comment-composer__extras {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.comment-composer__toolbar {
+  justify-content: space-between;
+}
+.comment-composer__control[data-expanded='true'] .comment-composer__toolbar {
+  min-height: 34px;
+}
+.comment-composer__action {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--foreground);
+}
+.comment-composer__send {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+}
+.comment-composer__reply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.comment-mentions {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% - 6px);
+  left: 18px;
+  width: min(200px, calc(100% - 36px));
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--overlay);
+  box-shadow: 0 6px 24px color-mix(in oklch, var(--foreground) 10%, transparent);
+}
+.comment-mentions__list {
+  max-height: 240px;
+  overflow-y: auto;
+  outline: none;
+}
+.comment-mentions__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+}
+.comment-mentions__item:is([data-focused], [data-hovered]) {
+  background: var(--surface-secondary);
+}
+@media (max-width: 480px) {
+  .comment-composer__control {
+    padding-left: 14px;
+    padding-right: 8px;
+    gap: 4px;
+  }
+  .comment-composer__extras {
+    gap: 2px;
+  }
+}
+
+.comment-composer__input {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  padding: 0;
+  outline: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.comment-composer__input:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+.comment-composer__mention { color: var(--accent); }
+.comment-composer__attachments { padding: 0; }
+
+/* Одна геометрия для header и main, включая промежутки между колонками. */
+.shell-grid {
+  width: 100%;
+  max-width: var(--shell-content-width, 640px);
+  margin-inline: auto;
+}
+.site-header-grid {
+  display: flex;
+  padding-inline: 8px;
+}
+@media (min-width: 768px) {
+  .shell-grid {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    column-gap: 16px;
+    max-width: calc(220px + 16px + var(--shell-content-width, 640px));
+  }
+  .site-header-grid { padding-inline: 0; }
+  .site-header-brand { grid-column: 1; grid-row: 1; padding-inline: 16px; }
+  .site-header-center { grid-column: 2; grid-row: 1; padding-right: 320px; }
+  .site-header-actions { grid-column: 2; grid-row: 1; justify-self: end; width: 320px; justify-content: space-between; }
+  .site-header-actions .site-header-write { padding-inline: 10px; gap: 4px; }
+  .site-header-actions .site-header-tab,
+  .site-header-actions .button--icon-only { min-width: 36px; width: 36px; }
+}
+@media (min-width: 1280px) {
+  .shell-grid {
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
+    max-width: calc(220px + 32px + var(--shell-content-width, 640px) + 320px);
+  }
+  .site-header-center { padding-right: 0; }
+  .site-header-actions { grid-column: 3; }
+  /* Без блока комментариев сетка остаётся двухколоночной, шапка — как до 1280px. */
+  .shell-no-rail .shell-grid {
+    grid-template-columns: 220px minmax(0, 1fr);
+    max-width: calc(220px + 16px + var(--shell-content-width, 640px));
+  }
+  .shell-no-rail .site-header-center { padding-right: 320px; }
+  .shell-no-rail .site-header-actions {
+    grid-column: 2;
+    width: 320px;
+    justify-content: space-between;
+  }
 }

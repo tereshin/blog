@@ -1,4 +1,5 @@
-export type UpstreamName = 'identity' | 'content' | 'discussion' | 'messaging' | 'notification' | 'media'
+export type UpstreamName =
+  'identity' | 'content' | 'discussion' | 'messaging' | 'notification' | 'media'
 
 export type RouteEntry = {
   prefix: string
@@ -18,6 +19,10 @@ export const ROUTE_TABLE: readonly RouteEntry[] = [
   { prefix: '/v1/auth', service: 'identity' },
   { prefix: '/v1/users', service: 'identity' },
   { prefix: '/v1/users', suffix: '/comments', service: 'discussion' },
+  { prefix: '/v1/pages', service: 'content' },
+  { prefix: '/v1/admin/pages', service: 'content' },
+  { prefix: '/v1/nav-sections', service: 'content' },
+  { prefix: '/v1/admin/nav-sections', service: 'content' },
   { prefix: '/v1/feed', service: 'content' },
   { prefix: '/v1/articles', service: 'content' },
   { prefix: '/v1/articles', suffix: '/comments', service: 'discussion' },
@@ -53,16 +58,33 @@ function pathOnly(path: string): string {
 
 function matches(path: string, entry: RouteEntry): boolean {
   const bare = pathOnly(path)
-  if (entry.suffix) return bare.startsWith(`${entry.prefix}/`) && bare.endsWith(entry.suffix) && bare.length > entry.prefix.length + entry.suffix.length
-  return path === entry.prefix || path.startsWith(`${entry.prefix}/`) || path.startsWith(`${entry.prefix}?`)
+  if (entry.suffix)
+    return (
+      bare.startsWith(`${entry.prefix}/`) &&
+      bare.endsWith(entry.suffix) &&
+      bare.length > entry.prefix.length + entry.suffix.length
+    )
+  return (
+    path === entry.prefix ||
+    path.startsWith(`${entry.prefix}/`) ||
+    path.startsWith(`${entry.prefix}?`)
+  )
 }
 
 /** Самый длинный подходящий префикс; суффикс (`/comments`) побеждает общий префикс той же длины. */
-export function resolveRoute(path: string, table: readonly RouteEntry[] = ROUTE_TABLE): RouteEntry | null {
+export function resolveRoute(
+  path: string,
+  table: readonly RouteEntry[] = ROUTE_TABLE,
+): RouteEntry | null {
   let best: RouteEntry | null = null
   for (const entry of table) {
     if (!matches(path, entry)) continue
-    if (!best || entry.prefix.length > best.prefix.length || (entry.prefix.length === best.prefix.length && entry.suffix && !best.suffix)) best = entry
+    if (
+      !best ||
+      entry.prefix.length > best.prefix.length ||
+      (entry.prefix.length === best.prefix.length && entry.suffix && !best.suffix)
+    )
+      best = entry
   }
   return best
 }

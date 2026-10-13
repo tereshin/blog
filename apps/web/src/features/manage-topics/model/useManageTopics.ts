@@ -1,3 +1,4 @@
+import { useViewer } from '@/entities/session'
 import { articleKeys } from '@/entities/article'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { seoKeys } from '@/entities/seo'
@@ -7,8 +8,10 @@ import type { TopicDraft } from '../api/manage-topics.ts'
 
 export function useManageTopics() {
   const query_client = useQueryClient()
+  const { is_superadmin } = useViewer()
   const topics = useQuery({
     queryKey: topicKeys.admin(),
+    enabled: is_superadmin,
     queryFn: ({ signal }) => getAllTopics(signal),
   })
 

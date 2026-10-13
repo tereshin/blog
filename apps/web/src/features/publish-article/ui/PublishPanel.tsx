@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ArticleDraft, BlocksDocument } from '@blog/contracts'
-import { BlockRenderer } from '@/entities/article'
 import type { Topic } from '@/entities/topic'
-import { useViewer } from '@/entities/session'
+import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import {
-  Avatar,
-  Button,
-  BaseIcon,
-  CloseButton,
-  CommentIcon,
-  Menu,
-  useToast,
-} from '@/shared/ui'
+import { Avatar, Button, BaseIcon, CommentIcon, Menu, useToast } from '@/shared/ui'
+import type { EditorPanelSlots } from '@/shared/ui'
 import type { ArticleDraftForm } from '../model/usePublishArticle.ts'
 
 type PublishPanelProps = {
@@ -27,9 +19,7 @@ type PublishPanelProps = {
   /** Редактор между заголовком и подвалом окна. */
   children: (title: string, onTitleChange: (title: string) => void) => ReactNode
   show_saved: boolean
-  onToggleFullscreen: () => void
-  is_fullscreen: boolean
-  onClose: () => void
+  renderPanel: (slots: EditorPanelSlots) => ReactNode
   onDirty: (is_dirty: boolean) => void
   onSubmit: (mode: 'draft' | 'publish', form: ArticleDraftForm) => Promise<ArticleDraft | null>
 }
@@ -45,7 +35,15 @@ const REASON_KEY = {
 
 function formFrom(initial: ArticleDraft | null, topic_id: string): ArticleDraftForm {
   if (!initial)
-    return { title: '', topic_id, visibility: 'public', comments_enabled: true, slug: '', seo_title: '', seo_description: '' }
+    return {
+      title: '',
+      topic_id,
+      visibility: 'public',
+      comments_enabled: true,
+      slug: '',
+      seo_title: '',
+      seo_description: '',
+    }
   return {
     title: initial.title,
     seo_title: initial.seo_title ?? '',
@@ -80,9 +78,7 @@ export function PublishPanel({
   reasons,
   children,
   show_saved,
-  onClose,
-  onToggleFullscreen,
-  is_fullscreen,
+  renderPanel,
   onDirty,
   onSubmit,
 }: PublishPanelProps) {
@@ -114,6 +110,9 @@ export function PublishPanel({
   const update = (patch: Partial<ArticleDraftForm>) =>
     setForm((current) => ({ ...current, ...patch }))
   const can_submit =
+    viewer.status === 'member' &&
+    viewer.user.can_publish &&
+    memberMutationBlock(viewer) === null &&
     editor_ready &&
     !is_pending &&
     form.title.trim().length > 0 &&
@@ -126,34 +125,34 @@ export function PublishPanel({
     })
   }
 
-  return (
-    <div className="article-editor-panel flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center gap-3 pl-16 pr-5 pt-7 sm:pl-24 sm:pr-8">
+  return renderPanel({
+    header: (
+      <>
         <Avatar src={avatar_url} name={author_name || t('header.write')} size="md" />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{author_name}</p>
-          <TopicPicker topics={active} value={form.topic_id} onChange={(topic_id) => update({ topic_id })} />
+          <TopicPicker
+            topics={active}
+            value={form.topic_id}
+            onChange={(topic_id) => update({ topic_id })}
+          />
         </div>
-        <Button
-          variant="ghost"
-          isIconOnly
-          className="ml-auto rounded-full bg-surface-secondary"
-          aria-label={t(is_fullscreen ? 'editor.collapse' : 'editor.expand')}
-          onPress={onToggleFullscreen}
-        >
-          {is_fullscreen ? <BaseIcon name="fullscreen_exit_2" style="line" /> : <BaseIcon name="fullscreen_2" style="line" />}
-        </Button>
-        <CloseButton aria-label={t('common.close')} className="rounded-full bg-surface-secondary" onPress={onClose} />
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-6 sm:px-8">
-        <div hidden={Boolean(preview)}>{children(form.title, (title) => update({ title }))}</div>
-        {preview ? (
-          <div className="pl-11 sm:pl-16">
-            <h1 className="article-editor-title">{form.title}</h1>
-            <BlockRenderer blocks={preview.blocks} />
-          </div>
+      </>
+    ),
+    metadata: (
+      <>
+        {form.title.length > 120 ? (
+          <p
+            className={
+              form.title.length > 150
+                ? 'text-right text-xs text-danger'
+                : 'text-right text-xs text-muted'
+            }
+            role="status"
+          >
+            {t('editor.title_count', { count: form.title.length })}
+          </p>
         ) : null}
-        {form.title.length > 120 ? <p className={form.title.length > 150 ? 'text-right text-xs text-danger' : 'text-right text-xs text-muted'} role="status">{t('editor.title_count', { count: form.title.length })}</p> : null}
         {reasons.length > 0 ? (
           <ul className="mt-3 text-sm text-danger">
             {reasons.map((reason) => (
@@ -163,27 +162,64 @@ export function PublishPanel({
             ))}
           </ul>
         ) : null}
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-separator pl-16 pr-5 py-4 sm:pl-24 sm:pr-8">
-        <Button variant="primary" shape="pill" isDisabled={!can_submit} onPress={() => submit('publish')}>
+      </>
+    ),
+    children: children(form.title, (title) => update({ title })),
+    preview: preview ? { title: form.title, blocks: preview.blocks } : null,
+    footer: (
+      <>
+        <Button
+          variant="primary"
+          shape="pill"
+          isDisabled={!can_submit}
+          onPress={() => submit('publish')}
+        >
           {t('editor.publish')}
         </Button>
         <Menu>
-          <Button variant="ghost" size="sm" aria-label={t('editor.comments_who')} className="gap-1.5 px-0 text-muted">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={t('editor.comments_who')}
+            className="gap-1.5 px-0 text-muted"
+          >
             <CommentIcon />
-            <span className="hidden sm:inline">{t(form.comments_enabled ? 'editor.comments_all' : 'editor.comments_none')}</span>
+            <span className="hidden sm:inline">
+              {t(form.comments_enabled ? 'editor.comments_all' : 'editor.comments_none')}
+            </span>
             <BaseIcon name="down" style="line" size={16} />
           </Button>
-          <Menu.Content aria-label={t('editor.comments_who')} selectionMode="single" selectedKeys={[form.comments_enabled ? 'all' : 'none']} onAction={(key) => update({ comments_enabled: key === 'all' })}>
+          <Menu.Content
+            aria-label={t('editor.comments_who')}
+            selectionMode="single"
+            selectedKeys={[form.comments_enabled ? 'all' : 'none']}
+            onAction={(key) => update({ comments_enabled: key === 'all' })}
+          >
             <Menu.Item id="all">{t('editor.comments_all')}</Menu.Item>
             <Menu.Item id="none">{t('editor.comments_none')}</Menu.Item>
           </Menu.Content>
         </Menu>
         <div className="ml-auto flex items-center gap-2">
-          {show_saved ? <span role="status" className="text-xs text-muted">{t('editor.saved')} ✓</span> : null}
-          <PublishSettings form={form} slug={initial?.slug ?? ''} slug_error={slug_error} can_submit={can_submit} editor_ready={editor_ready} is_preview={Boolean(preview)} onChange={update} onSave={() => submit('draft')} onPreview={() => { void handlePreview() }} />
+          {show_saved ? (
+            <span role="status" className="text-xs text-muted">
+              {t('editor.saved')} ✓
+            </span>
+          ) : null}
+          <PublishSettings
+            form={form}
+            slug={initial?.slug ?? ''}
+            slug_error={slug_error}
+            can_submit={can_submit}
+            editor_ready={editor_ready}
+            is_preview={Boolean(preview)}
+            onChange={update}
+            onSave={() => submit('draft')}
+            onPreview={() => {
+              void handlePreview()
+            }}
+          />
         </div>
-      </div>
-    </div>
-  )
+      </>
+    ),
+  })
 }

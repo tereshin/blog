@@ -37,6 +37,7 @@ export const articles_copy = pgTable('articles_copy', {
 export const users_copy = pgTable('users_copy', {
   user_id: uuid('user_id').primaryKey(),
   display_name: text('display_name'),
+  slug: text('slug'),
   avatar_url: text('avatar_url'),
   is_restricted: boolean('is_restricted').notNull().default(false),
 })

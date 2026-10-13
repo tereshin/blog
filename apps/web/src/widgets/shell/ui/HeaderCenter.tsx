@@ -1,13 +1,10 @@
 import { useShellStore } from '../model/useShellStore.ts'
 import { HeaderBackLink } from './HeaderBackLink.tsx'
 
-function HeaderBack({ title }: { title: string }) {
+function HeaderBack() {
   return (
     <div className="flex min-w-0 w-full max-w-xl items-center gap-1">
       <HeaderBackLink />
-      <span title={title} className="min-w-0 truncate text-sm font-medium">
-        {title}
-      </span>
     </div>
   )
 }
@@ -21,6 +18,6 @@ export function HeaderCenter() {
     case 'search':
       return null // Поиск поверх шапки рендерит SiteHeader, независимо от слота center.
     case 'back':
-      return <HeaderBack title={header_center.title} />
+      return <HeaderBack />
   }
 }

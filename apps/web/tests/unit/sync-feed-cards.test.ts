@@ -11,7 +11,7 @@ function card(id: string, title: string): ArticleCardModel {
     first_image_url: null,
     published_at: '2026-10-01T00:00:00.000Z',
     time_label: '00:00',
-    author: { user_id: 'u', display_name: 'Анна', avatar_url: null, slug: 'anna', href: '/u/anna' },
+    author: { user_id: 'u', display_name: 'Анна', avatar_url: null, slug: 'anna', href: '/u/anna', status_icon_id: null },
     topic: { id: 't', title: 'Технологии', slug: 'tech', status: 'active', href: '/t/tech' },
     reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 0 },
     reaction_count: 0,

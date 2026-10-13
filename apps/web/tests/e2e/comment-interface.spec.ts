@@ -95,7 +95,7 @@ test('прямая ссылка раскрывает ответ; меню пок
   await expect(root(page).getByRole('link', { name: 'Меню комментария' }).first()).toBeFocused()
 })
 
-test('компактное поле раскрывается, вставляет эмодзи и отправляет с клавиатуры', async ({
+test('компактное поле раскрывается и отправляет с клавиатуры', async ({
   page,
 }) => {
   await seedDiscussion(page)
@@ -109,12 +109,12 @@ test('компактное поле раскрывается, вставляет
   await expect(
     discussion(page).getByRole('button', { name: 'Отправить', exact: true }),
   ).toBeEnabled()
-  await discussion(page).getByRole('button', { name: 'Добавить эмодзи' }).click()
-  await page.getByRole('menuitem', { name: '🔥', exact: true }).click()
-  await expect(field).toHaveValue('Новый текст🔥')
+  await field.press('Enter')
+  await field.pressSequentially('Вторая строка')
+  await expect(field).toHaveText('Новый текст\nВторая строка')
   await field.press('Control+Enter')
-  await expect(page.locator('article p').getByText('Новый текст🔥', { exact: true })).toBeVisible()
-  await expect(field).toHaveValue('')
+  await expect(page.locator('article p').getByText('Новый текст Вторая строка', { exact: true })).toBeVisible()
+  await expect(field).toHaveText('')
 })
 
 test('ответ открывает ветку; обсуждение доступно и помещается на экране', async ({
@@ -199,15 +199,15 @@ test('изображение, GIF и упоминание отправляютс
     })
   await expect(form.getByRole('button', { name: 'Убрать изображение' })).toHaveCount(2)
   await form.getByRole('button', { name: 'Упомянуть участника' }).click()
-  const mention = page.getByRole('dialog', { name: 'Упомянуть участника' })
-  await mention.getByLabel('Имя участника').fill('Анна')
-  await mention.getByRole('button', { name: 'Анна Авторова' }).click()
-  await expect(form.getByRole('button', { name: 'Убрать упоминание Анна Авторова' })).toBeVisible()
+  await expect(form.getByRole('menu', { name: 'Упомянуть участника' })).toBeVisible()
+  await form.getByRole('menuitem', { name: /Анна Авторова/ }).click()
+  await expect(form.getByLabel('Написать комментарий')).toHaveText('С вложением и упоминанием @anna ')
+  await expect(page.getByRole('dialog', { name: 'Упомянуть участника' })).toHaveCount(0)
   await form.getByRole('button', { name: 'Отправить', exact: true }).click()
   const sent = discussion(page).locator('article').filter({ hasText: 'С вложением и упоминанием' })
   await expect(sent.locator('img')).toHaveCount(2)
-  await expect(sent.getByText('@Анна Авторова')).toBeVisible()
-  await expect(form.getByLabel('Написать комментарий')).toHaveValue('')
+  await expect(sent.getByText('@anna')).toBeVisible()
+  await expect(form.getByLabel('Написать комментарий')).toHaveText('')
 })
 
 test('ответы запрашиваются только после раскрытия, ссылка достаёт комментарий за первой страницей', async ({

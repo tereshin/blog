@@ -150,11 +150,24 @@ test('two logos and favicon settings persist and update site metadata', async ({
     'href',
     '/favicon-96x96.png?v=icon.png',
   )
-  if ((page.viewportSize()?.width ?? 0) < 768) await page.getByRole('button', { name: 'Открыть навигацию' }).click()
-  await page.getByRole('navigation', { name: 'Навигация', exact: true }).getByRole('link', { name: 'Тёмная тема', exact: true }).click()
+  const is_mobile = (page.viewportSize()?.width ?? 0) < 768
+  if (is_mobile) {
+    await page.getByRole('banner').getByRole('link', { name: 'Главная', exact: true }).click()
+    await page.getByRole('button', { name: 'Открыть навигацию' }).click()
+  }
+  await page
+    .getByRole('navigation', { name: 'Навигация', exact: true })
+    .getByRole('link', { name: 'Тёмная тема', exact: true })
+    .click()
   await page.getByRole('menu').getByText('Светлая', { exact: true }).click()
-  if ((page.viewportSize()?.width ?? 0) < 768) await page.keyboard.press('Escape')
-  await expect(page.getByRole('banner').locator('a[href="/"] img')).toHaveAttribute('src', 'data:image/png;base64,light')
+  if (is_mobile) {
+    await page.keyboard.press('Escape')
+    await page.goBack()
+  }
+  await expect(page.getByRole('banner').locator('a[href="/"] img')).toHaveAttribute(
+    'src',
+    'data:image/png;base64,light',
+  )
   await page.getByRole('main').getByRole('button', { name: 'Удалить: PNG 96×96' }).click()
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await expect(page.locator('head link[rel="icon"][sizes="96x96"]')).toHaveCount(0)
@@ -178,4 +191,89 @@ test('cover color picker synchronizes palette and HEX field', async ({ page }) =
       ),
     )
     .toBe('#0485F7')
+})
+
+test('topic images are edited directly from the header, outside the settings dialog', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
+  await page.goto('/t/tehnologii')
+  const header = page.getByRole('main').locator('.identity-header')
+  const image = {
+    name: 'topic.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  }
+  const avatar_chooser = page.waitForEvent('filechooser')
+  await header.getByRole('button', { name: 'Изменить аватар' }).click()
+  await (await avatar_chooser).setFiles(image)
+  await expect
+    .poll(() =>
+      page.evaluate(async () => (await (await fetch('/v1/topics/tehnologii')).json()).avatar_url),
+    )
+    .toMatch(/^blob:/)
+  const cover_chooser = page.waitForEvent('filechooser')
+  await header.getByRole('button', { name: 'Добавить обложку' }).click()
+  await (await cover_chooser).setFiles(image)
+  await expect
+    .poll(() =>
+      page.evaluate(async () => (await (await fetch('/v1/topics/tehnologii')).json()).cover_url),
+    )
+    .toMatch(/^blob:/)
+  await expect(header.locator(':scope > div').first().locator('img')).toHaveAttribute(
+    'src',
+    /^blob:/,
+  )
+  await page.getByRole('button', { name: 'Настроить тему' }).click()
+  await expect(page.getByRole('dialog').locator('input[type="file"]')).toHaveCount(0)
+})
+
+test('moderation labels and controls share typography, gaps and row alignment', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
+  for (const route of ['articles', 'comments', 'hidden', 'find']) {
+    await page.goto(`/admin/moderation/${route}`)
+    const grid = page.locator('.moderation-filters')
+    await expect(grid.locator('label').first()).toBeVisible()
+    const metrics = await grid.evaluate((element) =>
+      [...element.children]
+        .filter((field) => field.tagName !== 'TEMPLATE')
+        .map((field) => {
+          const label = field.querySelector('.field-label'),
+            control = field.querySelector('input,button')
+          if (!label || !control) throw new Error('Missing filter parts')
+          const label_style = getComputedStyle(label),
+            label_rect = label.getBoundingClientRect(),
+            rect = control.getBoundingClientRect()
+          return {
+            weight: label_style.fontWeight,
+            font: label_style.fontSize,
+            line: label_style.lineHeight,
+            gap: Math.round(rect.top - label_rect.bottom),
+            height: Math.round(rect.height),
+            top: Math.round(rect.top),
+            label_top: Math.round(label_rect.top),
+          }
+        }),
+    )
+    expect(
+      new Set(
+        metrics.map(({ weight, font, line, gap, height }) =>
+          JSON.stringify({ weight, font, line, gap, height }),
+        ),
+      ).size,
+    ).toBe(1)
+    for (const metric of metrics) expect(metric.gap).toBe(8)
+    for (const metric of metrics) expect(metric.height).toBe(40)
+    for (const row_top of new Set(metrics.map((metric) => metric.label_top)))
+      expect(
+        new Set(
+          metrics.filter((metric) => metric.label_top === row_top).map((metric) => metric.top),
+        ).size,
+      ).toBe(1)
+  }
 })

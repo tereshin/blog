@@ -16,7 +16,7 @@ const GUEST_SECTIONS = [
   '/rating',
   '/bookmarks',
   '/search',
-  '/about',
+  '/pages/welcome-page',
 ]
 
 function hasThreeColumns(page: Page): boolean {

@@ -1,11 +1,12 @@
 import { useEffect, useId } from 'react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { useShellStore } from '../model/useShellStore.ts'
 import { BackToTop } from './BackToTop.tsx'
 import { LeftNavDrawer } from './LeftNavDrawer.tsx'
 
 type ShellProps = {
+  content_width?: 640 | 848
   header: ReactNode
   left: ReactNode
   center: ReactNode
@@ -14,14 +15,15 @@ type ShellProps = {
   scroll_key?: string
 }
 
-/**
- * Полоса 1280 по центру от этой ширины. Прокручивается документ.
- * Шапка и видимые столбцы липнут к окну. Правый столбец есть только от 1280px.
- * От 768px левый столбец остаётся. Ниже 768px одна колонка, левая навигация — из шапки,
- * действия шапки — плавающая панель внизу; центр оставляет под ней место (`--tab-bar-space`).
- * Видимость столбцов задаёт CSS, не скрипт после гидрации.
- */
-export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
+/** Общая сетка шапки и main: центр 640px по умолчанию или 848px. */
+export function Shell({
+  header,
+  left,
+  center,
+  right,
+  scroll_key,
+  content_width = 640,
+}: ShellProps) {
   const { t } = useT()
   const is_nav_open = useShellStore((state) => state.is_nav_open)
   const setNavOpen = useShellStore((state) => state.setNavOpen)
@@ -40,12 +42,20 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
     setCenterScrollTop(0)
   }, [scroll_key, setCenterScrollTop])
 
+  const show_rail = right != null && right !== false
   return (
-    <div className="min-h-dvh bg-background text-foreground">
-      <header role="banner" data-mount-id={mount_id} className="sticky top-0 z-20 h-14 bg-[var(--surface)]">
+    <div
+      className={`min-h-dvh bg-background text-foreground${show_rail ? '' : ' shell-no-rail'}`}
+      style={{ '--shell-content-width': `${content_width}px` } as CSSProperties}
+    >
+      <header
+        role="banner"
+        data-mount-id={mount_id}
+        className="sticky top-0 z-20 h-14 bg-[var(--surface)]"
+      >
         {header}
       </header>
-      <div className="mx-auto w-full min-[768px]:grid min-[768px]:grid-cols-[220px_minmax(0,1fr)] min-[768px]:gap-x-4 min-[1280px]:w-[1280px] min-[1280px]:grid-cols-[220px_minmax(0,1fr)_320px]">
+      <div className="shell-grid">
         <nav
           aria-label={t('shell.navigation')}
           data-shell-scroll="left"
@@ -54,12 +64,14 @@ export function Shell({ header, left, center, right, scroll_key }: ShellProps) {
           {left}
         </nav>
         <main className="min-w-0 pt-4 pb-[var(--tab-bar-space)]">{center}</main>
-        <aside
-          aria-label={t('shell.popular_comments')}
-          className="sticky pt-4 top-14 hidden w-[320px] max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[1280px]:block"
-        >
-          {right}
-        </aside>
+        {show_rail ? (
+          <aside
+            aria-label={t('shell.popular_comments')}
+            className="sticky pt-4 top-14 hidden w-[320px] max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[1280px]:block"
+          >
+            {right}
+          </aside>
+        ) : null}
       </div>
       <BackToTop />
       <LeftNavDrawer is_open={is_nav_open} onOpenChange={setNavOpen}>

@@ -73,7 +73,7 @@ export default function ArticlePage() {
     return <ArticleUnavailable status="unavailable" />
   }
   return (
-    <div className="flex flex-col gap-4 max-w-[640px] mx-auto">
+    <div className="flex flex-col gap-4 max-w-[var(--shell-content-width,640px)] mx-auto">
       <ArticleView article={loaded}>
         <ArticleView.Byline
           follow={

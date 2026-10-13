@@ -21,7 +21,6 @@ export function mergeSettingsSection(
         logo_dark_url: draft.logo_dark_url,
         favicon: draft.favicon,
         locale: draft.locale,
-        about: draft.about,
       }
     case 'access':
       return {
@@ -29,6 +28,8 @@ export function mergeSettingsSection(
         registration_open: draft.registration_open,
         new_members_can_publish: draft.new_members_can_publish,
       }
+    case 'layout':
+      return { ...current, shell: draft.shell }
     case 'reactions':
       return { ...current, reaction_appearances: draft.reaction_appearances }
     case 'status-icons':

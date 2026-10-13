@@ -31,6 +31,7 @@ function card(row: ModerationArticle) {
       display_name: row.profile?.display_name ?? '',
       avatar_url: row.profile?.avatar_url ?? null,
       slug: row.profile?.slug ?? String(row.user?.public_number ?? ''),
+      status_icon_id: row.profile?.status_icon_id ?? null,
     },
     topic: {
       id: row.topic.id,

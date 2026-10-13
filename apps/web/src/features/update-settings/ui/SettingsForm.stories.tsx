@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
+import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SHELL_VISIBILITY } from '@blog/contracts'
 import { StoryProviders } from '@/shared/api/mocks'
 import type { AdminSettings } from '../api/update-settings.ts'
 import { SettingsForm } from './SettingsForm.tsx'
@@ -9,11 +9,11 @@ const initial: AdminSettings = {
   name: 'Блог',
   logo_url: null,
   locale: 'ru',
-  about: 'О проекте',
   registration_open: true,
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
   profile_status_icons: [],
+  shell: DEFAULT_SHELL_VISIBILITY,
 }
 
 function upload({ label, onUploaded }: { label: string; onUploaded: (url: string) => void }) {

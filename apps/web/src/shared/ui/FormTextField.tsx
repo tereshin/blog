@@ -1,3 +1,4 @@
+import { FieldLabel } from './FieldLabel.tsx'
 import { useId, useState } from 'react'
 import type { ComponentProps } from 'react'
 import { cn } from '@/shared/lib'
@@ -12,6 +13,7 @@ type FormTextFieldProps = ComponentProps<typeof Input> & {
 
 export function FormTextField({
   label,
+  size = 'lg',
   hint,
   error,
   id,
@@ -39,13 +41,15 @@ export function FormTextField({
       .filter(Boolean)
       .join(' ') || undefined
   return (
-    <div className="flex w-full min-w-0 max-w-lg flex-col gap-3">
-      <label htmlFor={field_id} className="text-base font-semibold">
+    <div
+      className={cn('flex w-full min-w-0 max-w-lg flex-col', size === 'base' ? 'gap-2' : 'gap-3')}
+    >
+      <FieldLabel htmlFor={field_id} size={size}>
         {label}
-      </label>
+      </FieldLabel>
       <div className="relative min-w-0">
         <Input
-          size="lg"
+          size={size}
           variant="secondary"
           {...props}
           id={field_id}

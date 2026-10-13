@@ -7,15 +7,15 @@ import { useCommentInteractions } from '../model/useCommentInteractions.ts'
 import { CommentReactors } from './CommentReactors.tsx'
 import { CommentReportForm } from './CommentReportForm.tsx'
 
-type CommentOverflowMenuProps = { comment: CommentNode; onEdit?: () => void; onDelete?: () => void }
-export function CommentOverflowMenu({ comment, onEdit, onDelete }: CommentOverflowMenuProps) {
+type CommentOverflowMenuProps = { comment: CommentNode; href?: string; onEdit?: () => void; onDelete?: () => void }
+export function CommentOverflowMenu({ comment, href, onEdit, onDelete }: CommentOverflowMenuProps) {
   const { t } = useT()
   const { is_own } = useViewer()
   const toast = useToast()
   const [dialog, setDialog] = useState<'reactions' | 'report' | null>(null)
   const { bookmark, report, authorize } = useCommentInteractions(comment)
   const copyLink = async () => {
-    const url = new URL(window.location.href)
+    const url = new URL(href ?? window.location.href, window.location.origin)
     url.hash = `comment-${comment.id}`
     try {
       await navigator.clipboard.writeText(url.href)

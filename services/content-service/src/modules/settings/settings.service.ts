@@ -1,7 +1,9 @@
 import {
+  DEFAULT_SHELL_VISIBILITY,
   faviconSettingsSchema,
   reactionAppearancesSchema,
   seoSettingsSchema,
+  shellVisibilitySchema,
   socialCoverSettingsSchema,
 } from '@blog/contracts'
 import type {
@@ -11,6 +13,11 @@ import type {
   ServiceContext,
   UpdateSettings,
 } from '@blog/contracts'
+import {
+  sanitizeDocument,
+  hasContentBlock,
+} from '../../shared/editor-document/document.sanitizer.ts'
+import type { FileOwner } from '../../shared/editor-document/document.sanitizer.ts'
 import { requireSuperadmin } from '../access/require-superadmin.ts'
 import { assertMediaUrl } from '../media-url.ts'
 import { DEFAULT_REACTION_APPEARANCES, assertSingleEmoji } from './reaction-appearance.ts'
@@ -20,11 +27,11 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   name: 'Блог',
   logo_url: null,
   locale: 'ru',
-  about: '',
   registration_open: true,
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
   profile_status_icons: [],
+  shell: DEFAULT_SHELL_VISIBILITY,
 }
 
 function appearancesOf(value: ReactionAppearances): ReactionAppearances {
@@ -33,16 +40,17 @@ function appearancesOf(value: ReactionAppearances): ReactionAppearances {
 
 function toPublic(row: SettingsRow): PublicSettings {
   return {
+    welcome_content: row.welcome_content ?? null,
     name: row.name,
     logo_url: row.logo_url,
     logo_dark_url: row.logo_dark_url ?? null,
     favicon: faviconSettingsSchema.parse(row.favicon ?? {}),
     locale: row.locale,
-    about: row.about,
     reaction_appearances: appearancesOf(row.reaction_appearances),
     profile_status_icons: row.profile_status_icons,
     seo: seoSettingsSchema.parse(row.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
+    shell: shellVisibilitySchema.parse(row.shell ?? {}),
   }
 }
 
@@ -59,11 +67,11 @@ export const BOOTSTRAP_SETTINGS: SettingsRow = {
   name: 'Блог',
   logo_url: null,
   locale: 'ru',
-  about: '',
   registration_open: false,
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
   profile_status_icons: [],
+  shell: DEFAULT_SHELL_VISIBILITY,
 }
 
 export type SettingsService = {
@@ -90,7 +98,11 @@ function assertAppearances(appearances: ReactionAppearances, media_url: string):
 
 export function createSettingsService(
   repository: SettingsRepository,
-  options: { media_url: string; public_origin?: string },
+  options: {
+    media_url: string
+    public_origin?: string
+    lookupFile?: (url: string) => Promise<FileOwner | null>
+  },
 ): SettingsService {
   return {
     async getPublic() {
@@ -110,6 +122,30 @@ export function createSettingsService(
     async update(viewer, input, correlation_id) {
       requireSuperadmin(viewer)
       const current = await repository.find()
+      const previous = current?.welcome_content ?? null
+      const requested = input.welcome_content === undefined ? previous : input.welcome_content
+      const existing_urls = new Set<string>()
+      for (const block of previous?.document.blocks ?? []) {
+        if (block.type === 'image' || block.type === 'attaches')
+          existing_urls.add(block.data.file.url)
+      }
+      let welcome_content = requested
+        ? {
+            title: requested.title,
+            document: await sanitizeDocument(requested.document, {
+              author_id: viewer.user_id ?? '',
+              media_urls: [options.media_url],
+              existing_urls,
+              lookupFile: options.lookupFile ?? (async () => null),
+            }),
+          }
+        : null
+      if (
+        welcome_content &&
+        !welcome_content.title.trim() &&
+        !hasContentBlock(welcome_content.document.blocks)
+      )
+        welcome_content = null
       const seo = seoSettingsSchema.parse(input.seo ?? current?.seo ?? {})
       const social_cover = socialCoverSettingsSchema.parse(
         input.social_cover ?? current?.social_cover ?? {},
@@ -140,6 +176,7 @@ export function createSettingsService(
       }
       const saved = await repository.save(
         {
+          welcome_content,
           name: input.name,
           logo_url: input.logo_url,
           logo_dark_url:
@@ -148,13 +185,13 @@ export function createSettingsService(
               : input.logo_dark_url,
           favicon,
           locale: input.locale,
-          about: input.about,
           registration_open: input.registration_open,
           new_members_can_publish: input.new_members_can_publish,
           reaction_appearances: input.reaction_appearances,
           profile_status_icons: input.profile_status_icons,
           seo,
           social_cover,
+          shell: shellVisibilitySchema.parse(input.shell ?? current?.shell ?? {}),
         },
         correlation_id,
       )

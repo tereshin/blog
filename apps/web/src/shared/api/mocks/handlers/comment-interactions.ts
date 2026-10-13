@@ -216,11 +216,12 @@ export const commentInteractionHandlers = [
     const q = new URL(request.url).searchParams.get('q')?.toLowerCase() ?? ''
     return HttpResponse.json(
       [session.member, session.author, session.admin]
-        .filter((item) => item.profile.display_name.toLowerCase().includes(q))
+        .filter((item) => [item.profile.display_name, item.profile.slug ?? ''].some((value) => value.toLowerCase().includes(q)))
         .map((item) => ({
           user_id: item.user.id,
           display_name: item.profile.display_name,
           avatar_url: item.profile.avatar_url,
+          slug: item.profile.slug,
         })),
     )
   }),

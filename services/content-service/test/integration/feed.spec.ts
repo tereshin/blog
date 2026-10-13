@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { DEFAULT_SEO_SETTINGS, DEFAULT_SOCIAL_COVER_SETTINGS, DEFAULT_REACTION_APPEARANCES, feedPageSchema, topicListSchema } from '@blog/contracts'
+import { DEFAULT_SEO_SETTINGS, DEFAULT_SHELL_VISIBILITY, DEFAULT_SOCIAL_COVER_SETTINGS, DEFAULT_REACTION_APPEARANCES, feedPageSchema, topicListSchema } from '@blog/contracts'
 import type { FeedPage, ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -239,22 +239,22 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       name: 'Блог',
       logo_url: null,
       locale: 'ru',
-      about: '',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
+      shell: DEFAULT_SHELL_VISIBILITY,
     })
-    await database.db.insert(settings).values({ id: 1, name: 'Мой блог', locale: 'sr', about: 'О нас', reaction_appearances: DEFAULT_REACTION_APPEARANCES })
+    await database.db.insert(settings).values({ id: 1, name: 'Мой блог', locale: 'sr', reaction_appearances: DEFAULT_REACTION_APPEARANCES })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
       name: 'Мой блог',
       logo_url: null,
       locale: 'sr',
-      about: 'О нас',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
+      shell: DEFAULT_SHELL_VISIBILITY,
     })
   })
 })

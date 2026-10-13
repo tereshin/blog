@@ -1,6 +1,7 @@
 import {
   faviconSettingsSchema,
   seoSettingsSchema,
+  shellVisibilitySchema,
   socialCoverSettingsSchema,
 } from '@blog/contracts'
 import { useState } from 'react'
@@ -34,6 +35,7 @@ export function useSettingsForm(
     favicon: faviconSettingsSchema.parse(initial.favicon ?? {}),
     seo: seoSettingsSchema.parse(initial.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(initial.social_cover ?? {}),
+    shell: shellVisibilitySchema.parse(initial.shell ?? {}),
   }))
   const [appearance_draft, setAppearanceDraft] = useState(() =>
     draftsFrom(initial.reaction_appearances),

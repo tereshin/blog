@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { reactionCountsSchema, reactionKindSchema } from '@blog/contracts'
 import { http } from '@/shared/api'
 
 const itemSchema = z.object({
@@ -9,6 +10,9 @@ const itemSchema = z.object({
   article_slug: z.string(),
   created_at: z.string(),
   reaction_count: z.number().int().nonnegative(),
+  reaction_counts: reactionCountsSchema,
+  my_reaction: reactionKindSchema.nullable(),
+  is_bookmarked: z.boolean(),
 })
 
 const pageSchema = z.object({

@@ -1,3 +1,4 @@
+import { readMockPages } from './pages.ts'
 import { http, HttpResponse } from 'msw'
 import type { PageSeo } from '@blog/contracts'
 import { SOCIAL_COVER_SIZES, socialCoverPreviewSchema } from '@blog/contracts'
@@ -15,7 +16,6 @@ export const seoHandlers = [
       '/': settings.seo.title || settings.name,
       '/popular': 'Популярное',
       '/rating': 'Рейтинг',
-      '/about': 'О проекте',
       '/search': 'Поиск',
       '/write': 'Редактор',
       '/bookmarks': 'Закладки',
@@ -26,7 +26,7 @@ export const seoHandlers = [
       favicon: settings.favicon,
       status: 200,
       title: labels[path] ?? settings.name,
-      description: settings.seo.description || settings.about,
+      description: settings.seo.description || '',
       canonical_url: origin + path,
       robots: 'noindex, follow',
       site_name: settings.name,
@@ -35,6 +35,13 @@ export const seoHandlers = [
       images: null,
       body_text: '',
       structured_data: { '@context': 'https://schema.org', '@graph': [] },
+    }
+    if (path === '/about') page.status = 404
+    const simple_slug = /^\/pages\/([^/]+)$/.exec(path)?.[1]
+    if (simple_slug) {
+      const simple = readMockPages().find((p) => p.slug === simple_slug && p.status === 'published')
+      page.status = simple ? 200 : 404
+      page.title = simple ? `${simple.title} — ${settings.name}` : 'Страница не найдена'
     }
     const slug = /^\/p\/([^/]+)$/.exec(path)?.[1]
     if (slug) {

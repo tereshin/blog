@@ -11,12 +11,6 @@ declare module '@editorjs/attaches' {
   export default tool
 }
 
-declare module '@editorjs/personality' {
-  import type { ToolConstructable } from '@editorjs/editorjs'
-  const tool: ToolConstructable
-  export default tool
-}
-
 declare module '@editorjs/embed' {
   import type { ToolConstructable } from '@editorjs/editorjs'
   const tool: ToolConstructable

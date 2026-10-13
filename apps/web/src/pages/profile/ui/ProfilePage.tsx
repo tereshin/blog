@@ -40,7 +40,7 @@ export default function ProfilePage() {
   return (
     <Tabs
       variant="secondary"
-      className="gap-4 max-w-[640px] mx-auto"
+      className="gap-4 max-w-[var(--shell-content-width,640px)] mx-auto"
       selectedKey={tab}
       onSelectionChange={(key) => setTab(key === 'comments' ? 'comments' : 'posts')}
     >
@@ -77,8 +77,10 @@ export default function ProfilePage() {
         </ProfileCard.Content>
         <ProfileCard.Navigation><ProfileCard.Tabs /></ProfileCard.Navigation>
       </ProfileCard>
-      <FeedSortMenu sort={sort} onChange={setSort} />
-      <ProfileActivityFeed activity={activity} is_own={profile.is_own} />
+      <div className="[&>div]:px-4 sm:[&>div]:px-6 [&_.link]:text-foreground [&_.link]:text-[15px]">
+        <FeedSortMenu sort={sort} onChange={setSort} />
+      </div>
+      <ProfileActivityFeed activity={activity} profile={profile} />
     </Tabs>
   )
 }

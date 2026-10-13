@@ -7,7 +7,7 @@ export const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/
 
 /** Служебные сегменты адресов из `contracts/sections.md`. */
 export const RESERVED_SLUGS: readonly string[] = [
-  'popular', 'feed', 'messages', 'rating', 'bookmarks', 'search', 'about', 'write', 'admin', 'api', 'auth', 't', 'p', 'u',
+  'popular', 'feed', 'messages', 'rating', 'bookmarks', 'search', 'write', 'admin', 'api', 'auth', 't', 'p', 'u',
 ]
 
 /** Проверка без обращения к базе: форма, затем служебный список. */

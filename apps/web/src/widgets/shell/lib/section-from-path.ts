@@ -17,7 +17,7 @@ function decodeSegment(value: string | undefined): string {
   }
 }
 
-/** Адрес → раздел из таблицы `contracts/sections.md`. Неизвестный адрес не подсвечивает никого (`about`). */
+/** Адрес → раздел из таблицы `contracts/sections.md`. Неизвестный адрес не подсвечивает никого (`other`). */
 export function getSectionFromPath({ pathname, topics, article_topic_id }: SectionInput): SectionView {
   const [first, second, third] = pathname.split('/').filter(Boolean)
   switch (first) {
@@ -52,6 +52,6 @@ export function getSectionFromPath({ pathname, topics, article_topic_id }: Secti
           ? { kind: 'admin_settings' }
           : { kind: 'admin_moderation' }
     default:
-      return { kind: 'about' }
+      return { kind: 'other' }
   }
 }

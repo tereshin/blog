@@ -98,7 +98,6 @@ describe('seed-data: темы, профили, адреса, настройки'
     expect(settings.name).not.toBe('')
     expect(settings.logo_url).not.toBeNull()
     expect(settings.locale).toBe('ru')
-    expect(settings.about).not.toBe('')
     expect(settings.registration_open).toBe(true)
     expect(settings.new_members_can_publish).toBe(true)
   })

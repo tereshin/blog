@@ -11,14 +11,19 @@ function expectNear(actual: number, expected: number, tolerance = 1.5): void {
 }
 
 async function expectSearchBeforeNotifications(page: Page): Promise<void> {
-  const labels = await page.getByRole('banner').getByRole('button').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label')))
+  const labels = await page
+    .getByRole('banner')
+    .getByRole('button')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label')))
   const search_index = labels.indexOf('Поиск')
   const notes_index = labels.indexOf('Уведомления')
   expect(search_index).toBeGreaterThanOrEqual(0)
   expect(notes_index).toBe(search_index + 1)
 }
 
-async function columnPlacement(page: Page): Promise<{ display: string; below: boolean; width: number }> {
+async function columnPlacement(
+  page: Page,
+): Promise<{ display: string; below: boolean; width: number }> {
   return page.evaluate(() => {
     const aside = document.querySelector('aside')
     const main = document.querySelector('main')
@@ -34,7 +39,7 @@ async function columnPlacement(page: Page): Promise<{ display: string; below: bo
 test.describe('геометрия каркаса', () => {
   test.describe.configure({ timeout: 90_000 })
 
-  test('на 1440 полоса 1280 по центру, столбцы и шапка держат числа', async ({ page }) => {
+  test('на 1440 полоса 1212 по центру, столбцы и шапка держат числа', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/')
     const banner = page.getByRole('banner')
@@ -62,13 +67,19 @@ test.describe('геометрия каркаса', () => {
     expectNear(rail_box.width, 320)
     expectNear(main_box.x - (nav_box.x + nav_box.width), 16)
     expectNear(rail_box.x - (main_box.x + main_box.width), 16)
-    expectNear(main_box.width, 708)
-    expectNear(rail_box.x + rail_box.width - nav_box.x, 1280)
-    expectNear(nav_box.x, (1440 - 1280) / 2)
+    expectNear(main_box.width, 640)
+    expectNear(rail_box.x + rail_box.width - nav_box.x, 1212)
+    expectNear(nav_box.x, (1440 - 1212) / 2)
 
     const sticky = await nav.evaluate((element) => {
       const style = getComputedStyle(element)
-      return { position: style.position, top: style.top, overflow_y: style.overflowY, align_self: style.alignSelf, max_height: Number.parseFloat(style.maxHeight) }
+      return {
+        position: style.position,
+        top: style.top,
+        overflow_y: style.overflowY,
+        align_self: style.alignSelf,
+        max_height: Number.parseFloat(style.maxHeight),
+      }
     })
     expect(sticky.position).toBe('sticky')
     expect(sticky.top).toBe('56px')
@@ -81,7 +92,9 @@ test.describe('геометрия каркаса', () => {
     await expect(page.getByText('Подписка Plus')).toHaveCount(0)
   })
 
-  test('прокрутка статьи двигает документ, шапка и столбцы остаются, «Наверх» возвращает в начало', async ({ page }) => {
+  test('прокрутка статьи двигает документ, шапка и столбцы остаются, «Наверх» возвращает в начало', async ({
+    page,
+  }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_article_length', 'long'))
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/p/statya-1')
@@ -97,7 +110,8 @@ test.describe('геометрия каркаса', () => {
     await expect(title).toContainText(/Статья 1:/)
     const truncated = await title.evaluate((element) => {
       const original = element.textContent
-      element.textContent = 'Очень длинное название раздела, которое не помещается в одну строку шапки и должно обрезаться многоточием на краю'
+      element.textContent =
+        'Очень длинное название раздела, которое не помещается в одну строку шапки и должно обрезаться многоточием на краю'
       const style = getComputedStyle(element)
       const header = element.closest('[role="banner"]')
       const result = {
@@ -128,7 +142,7 @@ test.describe('геометрия каркаса', () => {
     const after_banner = await banner.boundingBox()
     const after_nav = await nav.boundingBox()
     const after_rail = await rail.boundingBox()
-    expect((after_paragraph?.y ?? 0)).toBeLessThan((before.paragraph?.y ?? 0) - 200)
+    expect(after_paragraph?.y ?? 0).toBeLessThan((before.paragraph?.y ?? 0) - 200)
     expectNear(after_banner?.y ?? -1, before.banner?.y ?? 0)
     expectNear(after_nav?.y ?? -1, before.nav?.y ?? 0)
     expectNear(after_rail?.y ?? -1, before.rail?.y ?? 0)
@@ -160,7 +174,7 @@ test.describe('геометрия каркаса', () => {
     expectNear(rail_box?.width ?? 0, 320)
     expectNear((main_box?.x ?? 0) - ((nav_box?.x ?? 0) + (nav_box?.width ?? 0)), 16)
     expectNear((rail_box?.x ?? 0) - ((main_box?.x ?? 0) + (main_box?.width ?? 0)), 16)
-    expectNear(main_box?.width ?? 0, 708)
+    expectNear(main_box?.width ?? 0, 640)
     await expect(page.locator('[aria-label="Открыть навигацию"]')).toBeHidden()
     await expectSearchBeforeNotifications(page)
   })
@@ -185,12 +199,18 @@ test.describe('геометрия каркаса', () => {
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100)
     const after_title = await title.boundingBox()
     const after_field = await field.boundingBox()
-    expectNear((after_field?.y ?? 0) - (after_title?.y ?? 0), (before_field?.y ?? 0) - (before_title?.y ?? 0), 2)
-    expect((after_title?.y ?? 0)).toBeLessThan((before_title?.y ?? 0) - 50)
+    expectNear(
+      (after_field?.y ?? 0) - (after_title?.y ?? 0),
+      (before_field?.y ?? 0) - (before_title?.y ?? 0),
+      2,
+    )
+    expect(after_title?.y ?? 0).toBeLessThan((before_title?.y ?? 0) - 50)
     await expect(page.getByRole('navigation', { name: NAV_NAME })).toBeVisible()
   })
 
-  test('на 1024px левый столбец остаётся, правого нет на главной, в профиле и в настройках', async ({ page }) => {
+  test('на 1024px левый столбец остаётся, правого нет на главной, в профиле и в настройках', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1024, height: 800 })
     await page.goto('/')
     const nav = page.getByRole('navigation', { name: NAV_NAME })
@@ -203,7 +223,7 @@ test.describe('геометрия каркаса', () => {
     const main_box = await main.boundingBox()
     expectNear(nav_box?.width ?? 0, 220)
     expectNear((main_box?.x ?? 0) - ((nav_box?.x ?? 0) + (nav_box?.width ?? 0)), 16)
-    expect((main_box?.x ?? 0) + (main_box?.width ?? 0)).toBeGreaterThan(1024 - 8)
+    expect((main_box?.x ?? 0) + (main_box?.width ?? 0)).toBeLessThanOrEqual(1024)
 
     const before = await nav.boundingBox()
     await page.evaluate(() => window.scrollTo(0, 700))
@@ -234,7 +254,7 @@ test.describe('геометрия каркаса', () => {
     expect(placement.display).toBe('none')
     expect(placement.below).toBe(false)
     const main_box = await page.getByRole('main').boundingBox()
-    expect((main_box?.x ?? 0) + (main_box?.width ?? 0)).toBeGreaterThan(1024 - 8)
+    expect((main_box?.x ?? 0) + (main_box?.width ?? 0)).toBeLessThanOrEqual(1024)
   })
 
   test('на 390px одна колонка, одна кнопка шапки открывает навигацию', async ({ page }) => {
@@ -257,13 +277,18 @@ test.describe('геометрия каркаса', () => {
     await expect(page.getByText('Подписка Plus')).toHaveCount(0)
   })
 
-  test('на 390px действия шапки — панель внизу, на статье вместо бургера «Назад»', async ({ page }) => {
+  test('на 390px действия шапки — панель внизу, на статье вместо бургера «Назад»', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
     const banner = page.getByRole('banner')
     const search_box = await banner.getByRole('button', { name: 'Поиск' }).boundingBox()
     expect(search_box?.y ?? 0).toBeGreaterThan(844 - 100)
-    await expect(banner.getByRole('link', { name: 'Главная' })).toHaveAttribute('aria-current', 'page')
+    await expect(banner.getByRole('link', { name: 'Главная' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await expect(banner.getByRole('link', { name: 'Сообщения' })).toBeVisible()
     await expect(banner.getByRole('button', { name: 'Написать' })).toBeVisible()
 

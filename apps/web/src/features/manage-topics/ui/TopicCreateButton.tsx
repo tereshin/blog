@@ -14,7 +14,7 @@ export function TopicCreateButton() {
         aria-label={t('admin.topics.create')}
         onPress={() => setOpen(true)}
       >
-        <BaseIcon name="add" size={18} />
+        <BaseIcon name="add" style="line" className="text-muted" size={12} />
       </Button>
       <TopicDialog is_open={is_open} onOpenChange={setOpen} />
     </>

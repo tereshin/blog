@@ -16,7 +16,7 @@ export function BackToTop() {
   if (!is_scrolled) return null
   return (
     <Button
-      variant="secondary"
+      variant="tertiary"
       isIconOnly
       aria-label={t('common.back_to_top')}
       className="fixed bottom-[max(1rem,var(--tab-bar-space))] left-4 z-30 size-11 rounded-full shadow-lg"

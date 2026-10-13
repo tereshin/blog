@@ -7,8 +7,7 @@ import { DataTable } from '@/shared/ui/DataTable'
 import type { DataColumn } from '@/shared/ui/DataTable'
 import { useManageTopics } from '../model/useManageTopics.ts'
 import { TopicDialog } from './TopicDialog.tsx'
-import type { TopicUpload } from './TopicForm.tsx'
-export function TopicManagement({ upload }: { upload: TopicUpload }) {
+export function TopicManagement() {
   const { t } = useT()
   const { topics, update, reorder, move } = useManageTopics()
   const [dialog, setDialog] = useState<'create' | Topic | null>(null)
@@ -109,7 +108,6 @@ export function TopicManagement({ upload }: { upload: TopicUpload }) {
       ) : null}
       <TopicDialog
         initial={dialog && dialog !== 'create' ? dialog : undefined}
-        upload={dialog === 'create' ? undefined : upload}
         is_open={dialog !== null}
         onOpenChange={(open) => {
           if (!open) setDialog(null)

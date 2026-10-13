@@ -18,7 +18,7 @@ const CASES: Array<[string, SectionView, ReturnType<typeof getHighlightedItem>]>
   ['Рейтинг /rating', { kind: 'rating' }, { kind: 'rating' }],
   ['Закладки', { kind: 'bookmarks' }, null],
   ['Поиск', { kind: 'search' }, null],
-  ['О проекте', { kind: 'about' }, null],
+  ['Другие страницы', { kind: 'other' }, null],
   ['Новый редактор', { kind: 'write' }, null],
   ['Правка', { kind: 'write_edit' }, null],
   ['Модерация', { kind: 'admin_moderation' }, null],

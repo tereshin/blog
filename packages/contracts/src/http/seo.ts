@@ -22,13 +22,11 @@ export const seoSettingsSchema = z.strictObject({
       home: pageOverrideSchema.default({ title: '', description: '' }),
       popular: pageOverrideSchema.default({ title: '', description: '' }),
       rating: pageOverrideSchema.default({ title: '', description: '' }),
-      about: pageOverrideSchema.default({ title: '', description: '' }),
     })
     .default({
       home: { title: '', description: '' },
       popular: { title: '', description: '' },
       rating: { title: '', description: '' },
-      about: { title: '', description: '' },
     }),
   publisher: z
     .strictObject({

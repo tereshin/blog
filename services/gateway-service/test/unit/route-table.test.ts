@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { filterRequestHeaders, filterResponseHeaders, limitBytes, PayloadTooLargeError, resolveRoute } from '../../src/modules/proxy/index.ts'
+import {
+  filterRequestHeaders,
+  filterResponseHeaders,
+  limitBytes,
+  PayloadTooLargeError,
+  resolveRoute,
+} from '../../src/modules/proxy/index.ts'
 
 describe('resolveRoute', () => {
   it.each([
     ['/v1/auth/google/start', 'identity'],
     ['/v1/feed?mode=fresh', 'content'],
+    ['/v1/pages/contacts', 'content'],
+    ['/v1/admin/pages?status=draft', 'content'],
+    ['/v1/admin/pages/33333333-3333-4333-8333-333333333333', 'content'],
+    ['/v1/nav-sections', 'content'],
+    ['/v1/admin/nav-sections', 'content'],
+    ['/v1/admin/nav-sections/33333333-3333-4333-8333-333333333333/items', 'content'],
     ['/v1/feed/popular', 'content'],
     ['/v1/feed-seen', 'discussion'],
     ['/v1/me/article-states', 'discussion'],

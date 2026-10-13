@@ -1,12 +1,13 @@
 import type { EditorConfig } from '@editorjs/editorjs'
 import type EditorJS from '@editorjs/editorjs'
 import { uploadEditorFile } from './editor-uploader.ts'
+import { PersonTool } from './person-tool.ts'
 
 type EditorTools = NonNullable<EditorConfig['tools']>
 
 /** Инструменты подгружаются только в браузере: пакеты Editor.js трогают `window` при импорте. */
 export async function loadEditor(): Promise<{ Editor: typeof EditorJS; tools: EditorTools }> {
-  const [editor_module, header, list, quote, warning, delimiter, code, inline_code, marker, underline, image, attaches, embed, table, personality] =
+  const [editor_module, header, list, quote, warning, delimiter, code, inline_code, marker, underline, image, attaches, embed, table] =
     await Promise.all([
       import('@editorjs/editorjs'),
       import('@editorjs/header'),
@@ -22,7 +23,6 @@ export async function loadEditor(): Promise<{ Editor: typeof EditorJS; tools: Ed
       import('@editorjs/attaches'),
       import('@editorjs/embed'),
       import('@editorjs/table'),
-      import('@editorjs/personality'),
     ])
 
   const tools: EditorTools = {
@@ -39,7 +39,7 @@ export async function loadEditor(): Promise<{ Editor: typeof EditorJS; tools: Ed
     attaches: { class: attaches.default, config: { uploader: { uploadByFile: (file: File) => uploadEditorFile(file, 'attachment') } } },
     embed: { class: embed.default, config: { services: { youtube: true, vimeo: true, twitter: true, github: true, codepen: true } } },
     table: table.default,
-    personality: personality.default,
+    personality: PersonTool,
   }
 
   return { Editor: editor_module.default, tools }

@@ -1,7 +1,14 @@
 import { z } from 'zod'
+import { blocksDocumentSchema } from './blocks.ts'
 import { faviconSettingsSchema } from './site-assets.ts'
 import { reactionKindSchema } from './feed.ts'
 import { seoSettingsSchema, socialCoverSettingsSchema } from './seo.ts'
+
+export const welcomeContentSchema = z.object({
+  title: z.string().trim().max(300),
+  document: blocksDocumentSchema,
+})
+export type WelcomeContent = z.infer<typeof welcomeContentSchema>
 
 export const localeSchema = z.enum(['ru', 'en', 'sr'])
 
@@ -77,35 +84,58 @@ export const profileStatusIconsSchema = z
   })
 export type ProfileStatusIcon = z.infer<typeof profileStatusIconSchema>
 
+/** Видимость пунктов левого меню и блока «Популярные комментарии». Пропуск поля значит «показать». */
+export const DEFAULT_SHELL_VISIBILITY = {
+  popular: true,
+  fresh: true,
+  mine: true,
+  messages: true,
+  rating: true,
+  popular_comments: true,
+}
+
+export const shellVisibilitySchema = z.strictObject({
+  popular: z.boolean().default(true),
+  fresh: z.boolean().default(true),
+  mine: z.boolean().default(true),
+  messages: z.boolean().default(true),
+  rating: z.boolean().default(true),
+  popular_comments: z.boolean().default(true),
+})
+export type ShellVisibility = z.infer<typeof shellVisibilitySchema>
+
 /** Публичные настройки площадки: `GET /v1/settings`. Закрытые поля (регистрация) сюда не попадают. */
 export const publicSettingsSchema = z.strictObject({
+  welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string(),
   logo_url: z.string().nullable(),
   logo_dark_url: z.string().nullable().optional(),
   favicon: faviconSettingsSchema.optional(),
   locale: localeSchema,
-  about: z.string(),
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
   seo: seoSettingsSchema.optional(),
   social_cover: socialCoverSettingsSchema.optional(),
+  shell: shellVisibilitySchema.default(DEFAULT_SHELL_VISIBILITY),
 })
 export type PublicSettings = z.infer<typeof publicSettingsSchema>
 
 /** То, что сохраняет суперадминистратор. Публичный ответ эти флаги не отдаёт. */
 export const updateSettingsSchema = z.strictObject({
+  welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string().max(100),
   logo_url: z.string().nullable(),
   logo_dark_url: z.string().nullable().optional(),
   favicon: faviconSettingsSchema.optional(),
   locale: localeSchema,
-  about: z.string(),
   registration_open: z.boolean(),
   new_members_can_publish: z.boolean(),
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
   seo: seoSettingsSchema.optional(),
   social_cover: socialCoverSettingsSchema.optional(),
+  /** Нет поля — оставить сохранённую видимость. Пустой объект включает все разделы. */
+  shell: shellVisibilitySchema.optional(),
 })
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>
 

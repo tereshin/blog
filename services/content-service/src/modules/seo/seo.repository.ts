@@ -26,7 +26,6 @@ export function createSeoRepository(db: NodePgDatabase): SeoRepository {
         .select({
           favicon: settings.favicon,
           name: settings.name,
-          about: settings.about,
           logo_url: settings.logo_url,
           locale: settings.locale,
           seo: settings.seo,
@@ -38,7 +37,6 @@ export function createSeoRepository(db: NodePgDatabase): SeoRepository {
       return {
         favicon: row?.favicon,
         name: row?.name || 'Блог',
-        about: row?.about ?? '',
         logo_url: row?.logo_url ?? null,
         locale: row?.locale ?? 'ru',
         seo: seoSettingsSchema.parse(row?.seo ?? {}),

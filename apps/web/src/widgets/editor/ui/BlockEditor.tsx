@@ -4,10 +4,12 @@ import type { BlocksDocument } from '@blog/contracts'
 import type EditorJS from '@editorjs/editorjs'
 import type { OutputData } from '@editorjs/editorjs'
 import { useT } from '@/shared/i18n'
+import { uploadEditorFile, editorUploadCount } from '../lib/editor-uploader.ts'
+import { PersonTool } from '../lib/person-tool.ts'
 import { TitleTool } from '../lib/title-tool.ts'
 import { loadEditor } from '../lib/load-editor.ts'
 import { parseEditorOutput } from '../lib/normalize-document.ts'
-import type { BlockEditorHandle } from '../model/useEditorDocument.ts'
+import type { BlockEditorHandle, EditorSnapshot } from '../model/useEditorDocument.ts'
 import { EditorSkeleton } from './EditorSkeleton.tsx'
 import '../styles/editorjs.css'
 
@@ -43,6 +45,7 @@ export function BlockEditor({
   const saved_blocks = useRef<string | null>(null)
   const on_dirty = useRef(onDirty)
   const on_ready = useRef(onReady)
+  const [retry, setRetry] = useState(0)
   const [phase, setPhase] = useState<'loading' | 'ready' | 'failed'>('loading')
 
   useEffect(() => {
@@ -50,7 +53,31 @@ export function BlockEditor({
     on_ready.current = onReady
   }, [onDirty, onReady])
 
+  async function readSnapshot(): Promise<EditorSnapshot> {
+    const editor = editor_ref.current
+    if (!editor || !ready_ref.current) throw new Error('Редактор ещё не готов')
+    if (editorUploadCount()) throw new Error('Загрузка файлов ещё не завершена')
+    const output = await editor.save()
+    const title_block = output.blocks.find((block) => block.type === 'title')
+    const snapshot_title =
+      typeof title_block?.data['text'] === 'string' ? title_block.data['text'] : ''
+    return {
+      title: snapshot_title,
+      document: parseEditorOutput({
+        ...output,
+        blocks: output.blocks.filter((block) => block.type !== 'title'),
+      }),
+      fingerprint: JSON.stringify(output.blocks),
+    }
+  }
+
   useImperativeHandle(handle_ref, () => ({
+    readSnapshot,
+    async acknowledge(snapshot) {
+      const current = await readSnapshot()
+      saved_blocks.current = snapshot.fingerprint
+      return current.fingerprint === snapshot.fingerprint
+    },
     async save() {
       const editor = editor_ref.current
       if (!editor) throw new Error('Редактор ещё не готов')
@@ -81,7 +108,17 @@ export function BlockEditor({
               class: TitleTool,
               config: { placeholder: title_placeholder, onChange: onTitleChange },
             },
+            personality: {
+              class: PersonTool,
+              config: {
+                name_placeholder: t('editor.person.name'),
+                position_placeholder: t('editor.person.position'),
+                photo_label: t('editor.person.photo'),
+                upload_by_file: (file: File) => uploadEditorFile(file, 'image'),
+              },
+            },
           },
+          i18n: { messages: { toolNames: { Person: t('editor.person') } } },
           placeholder,
           // Документ контракта совпадает с OutputData, но разделитель может прийти без data.
           data: {
@@ -100,7 +137,9 @@ export function BlockEditor({
             try {
               const output = await editor.save()
               const title_block = output.blocks.find((block) => block.type === 'title')
-              onTitleChange(typeof title_block?.data['text'] === 'string' ? title_block.data['text'] : '')
+              onTitleChange(
+                typeof title_block?.data['text'] === 'string' ? title_block.data['text'] : '',
+              )
               if (JSON.stringify(output.blocks) !== saved_blocks.current) on_dirty.current()
             } catch {
               on_dirty.current()
@@ -112,6 +151,7 @@ export function BlockEditor({
           editor.destroy()
           return
         }
+        saved_blocks.current = JSON.stringify((await editor.save()).blocks)
         editor_ref.current = editor
         ready_ref.current = true
         setPhase('ready')
@@ -134,13 +174,31 @@ export function BlockEditor({
     }
     // Начальные блоки читаются один раз: повторный эффект уничтожил бы несохранённый текст.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placeholder])
+  }, [placeholder, retry])
 
   return (
     <div className="editor-holder relative min-h-48" data-editor={phase}>
       {phase === 'loading' ? <EditorSkeleton /> : null}
-      {phase === 'failed' ? <p className="text-sm text-danger">{t('error.unknown')}</p> : null}
-      <div ref={holder_ref} />
+      {phase === 'failed' ? (
+        <div>
+          <p className="text-sm text-danger">{t('error.unknown')}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setPhase('loading')
+              setRetry((value) => value + 1)
+            }}
+          >
+            {t('common.retry')}
+          </button>
+        </div>
+      ) : null}
+      <div
+        ref={holder_ref}
+        onInput={() => {
+          if (ready_ref.current) on_dirty.current()
+        }}
+      />
     </div>
   )
 }

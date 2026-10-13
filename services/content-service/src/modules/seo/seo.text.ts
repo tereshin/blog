@@ -28,7 +28,7 @@ export function documentText(value: unknown): string {
       case 'table': return plainText(block.data.content.flat().join(' '))
       case 'image': return plainText(block.data.caption ?? '')
       case 'attaches': return plainText(block.data.title)
-      case 'personality': return plainText(`${block.data.name} ${block.data.description ?? ''}`)
+      case 'personality': return plainText(`${block.data.name} ${block.data.position ?? ''}`)
       default: return ''
     }
   }).filter(Boolean).join('\n')

@@ -1,5 +1,7 @@
 import { delay, HttpResponse, http } from 'msw'
 import { readMockViewer } from './session.ts'
+import { mockCommentBookmarked, mockViewerId, readStoredComments } from './discussion-store.ts'
+import { mockFeedArticles } from './feed.ts'
 
 type ProfileBody = Partial<{
   display_name: string
@@ -39,6 +41,7 @@ const anna = {
   avatar_url: null,
   cover_url: null,
   slug: 'anna',
+  status_icon_id: null as string | null,
   reputation: 12,
   created_at: '2020-01-01T00:00:00.000Z',
   followers_count: 3,
@@ -55,7 +58,7 @@ const article = {
   excerpt: 'Короткий фрагмент статьи.',
   first_image_url: null,
   published_at: '2026-10-01T10:00:00.000Z',
-  author: { user_id: READER, display_name: 'Роман Читаев', avatar_url: null, slug: 'reader' },
+  author: { user_id: READER, display_name: 'Роман Читаев', avatar_url: null, slug: 'reader', status_icon_id: null },
   topic: { id: '5f0f6a52-0d8b-4f6e-a8b1-000000000001', title: 'Технологии', slug: 'tehnologii', status: 'active' },
   reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 0 },
   reaction_count: 0,
@@ -76,6 +79,9 @@ const comment = {
   article_slug: article.slug,
   created_at: '2026-10-02T10:00:00.000Z',
   reaction_count: 2,
+  reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 2 },
+  my_reaction: null,
+  is_bookmarked: false,
 }
 
 function profileOf(slug: string) {
@@ -102,7 +108,13 @@ export const profileHandlers = [
   http.get('*/v1/profiles/:slug/articles', ({ params }) => {
     const found = profileOf(String(params.slug))
     if (!found) return HttpResponse.json({ code: 'not_found', title: 'Профиль не найден', status: 404 }, { status: 404 })
-    const author = { user_id: found.user_id, display_name: found.display_name, avatar_url: found.avatar_url, slug: found.slug ?? String(found.public_number) }
+    const author = {
+      user_id: found.user_id,
+      display_name: found.display_name,
+      avatar_url: found.avatar_url,
+      slug: found.slug ?? String(found.public_number),
+      status_icon_id: found.status_icon_id,
+    }
     return HttpResponse.json({ items: [{ ...article, author }], next_cursor: null })
   }),
   http.get('*/v1/profiles/:slug/followers', () =>
@@ -112,7 +124,37 @@ export const profileHandlers = [
     }),
   ),
   http.get('*/v1/profiles/:slug/following', () => HttpResponse.json({ items: [], next_cursor: null })),
-  http.get('*/v1/users/:user_id/comments', () => HttpResponse.json({ items: [comment], next_cursor: null })),
+  http.get('*/v1/users/:user_id/comments', ({ params, request }) => {
+    const url = new URL(request.url)
+    const cursor = url.searchParams.get('cursor')
+    if (cursor && window.localStorage.getItem('mock_profile_comments_fail_next') === '1') {
+      return HttpResponse.json({ code: 'unavailable', title: 'Сервис недоступен' }, { status: 503 })
+    }
+    const viewer_id = mockViewerId()
+    const stored = readStoredComments().filter((item) => item.author.user_id === params.user_id && item.status === 'visible')
+    const items = stored.flatMap((item) => {
+      const article = mockFeedArticles.find((article) => article.id === item.article_id)
+      return article ? [{
+        id: item.id,
+        excerpt: item.body,
+        article_id: article.id,
+        article_title: article.title,
+        article_slug: article.slug,
+        created_at: item.created_at,
+        reaction_counts: item.reaction_counts,
+        reaction_count: Object.values(item.reaction_counts).reduce((sum, count) => sum + count, 0),
+        my_reaction: viewer_id ? item.reactions[viewer_id] ?? null : null,
+        is_bookmarked: mockCommentBookmarked(item.id, viewer_id),
+      }] : []
+    })
+    if (!stored.length) return HttpResponse.json({ items: [comment], next_cursor: null })
+    items.sort((a, b) => url.searchParams.get('sort') === 'popular'
+      ? b.reaction_count - a.reaction_count || b.id.localeCompare(a.id)
+      : b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id))
+    const start = cursor ? items.findIndex((item) => item.id === cursor) + 1 : 0
+    const page = items.slice(start, start + 20)
+    return HttpResponse.json({ items: page, next_cursor: items.length > start + 20 ? page.at(-1)?.id : null })
+  }),
   http.get('*/v1/profiles/:slug', async ({ params }) => {
     if (window.localStorage.getItem('mock_profile_delay') === '1') await delay(2000)
     const found = profileOf(String(params.slug))

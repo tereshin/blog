@@ -28,7 +28,7 @@ type FeedProps = FeedSlots & {
 
 function FeedSkeletons({ count }: { count: number }) {
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4 max-w-[640px] mx-auto">
+    <div className="flex w-full min-w-0 flex-col gap-4 max-w-[var(--shell-content-width,640px)] mx-auto">
       {Array.from({ length: count }, (_, index) => (
         <ArticleCard.Skeleton key={index} />
       ))}
@@ -110,7 +110,7 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
   return (
     <div
       ref={root_ref}
-      className="flex w-full min-w-0 flex-col gap-4 max-w-[640px] mx-auto"
+      className="flex w-full min-w-0 flex-col gap-4 max-w-[var(--shell-content-width,640px)] mx-auto"
       onClick={rememberReturn}
     >
       {visible_ids.length > 0 ? (

@@ -79,6 +79,9 @@ export const userCommentSchema = z.strictObject({
   article_slug: z.string(),
   created_at: z.iso.datetime(),
   reaction_count: z.number().int().nonnegative(),
+  reaction_counts: reactionCountsSchema,
+  my_reaction: reactionKindSchema.nullable(),
+  is_bookmarked: z.boolean(),
 })
 export type UserComment = z.infer<typeof userCommentSchema>
 

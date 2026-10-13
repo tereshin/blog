@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test'
 const SETTINGS = [
   ['/admin/settings/general', 'Общие настройки'],
   ['/admin/settings/access', 'Регистрация и публикации'],
+  ['/admin/settings/layout', 'Оболочка'],
   ['/admin/settings/reactions', 'Виды реакций'],
   ['/admin/settings/status-icons', 'Иконки статусов профиля'],
   ['/admin/settings/seo', 'SEO'],
@@ -43,7 +44,7 @@ for (const role of ['guest', 'member', 'admin', 'superadmin'] as const) {
       await link.click()
       await expect(page).toHaveURL('/admin')
       const nav = page.getByRole('navigation', { name: 'Админка', exact: true })
-      await expect(nav.getByRole('link')).toHaveCount(role === 'superadmin' ? 4 : 1)
+      await expect(nav.getByRole('link')).toHaveCount(role === 'superadmin' ? 6 : 1)
       if (role === 'superadmin') {
         await expect(nav.getByRole('link', { name: /^Участники/ })).toBeVisible()
         await expect(nav.getByRole('link', { name: /^Темы/ })).toBeVisible()
@@ -167,6 +168,8 @@ test('администратор видит только модерацию, з�
     ...SETTINGS.map(([path]) => path),
     '/admin/members',
     '/admin/topics',
+    '/admin/pages',
+    '/admin/sections',
   ]) {
     await page.goto(path)
     await expect(page.getByText('Раздел доступен только администратору площадки')).toBeVisible()

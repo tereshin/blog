@@ -1,17 +1,22 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { Autocomplete } from 'react-aria-components/Autocomplete'
 import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, Menu, Textarea } from '@/shared/ui'
+import { BaseIcon, Button } from '@/shared/ui'
+import { CommentEditor } from './CommentEditor.tsx'
 import { CommentAttachments } from './CommentAttachments.tsx'
 import { CommentExtras } from './CommentExtras.tsx'
+import { CommentMentionSuggestions } from './CommentMentionSuggestions.tsx'
+import type { CommentMention } from '../lib/comment-mentions.ts'
 import { useCommentExtras } from '../model/useCommentExtras.ts'
 import { useCommentDrafts } from '../model/useCommentDrafts.ts'
+import { useCommentMentions } from '../model/useCommentMentions.ts'
 import { useSendComment } from '../model/useSendComment.ts'
 
 type ReplyTarget = { id: string; name: string }
-
 type CommentFormProps = {
   article_id: string
+  author?: CommentMention
   comments_enabled: boolean
   parent: ReplyTarget | null
   onCancelReply: () => void
@@ -19,11 +24,10 @@ type CommentFormProps = {
   requireSession: (action: () => void) => void
 }
 
-const COMMENT_EMOJI = ['😀', '😂', '❤️', '👍', '🔥', '🎉', '🤔', '🙏']
-
-/** Компактное поле раскрывается при вводе; черновик и семантика textarea сохраняются. */
+/** A compact composer expands on focus; mentions are selected inline at the caret. */
 export function CommentForm({
   article_id,
+  author,
   comments_enabled,
   parent,
   onCancelReply,
@@ -35,27 +39,25 @@ export function CommentForm({
   const extras = useCommentExtras()
   const draft = useCommentDrafts(article_id, parent?.id ?? null)
   const [is_focused, setFocused] = useState(false)
-  const field_ref = useRef<HTMLTextAreaElement>(null)
+  const field_ref = useRef<HTMLDivElement>(null)
+  const block = memberMutationBlock(viewer)
+  const mention = useCommentMentions({
+    draft,
+    field_ref,
+    author,
+    is_focused,
+    can_search: viewer.status === 'member' && block === null,
+  })
   const is_expanded =
-    is_focused ||
-    draft.text.length > 0 ||
-    Boolean(parent) ||
-    extras.media.length > 0 ||
-    extras.mentions.length > 0
+    is_focused || draft.text.length > 0 || Boolean(parent) || extras.media.length > 0
   const send = useSendComment(article_id, (sent_parent) => {
     draft.clear()
     extras.clear()
+    mention.dismiss()
     if (sent_parent) onSent()
   })
-  useLayoutEffect(() => {
-    const field = field_ref.current
-    if (!field) return
-    field.style.height = 'auto'
-    field.style.height = `${Math.min(field.scrollHeight, 240)}px`
-  }, [draft.text, is_expanded])
 
   if (!comments_enabled) return null
-  const block = memberMutationBlock(viewer)
   if (block === 'restricted')
     return parent ? null : <p className="text-sm text-muted">{t('comment.restricted')}</p>
   const field_label = parent
@@ -68,24 +70,13 @@ export function CommentForm({
     block !== 'email_unverified'
   const submit = () => {
     if (!can_send) return
+    mention.dismiss()
     requireSession(() =>
       send.send(draft.text.trim(), parent?.id ?? null, {
         media: extras.media,
-        mentions: extras.mentions,
+        mentions: mention.mentions,
       }),
     )
-  }
-  const insertEmoji = (emoji: string) => {
-    const field = field_ref.current
-    const start = field?.selectionStart ?? draft.text.length
-    const end = field?.selectionEnd ?? start
-    const text = `${draft.text.slice(0, start)}${emoji}${draft.text.slice(end)}`
-    if (text.length > 5000) return
-    draft.update(text)
-    requestAnimationFrame(() => {
-      field?.focus()
-      field?.setSelectionRange(start + emoji.length, start + emoji.length)
-    })
   }
 
   return (
@@ -96,102 +87,102 @@ export function CommentForm({
         submit()
       }}
     >
-      <div
-        className="form-control form-control--base form-control--secondary rounded-xl"
-        onFocus={() => setFocused(true)}
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false)
-        }}
-      >
-        {parent ? (
-          <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2">
-            <BaseIcon
-              name="corner_up_right"
-              style="line"
-              size={16}
-              className="shrink-0 text-accent"
-            />
-            <span className="min-w-0 flex-1 truncate text-xs text-muted">{field_label}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              isIconOnly
-              aria-label={t('comment.cancel_reply')}
-              onPress={onCancelReply}
-            >
-              <BaseIcon name="close" style="line" size={16} />
-            </Button>
-          </div>
-        ) : null}
-        <div className="flex items-start gap-2 px-4 py-3">
-          <Textarea
-            size="base"
-            variant="secondary"
-            ref={field_ref}
-            value={draft.text}
-            maxLength={5000}
-            rows={is_expanded ? 3 : 1}
-            autoFocus={Boolean(parent)}
-            placeholder={t('comment.placeholder')}
-            aria-label={field_label}
-            className="form-control__input min-w-0 flex-1 resize-none py-1 text-[15px] leading-6"
-            onChange={(event) => draft.update(event.target.value)}
-            onKeyDown={(event) => {
-              if (
-                event.key === 'Enter' &&
-                (event.ctrlKey || event.metaKey) &&
-                !event.nativeEvent.isComposing
-              ) {
-                event.preventDefault()
-                submit()
-              }
-            }}
+      <Autocomplete inputValue={draft.text} filter={() => true}>
+        <div
+          className="comment-composer__control form-control form-control--lg form-control--secondary"
+          data-expanded={is_expanded}
+          onKeyDownCapture={(event) => {
+            if (event.nativeEvent.isComposing) {
+              event.stopPropagation()
+              return
+            }
+            if (event.key === 'Escape' && mention.is_open) {
+              event.preventDefault()
+              event.stopPropagation()
+              mention.dismiss()
+            }
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+              event.preventDefault()
+              event.stopPropagation()
+              submit()
+            }
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              setFocused(false)
+              mention.dismiss()
+            }
+          }}
+        >
+          <CommentMentionSuggestions mention={mention} author_id={author?.user_id} />
+          {parent ? (
+            <div className="comment-composer__reply">
+              <BaseIcon
+                name="corner_up_right"
+                style="line"
+                size={16}
+                className="shrink-0 text-accent"
+              />
+              <span className="min-w-0 flex-1 truncate text-xs text-muted">{field_label}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                isIconOnly
+                aria-label={t('comment.cancel_reply')}
+                onPress={onCancelReply}
+              >
+                <BaseIcon name="close" style="line" size={16} />
+              </Button>
+            </div>
+          ) : null}
+          <CommentEditor
+            draft={draft}
+            mention={mention}
+            field_ref={field_ref}
+            label={field_label}
+            placeholder={t('comment.input_placeholder')}
+            auto_focus={Boolean(parent)}
           />
-          <CommentExtras extras={extras} authorize={requireSession} />
-          <Menu>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              isIconOnly
-              className="shrink-0 text-muted"
-              aria-label={t('comment.add_emoji')}
-            >
-              <BaseIcon name="happy" style="line" size={22} />
-            </Button>
-            <Menu.Content
-              aria-label={t('comment.add_emoji')}
-              onAction={(key) => insertEmoji(String(key))}
-              className="grid grid-cols-4 gap-1"
-            >
-              {COMMENT_EMOJI.map((emoji) => (
-                <Menu.Item
-                  key={emoji}
-                  id={emoji}
-                  textValue={emoji}
-                  className="justify-center text-xl"
-                >
-                  {emoji}
-                </Menu.Item>
-              ))}
-            </Menu.Content>
-          </Menu>
-        </div>
-        <CommentAttachments extras={extras} />
-        {is_expanded ? (
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 px-4 py-3">
-            <Button type="submit" variant="primary" size="lg" isDisabled={!can_send}>
-              <BaseIcon name="send_plane" style="line" size={16} />
-              {send.is_pending
-                ? t('comment.sending')
-                : send.error
-                  ? t('comment.retry')
-                  : t('comment.send')}
-            </Button>
+          <CommentAttachments extras={extras} />
+          <div className="comment-composer__toolbar">
+            <CommentExtras
+              extras={extras}
+              authorize={requireSession}
+              onMention={mention.start}
+              can_mention={mention.mentions.length < 10}
+            />
+            {is_expanded && draft.text.trim() ? (
+              <Button
+                type="submit"
+                variant="primary"
+                isIconOnly
+                isDisabled={!can_send}
+                className="comment-composer__send"
+                aria-label={
+                  send.is_pending
+                    ? t('comment.sending')
+                    : send.error
+                      ? t('comment.retry')
+                      : t('comment.send')
+                }
+              >
+                {send.is_pending ? (
+                  <BaseIcon
+                    name="loading"
+                    style="line"
+                    size={22}
+                    className="animate-spin motion-reduce:animate-none"
+                  />
+                ) : (
+                  <BaseIcon name="arrow_up" style="line" size={22} />
+                )}
+              </Button>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+        </div>
+      </Autocomplete>
       {block === 'email_unverified' ? (
         <p className="text-sm text-muted">{t('login.email_unverified')}</p>
       ) : null}

@@ -46,6 +46,8 @@ export const feedCardSchema = z.strictObject({
     avatar_url: z.string().nullable(),
     /** Короткий адрес профиля или номер учётной записи (`/u/{slug}`). */
     slug: z.string(),
+    /** Выбранная иконка статуса профиля. `null` — статус не задан. */
+    status_icon_id: z.uuid().nullable(),
   }),
   topic: z.strictObject({
     id: z.uuid(),

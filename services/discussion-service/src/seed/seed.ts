@@ -40,6 +40,7 @@ export async function seedDiscussion(input: DiscussionSeedInput): Promise<void> 
       user_id: user.id,
       display_name: profile_of.get(user.id)?.display_name ?? user.display_name,
       avatar_url: profile_of.get(user.id)?.avatar_url ?? null,
+      slug: profile_of.get(user.id)?.slug ?? null,
       is_restricted: user.restricted_at !== null,
     })),
     { label: 'users_copy', logger },

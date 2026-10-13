@@ -44,7 +44,7 @@ export function SettingsSeoFields({
           onChange={(indexing_enabled) => onChange({ ...value, indexing_enabled })}
         />
         <p className="text-xs text-muted">{t('seo.indexing_hint')}</p>
-        {(['home', 'popular', 'rating', 'about'] as const).map((key) => (
+        {(['home', 'popular', 'rating'] as const).map((key) => (
           <fieldset
             key={key}
             className="flex min-w-0 max-w-lg flex-col gap-6 border-t border-separator pt-6"

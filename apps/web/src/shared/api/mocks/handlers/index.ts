@@ -1,3 +1,5 @@
+import { navSectionHandlers } from './nav-sections.ts'
+import { pageHandlers } from './pages.ts'
 import { siteAssetHandlers } from './site-assets.ts'
 import { commentInteractionHandlers } from './comment-interactions.ts'
 import { actionHandlers } from './actions.ts'
@@ -15,6 +17,8 @@ import { shellHandlers } from './shell.ts'
 // Обработчики разделов (лента, статья, профиль, обсуждение, сообщения, поиск, модерация)
 // добавляются вместе со своими историями и подключаются здесь: Storybook и Playwright берут тот же список.
 export const handlers = [
+  ...navSectionHandlers,
+  ...pageHandlers,
   ...siteAssetHandlers,
   ...seoHandlers,
   ...sessionHandlers,

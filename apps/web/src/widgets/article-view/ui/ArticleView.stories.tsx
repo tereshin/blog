@@ -19,6 +19,7 @@ const article: ArticleModel = {
     avatar_url: null,
     slug: 'anna',
     href: '/u/anna',
+    status_icon_id: null,
   },
   topic: {
     id: '5f0f6a52-0d8b-4f6e-a8b1-000000000001',

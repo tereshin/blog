@@ -52,7 +52,7 @@ function ProfileSkeleton() {
   return (
     <>
       <Card>
-        <Skeleton shape="block" className="h-36 w-full rounded-none" />
+        <Skeleton shape="block" className="h-36 w-full rounded-xl" />
         <Card.Content className="flex flex-col gap-3">
           <Skeleton shape="circle" className="size-16" />
           <Skeleton shape="line" className="h-6 w-40" />
@@ -73,7 +73,7 @@ function ProfileSkeleton() {
 export function CenterSkeleton({ kind = 'feed' }: CenterSkeletonProps) {
   const { t } = useT()
   return (
-    <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 px-4 py-4 min-[768px]:px-0 min-[768px]:pt-0 max-w-[640px] mx-auto">
+    <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 px-4 py-4 min-[768px]:px-0 min-[768px]:pt-0 max-w-[var(--shell-content-width,640px)] mx-auto">
       {kind === 'article' ? <ArticleSkeleton /> : null}
       {kind === 'profile' ? <ProfileSkeleton /> : null}
       {kind === 'feed' ? <FeedSkeleton /> : null}

@@ -57,6 +57,25 @@ describe('favicon content validation', () => {
       ),
     ).rejects.toThrow()
   })
+  it('accepts RealFaviconGenerator metadata and a verified embedded PNG', async () => {
+    const image = (await png(32)).toString('base64')
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:Description><dc:creator>RealFaviconGenerator</dc:creator><dc:source>https://realfavicongenerator.net</dc:source></rdf:Description></rdf:RDF></metadata><image width="32" height="32" xlink:href="data:image/png;base64,${image}"/></svg>`
+    expect(await validateFavicon(Buffer.from(svg), 'svg')).toBe('image/svg+xml')
+    for (const content of [
+      '<image href="https://evil.example/image.png"/>',
+      '<image href="data:image/svg+xml;base64,PHN2Zy8+"/>',
+      '<image href="data:image/png;base64,PHN2Zy8+"/>',
+      '<metadata><script>alert(1)</script></metadata>',
+      `<image onload="alert(1)" href="data:image/png;base64,${image}"/>`,
+    ]) {
+      await expect(
+        validateFavicon(
+          Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg">${content}</svg>`),
+          'svg',
+        ),
+      ).rejects.toThrow()
+    }
+  })
   it('validates manifest JSON and URL schemes', async () => {
     expect(
       await validateFavicon(

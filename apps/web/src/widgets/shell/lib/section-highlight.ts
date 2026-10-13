@@ -12,7 +12,7 @@ export type SectionView =
   | { kind: 'rating' }
   | { kind: 'bookmarks' }
   | { kind: 'search' }
-  | { kind: 'about' }
+  | { kind: 'other' }
   | { kind: 'write' }
   | { kind: 'write_edit' }
   | { kind: 'admin_moderation' }
@@ -46,7 +46,7 @@ export function getHighlightedItem(section: SectionView, active_topic_ids: reado
     case 'following':
     case 'bookmarks':
     case 'search':
-    case 'about':
+    case 'other':
     case 'write':
     case 'write_edit':
     case 'admin_moderation':

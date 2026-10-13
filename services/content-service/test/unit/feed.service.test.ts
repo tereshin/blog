@@ -76,6 +76,7 @@ function row(index: number, partial: Partial<FeedRow> = {}): FeedRow {
     author_avatar_url: null,
     author_slug: null,
     author_public_number: 3,
+    author_status_icon_id: null,
     topic_id: '22222222-2222-4222-8222-222222222222',
     topic_title: 'Тема',
     topic_slug: 'tema',
@@ -124,6 +125,12 @@ describe('feed.service', () => {
   it('адрес автора без короткого адреса — номер учётной записи', async () => {
     const page = await createFeedService(repositoryOf([row(1)])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page.items[0]?.author.slug).toBe('3')
+  })
+
+  it('передаёт выбранный статус автора', async () => {
+    const status_icon_id = '44444444-4444-4444-8444-444444444444'
+    const page = await createFeedService(repositoryOf([row(1, { author_status_icon_id: status_icon_id })])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
+    expect(page.items[0]?.author.status_icon_id).toBe(status_icon_id)
   })
 
   it('гость на «Моей ленте» получает 401, без подписок — причину без чтения статей', async () => {

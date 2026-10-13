@@ -51,7 +51,7 @@ test.describe('Вид и узкий экран', () => {
 
   test('бургер открывает одну панель на разных разделах, Escape её закрывает', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 768px')
-    for (const path of ['/', '/about', '/messages', '/rating', '/u/anna']) {
+    for (const path of ['/', '/pages/welcome-page', '/messages', '/rating', '/u/anna']) {
       await page.goto(path)
       const open = page.getByRole('button', { name: 'Открыть навигацию' })
       await open.click()

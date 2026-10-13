@@ -19,7 +19,7 @@ export type FeedCardFixture = {
   excerpt: string
   first_image_url: string | null
   published_at: string
-  author: { user_id: string; display_name: string; avatar_url: string | null; slug: string }
+  author: { user_id: string; display_name: string; avatar_url: string | null; slug: string; status_icon_id: string | null }
   topic: { id: string; title: string; slug: string; status: 'active' | 'archived' }
   reaction_counts: Record<string, number>
   reaction_count: number
@@ -52,7 +52,7 @@ export function buildFeedFixture(count = 45, now: Date = new Date()): FeedCardFi
       first_image_url: index % 2 === 0 ? IMAGE : null,
       // Каждая следующая статья старше предыдущей на 97 минут: первые попадают на сегодня, остальные — на прошлые дни.
       published_at: new Date(now.getTime() - (index + 1) * 97 * 60_000).toISOString(),
-      author: { ...author, avatar_url: null },
+      author: { ...author, avatar_url: null, status_icon_id: null },
       topic: { ...topic, status: 'active' as const },
       reaction_counts: { laugh: Math.floor(reactions / 4), heart: Math.ceil(reactions / 2), thumb: 0, fire: reactions % 3 },
       reaction_count: reactions,

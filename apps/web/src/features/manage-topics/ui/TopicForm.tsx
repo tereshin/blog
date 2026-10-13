@@ -1,19 +1,12 @@
-import type { ReactNode } from 'react'
 import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import { Button, FormTextArea, FormTextField, SelectField } from '@/shared/ui'
 import { useTopicForm } from '../model/useTopicForm.ts'
-export type TopicUpload = (
-  field: 'avatar' | 'cover',
-  onUploaded: (url: string) => void,
-) => ReactNode
 export function TopicForm({
   initial,
-  upload,
   onSaved = () => undefined,
 }: {
   initial?: Topic
-  upload?: TopicUpload
   onSaved?: (topic: Topic) => void
 }) {
   const { t } = useT()
@@ -55,34 +48,6 @@ export function TopicForm({
           value={draft.slug}
           onChange={(event) => setDraft({ ...draft, slug: event.target.value })}
         />
-        {upload
-          ? (['avatar', 'cover'] as const).map((field) => {
-              const url = draft[`${field}_url`]
-              return (
-                <div key={field} className="flex flex-wrap items-center gap-3">
-                  {url ? (
-                    <img
-                      src={url}
-                      alt={t(field === 'avatar' ? 'admin.topics.avatar' : 'admin.topics.cover')}
-                      className="h-16 max-w-48 rounded-lg object-contain"
-                    />
-                  ) : null}
-                  {upload(field, (url) =>
-                    setDraft((current) => ({ ...current, [`${field}_url`]: url })),
-                  )}
-                  {url ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onPress={() => setDraft({ ...draft, [`${field}_url`]: null })}
-                    >
-                      {t('common.delete')}
-                    </Button>
-                  ) : null}
-                </div>
-              )
-            })
-          : null}
         {initial ? (
           <SelectField
             label={t('admin.table.status')}

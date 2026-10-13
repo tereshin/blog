@@ -63,11 +63,7 @@ export const WideLayout: Story = {
     const canvas = within(canvasElement)
     const grid = canvasElement.querySelector('header')?.nextElementSibling
     const grid_class = grid?.className ?? ''
-    expect(grid_class).toContain('min-[1280px]:w-[1280px]')
-    expect(grid_class).toContain('min-[1280px]:grid-cols-[220px_minmax(0,1fr)_320px]')
-    expect(grid_class).toContain('min-[768px]:grid-cols-[220px_minmax(0,1fr)]')
-    expect(grid_class).toContain('min-[768px]:gap-x-4')
-    expect(grid_class).not.toContain('1200')
+    expect(grid_class).toContain('shell-grid')
     const search = await canvas.findByRole('button', { name: 'Поиск' })
     expect(search.nextElementSibling?.getAttribute('aria-label')).toBe('Уведомления')
     expect(canvasElement.querySelector('nav .rounded-card')).toBeNull()
@@ -75,3 +71,5 @@ export const WideLayout: Story = {
     expect(canvasElement.textContent).not.toContain('Подписка Plus')
   },
 }
+
+export const Expanded: Story = { args: { content_width: 848 } }

@@ -6,6 +6,7 @@ export type ArticleCopy = typeof articles_copy.$inferInsert
 
 export type UserCopyPatch = {
   user_id: string
+  slug?: string | null | undefined
   display_name?: string | undefined
   avatar_url?: string | null | undefined
   is_restricted?: boolean | undefined

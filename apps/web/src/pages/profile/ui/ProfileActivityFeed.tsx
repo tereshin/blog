@@ -1,13 +1,14 @@
 import { ArticleCard } from '@/entities/article'
+import type { Profile } from '@/entities/profile'
 import { useT } from '@/shared/i18n'
 import { Button, CommentIcon, EmptyState, ErrorState, PenIcon, Tabs } from '@/shared/ui'
 import { ArticleFeedItem, ArticleOverflowMenu } from '@/widgets/feed'
 import { UserCommentRow } from '@/widgets/profile-card'
 import type { useProfileActivity } from '../model/useProfileActivity.ts'
 
-type ProfileActivityFeedProps = { activity: ReturnType<typeof useProfileActivity>; is_own: boolean }
+type ProfileActivityFeedProps = { activity: ReturnType<typeof useProfileActivity>; profile: Profile }
 
-export function ProfileActivityFeed({ activity, is_own }: ProfileActivityFeedProps) {
+export function ProfileActivityFeed({ activity, profile }: ProfileActivityFeedProps) {
   const { t } = useT()
   const { tab, list, article_items, comment_items, viewer_states } = activity
   const has_load_error = list.isError && !list.data
@@ -36,7 +37,7 @@ export function ProfileActivityFeed({ activity, is_own }: ProfileActivityFeedPro
                         <ArticleOverflowMenu
                           article_id={article.id}
                           slug={article.slug}
-                          is_own={is_own}
+                          is_own={profile.is_own}
                         />
                       }
                     />
@@ -54,9 +55,9 @@ export function ProfileActivityFeed({ activity, is_own }: ProfileActivityFeedPro
         comment_items.length === 0 ? (
           <EmptyState title={t('profile.comments_empty')} description={t('profile.comments_empty_hint')} icon={<CommentIcon width={28} height={28} />} />
         ) : (
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-2">
             {comment_items.map((comment) => (
-              <UserCommentRow key={comment.id} comment={comment} />
+              <UserCommentRow key={comment.id} comment={comment} profile={profile} />
             ))}
           </ul>
         )
@@ -73,7 +74,7 @@ export function ProfileActivityFeed({ activity, is_own }: ProfileActivityFeedPro
           <Button
             variant="ghost"
             onPress={() => void list.fetchNextPage()}
-            isDisabled={list.isFetchingNextPage}
+            isDisabled={list.isFetching}
           >
             {t('common.more')}
           </Button>

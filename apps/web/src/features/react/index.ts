@@ -1,4 +1,5 @@
 export { ReactionControl } from './ui/ReactionControl.tsx'
 export { ReactionRow } from './ui/ReactionRow.tsx'
+export { ReactionButton } from './ui/ReactionButton.tsx'
 export { useReaction } from './model/useReaction.ts'
 export type { ReactionTarget } from './model/useReaction.ts'

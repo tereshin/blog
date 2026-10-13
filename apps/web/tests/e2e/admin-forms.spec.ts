@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test'
 const SCREENS = [
   'general',
   'access',
+  'layout',
   'reactions',
   'status-icons',
   'seo',

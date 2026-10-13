@@ -1,11 +1,11 @@
 import type { SettingsSection } from '@/features/update-settings'
-import { AdminScreen } from './AdminScreen.tsx'
+import { RequireRole } from '@/entities/session'
 import { AdminSettingsContent } from './AdminSettingsContent.tsx'
 
 export function AdminSettingsScreen({ section }: { section: SettingsSection }) {
   return (
-    <AdminScreen route={section}>
+    <RequireRole role="superadmin">
       <AdminSettingsContent section={section} />
-    </AdminScreen>
+    </RequireRole>
   )
 }

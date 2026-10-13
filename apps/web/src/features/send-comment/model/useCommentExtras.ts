@@ -8,7 +8,6 @@ export function useCommentExtras() {
   const { t } = useT()
   const toast = useToast()
   const [media, setMedia] = useState<{ url: string; alt: string }[]>([])
-  const [mentions, setMentions] = useState<{ user_id: string; display_name: string }[]>([])
   const upload = useMutation({
     mutationFn: (file: File) =>
       http.postBinary('/v1/media', file, mediaUploadResponseSchema, { query: { kind: 'image' } }),
@@ -17,7 +16,6 @@ export function useCommentExtras() {
   })
   return {
     media,
-    mentions,
     is_uploading: upload.isPending,
     upload: (file: File) => {
       if (
@@ -31,17 +29,8 @@ export function useCommentExtras() {
       upload.mutate(file)
     },
     removeMedia: (url: string) => setMedia((items) => items.filter((item) => item.url !== url)),
-    addMention: (user: { user_id: string; display_name: string }) =>
-      setMentions((items) =>
-        items.some((item) => item.user_id === user.user_id)
-          ? items
-          : [...items, { user_id: user.user_id, display_name: user.display_name }].slice(0, 10),
-      ),
-    removeMention: (id: string) =>
-      setMentions((items) => items.filter((item) => item.user_id !== id)),
     clear: () => {
       setMedia([])
-      setMentions([])
     },
   }
 }

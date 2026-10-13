@@ -1,5 +1,5 @@
 import { Select as HeroSelect } from '@heroui/react/select'
-import { Label } from '@heroui/react/label'
+import { FieldLabel } from './FieldLabel.tsx'
 import { ListBox } from '@heroui/react/list-box'
 import type { ComponentProps } from 'react'
 import { cn } from '@/shared/lib'
@@ -41,9 +41,13 @@ export function Select({
         if (typeof key === 'string') onChange?.(key)
         props.onSelectionChange?.(key)
       }}
-      className={cn('w-full min-w-0 gap-3', className as string | undefined)}
+      className={cn(
+        'w-full min-w-0',
+        size === 'base' ? 'gap-2' : 'gap-3',
+        className as string | undefined,
+      )}
     >
-      {label ? <Label className="text-base font-semibold">{label}</Label> : null}
+      {label ? <FieldLabel size={size}>{label}</FieldLabel> : null}
       <HeroSelect.Trigger
         className={cn(fieldVariants({ size, variant }), size === 'lg' ? 'h-12' : 'h-10')}
       >

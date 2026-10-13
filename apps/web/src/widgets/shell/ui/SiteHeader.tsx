@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useMessagesUnreadCount } from '@/entities/conversation'
 import { useSettings } from '@/entities/settings'
@@ -15,6 +15,7 @@ import { HeaderSearch } from './HeaderSearch.tsx'
 import { HeaderTab } from './HeaderTab.tsx'
 
 type SiteHeaderProps = {
+  content_width?: 640 | 848
   /** Центр шапки: поле поиска, «назад» или пусто (`HeaderCenter`). */
   center?: ReactNode
   /** Колокольчик уведомлений (появляется вместе со сценарием уведомлений). */
@@ -36,7 +37,14 @@ const HOME_SECTIONS = new Set(['fresh', 'popular', 'my_feed', 'topic'])
  * «Написать» — круглой кнопкой над ней (кроме статьи и сообщений, где внизу поле ввода).
  * Раскладку переключает CSS (`site-header-*` в globals.css).
  */
-export function SiteHeader({ center, notifications, onSearch, onWrite, account }: SiteHeaderProps) {
+export function SiteHeader({
+  center,
+  notifications,
+  onSearch,
+  onWrite,
+  account,
+  content_width,
+}: SiteHeaderProps) {
   const { t } = useT()
   const { data: settings } = useSettings()
   const { theme } = useAppearance()
@@ -59,7 +67,14 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
   const brand = settings?.name || t('common.site_name_fallback')
 
   return (
-    <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-1 px-2 sm:gap-2 sm:px-4">
+    <div
+      className="shell-grid site-header-grid h-14 items-center"
+      style={
+        content_width
+          ? ({ '--shell-content-width': `${content_width}px` } as CSSProperties)
+          : undefined
+      }
+    >
       {has_back ? (
         <HeaderBackLink className="size-10 min-[768px]:hidden" />
       ) : (
@@ -75,7 +90,7 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
           <MenuIcon className="size-6" />
         </Button>
       )}
-      <div className="lg:min-w-[200px]">
+      <div className="site-header-brand min-w-0">
         <Link
           to="/"
           className="shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4 max-[767px]:absolute max-[767px]:top-2 max-[767px]:left-1/2 max-[767px]:-translate-x-1/2"
@@ -83,10 +98,10 @@ export function SiteHeader({ center, notifications, onSearch, onWrite, account }
           {logo_url ? <img src={logo_url} alt={brand} className="h-10 w-auto" /> : brand}
         </Link>
       </div>
-      <div className="flex min-w-0 flex-1 items-center sm:px-2 max-[767px]:hidden max-w-[640px] mx-auto">
+      <div className="site-header-center flex min-w-0 items-center w-full max-w-[var(--shell-content-width,640px)] mx-auto">
         {center}
       </div>
-      <div className="site-header-actions flex shrink-0 items-center sm:gap-3">
+      <div className="site-header-actions flex min-w-0 items-center">
         <HeaderTab
           to="/"
           label={t('shell.nav.home')}

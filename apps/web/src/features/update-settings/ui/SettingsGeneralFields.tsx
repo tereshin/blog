@@ -4,11 +4,11 @@ import { SettingsFaviconFields } from './SettingsFaviconFields.tsx'
 import type { ReactNode } from 'react'
 import type { AdminSettings } from '../api/update-settings.ts'
 import { useT } from '@/shared/i18n'
-import { FormTextField, FormTextArea, SelectField } from '@/shared/ui'
+import { FormTextField, SelectField } from '@/shared/ui'
 
 type GeneralSettings = Pick<
   AdminSettings,
-  'name' | 'logo_url' | 'logo_dark_url' | 'favicon' | 'locale' | 'about'
+  'name' | 'logo_url' | 'logo_dark_url' | 'favicon' | 'locale'
 >
 type SettingsGeneralFieldsProps = {
   value: GeneralSettings
@@ -36,12 +36,6 @@ export function SettingsGeneralFields({
         value={value.name}
         hint={t('admin.settings.name_hint')}
         onChange={(event) => onChange({ ...value, name: event.target.value })}
-      />
-      <FormTextArea
-        label={t('admin.settings.about')}
-        value={value.about}
-        hint={t('admin.settings.about_hint')}
-        onChange={(event) => onChange({ ...value, about: event.target.value })}
       />
       <SettingsLogoFields
         value={value}

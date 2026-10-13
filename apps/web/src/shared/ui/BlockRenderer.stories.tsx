@@ -1,20 +1,59 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ArticleBlock } from '../model/article-types.ts'
+import type { DocumentBlock } from './document-block.ts'
 import { BlockRenderer } from './BlockRenderer.tsx'
 
-const blocks: Record<string, ArticleBlock> = {
-  paragraph: { type: 'paragraph', data: { text: 'Абзац с <b>жирным</b> и <a href="https://example.com">ссылкой</a>.' } },
+const blocks: Record<string, DocumentBlock> = {
+  paragraph: {
+    type: 'paragraph',
+    data: { text: 'Абзац с <b>жирным</b> и <a href="https://example.com">ссылкой</a>.' },
+  },
   header: { type: 'header', data: { text: 'Заголовок', level: 2 } },
-  list: { type: 'list', data: { style: 'checklist', items: [{ content: 'Готово', meta: { checked: true } }, { content: 'Впереди', items: ['вложенный'] }] } },
+  list: {
+    type: 'list',
+    data: {
+      style: 'checklist',
+      items: [
+        { content: 'Готово', meta: { checked: true } },
+        { content: 'Впереди', items: ['вложенный'] },
+      ],
+    },
+  },
   quote: { type: 'quote', data: { text: 'Цитата', caption: 'Кто-то' } },
   warning: { type: 'warning', data: { title: 'Внимание', message: 'Проверьте данные' } },
   delimiter: { type: 'delimiter', data: {} },
   code: { type: 'code', data: { code: 'const n = 1' } },
-  image: { type: 'image', data: { file: { url: 'https://example.com/pic.png' }, caption: 'Рисунок' } },
-  embed: { type: 'embed', data: { service: 'youtube', source: 'https://youtu.be/x', embed: 'https://www.youtube.com/embed/x', width: 640, height: 360 } },
-  table: { type: 'table', data: { withHeadings: true, content: [['Имя', 'Роль'], ['Анна', 'Автор']] } },
-  attaches: { type: 'attaches', data: { file: { url: 'https://example.com/file.pdf' }, title: 'Файл' } },
-  personality: { type: 'personality', data: { name: 'Анна', description: 'Пишет о ленте', photo: 'https://example.com/anna.png' } },
+  image: {
+    type: 'image',
+    data: { file: { url: 'https://example.com/pic.png' }, caption: 'Рисунок' },
+  },
+  embed: {
+    type: 'embed',
+    data: {
+      service: 'youtube',
+      source: 'https://youtu.be/x',
+      embed: 'https://www.youtube.com/embed/x',
+      width: 640,
+      height: 360,
+    },
+  },
+  table: {
+    type: 'table',
+    data: {
+      withHeadings: true,
+      content: [
+        ['Имя', 'Роль'],
+        ['Анна', 'Автор'],
+      ],
+    },
+  },
+  attaches: {
+    type: 'attaches',
+    data: { file: { url: 'https://example.com/file.pdf' }, title: 'Файл' },
+  },
+  personality: {
+    type: 'personality',
+    data: { name: 'Анна', position: 'Редактор', photo: 'https://example.com/anna.png' },
+  },
 }
 
 function Frame({ kind }: { kind: keyof typeof blocks }) {
@@ -26,7 +65,7 @@ function Frame({ kind }: { kind: keyof typeof blocks }) {
   )
 }
 
-const meta = { title: 'entities/article/BlockRenderer', component: Frame } satisfies Meta<typeof Frame>
+const meta = { title: 'shared/ui/BlockRenderer', component: Frame } satisfies Meta<typeof Frame>
 export default meta
 type Story = StoryObj<typeof Frame>
 

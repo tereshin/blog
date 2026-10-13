@@ -3,12 +3,15 @@ import type { AdminIcon } from '@/entities/admin'
 import { BaseIcon } from '@/shared/ui'
 
 export const ADMIN_ICONS = {
+  pages: <BaseIcon name="document" style="line" size={24} />,
+  sections: <BaseIcon name="menu" style="line" size={24} />,
   moderation: <BaseIcon name="shield" style="line" size={24} />,
   settings: <BaseIcon name="settings_1" style="line" size={24} />,
   members: <BaseIcon name="group" style="line" size={24} />,
   topics: <BaseIcon name="tag" style="line" size={24} />,
   general: <BaseIcon name="information" style="line" size={24} />,
   access: <BaseIcon name="user_add" style="line" size={24} />,
+  layout: <BaseIcon name="menu" style="line" size={24} />,
   reactions: <BaseIcon name="emoji" style="line" size={24} />,
   status: <BaseIcon name="user_star" style="line" size={24} />,
   seo: <BaseIcon name="search_2" style="line" size={24} />,

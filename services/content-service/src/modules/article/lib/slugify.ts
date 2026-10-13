@@ -70,7 +70,7 @@ export function searchText(title: string, blocks: readonly EditorBlock[]): strin
     if (block.type === 'table') parts.push(block.data.content.flat().join(' '))
     if (block.type === 'image' && block.data.caption) parts.push(block.data.caption)
     if (block.type === 'attaches') parts.push(block.data.title)
-    if (block.type === 'personality') parts.push(`${block.data.name} ${block.data.description ?? ''}`)
+    if (block.type === 'personality') parts.push(`${block.data.name} ${block.data.position ?? ''}`)
   }
   return parts
     .join(' ')

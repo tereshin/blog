@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   DEFAULT_REACTION_APPEARANCES,
   DEFAULT_SEO_SETTINGS,
+  DEFAULT_SHELL_VISIBILITY,
   DEFAULT_SOCIAL_COVER_SETTINGS,
   SettingsUpdatedV1,
 } from '@blog/contracts'
@@ -45,7 +46,6 @@ const body = {
   name: 'Площадка',
   logo_url: `${MEDIA}/logo.png`,
   locale: 'en',
-  about: 'О проекте',
   registration_open: false,
   new_members_can_publish: false,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
@@ -84,16 +84,17 @@ describe('content: настройки площадки', () => {
     const response = await app.inject({ method: 'GET', url: '/v1/settings' })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
+      welcome_content: null,
       name: 'Блог',
       logo_url: null,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
       locale: 'ru',
-      about: '',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
+      shell: DEFAULT_SHELL_VISIBILITY,
     })
   })
 
@@ -130,22 +131,25 @@ describe('content: настройки площадки', () => {
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
       ...body,
+      welcome_content: null,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
+      shell: DEFAULT_SHELL_VISIBILITY,
     })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      welcome_content: null,
       name: 'Площадка',
       logo_url: `${MEDIA}/logo.png`,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
       locale: 'en',
-      about: 'О проекте',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
+      shell: DEFAULT_SHELL_VISIBILITY,
     })
     const events = await database.db
       .select()
@@ -258,7 +262,6 @@ describe('content: настройки площадки', () => {
       name: body.name,
       logo_url: body.logo_url,
       locale: body.locale,
-      about: body.about,
       registration_open: body.registration_open,
       new_members_can_publish: body.new_members_can_publish,
     }
@@ -433,5 +436,58 @@ describe('content: настройки площадки', () => {
     })
     expect(clear.json().logo_dark_url).toBeNull()
     expect(clear.json().favicon.svg).toBeNull()
+  })
+
+  it('выключенный раздел и блок комментариев видны гостю', async () => {
+    const shell = { ...DEFAULT_SHELL_VISIBILITY, popular: false, popular_comments: false }
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: { ...body, shell },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json().shell).toEqual(shell)
+    const guest = await app.inject({ method: 'GET', url: '/v1/settings' })
+    expect(guest.json().shell).toEqual(shell)
+    expect(guest.json()).not.toHaveProperty('registration_open')
+  })
+  it('welcome content is sanitized, persisted, preserved by unrelated updates and removable', async () => {
+    const welcome_content = {
+      title: 'Welcome',
+      document: {
+        blocks: [{ type: 'paragraph', data: { text: '<b>Hello</b><script>alert(1)</script>' } }],
+      },
+    }
+    const save = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: { ...body, welcome_content },
+    })
+    expect(save.statusCode).toBe(200)
+    expect(save.json().welcome_content.document.blocks[0].data.text).toBe('<b>Hello</b>')
+    const forbidden = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'admin' },
+      payload: { ...body, welcome_content: null },
+    })
+    expect(forbidden.statusCode).toBe(403)
+    await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: body,
+    })
+    const public_response = await app.inject({ method: 'GET', url: '/v1/settings' })
+    expect(public_response.json().welcome_content.title).toBe('Welcome')
+    const removed = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: { ...body, welcome_content: null },
+    })
+    expect(removed.json().welcome_content).toBeNull()
   })
 })

@@ -53,7 +53,6 @@ export type SeedSettings = {
   name: string
   logo_url: string | null
   locale: 'ru' | 'en' | 'sr'
-  about: string
   registration_open: boolean
   new_members_can_publish: boolean
 }

@@ -9,6 +9,7 @@ const authorSchema = z.strictObject({
   display_name: z.string(),
   avatar_url: z.string().nullable(),
   slug: z.string(),
+  status_icon_id: z.uuid().nullable(),
 })
 
 const topicSchema = z.strictObject({

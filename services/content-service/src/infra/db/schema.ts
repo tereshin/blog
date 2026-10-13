@@ -18,12 +18,14 @@ import {
 import {
   DEFAULT_REACTION_APPEARANCES,
   DEFAULT_SEO_SETTINGS,
+  DEFAULT_SHELL_VISIBILITY,
   DEFAULT_SOCIAL_COVER_SETTINGS,
 } from '@blog/contracts'
 import type {
   ProfileStatusIcon,
   ReactionAppearances,
   SeoSettings,
+  ShellVisibility,
   SocialCoverSettings,
   SocialImages,
 } from '@blog/contracts'
@@ -144,6 +146,7 @@ export const promotions = pgTable('promotions', {
 
 export const settings = pgTable('settings', {
   id: smallint('id').primaryKey().default(1),
+  welcome_content: jsonb('welcome_content').$type<import('@blog/contracts').WelcomeContent>(),
   name: text('name').notNull(),
   logo_url: text('logo_url'),
   logo_dark_url: text('logo_dark_url'),
@@ -152,7 +155,6 @@ export const settings = pgTable('settings', {
     .notNull()
     .default({ png: null, svg: null, ico: null, apple: null, manifest: null }),
   locale: locale('locale').notNull().default('ru'),
-  about: text('about').notNull().default(''),
   registration_open: boolean('registration_open').notNull().default(true),
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
   reaction_appearances: jsonb('reaction_appearances')
@@ -168,6 +170,7 @@ export const settings = pgTable('settings', {
     .$type<SocialCoverSettings>()
     .notNull()
     .default(DEFAULT_SOCIAL_COVER_SETTINGS),
+  shell: jsonb('shell').$type<ShellVisibility>().notNull().default(DEFAULT_SHELL_VISIBILITY),
 })
 
 export const reports = pgTable(
@@ -197,3 +200,87 @@ export const social_covers = pgTable('social_covers', {
   images: jsonb('images').$type<SocialImages>(),
   requested_at: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+export const page_status = pgEnum('page_status', ['draft', 'published', 'deleted'])
+export const pages = pgTable(
+  'pages',
+  {
+    id: uuid('id').primaryKey(),
+    title: varchar('title', { length: 150 }).notNull(),
+    slug: varchar('slug', { length: 40 }).notNull().unique(),
+    blocks: jsonb('blocks')
+      .$type<import('@blog/contracts').BlocksDocument>()
+      .notNull()
+      .default({ blocks: [] }),
+    status: page_status('status').notNull().default('draft'),
+    version: integer('version').notNull().default(1),
+    created_by: uuid('created_by').notNull(),
+    updated_by: uuid('updated_by').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    published_at: timestamp('published_at', { withTimezone: true }),
+    deleted_at: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('pages_list_idx').on(table.created_at.desc(), table.id.desc()),
+    index('pages_status_idx').on(table.status, table.created_at.desc(), table.id.desc()),
+  ],
+)
+export const page_mutations = pgTable(
+  'page_mutations',
+  {
+    actor_id: uuid('actor_id').notNull(),
+    idempotency_key: text('idempotency_key').notNull(),
+    request_fingerprint: text('request_fingerprint').notNull(),
+    response_status: integer('response_status').notNull(),
+    response_body: jsonb('response_body').$type<import('@blog/contracts').AdminPage | null>(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.actor_id, table.idempotency_key] })],
+)
+
+export const nav_sections = pgTable(
+  'nav_sections',
+  {
+    id: uuid('id').primaryKey(),
+    title: varchar('title', { length: 80 }).notNull(),
+    position: integer('position').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('nav_sections_position_idx').on(table.position)],
+)
+
+export const nav_section_items = pgTable(
+  'nav_section_items',
+  {
+    id: uuid('id').primaryKey(),
+    section_id: uuid('section_id')
+      .notNull()
+      .references(() => nav_sections.id, { onDelete: 'cascade' }),
+    title: varchar('title', { length: 80 }).notNull(),
+    icon: text('icon'),
+    page_id: uuid('page_id').references(() => pages.id, { onDelete: 'set null' }),
+    url: text('url'),
+    position: integer('position').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('nav_section_items_section_idx').on(table.section_id, table.position),
+    index('nav_section_items_page_idx').on(table.page_id),
+  ],
+)
+
+export const nav_section_mutations = pgTable(
+  'nav_section_mutations',
+  {
+    actor_id: uuid('actor_id').notNull(),
+    idempotency_key: text('idempotency_key').notNull(),
+    request_fingerprint: text('request_fingerprint').notNull(),
+    response_status: integer('response_status').notNull(),
+    response_body: jsonb('response_body').$type<unknown>(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.actor_id, table.idempotency_key] })],
+)

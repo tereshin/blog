@@ -12,19 +12,10 @@ export class ArticleUnavailableError extends NotFoundError {
   }
 }
 
-/** Неизвестный блок отклоняет весь документ, а не выкидывает один блок. */
-export class InvalidBlockError extends AppError {
-  constructor() {
-    super({ code: 'invalid_block', http_status: 422, message: 'Документ содержит неизвестный блок' })
-  }
-}
-
-/** Картинка или вложение не загружены этим автором на площадку. */
-export class ForeignFileError extends AppError {
-  constructor() {
-    super({ code: 'foreign_file', http_status: 422, message: 'Файл должен быть загружен вами' })
-  }
-}
+export {
+  InvalidBlockError,
+  ForeignFileError,
+} from '../../shared/editor-document/document.errors.ts'
 
 /** Право публикации выключено: черновик не создаётся и статья не публикуется. */
 export class CannotPublishError extends AppError {

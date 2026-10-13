@@ -27,7 +27,7 @@ export default defineConfig({
         '/favicon.ico',
         '/apple-touch-icon.png',
         '/site.webmanifest',
-      ].map((path) => [path, { target: 'http://localhost:3000', changeOrigin: false }]),
+      ].map((path) => [path, { target: process.env['API_PROXY_TARGET'] ?? 'http://localhost:3000', changeOrigin: false }]),
     ),
   },
   build: {

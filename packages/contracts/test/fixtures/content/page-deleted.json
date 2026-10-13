@@ -1,0 +1,14 @@
+{
+  "event_id": "44444444-4444-4444-8444-444444444444",
+  "name": "content.page.deleted",
+  "occurred_at": "2026-10-12T10:00:00.000Z",
+  "correlation_id": "page-test",
+  "causation_id": null,
+  "version": 1,
+  "page_id": "33333333-3333-4333-8333-333333333333",
+  "slug": "contacts",
+  "status": "deleted",
+  "page_version": 2,
+  "actor_id": "11111111-1111-4111-8111-111111111111",
+  "updated_at": "2026-10-12T10:00:00.000Z"
+}

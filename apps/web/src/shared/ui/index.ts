@@ -54,3 +54,8 @@ export { SelectField } from './SelectField.tsx'
 export { ToggleField } from './ToggleField.tsx'
 export { FormTextField } from './FormTextField.tsx'
 export { FormTextArea } from './FormTextArea.tsx'
+
+export { BlockRenderer } from './BlockRenderer.tsx'
+
+export { PageCard } from './PageCard.tsx'
+export type { EditorPanelSlots } from './document-editor.ts'

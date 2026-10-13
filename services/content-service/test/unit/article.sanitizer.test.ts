@@ -44,6 +44,32 @@ describe('санитайзер статьи', () => {
     await expect(sanitizeDocument({ blocks: [{ type: 'image', data: { file: { url: `${MEDIA}/other.png` } } }] }, options)).rejects.toBeInstanceOf(ForeignFileError)
   })
 
+  it('чистит имя и должность и отклоняет чужое фото', async () => {
+    const document = await sanitizeDocument(
+      {
+        blocks: [
+          {
+            type: 'personality',
+            data: { name: '<b>Анна</b><script>x</script>', position: '<i>Редактор</i>', photo: OWN },
+          },
+        ],
+      },
+      options,
+    )
+    expect(document.blocks[0]).toMatchObject({
+      type: 'personality',
+      data: { name: 'Анна', position: 'Редактор', photo: OWN },
+    })
+    await expect(
+      sanitizeDocument(
+        { blocks: [{ type: 'personality', data: { name: 'Анна', photo: 'https://evil.test/a.png' } }] },
+        options,
+      ),
+    ).rejects.toBeInstanceOf(ForeignFileError)
+    expect(hasContentBlock([{ type: 'personality', data: { name: '  ' } }])).toBe(false)
+    expect(hasContentBlock([{ type: 'personality', data: { name: 'Анна' } }])).toBe(true)
+  })
+
   it('один разделитель не считается содержанием, абзац и список считаются', () => {
     expect(hasContentBlock([{ type: 'delimiter', data: {} }])).toBe(false)
     expect(hasContentBlock([{ type: 'paragraph', data: { text: '  ' } }])).toBe(false)

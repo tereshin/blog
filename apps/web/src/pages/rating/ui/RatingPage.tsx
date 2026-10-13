@@ -22,7 +22,7 @@ export default function RatingPage() {
   const items = (rating.data?.pages ?? []).flatMap((page) => page.items)
 
   return (
-    <Card className="gap-0 max-w-[640px] mx-auto">
+    <Card className="gap-0 max-w-[var(--shell-content-width,640px)] mx-auto">
       <Card.Header className="px-5 pt-5 pb-2">
         <h1 className="text-xl font-semibold">{t('rating.title')}</h1>
       </Card.Header>

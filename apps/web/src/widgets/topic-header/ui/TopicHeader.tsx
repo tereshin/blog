@@ -3,15 +3,15 @@ import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import { IdentityHeader, Tabs } from '@/shared/ui'
 
-type TopicHeaderProps = { topic: Topic; follow?: ReactNode }
+type TopicHeaderProps = { topic: Topic; follow?: ReactNode; cover_action?: ReactNode; avatar_action?: ReactNode }
 
-export function TopicHeader({ topic, follow }: TopicHeaderProps) {
+export function TopicHeader({ topic, follow, cover_action, avatar_action }: TopicHeaderProps) {
   const { t } = useT()
   return (
     <IdentityHeader>
-      <IdentityHeader.Cover url={topic.cover_url} />
+      <IdentityHeader.Cover url={topic.cover_url} action={cover_action} />
       <IdentityHeader.Identity
-        avatar={<IdentityHeader.Avatar src={topic.avatar_url} name={topic.title} />}
+        avatar={<IdentityHeader.Avatar src={topic.avatar_url} name={topic.title} action={avatar_action} />}
         actions={follow}
       />
       <IdentityHeader.Content>

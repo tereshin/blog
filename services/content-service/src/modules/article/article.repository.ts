@@ -30,6 +30,7 @@ const columns = {
   author_avatar_url: profiles.avatar_url,
   author_slug: profiles.slug,
   author_public_number: users_copy.public_number,
+  author_status_icon_id: profiles.status_icon_id,
   topic_id: topics.id,
   topic_title: topics.title,
   topic_slug: topics.slug,

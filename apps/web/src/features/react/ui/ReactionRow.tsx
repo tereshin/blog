@@ -1,4 +1,5 @@
 import type { ReactionAppearance, ReactionAppearances } from '@blog/contracts'
+import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
 import { BaseIcon, Menu } from '@/shared/ui'
@@ -14,6 +15,7 @@ type ReactionRowProps = {
   /** Гость: «добавить» сразу зовёт вход и не открывает меню видов. */
   onAdd?: () => void
   appearances?: ReactionAppearances
+  children?: ReactNode
 }
 
 function appearanceOf(appearances: ReactionAppearances, kind: string): ReactionAppearance | undefined {
@@ -28,6 +30,7 @@ export function ReactionRow({
   is_pending = false,
   onAdd,
   appearances = FALLBACK_REACTION_APPEARANCES,
+  children,
 }: ReactionRowProps) {
   const { t, locale } = useT()
   const active = appearances.filter((item) => item.status === 'active')
@@ -49,7 +52,7 @@ export function ReactionRow({
           },
       ),
   ]
-  if (visible.length === 0 && active[0]) visible.push(active[0])
+  if (visible.length === 0 && !children && active[0]) visible.push(active[0])
   return (
     <div className="flex flex-wrap items-center gap-2">
       {visible.map((appearance) => {
@@ -71,6 +74,7 @@ export function ReactionRow({
           </ReactionButton>
         )
       })}
+      {children}
       {onAdd ? (
         <ReactionButton
           variant="secondary"

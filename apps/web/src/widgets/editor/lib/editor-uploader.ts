@@ -6,12 +6,39 @@ type UploadedEditorFile = {
 }
 
 /** Ответ media-сервиса в формат Editor.js. Ошибку пробрасываем текстом: инструмент показывает её в блоке. */
-export async function uploadEditorFile(file: File, kind: 'image' | 'attachment'): Promise<UploadedEditorFile> {
+export async function uploadEditorFile(
+  file: File,
+  kind: 'image' | 'attachment',
+): Promise<UploadedEditorFile> {
+  uploads++
+  notifyUploads()
   try {
     const media = await uploadMedia(file, kind)
-    return { success: 1, file: { url: media.url, name: file.name, size: media.byte_size, title: file.name } }
+    return {
+      success: 1,
+      file: { url: media.url, name: file.name, size: media.byte_size, title: file.name },
+    }
   } catch (error) {
-    const message = error instanceof Error && error.message ? error.message : 'Не удалось загрузить файл'
+    const message =
+      error instanceof Error && error.message ? error.message : 'Не удалось загрузить файл'
     throw new Error(message, { cause: error })
+  } finally {
+    uploads--
+    notifyUploads()
   }
+}
+
+let uploads = 0
+const listeners = new Set<() => void>()
+export function editorUploadCount(): number {
+  return uploads
+}
+export function subscribeEditorUploads(listener: () => void) {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+function notifyUploads() {
+  for (const listener of listeners) listener()
 }

@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { useT } from '@/shared/i18n'
 import { cn } from '@/shared/lib'
-import { ArrowLeftIcon } from '@/shared/ui'
+import { BaseIcon } from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
 import { getReturnTarget } from '../lib/feed-return.ts'
 
@@ -23,11 +23,11 @@ export function HeaderBackLink({ className }: HeaderBackLinkProps) {
       to={target}
       aria-label={t('header.back')}
       className={cn(
-        'inline-flex size-9 shrink-0 items-center justify-center rounded-md text-foreground outline-offset-2 hover:bg-surface-secondary',
+        'inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-foreground outline-offset-2 hover:bg-surface-secondary',
         className,
       )}
     >
-      <ArrowLeftIcon className="size-6" />
+      <BaseIcon name="left" style="line" size={28} />
     </Link>
   )
 }

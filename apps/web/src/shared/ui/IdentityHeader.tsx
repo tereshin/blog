@@ -21,7 +21,7 @@ function Cover({ url, action }: CoverProps) {
           className={cn(
             'absolute inset-0 flex items-center justify-center px-4',
             url &&
-              'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
+            'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
           )}
         >
           {action}
@@ -66,23 +66,25 @@ function Navigation({ children }: IdentityHeaderProps) {
 function Loading() {
   return (
     <Root>
-      <Skeleton className="aspect-[3.2/1] min-h-28 w-full rounded-none" />
-      <Identity
-        avatar={
-          <Skeleton
-            shape="circle"
-            className="relative -mt-12 size-20 ring-4 ring-surface sm:-mt-14 sm:size-24"
-          />
-        }
-      />
-      <Content>
-        <Skeleton className="h-7 w-2/3" />
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-5 w-4/5" />
-      </Content>
-      <Navigation>
-        <Skeleton className="mb-4 h-8 w-48" />
-      </Navigation>
+      <div className="max-w-[var(--shell-content-width,640px)] mx-auto">
+        <Skeleton className="aspect-[3.2/1] min-h-28 w-full rounded-none" />
+        <Identity
+          avatar={
+            <Skeleton
+              shape="circle"
+              className="relative -mt-12 size-20 ring-4 ring-surface sm:-mt-14 sm:size-24"
+            />
+          }
+        />
+        <Content>
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-5 w-4/5" />
+        </Content>
+        <Navigation>
+          <Skeleton className="mb-4 h-8 w-48" />
+        </Navigation>
+      </div>
     </Root>
   )
 }

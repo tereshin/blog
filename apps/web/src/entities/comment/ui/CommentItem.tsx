@@ -55,6 +55,9 @@ export function CommentItem({
         ? t('comment.hidden')
         : null
   const reply_form = renderReply?.(comment) ?? null
+  const standalone_mentions = (comment.mentions ?? []).filter(
+    (user) => !comment.body?.includes(`@${user.display_name}`),
+  )
   const reply_count = comment.reply_count ?? comment.replies.length
   const has_replies = reply_count > 0
   const query = useReplies(article_id, comment.id, sort, is_expanded && placement.root_id === null)
@@ -113,9 +116,9 @@ export function CommentItem({
           ))}
         </div>
       ) : null}
-      {!stub && comment.mentions?.length ? (
+      {!stub && standalone_mentions.length ? (
         <div className="mt-2 flex flex-wrap gap-2">
-          {comment.mentions.map((user) => (
+          {standalone_mentions.map((user) => (
             <span key={user.user_id} className="text-sm text-accent">
               @{user.display_name}
             </span>

@@ -1,47 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
 import { useBlocker, useLocation, useNavigate, useParams } from 'react-router'
 import { articleKeys, getArticleDraft } from '@/entities/article'
 import type { ArticleDraft } from '@/entities/article'
 import { memberMutationBlock, useViewer } from '@/entities/session'
 import { useTopics } from '@/entities/topic'
+import type { Topic } from '@/entities/topic'
 import { useLoginDialog } from '@/features/login'
 import { PublishPanel, UnsavedChangesDialog, usePublishArticle } from '@/features/publish-article'
 import { useT } from '@/shared/i18n'
-import { CloseButton, Dialog, EmptyState } from '@/shared/ui'
-import { BlockEditor, EditorSkeleton, useEditorDocument } from '@/widgets/editor'
+import { CloseButton, EmptyState } from '@/shared/ui'
+import {
+  BlockEditor,
+  EditorSkeleton,
+  EditorWindow,
+  EditorPanel,
+  useEditorDocument,
+} from '@/widgets/editor'
 
 const EMPTY_DOCUMENT = { blocks: [] }
-
-function EditorWindow({
-  children,
-  onClose,
-  is_fullscreen,
-}: {
-  children: ReactNode
-  onClose: () => void
-  is_fullscreen: boolean
-}) {
-  const { t } = useT()
-  return (
-    <Dialog
-      is_open
-      onOpenChange={(open) => {
-        if (!open) onClose()
-      }}
-      aria-label={t('header.write')}
-      size="full"
-      className={
-        is_fullscreen
-          ? 'article-editor-window article-editor-window--full'
-          : 'article-editor-window'
-      }
-    >
-      {children}
-    </Dialog>
-  )
-}
 
 function WindowNotice({ title, onClose }: { title: string; onClose: () => void }) {
   const { t } = useT()
@@ -69,10 +46,14 @@ export default function EditorPage() {
   const draft_query = useQuery({
     queryKey: articleKeys.draft(id ?? ''),
     queryFn: ({ signal }) => getArticleDraft(id ?? '', signal),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && viewer.status === 'member',
   })
   const [local, setLocal] = useState<ArticleDraft | null>(null)
-  const draft = local && (id === undefined || id === local.id) ? local : (draft_query.data ?? null)
+  const [opened, setOpened] = useState<{ draft: ArticleDraft | null; topics: Topic[] } | null>(null)
+  const draft =
+    local && (id === undefined || id === local.id)
+      ? local
+      : (draft_query.data ?? opened?.draft ?? null)
   const editor = useEditorDocument()
   const [form_dirty, setFormDirty] = useState(false)
   const [editor_ready, setEditorReady] = useState(false)
@@ -90,8 +71,8 @@ export default function EditorPage() {
   }, [id])
 
   useEffect(() => {
-    if (viewer.status === 'guest') openLogin('required')
-  }, [viewer.status, openLogin])
+    if (viewer.status === 'guest' && !opened) openLogin('required')
+  }, [viewer.status, opened, openLogin])
 
   useEffect(() => {
     if (!is_dirty) return
@@ -125,44 +106,58 @@ export default function EditorPage() {
   const block = memberMutationBlock(viewer)
   const can_write = viewer.status === 'member' && viewer.user.can_publish && block === null
   const waiting =
-    viewer.status === 'loading' ||
-    (can_write && (topics.isPending || (Boolean(id) && !draft && draft_query.isPending)))
+    !opened &&
+    (viewer.status === 'loading' ||
+      (can_write && (topics.isPending || (Boolean(id) && !draft && draft_query.isPending))))
+
+  useEffect(() => {
+    if (!opened && can_write && !waiting && !(id && !draft) && topics.data) {
+      // Keep the authorized edit session alive when auth clears the query cache.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpened({ draft, topics: topics.data })
+    }
+  }, [opened, can_write, waiting, id, draft, topics.data])
 
   return (
-    <EditorWindow onClose={requestClose} is_fullscreen={is_fullscreen}>
+    <EditorWindow label={t('header.write')} onClose={requestClose} is_fullscreen={is_fullscreen}>
       {waiting ? (
         <div className="p-5">
           <EditorSkeleton />
         </div>
       ) : null}
-      {viewer.status === 'guest' ? (
+      {!opened && viewer.status === 'guest' ? (
         <WindowNotice title={t('editor.guest')} onClose={requestClose} />
       ) : null}
-      {block === 'restricted' ? (
+      {!opened && block === 'restricted' ? (
         <WindowNotice title={t('editor.restricted')} onClose={requestClose} />
       ) : null}
-      {block === 'email_unverified' ? (
+      {!opened && block === 'email_unverified' ? (
         <WindowNotice title={t('login.email_unverified')} onClose={requestClose} />
       ) : null}
-      {viewer.status === 'member' && block === null && !viewer.user.can_publish ? (
+      {!opened && viewer.status === 'member' && block === null && !viewer.user.can_publish ? (
         <WindowNotice title={t('editor.cannot_publish')} onClose={requestClose} />
       ) : null}
-      {can_write && id && !draft && draft_query.isError ? (
+      {!opened && can_write && id && !draft && draft_query.isError ? (
         <WindowNotice title={t('editor.not_found')} onClose={requestClose} />
       ) : null}
-      {can_write && !waiting && !(id && !draft) && topics.data ? (
+      {opened ? (
         <PublishPanel
-          is_fullscreen={is_fullscreen}
-          onToggleFullscreen={() => setFullscreen((current) => !current)}
+          renderPanel={(slots) => (
+            <EditorPanel
+              {...slots}
+              is_fullscreen={is_fullscreen}
+              onToggleFullscreen={() => setFullscreen((current) => !current)}
+              onClose={requestClose}
+            />
+          )}
           initial={draft}
-          topics={topics.data}
+          topics={opened.topics}
           readDocument={editor.save}
           editor_ready={editor_ready}
           is_pending={publishing.is_pending}
           slug_error={publishing.slug_error}
           reasons={publishing.reasons}
           show_saved={Boolean(draft?.id) && !is_dirty}
-          onClose={requestClose}
           onDirty={setFormDirty}
           onSubmit={publishing.submit}
         >

@@ -6,6 +6,8 @@ import type { FaviconVariant } from '@blog/contracts'
 
 const SVG_TAGS = new Set([
   'svg',
+  'metadata',
+  'image',
   'g',
   'path',
   'rect',
@@ -115,6 +117,8 @@ export async function validateFavicon(bytes: Buffer, variant: FaviconVariant): P
   }
   if (variant === 'svg') {
     let root = false
+    let metadata_depth = 0
+    const embedded_images: Buffer[] = []
     const parser = new SaxesParser({ xmlns: true })
     parser.on('doctype', () => invalid('DTD в SVG запрещён'))
     parser.on('processinginstruction', () => invalid('Инструкции в SVG запрещены'))
@@ -123,9 +127,22 @@ export async function validateFavicon(bytes: Buffer, variant: FaviconVariant): P
         if (tag.local !== 'svg' || tag.uri !== 'http://www.w3.org/2000/svg') invalid('Нужен SVG')
         root = true
       }
-      if (tag.uri !== 'http://www.w3.org/2000/svg' || !SVG_TAGS.has(tag.local))
+      const is_metadata =
+        metadata_depth > 0 &&
+        (tag.uri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#' ||
+          tag.uri === 'http://purl.org/dc/elements/1.1/')
+      if (!is_metadata && (tag.uri !== 'http://www.w3.org/2000/svg' || !SVG_TAGS.has(tag.local)))
         invalid('Недопустимый элемент SVG')
+      if (tag.local === 'metadata' || metadata_depth > 0) metadata_depth += 1
       for (const attribute of Object.values(tag.attributes)) {
+        if (tag.local === 'image' && attribute.local === 'href') {
+          const match = /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/.exec(attribute.value)
+          if (!match?.[1]) invalid('В SVG разрешены только встроенные PNG изображения')
+          const image = Buffer.from(match[1], 'base64')
+          if (image.toString('base64') !== match[1]) invalid('Некорректное изображение SVG')
+          embedded_images.push(image)
+          continue
+        }
         if (
           /^on/i.test(attribute.local) ||
           attribute.local === 'style' ||
@@ -140,11 +157,24 @@ export async function validateFavicon(bytes: Buffer, variant: FaviconVariant): P
           invalid('Внешние ссылки SVG запрещены')
       }
     })
+    parser.on('closetag', () => {
+      if (metadata_depth > 0) metadata_depth -= 1
+    })
     parser.on('error', (cause) => {
       throw new ValidationError({ message: 'Некорректный SVG', cause })
     })
     parser.write(bytes.toString('utf8')).close()
     if (!root) invalid('Нужен SVG')
+    for (const image of embedded_images) {
+      try {
+        const decoder = sharp(image, { limitInputPixels: 4096 * 4096 })
+        const info = await decoder.metadata()
+        if (info.format !== 'png' || (info.pages ?? 1) !== 1) invalid('Нужен встроенный PNG')
+        await decoder.raw().toBuffer()
+      } catch (cause) {
+        throw new ValidationError({ message: 'Некорректное встроенное PNG изображение SVG', cause })
+      }
+    }
     return 'image/svg+xml'
   }
   try {

@@ -25,3 +25,6 @@ export { NotificationCreatedV1 } from './notification/notification-created.v1.ts
 
 export { SocialCoverRequestedV1 } from './content/social-cover-requested.v1.ts'
 export { SocialCoverGeneratedV1 } from './media/social-cover-generated.v1.ts'
+
+export { PageUpdatedV1 } from './content/page-updated.v1.ts'
+export { PageDeletedV1 } from './content/page-deleted.v1.ts'

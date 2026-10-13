@@ -2,15 +2,12 @@ import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import { Button, Dialog } from '@/shared/ui'
 import { TopicForm } from './TopicForm.tsx'
-import type { TopicUpload } from './TopicForm.tsx'
 export function TopicDialog({
   initial,
-  upload,
   is_open,
   onOpenChange,
 }: {
   initial?: Topic
-  upload?: TopicUpload
   is_open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -22,7 +19,7 @@ export function TopicDialog({
       </Dialog.Header>
       <Dialog.Body>
         {is_open ? (
-          <TopicForm initial={initial} upload={upload} onSaved={() => onOpenChange(false)} />
+          <TopicForm initial={initial} onSaved={() => onOpenChange(false)} />
         ) : null}
       </Dialog.Body>
       <Dialog.Footer>

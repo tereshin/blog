@@ -4,7 +4,7 @@ import { reactionCountsSchema, reactionKindSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { articleKeys, mapFeedCards } from '@/entities/article'
 import { commentKeys } from '@/entities/comment'
-import type { CommentNode } from '@/entities/comment'
+import type { CommentNode, UserCommentModel } from '@/entities/comment'
 import type { ArticleLoad, ArticleViewerState } from '@/entities/article'
 import { applyReactionChange } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
@@ -39,13 +39,14 @@ function patchCommentNode(node: CommentNode, comment_id: string, next: ReactionS
 
 function patchCommentCache(data: unknown, comment_id: string, next: ReactionSnapshot): unknown {
   if (!data || typeof data !== 'object' || !('pages' in data)) return data
-  const cache = data as { pages: { comments: CommentNode[] }[] }
+  const cache = data as { pages: { comments?: CommentNode[]; items?: UserCommentModel[] }[] }
   if (!Array.isArray(cache.pages)) return data
   return {
     ...cache,
     pages: cache.pages.map((page) => ({
       ...page,
-      comments: Array.isArray(page.comments) ? page.comments.map((comment) => patchCommentNode(comment, comment_id, next)) : page.comments,
+      ...(page.comments ? { comments: page.comments.map((comment) => patchCommentNode(comment, comment_id, next)) } : {}),
+      ...(page.items ? { items: page.items.map((comment) => comment.id === comment_id ? { ...comment, reaction_counts: next.counts, reaction_count: next.reaction_count, my_reaction: next.my_reaction } : comment) } : {}),
     })),
   }
 }

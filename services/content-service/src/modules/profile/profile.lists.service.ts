@@ -45,6 +45,7 @@ function toArticle(
       display_name: row.author_display_name ?? '',
       avatar_url: row.author_avatar_url,
       slug: row.author_slug ?? String(row.author_public_number ?? ''),
+      status_icon_id: row.author_status_icon_id,
     },
     topic: { id: row.topic_id, title: row.topic_title, slug: row.topic_slug, status: row.topic_status, avatar_url: row.topic_avatar_url },
     reaction_counts: counts.success ? counts.data : EMPTY_COUNTS,

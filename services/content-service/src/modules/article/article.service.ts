@@ -42,6 +42,7 @@ function authorOf(row: ArticleRow) {
     display_name: row.author_display_name ?? '',
     avatar_url: row.author_avatar_url,
     slug: row.author_slug ?? String(row.author_public_number ?? ''),
+    status_icon_id: row.author_status_icon_id,
   }
 }
 

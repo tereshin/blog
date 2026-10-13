@@ -30,7 +30,9 @@ export function ArticleDiscussion({ article }: ArticleDiscussionProps) {
   return (
     <div className="flex flex-col gap-4">
       <CommentForm
+        key={article.id}
         article_id={article.id}
+        author={article.author}
         comments_enabled={article.comments_enabled}
         parent={null}
         onCancelReply={() => undefined}
@@ -77,6 +79,7 @@ export function ArticleDiscussion({ article }: ArticleDiscussionProps) {
           reply?.anchor_id === comment.id ? (
             <CommentForm
               key={reply.anchor_id}
+              author={article.author}
               article_id={article.id}
               comments_enabled={article.comments_enabled}
               parent={{ id: reply.id, name: reply.name }}

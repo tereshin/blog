@@ -175,14 +175,14 @@ test.describe('вход через эмулятор', () => {
   })
 
   test('закрытие окна провайдера оставляет гостя на том же адресе', async ({ page }) => {
-    await page.goto('/about')
+    await page.goto('/pages/welcome-page')
     await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
     const popup = page.waitForEvent('popup')
     await page.getByRole('button', { name: 'Войти через Google' }).click()
     const popup_page = await popup
     await popup_page.close()
     await expect(page.getByText('Вход не завершён.')).toBeVisible()
-    await expect(page).toHaveURL(/\/about/)
+    await expect(page).toHaveURL(/\/pages\/welcome-page/)
     await expect(page.getByRole('banner').getByRole('button', { name: 'Войти' })).toBeVisible()
   })
 })
