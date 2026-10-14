@@ -1,6 +1,6 @@
+import preview from '#.storybook/preview'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { AdminPage } from '@blog/contracts'
 import { PageForm } from './PageForm.tsx'
 import session from '@/shared/api/mocks/fixtures/session.json'
@@ -69,13 +69,9 @@ function Frame({ kind }: { kind: 'new' | 'draft' | 'published' | 'loading' | 'gu
     </QueryClientProvider>
   )
 }
-const meta = { title: 'features/manage-pages/PageForm', component: Frame } satisfies Meta<
-  typeof Frame
->
-export default meta
-type Story = StoryObj<typeof Frame>
-export const New: Story = { args: { kind: 'new' } }
-export const Draft: Story = { args: { kind: 'draft' } }
-export const Published: Story = { args: { kind: 'published' } }
-export const Loading: Story = { args: { kind: 'loading' } }
-export const SessionExpired: Story = { args: { kind: 'guest' } }
+const meta = preview.meta({ title: 'features/manage-pages/PageForm', component: Frame })
+export const New = meta.story({ args: { kind: 'new' } })
+export const Draft = meta.story({ args: { kind: 'draft' } })
+export const Published = meta.story({ args: { kind: 'published' } })
+export const Loading = meta.story({ args: { kind: 'loading' } })
+export const SessionExpired = meta.story({ args: { kind: 'guest' } })

@@ -15,8 +15,10 @@ import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { notifications, outbox } from '../../src/infra/db/schema.ts'
 import {
-  createNotificationHandler,
-  createNotificationRepository,
+  NotificationConsumer,
+  NotificationController,
+  NotificationRepository,
+  NotificationService,
   notificationRoutes,
 } from '../../src/modules/notification/index.ts'
 
@@ -82,8 +84,8 @@ describe('notification: записи из событий (PostgreSQL в конт
     postgres = await startPostgres()
     database = openDatabase(postgres.url)
     await migrate(database.pool)
-    const repository = createNotificationRepository(database.db)
-    const handler = createNotificationHandler(repository)
+    const service = new NotificationService(new NotificationRepository(database.db))
+    const handler = new NotificationConsumer(service).handle
     const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, handler)
 
     await apply(event('identity.user.created', { ...user, user_id: AUTHOR, display_name: 'Анна' }))
@@ -106,7 +108,7 @@ describe('notification: записи из событий (PostgreSQL в конт
     app.addHook('onRequest', async (request) => {
       request.viewer = request.headers['x-test-viewer'] === 'author' ? author : guest
     })
-    await app.register(notificationRoutes, { database })
+    await app.register(notificationRoutes, { controller: new NotificationController(service) })
 
     const comment = event('discussion.comment.created', {
       comment_id: COMMENT,
@@ -141,9 +143,8 @@ describe('notification: записи из событий (PostgreSQL в конт
   })
 
   it('свой комментарий и реакция на комментарий записей не создают', async () => {
-    const repository = createNotificationRepository(database.db)
-    const apply = (item: OutboxEvent) =>
-      processEvent(database.db, CONSUMER, item, createNotificationHandler(repository))
+    const consumer = new NotificationConsumer(new NotificationService(new NotificationRepository(database.db)))
+    const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, consumer.handle)
     await apply(
       event('discussion.comment.created', {
         comment_id: '4a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a32',
@@ -188,8 +189,7 @@ describe('notification: записи из событий (PostgreSQL в конт
   it('subscription and mention recipients are deduplicated, exclude the actor and survive replay', async () => {
     const subscriber = '00000000-0000-4000-8000-000000000099'
     const comment_id = '00000000-0000-4000-8000-000000000098'
-    const repository = createNotificationRepository(database.db)
-    const handler = createNotificationHandler(repository)
+    const handler = new NotificationConsumer(new NotificationService(new NotificationRepository(database.db))).handle
     const item = event('discussion.comment.created', {
       comment_id,
       article_id: ARTICLE,

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { publicPageSchema, requireVerifiedEmail } from '@blog/contracts'
+import { publicPageSchema } from '@blog/contracts'
 import type {
   AdminPagesQuery,
   BlocksDocument,
@@ -13,6 +13,7 @@ import {
   RestrictedError,
   UnauthorizedError,
 } from '@blog/errors'
+import { requireVerifiedEmail } from '../../shared/require-verified-email.ts'
 import {
   sanitizeDocument,
   hasContentBlock,
@@ -20,7 +21,7 @@ import {
 import type { FileOwner } from '../../shared/editor-document/document.sanitizer.ts'
 import { pageDto, pageSummary } from './page.mapper.ts'
 import { pageError } from './page.errors.ts'
-import type { PageRepository, StoredPage } from './page.types.ts'
+import type { PageRepositoryPort, StoredPage } from './page.types.ts'
 export type PageOptions = {
   media_urls: readonly string[]
   lookupFile: (url: string) => Promise<FileOwner | null>
@@ -51,19 +52,24 @@ function existingFiles(doc?: BlocksDocument) {
     if (block.type === 'image' || block.type === 'attaches') urls.add(block.data.file.url)
   return urls
 }
-export function createPageService(repository: PageRepository, options: PageOptions) {
-  async function prepare(
+export class PageService {
+  constructor(
+    private readonly repository: PageRepositoryPort,
+    private readonly options: PageOptions,
+  ) {}
+
+  private async prepare(
     actor_id: string,
     input: CreatePage | UpdatePage,
     current: StoredPage | null,
   ) {
     const cache = new Map<string, Promise<FileOwner | null>>()
     const blocks = await sanitizeDocument(input.blocks ?? current?.blocks ?? { blocks: [] }, {
-      ...options,
+      ...this.options,
       author_id: actor_id,
       existing_urls: existingFiles(current?.blocks),
       lookupFile: (url) => {
-        const pending = cache.get(url) ?? options.lookupFile(url)
+        const pending = cache.get(url) ?? this.options.lookupFile(url)
         cache.set(url, pending)
         return pending
       },
@@ -80,7 +86,8 @@ export function createPageService(repository: PageRepository, options: PageOptio
       status,
     }
   }
-  function operation(
+
+  private operation(
     viewer: ServiceContext,
     key: string,
     method: string,
@@ -99,52 +106,58 @@ export function createPageService(repository: PageRepository, options: PageOptio
       correlation_id,
     }
   }
-  return {
-    async list(viewer: ServiceContext, query: AdminPagesQuery) {
-      requirePageAdmin(viewer)
-      const page = await repository.list(query)
-      return { items: page.rows.map(pageSummary), next_cursor: page.next_cursor }
-    },
-    async get(viewer: ServiceContext, id: string) {
-      requirePageAdmin(viewer)
-      const row = await repository.find(id)
-      if (!row) throw pageError('page_not_found', 404)
-      return pageDto(row)
-    },
-    async publicPage(slug: string) {
-      const row = await repository.publicPage(slug)
-      if (!row) throw pageError('page_not_found', 404)
-      return publicPageSchema.strip().parse(pageDto(row))
-    },
-    published: repository.published,
-    async create(viewer: ServiceContext, input: CreatePage, key: string, correlation_id: string) {
-      const op = operation(viewer, key, 'POST', undefined, input, correlation_id)
-      return repository.mutate(op, (current) => prepare(op.actor_id, input, current))
-    },
-    async update(
-      viewer: ServiceContext,
-      id: string,
-      input: UpdatePage,
-      key: string,
-      correlation_id: string,
-    ) {
-      const op = operation(viewer, key, 'PATCH', id, input, correlation_id)
-      return repository.mutate({ ...op, id, expected_version: input.expected_version }, (current) =>
-        prepare(op.actor_id, input, current),
-      )
-    },
-    async remove(
-      viewer: ServiceContext,
-      id: string,
-      expected_version: number,
-      key: string,
-      correlation_id: string,
-    ) {
-      const op = operation(viewer, key, 'DELETE', id, { expected_version }, correlation_id)
-      return repository.mutate({ ...op, id, expected_version, is_delete: true }, async () => {
-        throw new Error('delete has no document')
-      })
-    },
+
+  async list(viewer: ServiceContext, query: AdminPagesQuery) {
+    requirePageAdmin(viewer)
+    const page = await this.repository.list(query)
+    return { items: page.rows.map(pageSummary), next_cursor: page.next_cursor }
+  }
+
+  async get(viewer: ServiceContext, id: string) {
+    requirePageAdmin(viewer)
+    const row = await this.repository.find(id)
+    if (!row) throw pageError('page_not_found', 404)
+    return pageDto(row)
+  }
+
+  async publicPage(slug: string) {
+    const row = await this.repository.publicPage(slug)
+    if (!row) throw pageError('page_not_found', 404)
+    return publicPageSchema.strip().parse(pageDto(row))
+  }
+
+  published(cursor?: string, limit?: number) {
+    return this.repository.published(cursor, limit)
+  }
+
+  async create(viewer: ServiceContext, input: CreatePage, key: string, correlation_id: string) {
+    const op = this.operation(viewer, key, 'POST', undefined, input, correlation_id)
+    return this.repository.mutate(op, (current) => this.prepare(op.actor_id, input, current))
+  }
+
+  async update(
+    viewer: ServiceContext,
+    id: string,
+    input: UpdatePage,
+    key: string,
+    correlation_id: string,
+  ) {
+    const op = this.operation(viewer, key, 'PATCH', id, input, correlation_id)
+    return this.repository.mutate({ ...op, id, expected_version: input.expected_version }, (current) =>
+      this.prepare(op.actor_id, input, current),
+    )
+  }
+
+  async remove(
+    viewer: ServiceContext,
+    id: string,
+    expected_version: number,
+    key: string,
+    correlation_id: string,
+  ) {
+    const op = this.operation(viewer, key, 'DELETE', id, { expected_version }, correlation_id)
+    return this.repository.mutate({ ...op, id, expected_version, is_delete: true }, async () => {
+      throw new Error('delete has no document')
+    })
   }
 }
-export type PageService = ReturnType<typeof createPageService>

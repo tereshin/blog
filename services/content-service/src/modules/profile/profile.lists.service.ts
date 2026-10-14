@@ -4,9 +4,8 @@ import type { ProfileArticle, ProfileArticlePage, ProfileStats, ServiceContext, 
 import { UnauthorizedError } from '@blog/errors'
 import { decodeProfileCursor, encodeProfileCursor } from './profile.cursor.ts'
 import type { ProfileCursor } from './profile.cursor.ts'
-import { createProfileLists } from './profile.lists.ts'
-import type { ProfileArticleRow, UserListRow } from './profile.lists.ts'
-import type { ProfileService } from './profile.types.ts'
+import type { ProfileListsRepository, ProfileArticleRow, UserListRow } from './profile.lists.ts'
+import type { ProfileService } from './profile.service.ts'
 
 const EMPTY_COUNTS = { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 const storedTopCommentSchema = z.looseObject({ id: z.uuid(), author_id: z.uuid(), body: z.string() })
@@ -69,13 +68,17 @@ function pageOf<T>(rows: T[], limit: number, cursorOf: (row: T) => ProfileCursor
   return { items, next_cursor: rows.length > limit && last ? encodeProfileCursor(cursorOf(last)) : null }
 }
 
-export function createProfileListService(repository: ReturnType<typeof createProfileLists>, profiles: ProfileService) {
-  return {
-    async articles(viewer: ServiceContext, slug: string, query: ProfileListQuery): Promise<ProfileArticlePage> {
-      const profile = await profiles.getBySlug(viewer, slug)
+export class ProfileListService {
+  constructor(
+    private readonly repository: ProfileListsRepository,
+    private readonly profiles: ProfileService,
+  ) {}
+
+  async articles(viewer: ServiceContext, slug: string, query: ProfileListQuery): Promise<ProfileArticlePage> {
+      const profile = await this.profiles.getBySlug(viewer, slug)
       const sort = query.sort ?? 'fresh'
       const cursor = query.cursor ? decodeProfileCursor(query.cursor) : null
-      const rows = await repository.listArticles(viewer, profile.user_id, sort, cursor, query.limit + 1)
+      const rows = await this.repository.listArticles(viewer, profile.user_id, sort, cursor, query.limit + 1)
       const page = pageOf(rows, query.limit, (row) =>
         sort === 'popular'
           ? { k: 'score', s: Number(row.score), id: row.id }
@@ -85,38 +88,35 @@ export function createProfileListService(repository: ReturnType<typeof createPro
         const stored = storedTopCommentSchema.safeParse(row.top_comment)
         return stored.success ? [stored.data.author_id] : []
       })
-      const profiles_by_id = await repository.findProfiles([...new Set(author_ids)])
+      const profiles_by_id = await this.repository.findProfiles([...new Set(author_ids)])
       return { items: page.items.map((row) => toArticle(row, profiles_by_id)), next_cursor: page.next_cursor }
-    },
+  }
 
-    async followers(viewer: ServiceContext, slug: string, query: PageQuery): Promise<UserListPage> {
-      const profile = await profiles.getBySlug(viewer, slug)
+  async followers(viewer: ServiceContext, slug: string, query: PageQuery): Promise<UserListPage> {
+      const profile = await this.profiles.getBySlug(viewer, slug)
       const cursor = query.cursor ? decodeProfileCursor(query.cursor) : null
-      const rows = await repository.listFollowers(profile.user_id, cursor, query.limit + 1)
+      const rows = await this.repository.listFollowers(profile.user_id, cursor, query.limit + 1)
       const page = pageOf(rows, query.limit, (row) => ({ k: 'follow', t: row.created_at.toISOString(), id: row.user_id }))
       return { items: page.items.map(toItem), next_cursor: page.next_cursor }
-    },
+  }
 
-    async following(viewer: ServiceContext, slug: string, query: PageQuery): Promise<UserListPage> {
-      const profile = await profiles.getBySlug(viewer, slug)
+  async following(viewer: ServiceContext, slug: string, query: PageQuery): Promise<UserListPage> {
+      const profile = await this.profiles.getBySlug(viewer, slug)
       const cursor = query.cursor ? decodeProfileCursor(query.cursor) : null
-      const rows = await repository.listFollowing(profile.user_id, cursor, query.limit + 1)
+      const rows = await this.repository.listFollowing(profile.user_id, cursor, query.limit + 1)
       const page = pageOf(rows, query.limit, (row) => ({ k: 'follow', t: row.created_at.toISOString(), id: row.user_id }))
       return { items: page.items.map(toItem), next_cursor: page.next_cursor }
-    },
+  }
 
-    async stats(viewer: ServiceContext): Promise<ProfileStats> {
+  async stats(viewer: ServiceContext): Promise<ProfileStats> {
       if (!viewer.user_id) throw new UnauthorizedError()
-      return repository.stats(viewer.user_id)
-    },
+      return this.repository.stats(viewer.user_id)
+  }
 
-    async rating(query: PageQuery): Promise<UserListPage> {
+  async rating(query: PageQuery): Promise<UserListPage> {
       const cursor = query.cursor ? decodeProfileCursor(query.cursor) : null
-      const rows = await repository.rating(cursor, query.limit + 1)
+      const rows = await this.repository.rating(cursor, query.limit + 1)
       const page = pageOf(rows, query.limit, (row) => ({ k: 'rep', s: row.reputation, id: row.user_id }))
       return { items: page.items.map(toItem), next_cursor: page.next_cursor }
-    },
   }
 }
-
-export type ProfileListService = ReturnType<typeof createProfileListService>

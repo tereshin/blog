@@ -1,5 +1,5 @@
 import { createIdempotentConsumer } from '@blog/broker'
-import type { BrokerClient, Database, EventHandler, RunningConsumer } from '@blog/broker'
+import type { BrokerClient, Database, OutboxEvent, RunningConsumer } from '@blog/broker'
 import {
   ArticleDeletedV1,
   ArticleHiddenV1,
@@ -12,7 +12,7 @@ import {
   UserCreatedV1,
 } from '@blog/contracts'
 import type { Logger } from '@blog/logger'
-import type { NotificationRepository } from './notification.repository.ts'
+import type { NotificationService } from './notification.service.ts'
 
 const ARTICLE_EVENTS = {
   'content.article.published': ArticlePublishedV1,
@@ -21,106 +21,10 @@ const ARTICLE_EVENTS = {
   'content.article.deleted': ArticleDeletedV1,
 } as const
 
-/** Применяет одно событие: копии статьи и участника и записи уведомлений. Своё действие запись не создаёт. */
-export function createNotificationHandler(repository: NotificationRepository): EventHandler {
-  return async (tx: Database, event) => {
-    switch (event.name) {
-      case 'content.article.published':
-      case 'content.article.updated':
-      case 'content.article.deleted':
-      case 'content.article.hidden': {
-        const parsed = ARTICLE_EVENTS[event.name].parse(event)
-        await repository.upsertArticle(tx, {
-          article_id: parsed.article_id,
-          author_id: parsed.author_id,
-          title: parsed.title,
-          slug: parsed.slug,
-        })
-        if (event.name === 'content.article.hidden') {
-          await repository.notify(tx, {
-            source: event,
-            user_id: parsed.author_id,
-            kind: 'moderation',
-            article_id: parsed.article_id,
-            actor_id: null,
-          })
-        }
-        return
-      }
-      case 'identity.user.created': {
-        const parsed = UserCreatedV1.parse(event)
-        await repository.upsertUser(tx, {
-          user_id: parsed.user_id,
-          display_name: parsed.display_name,
-        })
-        return
-      }
-      case 'content.profile.updated': {
-        const parsed = ProfileUpdatedV1.parse(event)
-        await repository.upsertUser(tx, {
-          user_id: parsed.user_id,
-          display_name: parsed.display_name,
-          avatar_url: parsed.avatar_url,
-        })
-        return
-      }
-      case 'discussion.comment.created': {
-        const parsed = CommentCreatedV1.parse(event)
-        const recipients = new Map<string, 'comment' | 'reply' | 'mention'>()
-        for (const id of parsed.subscriber_ids ?? []) recipients.set(id, 'comment')
-        recipients.set(parsed.article_author_id, 'comment')
-        if (parsed.parent_author_id && parsed.parent_author_id !== parsed.article_author_id)
-          recipients.set(parsed.parent_author_id, 'reply')
-        for (const id of parsed.mention_ids ?? []) recipients.set(id, 'mention')
-        recipients.delete(parsed.author_id)
-        for (const [user_id, kind] of recipients) {
-          await repository.notify(tx, {
-            source: event,
-            user_id,
-            kind,
-            article_id: parsed.article_id,
-            comment_id: parsed.comment_id,
-            actor_id: parsed.author_id,
-          })
-        }
-        return
-      }
-      case 'discussion.reaction.added': {
-        const parsed = ReactionAddedV1.parse(event)
-        if (parsed.target_type === 'article' && parsed.actor_id !== parsed.target_author_id) {
-          await repository.notify(tx, {
-            source: event,
-            user_id: parsed.target_author_id,
-            kind: 'reaction',
-            article_id: parsed.article_id,
-            actor_id: parsed.actor_id,
-          })
-        }
-        return
-      }
-      case 'messaging.message.sent': {
-        const parsed = MessageSentV1.parse(event)
-        if (parsed.sender_id === parsed.recipient_id) return
-        await repository.notify(tx, {
-          source: event,
-          user_id: parsed.recipient_id,
-          kind: 'message',
-          conversation_id: parsed.conversation_id,
-          actor_id: parsed.sender_id,
-        })
-        return
-      }
-      default:
-        return
-    }
-  }
-}
-
 export type NotificationConsumerDeps = {
   db: Database
   broker: BrokerClient
   logger: Logger
-  repository: NotificationRepository
 }
 
 const SUBSCRIPTIONS = [
@@ -132,13 +36,50 @@ const SUBSCRIPTIONS = [
   { durable: 'notification-messages', subject: 'messaging.message.sent' },
 ] as const
 
-/** Запускает потребителей. Каждый durable пишет свою строку в `processed_events`. */
-export async function startNotificationConsumers(
-  deps: NotificationConsumerDeps,
-): Promise<RunningConsumer> {
-  const handler = createNotificationHandler(deps.repository)
-  const running = await Promise.all(
-    SUBSCRIPTIONS.map((item) => createIdempotentConsumer({ ...deps, ...item, handler })),
-  )
-  return { stop: async () => void (await Promise.all(running.map((consumer) => consumer.stop()))) }
+/** Разбирает событие и передаёт его сервису в транзакции потребителя; решения о получателях принимает сервис. */
+export class NotificationConsumer {
+  constructor(private readonly service: NotificationService<Database>) {}
+
+  readonly handle = async (tx: Database, event: OutboxEvent): Promise<void> => {
+    switch (event.name) {
+      case 'content.article.published':
+      case 'content.article.updated':
+      case 'content.article.deleted':
+      case 'content.article.hidden': {
+        const parsed = ARTICLE_EVENTS[event.name].parse(event)
+        const article = { article_id: parsed.article_id, author_id: parsed.author_id, title: parsed.title, slug: parsed.slug }
+        await this.service.applyArticle(tx, event, article, event.name === 'content.article.hidden')
+        return
+      }
+      case 'identity.user.created': {
+        const parsed = UserCreatedV1.parse(event)
+        await this.service.copyUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name })
+        return
+      }
+      case 'content.profile.updated': {
+        const parsed = ProfileUpdatedV1.parse(event)
+        await this.service.copyUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name, avatar_url: parsed.avatar_url })
+        return
+      }
+      case 'discussion.comment.created':
+        await this.service.notifyComment(tx, event, CommentCreatedV1.parse(event))
+        return
+      case 'discussion.reaction.added':
+        await this.service.notifyReaction(tx, event, ReactionAddedV1.parse(event))
+        return
+      case 'messaging.message.sent':
+        await this.service.notifyMessage(tx, event, MessageSentV1.parse(event))
+        return
+      default:
+        return
+    }
+  }
+
+  /** Каждый durable пишет свою строку в `processed_events`. */
+  async start(deps: NotificationConsumerDeps): Promise<RunningConsumer> {
+    const running = await Promise.all(
+      SUBSCRIPTIONS.map((item) => createIdempotentConsumer({ ...deps, ...item, handler: this.handle })),
+    )
+    return { stop: async () => void (await Promise.all(running.map((consumer) => consumer.stop()))) }
+  }
 }

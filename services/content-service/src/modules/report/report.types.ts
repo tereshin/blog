@@ -15,7 +15,7 @@ export type ReportRow = {
   status: ReportStatus
 }
 
-export type ReportRepository = {
+export type ReportRepositoryPort = {
   findArticle: (article_id: string) => Promise<ReportArticle | null>
   createOpen: (input: { id: string; article_id: string; reporter_id: string }) => Promise<ReportRow>
 }

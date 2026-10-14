@@ -1,15 +1,13 @@
 import { z } from 'zod'
 import { blocksDocumentSchema, reactionCountsSchema } from '@blog/contracts'
-import type { Article, ArticleAccessFields, FeedCard, ReactionCounts, ServiceContext } from '@blog/contracts'
-import { canRead } from '../access/index.ts'
+import type { Article, ArticleAccessFields, ArticleCards, FeedCard, ReactionCounts, ServiceContext } from '@blog/contracts'
+import { canRead } from '../../shared/can-read.ts'
 import { ArticleMembersOnlyError, ArticleUnavailableError } from './article.errors.ts'
-import type { ArticleRepository, ArticleRow, ArticleService } from './article.types.ts'
-import { createArticleWrite } from './article.write.ts'
-import type { ArticleWriteOptions } from './article.write.ts'
+import type { ArticleReadRepositoryPort, ArticleRow, ProfileLite } from './article.types.ts'
 
 const EMPTY_COUNTS: ReactionCounts = { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 const TOP_COMMENT_EXCERPT_LENGTH = 140
-const storedTopCommentSchema = z.looseObject({ id: z.uuid(), author_id: z.uuid(), body: z.string() })
+const StoredTopCommentSchema = z.looseObject({ id: z.uuid(), author_id: z.uuid(), body: z.string() })
 
 export type ReadFailure = 'members_only' | 'unavailable'
 
@@ -50,15 +48,15 @@ function topicOf(row: ArticleRow) {
   return { id: row.topic_id, title: row.topic_title, slug: row.topic_slug, status: row.topic_status, avatar_url: row.topic_avatar_url ?? null }
 }
 
-function topCommentOf(row: ArticleRow, profiles_by_id: Map<string, { display_name: string; avatar_url: string | null }>): FeedCard['top_comment'] {
-  const stored = storedTopCommentSchema.safeParse(row.top_comment)
+function topCommentOf(row: ArticleRow, profiles_by_id: Map<string, ProfileLite>): FeedCard['top_comment'] {
+  const stored = StoredTopCommentSchema.safeParse(row.top_comment)
   if (!stored.success) return null
   const author = profiles_by_id.get(stored.data.author_id)
   if (!author) return null
   return { id: stored.data.id, author_name: author.display_name, author_avatar_url: author.avatar_url, excerpt: excerptOf(stored.data.body) }
 }
 
-function toCard(row: ArticleRow, profiles_by_id: Map<string, { display_name: string; avatar_url: string | null }>): FeedCard | null {
+function toCard(row: ArticleRow, profiles_by_id: Map<string, ProfileLite>): FeedCard | null {
   if (!row.published_at) return null
   return {
     id: row.id,
@@ -81,47 +79,47 @@ function toCard(row: ArticleRow, profiles_by_id: Map<string, { display_name: str
   }
 }
 
-export function createArticleService(repository: ArticleRepository, options: ArticleWriteOptions): ArticleService {
-  return {
-    ...createArticleWrite(repository, options),
-    async getBySlug(viewer, slug) {
-      const row = await repository.findBySlug(slug)
-      if (!row) throw new ArticleUnavailableError()
-      assertCanRead(viewer, { author_id: row.author_id, visibility: row.visibility, status: row.status })
-      const blocks = blocksDocumentSchema.safeParse(row.blocks)
-      if (!blocks.success) throw new Error(`статья ${row.id} хранит документ блоков вне схемы`)
-      const article: Article = {
-        id: row.id,
-        slug: row.slug,
-        title: row.title,
-        blocks: blocks.data,
-        author: authorOf(row),
-        topic: topicOf(row),
-        published_at: row.published_at ? row.published_at.toISOString() : null,
-        visibility: row.visibility,
-        comments_enabled: row.comments_enabled,
-        status: row.status,
-        reaction_counts: countsOf(row.reaction_counts),
-        reaction_count: row.reaction_count,
-        comment_count: row.comment_count,
-        bookmark_count: row.bookmark_count,
-        view_count: row.view_count,
-        is_own: viewer.user_id !== undefined && viewer.user_id === row.author_id,
-      }
-      return article
-    },
+export class ArticleService {
+  constructor(private readonly repository: ArticleReadRepositoryPort) {}
 
-    async getByIds(viewer, ids) {
-      const rows = await repository.findVisibleByIds(viewer, ids)
-      const top_ids = rows.flatMap((row) => {
-        const stored = storedTopCommentSchema.safeParse(row.top_comment)
-        return stored.success ? [stored.data.author_id] : []
-      })
-      const profiles_by_id = await repository.findProfiles([...new Set(top_ids)])
-      return { items: rows.flatMap((row) => {
+  async getBySlug(viewer: ServiceContext, slug: string): Promise<Article> {
+    const row = await this.repository.findBySlug(slug)
+    if (!row) throw new ArticleUnavailableError()
+    assertCanRead(viewer, { author_id: row.author_id, visibility: row.visibility, status: row.status })
+    const blocks = blocksDocumentSchema.safeParse(row.blocks)
+    if (!blocks.success) throw new Error(`статья ${row.id} хранит документ блоков вне схемы`)
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      blocks: blocks.data,
+      author: authorOf(row),
+      topic: topicOf(row),
+      published_at: row.published_at ? row.published_at.toISOString() : null,
+      visibility: row.visibility,
+      comments_enabled: row.comments_enabled,
+      status: row.status,
+      reaction_counts: countsOf(row.reaction_counts),
+      reaction_count: row.reaction_count,
+      comment_count: row.comment_count,
+      bookmark_count: row.bookmark_count,
+      view_count: row.view_count,
+      is_own: viewer.user_id !== undefined && viewer.user_id === row.author_id,
+    }
+  }
+
+  async getByIds(viewer: ServiceContext, ids: readonly string[]): Promise<ArticleCards> {
+    const rows = await this.repository.findVisibleByIds(viewer, ids)
+    const top_ids = rows.flatMap((row) => {
+      const stored = StoredTopCommentSchema.safeParse(row.top_comment)
+      return stored.success ? [stored.data.author_id] : []
+    })
+    const profiles_by_id = await this.repository.findProfiles([...new Set(top_ids)])
+    return {
+      items: rows.flatMap((row) => {
         const card = toCard(row, profiles_by_id)
         return card ? [card] : []
-      }) }
-    },
+      }),
+    }
   }
 }

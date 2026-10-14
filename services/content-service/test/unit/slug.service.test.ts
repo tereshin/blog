@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { RESERVED_SLUGS, SLUG_PATTERN, SlugInvalidError, SlugReservedError, SlugTakenError, createSlugService, validateSlug } from '../../src/modules/slug/index.ts'
+import { RESERVED_SLUGS, SLUG_PATTERN, SlugInvalidError, SlugReservedError, SlugService, SlugTakenError, validateSlug } from '../../src/modules/slug/index.ts'
 import type { SlugOwnerType } from '../../src/modules/slug/index.ts'
 
 type Row = { owner_type: SlugOwnerType; owner_id: string }
 
 function memory() {
   const rows = new Map<string, Row>()
-  const service = createSlugService({
+  const service = new SlugService<never>({
     async insert(_tx, slug, owner_type, owner_id) {
       if (rows.has(slug)) return false
       rows.set(slug, { owner_type, owner_id })
@@ -17,6 +17,9 @@ function memory() {
     },
     async deleteByOwner(_tx, owner_type, owner_id, keep) {
       for (const [slug, row] of rows) if (row.owner_type === owner_type && row.owner_id === owner_id && slug !== keep) rows.delete(slug)
+    },
+    async listAll() {
+      return [...rows.keys()]
     },
   })
   // Транзакция тестовому хранилищу не нужна.

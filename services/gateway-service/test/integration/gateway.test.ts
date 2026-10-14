@@ -12,7 +12,8 @@ import { buildApp } from '../../src/app.ts'
 import { loadEnv } from '../../src/config/env.ts'
 import { EventsService } from '../../src/modules/events/index.ts'
 import { ProxyService } from '../../src/modules/proxy/index.ts'
-import { SessionService, createContextSigner, createIdentityLookup } from '../../src/modules/session/index.ts'
+import { ContextSigner, SessionService } from '../../src/modules/session/index.ts'
+import { IdentitySessionClient } from '../../src/infra/http/identity-session-client.ts'
 import { createServiceClient } from '@blog/http-kit'
 
 const USER_ID = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -87,27 +88,28 @@ describe('gateway: сессия, прокси, поток событий', () =>
     })
     const identity_client = createServiceClient({ name: 'identity', base_url: identity.url, max_retries: 0 })
     events = new EventsService(
-      async (_jwt, article_id) => ({ can_read: article_id === ARTICLE_ID, visibility: 'public', status: 'published', author_id: USER_ID }),
+      { check: async (_jwt, article_id) => ({ can_read: article_id === ARTICLE_ID, visibility: 'public', status: 'published', author_id: USER_ID }) },
       logger,
     )
-    app = await buildApp({
-      env,
-      logger,
-      metrics: createServiceMetrics('gateway_test'),
-      sessions: new SessionService(createIdentityLookup(identity_client)),
-      signer: createContextSigner(pair.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()),
-      proxy: new ProxyService({
-        identity: identity.url,
-        content: content.url,
-        discussion: 'http://127.0.0.1:1',
-        messaging: 'http://127.0.0.1:1',
-        notification: 'http://127.0.0.1:1',
-        media: 'http://127.0.0.1:1',
-      }),
-      content: createServiceClient({ name: 'content', base_url: content.url, max_retries: 0 }),
-      events,
-      is_broker_ready: () => true,
+    const proxy = new ProxyService({
+      identity: identity.url,
+      content: content.url,
+      discussion: 'http://127.0.0.1:1',
+      messaging: 'http://127.0.0.1:1',
+      notification: 'http://127.0.0.1:1',
+      media: 'http://127.0.0.1:1',
     })
+    app = await buildApp(
+      { env, logger, metrics: createServiceMetrics('gateway_test'), is_broker_ready: () => true },
+      {
+        identity: identity_client,
+        content: createServiceClient({ name: 'content', base_url: content.url, max_retries: 0 }),
+        proxy,
+        sessions: new SessionService(new IdentitySessionClient(identity_client), proxy),
+        events,
+        signer: new ContextSigner(pair.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()),
+      },
+    )
     base_url = await app.listen({ port: 0, host: '127.0.0.1' })
   })
 

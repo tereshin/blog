@@ -15,7 +15,7 @@ function Root({ children }: IdentityHeaderProps) {
 function Cover({ url, action }: CoverProps) {
   return (
     <div className="group relative aspect-[3.2/1] min-h-28 w-full bg-surface-tertiary">
-      {url ? <img src={url} alt="" className="absolute inset-0 size-full object-cover" /> : null}
+      {url ? <img loading="lazy" src={url} alt="" className="absolute inset-0 size-full object-cover" /> : null}
       {action ? (
         <div
           className={cn(

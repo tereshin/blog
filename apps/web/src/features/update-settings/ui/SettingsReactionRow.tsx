@@ -104,7 +104,7 @@ export function SettingsReactionRow({
           </Button>
         )}
         {item.presentation === 'image' && item.image_url ? (
-          <img src={item.image_url} alt="" className="h-8 w-8 object-contain" />
+          <img loading="lazy" src={item.image_url} alt="" className="h-8 w-8 object-contain" />
         ) : null}
         {error === 'image' ? (
           <p className="text-sm text-danger">{t('admin.settings.appearance.image_missing')}</p>

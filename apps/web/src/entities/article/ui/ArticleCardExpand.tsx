@@ -1,38 +1,37 @@
-import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { cva } from 'class-variance-authority'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { Button, ChevronDownIcon, Skeleton } from '@/shared/ui'
-import { getArticle } from '../api/get-article.ts'
-import { articleKeys } from '../model/article-keys.ts'
-import { BlockRenderer } from './BlockRenderer.tsx'
+import { BlockRenderer, Button, ChevronDownIcon, Skeleton } from '@/shared/ui'
+import type { ArticleLoad, ArticleModel } from '../model/article-types.ts'
 import { ArticleCard } from './ArticleCard.tsx'
 
+const chevron_class = cva(undefined, {
+  variants: { is_open: { true: 'rotate-180', false: undefined } },
+})
+
 type ArticleCardExpandProps = {
-  slug: string
   has_more_content?: boolean
+  is_open: boolean
+  is_pending?: boolean
+  is_error?: boolean
+  load?: ArticleLoad | null
+  article?: ArticleModel | null
+  onToggle: () => void
   children?: ReactNode
-  /** Статья раскрыта в ленте: полоса просмотренного (US14) узнает об этом, адрес не меняется. */
-  onExpanded?: (article_id: string) => void
 }
 
-/** «Показать полностью» дочитывает статью внутри карточки и не открывает её страницу. */
-export function ArticleCardExpand({ slug, has_more_content = true, children, onExpanded }: ArticleCardExpandProps) {
+/** «Показать полностью» раскрывает тело статьи внутри карточки и не открывает её страницу. */
+export function ArticleCardExpand({
+  has_more_content = true,
+  is_open,
+  is_pending = false,
+  is_error = false,
+  load = null,
+  article = null,
+  onToggle,
+  children,
+}: ArticleCardExpandProps) {
   const { t } = useT()
-  const [is_open, setOpen] = useState(false)
-  const query = useQuery({
-    queryKey: articleKeys.detail(slug),
-    queryFn: ({ signal }) => getArticle(slug, signal),
-    enabled: is_open,
-  })
-
-  const toggle = () => setOpen((open) => !open)
-  const article = query.data?.status === 'ok' ? query.data.article : null
-
-  useEffect(() => {
-    if (is_open && article) onExpanded?.(article.id)
-  }, [is_open, article, onExpanded])
-
   if (!has_more_content) return <>{children}</>
 
   return (
@@ -44,19 +43,19 @@ export function ArticleCardExpand({ slug, has_more_content = true, children, onE
       ) : children}
       <ArticleCard.Expand>
         <div>
-          <Button variant="ghost" className="h-auto min-w-0 gap-1 rounded-none p-0 text-base font-normal text-accent" onPress={toggle} aria-expanded={is_open}>
+          <Button variant="ghost" className="h-auto min-w-0 gap-1 rounded-none p-0 text-base font-normal text-accent" onPress={onToggle} aria-expanded={is_open}>
             {t(is_open ? 'article.collapse' : 'article.expand')}
-            <ChevronDownIcon width={16} height={16} className={is_open ? 'rotate-180' : undefined} />
+            <ChevronDownIcon width={16} height={16} className={chevron_class({ is_open })} />
           </Button>
-          {is_open && query.isPending ? (
+          {is_open && is_pending ? (
             <div className="mt-3 flex flex-col gap-2" aria-busy="true" aria-label={t('article.expand_loading')}>
               <Skeleton />
               <Skeleton className="w-4/5" />
             </div>
           ) : null}
-          {is_open && query.isError ? <p className="mt-3 text-sm text-danger">{t('article.expand_failed')}</p> : null}
-          {is_open && query.data?.status === 'members_only' ? <p className="mt-3 text-sm text-muted">{t('article.visibility.members')}</p> : null}
-          {is_open && query.data?.status === 'unavailable' ? <p className="mt-3 text-sm text-muted">{t('article.unavailable')}</p> : null}
+          {is_open && is_error ? <p className="mt-3 text-sm text-danger">{t('article.expand_failed')}</p> : null}
+          {is_open && load?.status === 'members_only' ? <p className="mt-3 text-sm text-muted">{t('article.visibility.members')}</p> : null}
+          {is_open && load?.status === 'unavailable' ? <p className="mt-3 text-sm text-muted">{t('article.unavailable')}</p> : null}
         </div>
       </ArticleCard.Expand>
     </>

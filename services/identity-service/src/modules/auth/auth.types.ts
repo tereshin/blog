@@ -28,7 +28,11 @@ export type MemberSession = {
   display_name_hint: string
 }
 
-export type AuthRepository = {
+/**
+ * Порт хранилища учётных записей. `openSession`, `attachUid` и `createMember` при гонке
+ * уникального индекса бросают `AccountConflictError`.
+ */
+export type AuthRepositoryPort = {
   readSettings: () => Promise<AccountSettings>
   findByUid: (firebase_uid: string) => Promise<AccountUser | null>
   findByEmail: (email: string) => Promise<AccountUser | null>
@@ -54,4 +58,38 @@ export type AuthRepository = {
   claimIdempotency: (scope: string, key: string) => Promise<boolean>
   revokeSession: (session_id: string, correlation_id: string) => Promise<void>
   provisionSuperadmin: (input: { email: string; correlation_id: string }) => Promise<{ created: boolean; user_id: string }>
+}
+
+export type VerifiedToken = {
+  firebase_uid: string
+  email: string | null
+  email_verified: boolean
+  name: string | null
+  provider_id: string
+}
+
+/** Порт Firebase Admin и Identity Toolkit. `createUser` на занятый адрес бросает `FirebaseEmailExistsError`. */
+export type FirebaseGateway = {
+  verifyIdToken: (id_token: string) => Promise<VerifiedToken>
+  createUser: (input: { email: string; password: string }) => Promise<{ firebase_uid: string }>
+  deleteUser: (firebase_uid: string) => Promise<void>
+  signInWithPassword: (input: { email: string; password: string }) => Promise<VerifiedToken | null>
+  sendEmailVerification: (firebase_uid: string) => Promise<boolean>
+  confirmEmailVerification: (oob_code: string) => Promise<{ firebase_uid: string } | null>
+  sendPasswordReset: (email: string) => Promise<void>
+  confirmPasswordReset: (input: { oob_code: string; password: string }) => Promise<boolean>
+  listProviders: () => Promise<{ id: string }[]>
+  close: () => Promise<void>
+}
+
+/** Параметры входа из окружения; подставляет app.ts. */
+export type AuthServiceOptions = {
+  superadmin_email: string
+  session_ttl_days: number
+  web_api_key: string
+  auth_domain: string
+  project_id: string
+  emulator_host: string | null
+  seed_password: string | null
+  now?: () => Date
 }

@@ -12,6 +12,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, follows, profiles, promotions, settings, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { accessRoutes } from '../../src/modules/access/index.ts'
 import { feedRoutes } from '../../src/modules/feed/index.ts'
 import { settingsRoutes } from '../../src/modules/settings/index.ts'
@@ -101,10 +102,11 @@ describe('content: лента, темы и настройки на PostgreSQL', 
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(accessRoutes, { database })
-    await app.register(topicRoutes, { database, media_url: 'http://media.test' })
-    await app.register(settingsRoutes, { database, media_url: 'http://media.test' })
-    await app.register(feedRoutes, { database })
+    const modules = composeContent({ database, media_url: 'http://media.test' })
+    await app.register(accessRoutes, { controller: modules.access })
+    await app.register(topicRoutes, { controller: modules.topic })
+    await app.register(settingsRoutes, { controller: modules.settings })
+    await app.register(feedRoutes, { controller: modules.feed })
   }, 120_000)
 
   afterAll(async () => {

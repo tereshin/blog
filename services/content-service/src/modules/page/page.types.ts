@@ -13,7 +13,7 @@ export type PageMutation = {
   fingerprint: string
   correlation_id: string
 }
-export type PageRepository = {
+export type PageRepositoryPort = {
   list: (
     query: AdminPagesQuery,
   ) => Promise<{ rows: Omit<StoredPage, 'blocks'>[]; next_cursor: string | null }>

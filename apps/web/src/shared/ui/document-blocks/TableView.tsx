@@ -12,7 +12,7 @@ export function TableView({ data }: TableViewProps) {
           {rows.map((row, row_index) => (
             <tr key={row_index}>
               {(Array.isArray(row) ? row : []).map((cell, cell_index) => {
-                const Cell = data?.withHeadings === true && row_index === 0 ? 'th' : 'td'
+                const Cell = data?.with_headings === true && row_index === 0 ? 'th' : 'td'
                 return (
                   <Cell key={cell_index} className="border border-separator px-2 py-1 text-left">
                     <InlineHtml html={typeof cell === 'string' ? cell : ''} />

@@ -6,10 +6,10 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, topics } from '../../src/infra/db/schema.ts'
-import { createFeedService } from '../../src/modules/feed/feed.service.ts'
-import { createFeedRepository } from '../../src/modules/feed/feed.repository.ts'
-import { createArticleRepository } from '../../src/modules/article/article.repository.ts'
-import { createProfileLists } from '../../src/modules/profile/profile.lists.ts'
+import { FeedService } from '../../src/modules/feed/feed.service.ts'
+import { FeedRepository } from '../../src/modules/feed/feed.repository.ts'
+import { ArticleRepository } from '../../src/modules/article/article.repository.ts'
+import { ProfileListsRepository } from '../../src/modules/profile/profile.lists.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const ARTICLE = '7a1c2d30-1111-4a11-8a11-000000000010'
@@ -49,11 +49,11 @@ describe('скрытое содержимое карточек (PostgreSQL)', ()
   it.each(CASES)('$name', async ({ blocks, excerpt, has_more }) => {
     const has_image = blocks.some((block) => block.type === 'image')
     await database.db.update(articles).set({ blocks: { blocks }, excerpt, first_image_url: has_image ? IMAGE : null }).where(eq(articles.id, ARTICLE))
-    const feed = await createFeedService(createFeedRepository(database.db)).getPage(guest, { mode: 'fresh', limit: 20 })
+    const feed = await new FeedService(new FeedRepository(database.db)).getPage(guest, { mode: 'fresh', limit: 20 })
     expect(feed.items[0]?.has_more_content).toBe(has_more)
-    const profile = await createProfileLists(database.db).listArticles(guest, AUTHOR, 'fresh', null, 20)
+    const profile = await new ProfileListsRepository(database.db).listArticles(guest, AUTHOR, 'fresh', null, 20)
     expect(profile[0]?.has_more_content).toBe(has_more)
-    const cards = await createArticleRepository(database.db).findVisibleByIds(guest, [ARTICLE])
+    const cards = await new ArticleRepository(database.db).findVisibleByIds(guest, [ARTICLE])
     expect(cards[0]?.has_more_content).toBe(has_more)
   })
 })

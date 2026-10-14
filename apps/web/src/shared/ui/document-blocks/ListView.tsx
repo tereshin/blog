@@ -15,16 +15,16 @@ export function ListView({ items, style }: ListViewProps) {
   const Tag = style === 'ordered' ? 'ol' : 'ul'
   return (
     <Tag className={`my-2 space-y-3 pl-5 ${LIST_CLASSES[style] ?? 'list-disc'}`}>
-      {items.map((item, index) => {
+      {items.map((item, offset) => {
         if (typeof item === 'string') {
           return (
-            <li key={index}>
+            <li key={`${style}-${offset}`}>
               <InlineHtml html={item} />
             </li>
           )
         }
         return (
-          <li key={index}>
+          <li key={`${style}-${offset}`}>
             {style === 'checklist' ? (
               <input
                 type="checkbox"

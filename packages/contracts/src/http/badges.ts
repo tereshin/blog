@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-export const LEGACY_BADGE_IDS = ['first_post', 'ten_reactions', 'one_year'] as const
-export const badgeIdSchema = z.union([z.enum(LEGACY_BADGE_IDS), z.uuid()])
+export const BUILT_IN_BADGE_IDS = ['first_post', 'ten_reactions', 'one_year'] as const
+export const badgeIdSchema = z.union([z.enum(BUILT_IN_BADGE_IDS), z.uuid()])
 export const badgeMetricSchema = z.enum(['published_posts', 'reputation', 'membership_months'])
 export const badgeDefinitionSchema = z.strictObject({
   id: badgeIdSchema,

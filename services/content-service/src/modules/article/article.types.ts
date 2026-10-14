@@ -1,4 +1,4 @@
-import type { Article, ArticleCards, ArticleDraft, BlocksDocument, CreateArticle, ServiceContext, UpdateArticle } from '@blog/contracts'
+import type { BlocksDocument, ServiceContext } from '@blog/contracts'
 
 export type ArticleRow = {
   id: string
@@ -75,30 +75,52 @@ export type ArticleSave = {
   slug?: string
   seo_title?: string | null
   seo_description?: string | null
-  correlation_id: string
 }
 
-export type ArticleRepository = {
+export type ArticleEventName =
+  | 'content.article.published'
+  | 'content.article.updated'
+  | 'content.article.hidden'
+  | 'content.article.restored'
+  | 'content.article.deleted'
+
+export type ProfileLite = { display_name: string; avatar_url: string | null }
+
+export type TopicStatus = 'active' | 'archived'
+
+/** Порт хранилища статей: только чтение и запись строк, оркестрация — в сервисе. */
+export type ArticleRepositoryPort<TTx> = {
+  transaction: <T>(work: (tx: TTx) => Promise<T>) => Promise<T>
   findBySlug: (slug: string) => Promise<ArticleRow | null>
   findVisibleByIds: (viewer: ServiceContext, ids: readonly string[]) => Promise<ArticleRow[]>
-  findProfiles: (user_ids: readonly string[]) => Promise<Map<string, { display_name: string; avatar_url: string | null }>>
-  findForAuthor: (id: string, author_id: string) => Promise<StoredArticle | null>
+  findProfiles: (user_ids: readonly string[]) => Promise<Map<string, ProfileLite>>
+  findForAuthor: (id: string, author_id: string, tx?: TTx) => Promise<StoredArticle | null>
   listDrafts: (author_id: string) => Promise<StoredArticle[]>
-  insertDraft: (input: NewArticle) => Promise<StoredArticle>
-  save: (id: string, author_id: string, input: ArticleSave) => Promise<StoredArticle | null>
-  publish: (id: string, author_id: string, input: { has_content: boolean; search_text: string; correlation_id: string }) => Promise<StoredArticle | null>
-  remove: (id: string, author_id: string, correlation_id: string) => Promise<StoredArticle | null>
+  findTopicStatus: (tx: TTx, topic_id: string) => Promise<TopicStatus | null>
+  findPublicNumber: (tx: TTx, user_id: string) => Promise<number | null>
+  insertDraft: (tx: TTx, input: NewArticle & { id: string; slug: string }) => Promise<StoredArticle>
+  /** `should_index` — статья опубликована, и `search_vector` пересчитывается вместе с правкой. */
+  save: (tx: TTx, id: string, author_id: string, input: ArticleSave & { should_index: boolean }) => Promise<StoredArticle | null>
+  publish: (tx: TTx, id: string, input: { published_at: Date; search_text: string }) => Promise<StoredArticle | null>
+  markDeleted: (tx: TTx, id: string) => Promise<void>
+  appendEvent: (tx: TTx, name: ArticleEventName, row: StoredArticle, correlation_id: string, moderator_id?: string) => Promise<void>
 }
 
-export type ArticleService = {
-  getBySlug: (viewer: ServiceContext, slug: string) => Promise<Article>
-  getByIds: (viewer: ServiceContext, ids: readonly string[]) => Promise<ArticleCards>
-  create: (viewer: ServiceContext, input: CreateArticle, correlation_id: string) => Promise<ArticleDraft>
-  update: (viewer: ServiceContext, id: string, input: UpdateArticle, correlation_id: string) => Promise<ArticleDraft>
-  publish: (viewer: ServiceContext, id: string, correlation_id: string) => Promise<ArticleDraft>
-  remove: (viewer: ServiceContext, id: string, correlation_id: string) => Promise<void>
-  getDraft: (viewer: ServiceContext, id: string) => Promise<ArticleDraft>
-  listDrafts: (viewer: ServiceContext) => Promise<ArticleDraft[]>
+/** Чтение для витрины: методы без транзакции. */
+export type ArticleReadRepositoryPort = Pick<ArticleRepositoryPort<never>, 'findBySlug' | 'findVisibleByIds' | 'findProfiles'>
+
+export type ArticleSlugsPort<TTx> = {
+  reserveSlug: (tx: TTx, slug: string, owner_type: 'article', owner_id: string) => Promise<void>
+  replaceSlug: (tx: TTx, slug: string, owner_type: 'article', owner_id: string) => Promise<void>
+  releaseSlug: (tx: TTx, owner_type: 'article', owner_id: string) => Promise<void>
+  pickFree: (tx: TTx, choose: (is_unavailable: (slug: string) => boolean) => string) => Promise<string>
 }
 
-export type ArticlePublishTransaction = (operation: (repository: ArticleRepository, badges: import('../badge/index.ts').BadgeService) => Promise<StoredArticle | null>) => Promise<StoredArticle | null>
+export type ArticleCoversPort<TTx> = {
+  requestArticleCover: (tx: TTx, article_id: string, correlation_id: string) => Promise<void>
+  invalidateArticleCover: (tx: TTx, article_id: string) => Promise<void>
+}
+
+export type ArticleBadgesPort<TTx> = {
+  evaluate: (tx: TTx, user_id: string) => Promise<void>
+}

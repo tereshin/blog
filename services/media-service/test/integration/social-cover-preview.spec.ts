@@ -6,19 +6,21 @@ import { DEFAULT_SOCIAL_COVER_SETTINGS, socialCoverPreviewResponseSchema } from 
 import type { ServiceContext } from '@blog/contracts'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
-import { createCoverRenderer, socialCoverRoutes } from '../../src/modules/social-cover/index.ts'
+import { SocialCoverController, SocialCoverPool, SocialCoverService, socialCoverRoutes } from '../../src/modules/social-cover/index.ts'
 import type { CoverRenderer } from '../../src/modules/social-cover/index.ts'
 
 const payload = { variant: 'vk', input: { title: 'Текущие значения формы: Ђорђе и русский текст', author_name: 'Автор', site_name: 'Сайт', image_url: null, settings: { ...DEFAULT_SOCIAL_COVER_SETTINGS, background_mode: 'color', background_color: '#445566' } } }
 describe('серверный предпросмотр: контракт, доступ и настоящий worker', () => {
   let app: FastifyInstance, renderer: CoverRenderer
   beforeAll(async () => {
-    renderer = createCoverRenderer(1)
+    renderer = new SocialCoverPool(1)
     app = Fastify()
-    await app.register(requestContext, { logger: createLogger({ service: 'preview-test', level: 'silent' }) })
+    const logger = createLogger({ service: 'preview-test', level: 'silent' })
+    await app.register(requestContext, { logger })
     await app.register(errorHandler)
     app.decorateRequest('viewer', { getter() { return { role: this.headers['x-role'] === 'superadmin' ? 'superadmin' : 'guest', is_restricted: this.headers['x-restricted'] === '1', can_publish: false, viewer_key: 'preview-test' } satisfies ServiceContext } })
-    await app.register(socialCoverRoutes, { renderer, public_url: 'https://media.example', store: { async put() { throw new Error('Preview must not write files') } } })
+    const store = { async put() { throw new Error('Preview must not write files') } }
+    await app.register(socialCoverRoutes, { controller: new SocialCoverController(new SocialCoverService(renderer, store, 'https://media.example', logger)) })
   })
   afterAll(async () => { await app.close(); await renderer.close() })
   it.each([{ }, { 'x-role': 'member' }, { 'x-role': 'superadmin', 'x-restricted': '1' }])('отклоняет зрителя %j', async (headers) => {

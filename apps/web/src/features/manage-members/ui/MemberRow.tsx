@@ -45,8 +45,8 @@ export function MemberRow({ user }: MemberRowProps) {
       {!locked ? (
         <ToggleField
           label={t('admin.members.can_publish')}
-          isSelected={user.can_publish}
-          isDisabled={is_pending}
+          is_selected={user.can_publish}
+          is_disabled={is_pending}
           onChange={(can_publish) => actions.setPublishing.mutate({ id: user.id, can_publish })}
         />
       ) : null}

@@ -8,7 +8,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles_copy, users_copy } from '../../src/infra/db/schema.ts'
-import { createCopiesHandler } from '../../src/modules/copies/index.ts'
+import { CopiesConsumer, CopiesRepository, CopiesService } from '../../src/modules/copies/index.ts'
 
 const USER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const ARTICLE = '5c9d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a01'
@@ -44,7 +44,7 @@ const article = {
 describe('discussion: копии из событий (PostgreSQL в контейнере)', () => {
   let postgres: TestPostgres
   let database: DbHandle
-  const handler = createCopiesHandler()
+  const handler = new CopiesConsumer(new CopiesService(new CopiesRepository())).handle
   const apply = (e: OutboxEvent) => processEvent(database.db, CONSUMER, e, handler)
   const readUser = async () => (await database.db.select().from(users_copy).where(eq(users_copy.user_id, USER)))[0]
   const readArticle = async () => (await database.db.select().from(articles_copy).where(eq(articles_copy.article_id, ARTICLE)))[0]

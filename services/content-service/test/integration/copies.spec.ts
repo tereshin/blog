@@ -8,7 +8,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { profiles, users_copy } from '../../src/infra/db/schema.ts'
-import { createCopiesHandler } from '../../src/modules/copies/index.ts'
+import { CopiesHandler } from '../../src/modules/copies/index.ts'
 
 const USER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const CONSUMER = 'test-copies'
@@ -22,7 +22,7 @@ const snapshot = { user_id: USER, public_number: 7, role: 'member', can_publish:
 describe('content: копии участников из событий (PostgreSQL в контейнере)', () => {
   let postgres: TestPostgres
   let database: DbHandle
-  const handler = createCopiesHandler()
+  const handler = new CopiesHandler().handle
   const apply = (e: OutboxEvent) => processEvent(database.db, CONSUMER, e, handler)
   const readUser = async () => (await database.db.select().from(users_copy).where(eq(users_copy.user_id, USER)))[0]
   const readProfile = async () => (await database.db.select().from(profiles).where(eq(profiles.user_id, USER)))[0]

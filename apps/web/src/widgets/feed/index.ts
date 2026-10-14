@@ -1,10 +1,12 @@
 export { ArticleFeed } from './ui/ArticleFeed.tsx'
 export { ArticleOverflowMenu } from './ui/ArticleOverflowMenu.tsx'
 export { Feed } from './ui/Feed.tsx'
-export { markSeenArticle } from './model/useSeenArticles.ts'
+export { VirtualFeedList } from './ui/VirtualFeedList.tsx'
+export { markSeenArticle } from './api/feed-seen.ts'
 export type { FeedSlots } from './ui/FeedItem.tsx'
 export { useFeed } from './model/useFeed.ts'
 export type { FeedState } from './model/useFeed.ts'
 
 export { ArticleFeedItem } from './ui/ArticleFeedItem.tsx'
+export { FeedArticleExpand } from './ui/FeedArticleExpand.tsx'
 export { FeedSortMenu } from './ui/FeedSortMenu.tsx'

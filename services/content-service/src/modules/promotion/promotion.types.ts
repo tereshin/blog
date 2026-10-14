@@ -13,7 +13,7 @@ export type PromotionArticle = {
   status: 'draft' | 'published' | 'hidden' | 'deleted'
 }
 
-export type PromotionRepository = {
+export type PromotionRepositoryPort = {
   findArticle: (article_id: string) => Promise<PromotionArticle | null>
   find: (article_id: string) => Promise<PromotionRow | null>
   upsert: (row: PromotionRow) => Promise<PromotionRow>

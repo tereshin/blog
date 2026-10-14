@@ -12,6 +12,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, follows, outbox, profiles, settings, slugs, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { profileRoutes } from '../../src/modules/profile/index.ts'
 
 const OWNER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -61,7 +62,8 @@ describe('content: профиль', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(profileRoutes, { database, media_url: MEDIA, media_public_url: S3, public_origin: 'http://blog.test' })
+    const modules = composeContent({ database, media_url: MEDIA, media_public_url: S3, public_origin: 'http://blog.test' })
+    await app.register(profileRoutes, { controller: modules.profile })
   }, 120_000)
 
   afterAll(async () => {

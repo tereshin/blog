@@ -14,12 +14,12 @@ test.describe('Вид и узкий экран', () => {
     await page.emulateMedia({ colorScheme: 'dark' })
     await page.goto('/')
     const navigation = await openNavigation(page)
-    await navigation.getByRole('button', { name: 'Системная тема' }).click()
+    await navigation.getByRole('link', { name: 'Системная тема' }).click()
     await page.getByRole('menuitemradio', { name: 'Светлая' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-    await expect((await openNavigation(page)).getByRole('button', { name: 'Светлая тема' })).toBeVisible()
+    await expect((await openNavigation(page)).getByRole('link', { name: 'Светлая тема' })).toBeVisible()
   })
 
   test('гость без выбора видит вид устройства и следует его смене', async ({ page }) => {
@@ -33,8 +33,8 @@ test.describe('Вид и узкий экран', () => {
   test('участник включает светлый вид из левой навигации', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/')
-    await expect(page.getByRole('banner').getByRole('button', { name: 'Тёмная тема' })).toHaveCount(0)
-    await (await openNavigation(page)).getByRole('button', { name: 'Тёмная тема' }).click()
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Тёмная тема' })).toHaveCount(0)
+    await (await openNavigation(page)).getByRole('link', { name: 'Тёмная тема' }).click()
     await page.getByRole('menuitemradio', { name: 'Светлая' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   })

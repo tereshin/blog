@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { FormTextField } from './FormTextField.tsx'
-const meta = {
+const meta = preview.meta({
   title: 'shared/FormTextField',
   component: FormTextField,
   args: {
@@ -9,12 +9,10 @@ const meta = {
     maxLength: 100,
     hint: 'Название отображается в шапке сайта.',
   },
-} satisfies Meta<typeof FormTextField>
-export default meta
-type Story = StoryObj<typeof meta>
-export const Default: Story = {}
-export const Empty: Story = { args: { defaultValue: '', placeholder: 'Введите название' } }
-export const Error: Story = { args: { error: 'Проверьте значение поля' } }
-export const Disabled: Story = { args: { disabled: true } }
-export const ReadOnly: Story = { args: { readOnly: true } }
-export const WithoutLimit: Story = { args: { maxLength: undefined } }
+})
+export const Default = meta.story()
+export const Empty = meta.story({ args: { defaultValue: '', placeholder: 'Введите название' } })
+export const Error = meta.story({ args: { error: 'Проверьте значение поля' } })
+export const Disabled = meta.story({ args: { disabled: true } })
+export const ReadOnly = meta.story({ args: { readOnly: true } })
+export const WithoutLimit = meta.story({ args: { maxLength: undefined } })

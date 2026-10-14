@@ -1,17 +1,11 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify'
-import type { DbHandle } from '../../infra/db/client.ts'
-import { createPageRepository } from './page.repository.ts'
-import { createPageService, requirePageAdmin } from './page.service.ts'
-import type { PageOptions } from './page.service.ts'
-import { createPageController } from './page.controller.ts'
+import { requirePageAdmin } from './page.service.ts'
+import type { PageController } from './page.controller.ts'
 import { pageResponseSchemas } from './page.schema.ts'
-export const pageRoutes: FastifyPluginAsync<PageOptions & { database: DbHandle }> = async (
-  app,
-  options,
-) => {
-  const controller = createPageController(
-    createPageService(createPageRepository(options.database.db), options),
-  )
+
+export type PageRoutesOptions = { controller: PageController }
+
+export const pageRoutes: FastifyPluginAsync<PageRoutesOptions> = async (app, { controller }) => {
   const admin = async (request: FastifyRequest) => {
     requirePageAdmin(request.viewer)
   }
@@ -19,17 +13,17 @@ export const pageRoutes: FastifyPluginAsync<PageOptions & { database: DbHandle }
   app.get(
     '/v1/pages/:slug',
     { schema: { response: { 200: pageResponseSchemas.public } } },
-    controller.publicPage,
+    (request, reply) => controller.publicPage(request, reply),
   )
   app.get(
     '/v1/admin/pages',
     { preValidation: admin, schema: { response: { 200: pageResponseSchemas.list } } },
-    controller.list,
+    (request, reply) => controller.list(request, reply),
   )
   app.get(
     '/v1/admin/pages/:id',
     { preValidation: admin, schema: { response: admin_response } },
-    controller.get,
+    (request, reply) => controller.get(request, reply),
   )
   app.post(
     '/v1/admin/pages',
@@ -38,12 +32,14 @@ export const pageRoutes: FastifyPluginAsync<PageOptions & { database: DbHandle }
       bodyLimit: 1024 * 1024,
       schema: { response: { 201: pageResponseSchemas.admin } },
     },
-    controller.create,
+    (request, reply) => controller.create(request, reply),
   )
   app.patch(
     '/v1/admin/pages/:id',
     { preValidation: admin, bodyLimit: 1024 * 1024, schema: { response: admin_response } },
-    controller.update,
+    (request, reply) => controller.update(request, reply),
   )
-  app.delete('/v1/admin/pages/:id', { preValidation: admin }, controller.remove)
+  app.delete('/v1/admin/pages/:id', { preValidation: admin }, (request, reply) =>
+    controller.remove(request, reply),
+  )
 }

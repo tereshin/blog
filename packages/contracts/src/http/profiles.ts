@@ -1,13 +1,13 @@
 import { z } from 'zod'
-import { badgeIdSchema } from './badges.ts'
+import { badgeIdSchema, BUILT_IN_BADGE_IDS } from './badges.ts'
 import { feedCardSchema } from './feed.ts'
 import { pageSchema } from './pagination.ts'
 
 /** 3–40: латиница, цифры и дефис, дефис не с краю. Совпадает с реестром адресов content-service. */
 export const PROFILE_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/
 
-export const PROFILE_BADGES = ['first_post', 'ten_reactions', 'one_year'] as const
-export const profileBadgeSchema = z.enum(PROFILE_BADGES)
+export const PROFILE_BADGES = BUILT_IN_BADGE_IDS
+export const profileBadgeSchema = badgeIdSchema
 export type ProfileBadge = z.infer<typeof profileBadgeSchema>
 
 export const profileSchema = z.strictObject({
@@ -24,8 +24,6 @@ export const profileSchema = z.strictObject({
   followers_count: z.number().int().nonnegative(),
   following_count: z.number().int().nonnegative(),
   badges: z.array(profileBadgeSchema),
-  /** Full catalog IDs; legacy badges above retain their v1 enum. */
-  badge_ids: z.array(badgeIdSchema).optional(),
   is_own: z.boolean(),
   is_following: z.boolean(),
 })

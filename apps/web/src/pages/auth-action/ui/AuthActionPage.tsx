@@ -1,62 +1,23 @@
-import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
-import {
-  confirmEmailVerification,
-  confirmPasswordReset,
-  credentialFieldError,
-} from '@/features/login'
+import { Link } from 'react-router'
 import { useT } from '@/shared/i18n'
 import { Button, EmptyState, Input } from '@/shared/ui'
-import { useShellStore } from '@/widgets/shell'
-
-type ActionStatus = 'idle' | 'ok' | 'fail'
+import { useAuthActionPage } from '../model/useAuthActionPage.ts'
 
 /** Страница письма: код из query уходит на подтверждение и не остаётся в адресе. */
 export default function AuthActionPage() {
   const { t } = useT()
-  const [params] = useSearchParams()
-  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
-  const [status, setStatus] = useState<ActionStatus>('idle')
-  const [password, setPassword] = useState('')
-  const [field_error, setFieldError] = useState(false)
-  const [action] = useState(() => ({ mode: params.get('mode'), oob_code: params.get('oob_code') }))
-  const mode = action.mode
-  const oob_code = action.oob_code
+  const {
+    status,
+    password,
+    setPassword,
+    field_error,
+    mode,
+    handleReset,
+    is_reset,
+    is_invalid,
+  } = useAuthActionPage()
 
-  useEffect(() => {
-    setHeaderCenter({ kind: 'empty' })
-  }, [setHeaderCenter])
-
-  useEffect(() => {
-    if (mode !== 'verifyEmail' || !oob_code) return
-    const code = oob_code
-    window.history.replaceState(window.history.state, '', '/auth/action')
-    void confirmEmailVerification(code).then(
-      () => setStatus('ok'),
-      () => setStatus('fail'),
-    )
-  }, [mode, oob_code])
-
-  const submitReset = () => {
-    if (!oob_code) {
-      setStatus('fail')
-      return
-    }
-    if (credentialFieldError('reset@blog.test', password) === 'password') {
-      setFieldError(true)
-      return
-    }
-    const code = oob_code
-    window.history.replaceState(window.history.state, '', '/auth/action')
-    void confirmPasswordReset(code, password).then(
-      () => setStatus('ok'),
-      () => setStatus('fail'),
-    )
-  }
-
-  const is_reset = mode === 'resetPassword' || (status !== 'idle' && mode !== 'verifyEmail')
-
-  if (!oob_code || (mode !== 'verifyEmail' && mode !== 'resetPassword')) {
+  if (is_invalid) {
     return (
       <EmptyState
         title={t('auth_action.invalid_link')}
@@ -85,7 +46,7 @@ export default function AuthActionPage() {
           className="flex max-w-sm flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault()
-            submitReset()
+            handleReset()
           }}
         >
           <h1 className="text-lg">{t('auth_action.reset_title')}</h1>

@@ -27,7 +27,7 @@ const SVG_TAGS = new Set([
   'use',
 ])
 const SAFE_URL = /^(?:#[\w.-]+|url\(#[\w.-]+\))$/
-const manifestSchema = z
+const ManifestSchema = z
   .object({
     name: z.string().optional(),
     short_name: z.string().optional(),
@@ -178,7 +178,7 @@ export async function validateFavicon(bytes: Buffer, variant: FaviconVariant): P
     return 'image/svg+xml'
   }
   try {
-    const manifest = manifestSchema.parse(JSON.parse(bytes.toString('utf8')))
+    const manifest = ManifestSchema.parse(JSON.parse(bytes.toString('utf8')))
     for (const url of [
       manifest.start_url,
       manifest.scope,

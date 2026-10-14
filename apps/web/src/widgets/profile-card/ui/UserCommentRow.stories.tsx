@@ -1,6 +1,6 @@
+import preview from '#.storybook/preview'
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter } from 'react-router'
 import type { Profile } from '@/entities/profile'
 import { ToastProvider } from '@/shared/ui'
@@ -24,6 +24,20 @@ const profile: Profile = {
   is_following: false,
 }
 
+const COMMENT = {
+  id: '00000000-0000-4000-8000-000000000020',
+  excerpt: 'спасибо, поправлю!',
+  article_id: '9b2e3f40-2222-4b22-8b22-000000000001',
+  article_title: 'Модель Fable 5 будет доступна всем пользователям',
+  article_slug: 'statya-1',
+  href: '/p/statya-1#comment-00000000-0000-4000-8000-000000000020',
+  created_at: '2026-07-02T10:00:00.000Z',
+  reaction_count: 0,
+  reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 0 },
+  my_reaction: null,
+  is_bookmarked: false,
+}
+
 function Preview(props: Parameters<typeof UserCommentRow>[0]) {
   const [client] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
@@ -41,58 +55,43 @@ function Preview(props: Parameters<typeof UserCommentRow>[0]) {
   )
 }
 
-const meta = {
+const meta = preview.meta({
   title: 'widgets/profile-card/UserCommentRow',
   component: Preview,
   args: {
     profile,
-    comment: {
-      id: '00000000-0000-4000-8000-000000000020',
-      excerpt: 'спасибо, поправлю!',
-      article_id: '9b2e3f40-2222-4b22-8b22-000000000001',
-      article_title: 'Модель Fable 5 будет доступна всем пользователям',
-      article_slug: 'statya-1',
-      href: '/p/statya-1#comment-00000000-0000-4000-8000-000000000020',
-      created_at: '2026-07-02T10:00:00.000Z',
-      reaction_count: 0,
-      reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 0 },
-      my_reaction: null,
-      is_bookmarked: false,
-    },
+    comment: COMMENT,
   },
-} satisfies Meta<typeof Preview>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const WithoutReactions: Story = {}
-export const WithReactions: Story = {
+})
+export const WithoutReactions = meta.story()
+export const WithReactions = meta.story({
   args: {
     comment: {
-      ...meta.args.comment,
+      ...COMMENT,
       excerpt: 'если мы все будем отдыхать — кто же будет писать новости',
       reaction_count: 4,
       reaction_counts: { laugh: 1, heart: 0, thumb: 1, fire: 2 },
     },
   },
-}
-export const SelectedHeart: Story = {
+})
+export const SelectedHeart = meta.story({
   args: {
     comment: {
-      ...meta.args.comment,
+      ...COMMENT,
       excerpt: 'да, простите, поправила',
       reaction_count: 1,
       reaction_counts: { heart: 1 },
       my_reaction: 'heart',
     },
   },
-}
-export const LongText: Story = {
+})
+export const LongText = meta.story({
   args: {
     profile: { ...profile, display_name: 'Очень длинное имя автора комментария' },
     comment: {
-      ...meta.args.comment,
+      ...COMMENT,
       excerpt:
         'Длинный комментарий\nс переносами строк и ссылкой: https://example.com/very-long-address-without-spaces-that-must-wrap-on-small-screens',
     },
   },
-}
+})

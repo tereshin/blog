@@ -45,7 +45,7 @@ export function ArticleByline({ author, topic, published_at, time_label, follow,
             {author.display_name}
           </Link>
           {status ? (
-            <img
+            <img loading="lazy"
               src={status.image_url}
               alt={status.label}
               title={status.label}

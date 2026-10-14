@@ -17,6 +17,7 @@ const MB = 1024 * 1024
 /** Префикс → сервис-владелец. Порядок не важен: выбирается самый длинный префикс. */
 export const ROUTE_TABLE: readonly RouteEntry[] = [
   { prefix: '/v1/auth', service: 'identity' },
+  { prefix: '/v1/sessions', service: 'identity' },
   { prefix: '/v1/users', service: 'identity' },
   { prefix: '/v1/users', suffix: '/comments', service: 'discussion' },
   { prefix: '/v1/pages', service: 'content' },

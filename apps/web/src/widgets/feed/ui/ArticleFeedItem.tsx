@@ -1,6 +1,6 @@
 import type { ArticleCardModel, ArticleViewerState } from '@/entities/article'
 import { FeedItem } from './FeedItem.tsx'
-import { useArticleFeedSlots } from './useArticleFeedSlots.tsx'
+import { useArticleFeedSlots } from '../model/useArticleFeedSlots.tsx'
 
 type ArticleFeedItemProps = {
   article: ArticleCardModel

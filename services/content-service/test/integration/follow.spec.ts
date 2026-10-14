@@ -10,6 +10,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { profiles, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { followRoutes } from '../../src/modules/follow/index.ts'
 import { profileRoutes } from '../../src/modules/profile/index.ts'
 import { topicRoutes } from '../../src/modules/topic/index.ts'
@@ -53,9 +54,10 @@ describe('content: подписки', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(followRoutes, { database })
-    await app.register(topicRoutes, { database, media_url: 'http://media.test' })
-    await app.register(profileRoutes, { database, media_url: 'http://media.test', public_origin: 'http://blog.test' })
+    const modules = composeContent({ database, media_url: 'http://media.test', public_origin: 'http://blog.test' })
+    await app.register(followRoutes, { controller: modules.follow })
+    await app.register(topicRoutes, { controller: modules.topic })
+    await app.register(profileRoutes, { controller: modules.profile })
   }, 120_000)
 
   afterAll(async () => {

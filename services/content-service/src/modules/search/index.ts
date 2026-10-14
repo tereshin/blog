@@ -1,2 +1,5 @@
 export { searchRoutes } from './search.routes.ts'
 export type { SearchRoutesOptions } from './search.routes.ts'
+export { SearchController } from './search.controller.ts'
+export { SearchRepository } from './search.repository.ts'
+export { SearchService } from './search.service.ts'

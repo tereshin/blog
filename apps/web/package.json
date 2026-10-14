@@ -2,6 +2,9 @@
   "name": "web",
   "private": true,
   "type": "module",
+  "imports": {
+    "#*": "./*"
+  },
   "scripts": {
     "dev": "vite",
     "build": "pnpm icons:check && tsc -p tsconfig.json --noEmit && vite build",

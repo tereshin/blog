@@ -19,7 +19,7 @@ export function AdminCatalog({ catalog }: AdminCatalogProps) {
         <PageCard.Header title={t(config.title)} />
         <PageCard.Content className="p-0">
           <nav aria-label={t(config.title)}>
-            <ul className="-mx-4 mb-2">
+            <ul className="mb-2">
               {children.map((item) => (
                 <li key={item.path}>
                   <Link

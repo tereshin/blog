@@ -34,11 +34,24 @@ export const notificationHandlers = [
     if (!user_id) return HttpResponse.json({ code: 'unauthorized', title: 'Требуется вход' }, { status: 401 })
     return HttpResponse.json({ items: notificationsFor(user_id).map(present), next_cursor: null })
   }),
+  http.patch('*/v1/notifications', () => {
+    const user_id = viewerId()
+    if (!user_id) return HttpResponse.json({ code: 'unauthorized', title: 'Требуется вход' }, { status: 401 })
+    markAllMockNotificationsRead(user_id)
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.post('*/v1/notifications/read-all', () => {
     const user_id = viewerId()
     if (!user_id) return HttpResponse.json({ code: 'unauthorized', title: 'Требуется вход' }, { status: 401 })
     markAllMockNotificationsRead(user_id)
     return new HttpResponse(null, { status: 204 })
+  }),
+  http.patch('*/v1/notifications/:id', ({ params }) => {
+    const user_id = viewerId()
+    if (!user_id) return HttpResponse.json({ code: 'unauthorized', title: 'Требуется вход' }, { status: 401 })
+    const item = markMockNotificationRead(user_id, String(params.id))
+    if (!item) return HttpResponse.json({ code: 'not_found', title: 'Уведомление не найдено' }, { status: 404 })
+    return HttpResponse.json(present(item))
   }),
   http.post('*/v1/notifications/:id/read', ({ params }) => {
     const user_id = viewerId()

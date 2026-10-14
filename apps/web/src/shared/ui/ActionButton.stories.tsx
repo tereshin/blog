@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { ActionButton } from './ActionButton.tsx'
 import { BookmarkIcon, ShareIcon } from './icons.tsx'
 
-const meta = {
+const meta = preview.meta({
   title: 'shared/ui/ActionButton',
   component: ActionButton,
   args: {
@@ -16,12 +16,9 @@ const meta = {
       </>
     ),
   },
-} satisfies Meta<typeof ActionButton>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Default: Story = {}
-export const Saved: Story = {
+})
+export const Default = meta.story()
+export const Saved = meta.story({
   args: {
     'aria-pressed': true,
     'aria-label': 'Убрать из закладок',
@@ -34,9 +31,9 @@ export const Saved: Story = {
       </>
     ),
   },
-}
-export const Disabled: Story = { args: { isDisabled: true } }
-export const IconOnly: Story = {
+})
+export const Disabled = meta.story({ args: { isDisabled: true } })
+export const IconOnly = meta.story({
   args: {
     isIconOnly: true,
     'aria-label': 'Поделиться',
@@ -46,4 +43,4 @@ export const IconOnly: Story = {
       </span>
     ),
   },
-}
+})

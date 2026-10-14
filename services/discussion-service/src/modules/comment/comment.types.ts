@@ -2,15 +2,11 @@ import type {
   ArticleAccessFields,
   CommentSort,
   Comment,
-  CommentTreePage,
-  PageQuery,
-  PopularComment,
   ReactionKind,
   ServiceContext,
-  UserCommentPage,
 } from '@blog/contracts'
 import type { CommentCursor, UserCommentCursor } from './comment.schema.ts'
-import type { CommentRow } from './comment.tree.ts'
+import type { CommentRow, CommentStatus } from './comment.tree.ts'
 
 export type PopularCommentRow = {
   id: string
@@ -25,12 +21,12 @@ export type PopularCommentRow = {
 
 export type UserCommentRow = PopularCommentRow & { created_at: Date }
 
-export type CommentRepository = {
+export type CommentArticle = ArticleAccessFields & { comments_enabled: boolean }
+
+export type CommentRepositoryPort = {
   /** Видимые комментарии опубликованных статей, доступных зрителю, по убыванию реакций. */
   findPopular: (viewer: ServiceContext, limit: number) => Promise<PopularCommentRow[]>
-  findArticle: (
-    article_id: string,
-  ) => Promise<(ArticleAccessFields & { comments_enabled: boolean }) | null>
+  findArticle: (article_id: string) => Promise<CommentArticle | null>
   listRoots: (
     article_id: string,
     cursor: CommentCursor | null,
@@ -63,65 +59,33 @@ export type CommentRepository = {
   ) => Promise<UserCommentRow[]>
 }
 
-export type CommentService = {
-  getPopular: (viewer: ServiceContext) => Promise<PopularComment[]>
-  listForArticle: (
-    viewer: ServiceContext,
-    article_id: string,
-    query: PageQuery & { sort?: CommentSort; include_replies?: boolean },
-  ) => Promise<CommentTreePage>
-  listReplyPage: (
-    viewer: ServiceContext,
-    root_id: string,
-    query: PageQuery & { sort?: CommentSort },
-  ) => Promise<CommentTreePage>
-  getByIds: (viewer: ServiceContext, ids: string[]) => Promise<Comment[]>
-  getThread: (
-    viewer: ServiceContext,
-    id: string,
-  ) => Promise<{ article_id: string; root: Comment; target: Comment }>
-  listByAuthor: (
-    viewer: ServiceContext,
-    author_id: string,
-    sort: 'fresh' | 'popular',
-    query: PageQuery,
-  ) => Promise<UserCommentPage>
-  create: (input: {
-    viewer: ServiceContext
-    article_id: string
-    body: string
-    media?: { url: string; alt: string }[] | undefined
-    mentions?: { user_id: string; display_name: string }[] | undefined
-    parent_id?: string | undefined
-    idempotency_key: string | null
-    correlation_id: string
-  }) => Promise<Comment>
-  update: (input: {
-    viewer: ServiceContext
-    comment_id: string
-    body: string
-    idempotency_key: string | null
-    correlation_id: string
-  }) => Promise<Comment>
-  remove: (input: {
-    viewer: ServiceContext
-    comment_id: string
-    idempotency_key: string | null
-    correlation_id: string
-  }) => Promise<Comment>
-  hide: (input: {
-    viewer: ServiceContext
-    comment_id: string
-    correlation_id: string
-  }) => Promise<Comment>
-  restore: (input: {
-    viewer: ServiceContext
-    comment_id: string
-    correlation_id: string
-  }) => Promise<Comment>
-  moderateRemove: (input: {
-    viewer: ServiceContext
-    comment_id: string
-    correlation_id: string
-  }) => Promise<Comment>
+type WriteBase = {
+  user_id: string
+  idempotency_key: string | null
+  correlation_id: string
+}
+
+export type InsertCommentInput = WriteBase & {
+  article_id: string
+  body: string
+  media?: { url: string; alt: string }[] | undefined
+  mentions?: { user_id: string; display_name: string }[] | undefined
+  parent_id?: string | undefined
+}
+
+export type ChangeCommentInput = WriteBase & { comment_id: string }
+
+export type ModerateCommentInput = {
+  comment_id: string
+  status: CommentStatus
+  correlation_id: string
+  moderator_id: string
+}
+
+/** Запись комментариев: транзакция, идемпотентность и события живут за этим портом. */
+export type CommentWriterPort = {
+  insert: (input: InsertCommentInput) => Promise<Comment>
+  update: (input: ChangeCommentInput & { body: string }) => Promise<Comment>
+  remove: (input: ChangeCommentInput) => Promise<Comment>
+  moderate: (input: ModerateCommentInput) => Promise<Comment>
 }

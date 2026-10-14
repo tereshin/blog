@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type pg from 'pg'
 
-export type MigrationLogger = { info: (message: string) => void }
+export type MigrationLogger = { info: (message: string) => void; warn?: (message: string) => void }
 
 export type RunMigrationsOptions = {
   pool: pg.Pool
@@ -52,7 +52,12 @@ export async function runMigrations(options: RunMigrationsOptions): Promise<stri
       options.logger?.info(`применена миграция ${migration.name}`)
     }
   } finally {
-    await client.query('select pg_advisory_unlock($1)', [ADVISORY_LOCK_KEY]).catch(() => undefined)
+    try {
+      await client.query('select pg_advisory_unlock($1)', [ADVISORY_LOCK_KEY])
+    } catch (error) {
+      // Блокировка сессионная: Postgres снимет её при закрытии соединения.
+      options.logger?.warn?.(`advisory lock миграций не снят явно: ${error instanceof Error ? error.message : String(error)}`)
+    }
     client.release()
   }
   return applied

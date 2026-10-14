@@ -26,7 +26,7 @@ export const publicSettingsSchema = z.object({
   locale: z.enum(['ru', 'en', 'sr']).catch('ru'),
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
-  profile_badges: badgeDefinitionsSchema.optional(),
+  profile_badges: badgeDefinitionsSchema,
   shell: shellVisibilitySchema.default(DEFAULT_SHELL_VISIBILITY),
 })
 type PublicSettingsDto = z.infer<typeof publicSettingsSchema>
@@ -41,7 +41,7 @@ export type PublicSettings = {
   locale: 'ru' | 'en' | 'sr'
   reaction_appearances: ReactionAppearances
   profile_status_icons: ProfileStatusIcon[]
-  profile_badges: import('@blog/contracts').BadgeDefinition[] | null
+  profile_badges: import('@blog/contracts').BadgeDefinition[]
   shell: ShellVisibility
 }
 
@@ -55,7 +55,7 @@ export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
     locale: dto.locale,
     reaction_appearances: dto.reaction_appearances,
     profile_status_icons: dto.profile_status_icons,
-    profile_badges: dto.profile_badges ?? null,
+    profile_badges: dto.profile_badges,
     shell: dto.shell,
   }
 }

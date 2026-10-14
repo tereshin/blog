@@ -11,7 +11,6 @@ import { useShellStore } from '../model/useShellStore.ts'
 import { useWriteAction } from '../model/useWriteAction.ts'
 import { AccountMenu } from './AccountMenu.tsx'
 import { HeaderBackLink } from './HeaderBackLink.tsx'
-import { HeaderCenter } from './HeaderCenter.tsx'
 import { HeaderSearch } from './HeaderSearch.tsx'
 import { MobileNavigation } from './MobileNavigation.tsx'
 
@@ -31,7 +30,7 @@ type SiteHeaderProps = {
 /**
  * Шапка на всю ширину вне прокрутки. От 768px: слева название площадки,
  * справа слева направо — поиск, колокольчик, «Написать», учётная запись или «Войти».
- * Ниже 768px: сверху кнопка панели (на статье — «Назад») и название по центру;
+ * Ниже 768px: сверху кнопка панели (на статье — «Назад») и название площадки;
  * действия становятся плавающей панелью внизу экрана (главная, поиск, колокольчик, сообщения, учётная запись),
  * «Написать» — круглой кнопкой над ней (кроме статьи и сообщений, где внизу поле ввода).
  * Раскладку переключает CSS (`site-header-*` в globals.css).
@@ -97,14 +96,13 @@ export function SiteHeader({
           to="/"
           className={cn(
             'shrink-0 rounded-md text-lg font-semibold text-foreground outline-offset-4 max-[767px]:absolute max-[767px]:top-2 max-[767px]:left-1/2 max-[767px]:-translate-x-1/2',
-            has_back && 'max-[767px]:hidden',
           )}
         >
           {logo_url ? <img src={logo_url} alt={brand} className="h-10 w-auto" /> : brand}
         </Link>
       </div>
-      <div className="site-header-center flex min-w-0 flex-1 items-center max-w-[var(--shell-content-width,640px)] mx-auto">
-        {is_mobile ? <HeaderCenter show_link={false} /> : center}
+      <div className="site-header-center flex min-w-0 flex-1 items-center">
+        {is_mobile ? null : center}
       </div>
       {is_mobile ? (
         <MobileNavigation

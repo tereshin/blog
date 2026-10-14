@@ -3,8 +3,8 @@ import type { ServiceContext } from '@blog/contracts'
 import { decodeCursor, encodeCursor } from '../../src/modules/feed/feed.cursor.ts'
 import { comparePopular, isPopularCandidate, popularScore } from '../../src/modules/feed/feed.rules.ts'
 import type { PopularityInput } from '../../src/modules/feed/feed.rules.ts'
-import { createFeedService } from '../../src/modules/feed/feed.service.ts'
-import type { FeedRepository, FeedRow } from '../../src/modules/feed/feed.types.ts'
+import { FeedService } from '../../src/modules/feed/feed.service.ts'
+import type { FeedRepositoryPort, FeedRow } from '../../src/modules/feed/feed.types.ts'
 
 const NOW = new Date('2026-10-08T12:00:00Z')
 const DAY = 24 * 60 * 60 * 1000
@@ -98,7 +98,7 @@ function repositoryOf(
   rows: FeedRow[],
   profiles = new Map<string, { display_name: string; avatar_url: string | null }>(),
   follows: { user_ids: string[]; topic_ids: string[] } = { user_ids: [], topic_ids: [] },
-): FeedRepository {
+): FeedRepositoryPort {
   return {
     findPage: async ({ limit }) => rows.slice(0, limit),
     findProfiles: async () => profiles,
@@ -108,7 +108,7 @@ function repositoryOf(
 
 describe('feed.service', () => {
   it('отдаёт порцию и next_cursor, если есть ещё', async () => {
-    const service = createFeedService(repositoryOf(Array.from({ length: 21 }, (_, index) => row(index + 1))))
+    const service = new FeedService(repositoryOf(Array.from({ length: 21 }, (_, index) => row(index + 1))))
     const page = await service.getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page.items).toHaveLength(20)
     expect(page.items[0]?.topic.avatar_url).toBe('https://example.com/topic.png')
@@ -117,24 +117,24 @@ describe('feed.service', () => {
   })
 
   it('на последней порции next_cursor пустой', async () => {
-    const service = createFeedService(repositoryOf([row(1), row(2)]))
+    const service = new FeedService(repositoryOf([row(1), row(2)]))
     const page = await service.getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page).toMatchObject({ items: [{ id: row(1).id }, { id: row(2).id }], next_cursor: null })
   })
 
   it('адрес автора без короткого адреса — номер учётной записи', async () => {
-    const page = await createFeedService(repositoryOf([row(1)])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
+    const page = await new FeedService(repositoryOf([row(1)])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page.items[0]?.author.slug).toBe('3')
   })
 
   it('передаёт выбранный статус автора', async () => {
     const status_icon_id = '44444444-4444-4444-8444-444444444444'
-    const page = await createFeedService(repositoryOf([row(1, { author_status_icon_id: status_icon_id })])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
+    const page = await new FeedService(repositoryOf([row(1, { author_status_icon_id: status_icon_id })])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page.items[0]?.author.status_icon_id).toBe(status_icon_id)
   })
 
   it('гость на «Моей ленте» получает 401, без подписок — причину без чтения статей', async () => {
-    await expect(createFeedService(repositoryOf([])).getPage(viewer, { mode: 'mine', limit: 20 }, NOW)).rejects.toMatchObject({ http_status: 401 })
+    await expect(new FeedService(repositoryOf([])).getPage(viewer, { mode: 'mine', limit: 20 }, NOW)).rejects.toMatchObject({ http_status: 401 })
     let read = false
     const repository = repositoryOf([])
     repository.findPage = async () => {
@@ -142,11 +142,11 @@ describe('feed.service', () => {
       return []
     }
     const member: ServiceContext = { ...viewer, role: 'member', user_id: '11111111-1111-4111-8111-111111111111' }
-    const empty = await createFeedService(repository).getPage(member, { mode: 'mine', limit: 20 }, NOW)
+    const empty = await new FeedService(repository).getPage(member, { mode: 'mine', limit: 20 }, NOW)
     expect(empty).toEqual({ items: [], next_cursor: null, reason: 'no_follows' })
     expect(read).toBe(false)
 
-    const followed = await createFeedService(repositoryOf([row(1)], new Map(), { user_ids: [member.user_id ?? ''], topic_ids: [] })).getPage(
+    const followed = await new FeedService(repositoryOf([row(1)], new Map(), { user_ids: [member.user_id ?? ''], topic_ids: [] })).getPage(
       member,
       { mode: 'mine', limit: 20 },
       NOW,
@@ -159,7 +159,7 @@ describe('feed.service', () => {
     const author = '33333333-3333-4333-8333-333333333333'
     const top = { id: '44444444-4444-4444-8444-444444444444', author_id: author, body: 'Очень  длинный '.repeat(30), reaction_count: 2, reply_count: 0 }
     const profiles = new Map([[author, { display_name: 'Борис', avatar_url: null }]])
-    const page = await createFeedService(repositoryOf([row(1, { top_comment: top })], profiles)).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
+    const page = await new FeedService(repositoryOf([row(1, { top_comment: top })], profiles)).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     const card = page.items[0]
     expect(card?.top_comment?.author_name).toBe('Борис')
     expect(card?.top_comment?.excerpt.length).toBeLessThanOrEqual(140)
@@ -168,7 +168,7 @@ describe('feed.service', () => {
 
   it('комментарий без найденного профиля автора не попадает в карточку', async () => {
     const top = { id: '44444444-4444-4444-8444-444444444444', author_id: '33333333-3333-4333-8333-333333333333', body: 'Текст' }
-    const page = await createFeedService(repositoryOf([row(1, { top_comment: top })])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
+    const page = await new FeedService(repositoryOf([row(1, { top_comment: top })])).getPage(viewer, { mode: 'fresh', limit: 20 }, NOW)
     expect(page.items[0]?.top_comment).toBeNull()
   })
 })

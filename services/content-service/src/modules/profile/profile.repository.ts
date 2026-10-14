@@ -5,9 +5,9 @@ import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Database } from '@blog/broker'
 import { profiles, users_copy } from '../../infra/db/schema.ts'
-import { releaseSlug, replaceSlug } from '../slug/index.ts'
+import { SlugRepository, SlugService } from '../slug/index.ts'
 import { appendProfileUpdated } from './profile.events.ts'
-import type { ProfileRecord, ProfileRepository } from './profile.types.ts'
+import type { ProfileRecord, ProfileRepositoryPort } from './profile.types.ts'
 import type { UpdateProfile } from '@blog/contracts'
 
 function selection(viewer_id: string | undefined) {
@@ -59,9 +59,11 @@ function toRecord(row: {
   return row
 }
 
-export function createProfileRepository(db: NodePgDatabase): ProfileRepository {
-  const load = async (where: SQL, viewer_id: string | undefined) => {
-    const [row] = await db
+export class ProfileRepository implements ProfileRepositoryPort {
+  constructor(private readonly db: NodePgDatabase) {}
+
+  private async load(where: SQL, viewer_id: string | undefined) {
+    const [row] = await this.db
       .select(selection(viewer_id))
       .from(profiles)
       .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
@@ -70,15 +72,20 @@ export function createProfileRepository(db: NodePgDatabase): ProfileRepository {
     return row ? toRecord(row) : null
   }
 
-  return {
-    findBySlug: (slug, viewer_id) => load(eq(profiles.slug, slug) as SQL, viewer_id),
-    findByPublicNumber: (public_number, viewer_id) => load(eq(users_copy.public_number, public_number) as SQL, viewer_id),
+  findBySlug(slug: string, viewer_id: string | undefined) {
+    return this.load(eq(profiles.slug, slug) as SQL, viewer_id)
+  }
 
-    async update(user_id, input: UpdateProfile, correlation_id) {
-      return (db as Database).transaction(async (tx) => {
+  findByPublicNumber(public_number: number, viewer_id: string | undefined) {
+    return this.load(eq(users_copy.public_number, public_number) as SQL, viewer_id)
+  }
+
+  async update(user_id: string, input: UpdateProfile, correlation_id: string) {
+    return (this.db as Database).transaction(async (tx) => {
         const database = tx as Database
-        if (input.slug === null) await releaseSlug(database, 'profile', user_id)
-        else if (input.slug !== undefined) await replaceSlug(database, input.slug, 'profile', user_id)
+        const slugs = new SlugService(new SlugRepository())
+        if (input.slug === null) await slugs.releaseSlug(database, 'profile', user_id)
+        else if (input.slug !== undefined) await slugs.replaceSlug(database, input.slug, 'profile', user_id)
         const [row] = await database
           .update(profiles)
           .set(input)
@@ -102,6 +109,5 @@ export function createProfileRepository(db: NodePgDatabase): ProfileRepository {
         if (input.display_name !== undefined) await requestAuthorCovers(database, user_id, correlation_id)
         return toRecord(fresh)
       })
-    },
   }
 }

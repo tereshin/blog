@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ArticleAccessFields, ServiceContext } from '@blog/contracts'
-import { canRead, createAccessService } from '../../src/modules/access/index.ts'
+import { AccessService } from '../../src/modules/access/index.ts'
+import { canRead } from '../../src/shared/can-read.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const OTHER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
@@ -49,7 +50,7 @@ describe('content: canRead — все сочетания состояния, д�
 
 describe('content: getAccess', () => {
   const article: ArticleAccessFields = { author_id: AUTHOR, visibility: 'members', status: 'published' }
-  const service = createAccessService({ findArticle: async (id) => (id === 'known' ? article : null) })
+  const service = new AccessService({ findArticle: async (id) => (id === 'known' ? article : null) })
 
   it('отдаёт решение и поля, по которым оно принято', async () => {
     expect(await service.getAccess(viewers.guest, 'known')).toEqual({ can_read: false, visibility: 'members', status: 'published', author_id: AUTHOR })

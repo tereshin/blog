@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/shared/lib'
 import { Textarea } from './Textarea.tsx'
 import { FieldCounter } from './FieldCounter.tsx'
+import { fieldStackVariants } from './field-variants.ts'
 
 type FormTextAreaProps = ComponentProps<typeof Textarea> & {
   label: string
@@ -42,7 +43,7 @@ export function FormTextArea({
       .join(' ') || undefined
   return (
     <div
-      className={cn('flex w-full min-w-0 max-w-lg flex-col', size === 'base' ? 'gap-2' : 'gap-3')}
+      className={cn(fieldStackVariants({ size: size === 'base' ? 'base' : 'lg' }))}
     >
       <FieldLabel htmlFor={field_id} size={size}>
         {label}

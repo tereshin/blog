@@ -20,6 +20,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { outbox, settings } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { settingsRoutes } from '../../src/modules/settings/index.ts'
 
 const MEDIA = 'http://media.test'
@@ -72,7 +73,8 @@ describe('content: настройки площадки', () => {
       request.viewer =
         viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(settingsRoutes, { database, media_url: MEDIA })
+    const modules = composeContent({ database, media_url: MEDIA })
+    await app.register(settingsRoutes, { controller: modules.settings })
   }, 120_000)
 
   afterAll(async () => {

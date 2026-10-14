@@ -3,6 +3,9 @@ import type { DbHandle } from '@blog/db-kit'
 
 export type { DbHandle }
 
-export function openDatabase(url: string): DbHandle {
-  return createDb({ url })
+export type OpenDatabaseOptions = { statement_timeout_ms?: number }
+
+/** Пул сервиса; одноразовые задачи (migrate, seed, bootstrap) снимают `statement_timeout` явно. */
+export function openDatabase(url: string, options: OpenDatabaseOptions = {}): DbHandle {
+  return createDb({ url, ...options })
 }

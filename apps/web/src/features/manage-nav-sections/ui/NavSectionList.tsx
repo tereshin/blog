@@ -12,7 +12,9 @@ import type { AdminNavSection, AdminNavSectionItem, CreateNavSectionItem } from 
 import { useT } from '@/shared/i18n'
 import { EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 import { useManageNavSections } from '../model/useManageNavSections.ts'
-import { DeleteSectionDialog, ItemDialog, SectionTitleDialog } from './NavSectionDialogs.tsx'
+import { DeleteSectionDialog } from './DeleteSectionDialog.tsx'
+import { ItemDialog } from './ItemDialog.tsx'
+import { SectionTitleDialog } from './SectionTitleDialog.tsx'
 import { NavSectionCard } from './NavSectionCard.tsx'
 
 type DialogState =

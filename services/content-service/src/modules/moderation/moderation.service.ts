@@ -5,9 +5,23 @@ import {
 } from './moderation.cursor.ts'
 import { moderationFiltersSchema, reactionCountsSchema } from '@blog/contracts'
 import type { ModerationFilters, ServiceContext } from '@blog/contracts'
-import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError } from '@blog/errors'
-import type { StoredArticle } from '../article/article.types.ts'
-import type { ModerationArticle, ModerationRepository } from './moderation.repository.ts'
+import { ForbiddenError, UnauthorizedError } from '@blog/errors'
+import type { StoredArticle } from '../article/index.ts'
+import {
+  ArticleNotHideableError,
+  ArticleNotRestorableError,
+  ModerationArticleNotFoundError,
+  ReportNotFoundError,
+} from './moderation.errors.ts'
+import type {
+  ModerationArticle,
+  ModerationArticleEventsPort,
+  ModerationCoversPort,
+  ModerationEventName,
+  ModerationListFilter,
+  ModerationReport,
+  ModerationRepositoryPort,
+} from './moderation.types.ts'
 
 const EMPTY_COUNTS = { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 
@@ -51,144 +65,129 @@ function card(row: ModerationArticle) {
   }
 }
 
-export function createModerationService(repository: ModerationRepository) {
+type ReviewAction = 'dismiss' | 'hide' | 'delete'
+
+function toReport(report: ModerationReport) {
   return {
-    async list(
-      viewer: ServiceContext,
-      filter: 'reported' | 'hidden' | 'search',
-      filters: ModerationFilters = moderationFiltersSchema.parse({}),
-    ) {
-      requireModerator(viewer)
-      const scope = moderationScope(filters, filter)
-      const page = await repository.list(
-        filter,
-        filters.limit + 1,
-        filters,
-        decodeModerationCursor(filters.cursor, scope),
-      )
-      const last = page.articles.slice(0, filters.limit).at(-1)
-      return {
-        items: page.articles.slice(0, filters.limit).map((row) => ({
-          article: card(row),
-          updated_at: row.article.updated_at.toISOString(),
-          reports: page.reports
-            .filter((report) => report.article_id === row.article.id)
-            .map((report) => ({
-              id: report.id,
-              article_id: report.article_id,
-              reporter_id: report.reporter_id,
-              created_at: report.created_at.toISOString(),
-              status: report.status,
-            })),
-        })),
-        next_cursor:
-          page.articles.length > filters.limit && last
-            ? encodeModerationCursor({
-                t: last.article.updated_at.toISOString(),
-                id: last.article.id,
-                scope,
-                exact: last.article.slug === filters.q,
-              })
-            : null,
-      }
-    },
+    id: report.id,
+    article_id: report.article_id,
+    reporter_id: report.reporter_id,
+    created_at: report.created_at.toISOString(),
+    status: report.status,
+  }
+}
 
-    async listReports(viewer: ServiceContext, filters: ModerationFilters) {
-      requireModerator(viewer)
-      const scope = moderationScope(filters, 'reports')
-      const rows = await repository.listReports(
-        filters.limit + 1,
-        filters,
-        decodeModerationCursor(filters.cursor, scope),
-      )
-      const last = rows.slice(0, filters.limit).at(-1)
-      return {
-        items: rows
-          .slice(0, filters.limit)
-          .map((row) => ({
-            article: card(row),
-            report: { ...row.report, created_at: row.report.created_at.toISOString() },
-          })),
-        next_cursor:
-          rows.length > filters.limit && last
-            ? encodeModerationCursor({
-                t: last.report.created_at.toISOString(),
-                id: last.report.id,
-                scope,
-              })
-            : null,
-      }
-    },
+export class ModerationService<TTx> {
+  constructor(
+    private readonly repository: ModerationRepositoryPort<TTx>,
+    private readonly articles: ModerationArticleEventsPort<TTx>,
+    private readonly covers: ModerationCoversPort<TTx>,
+  ) {}
 
-    async hide(viewer: ServiceContext, id: string, correlation_id: string): Promise<StoredArticle> {
-      const moderator_id = requireModerator(viewer)
-      const current = await repository.find(id)
-      if (!current || current.status === 'deleted') throw new NotFoundError()
-      if (current.status === 'hidden') return current
-      if (current.status !== 'published')
-        throw new ConflictError({ message: 'Скрыть можно только опубликованную статью' })
-      const next = await repository.transition({
-        id,
-        status: 'hidden',
-        event_name: 'content.article.hidden',
-        correlation_id,
-        moderator_id,
-      })
-      if (!next) throw new NotFoundError()
+  async list(viewer: ServiceContext, filter: ModerationListFilter, filters: ModerationFilters = moderationFiltersSchema.parse({})) {
+    requireModerator(viewer)
+    const scope = moderationScope(filters, filter)
+    const page = await this.repository.list(filter, filters.limit + 1, filters, decodeModerationCursor(filters.cursor, scope))
+    const last = page.articles.slice(0, filters.limit).at(-1)
+    return {
+      items: page.articles.slice(0, filters.limit).map((row) => ({
+        article: card(row),
+        updated_at: row.article.updated_at.toISOString(),
+        reports: page.reports.filter((report) => report.article_id === row.article.id).map(toReport),
+      })),
+      next_cursor:
+        page.articles.length > filters.limit && last
+          ? encodeModerationCursor({
+              t: last.article.updated_at.toISOString(),
+              id: last.article.id,
+              scope,
+              exact: last.article.slug === filters.q,
+            })
+          : null,
+    }
+  }
+
+  async listReports(viewer: ServiceContext, filters: ModerationFilters) {
+    requireModerator(viewer)
+    const scope = moderationScope(filters, 'reports')
+    const rows = await this.repository.listReports(filters.limit + 1, filters, decodeModerationCursor(filters.cursor, scope))
+    const last = rows.slice(0, filters.limit).at(-1)
+    return {
+      items: rows.slice(0, filters.limit).map((row) => ({ article: card(row), report: toReport(row.report) })),
+      next_cursor:
+        rows.length > filters.limit && last
+          ? encodeModerationCursor({ t: last.report.created_at.toISOString(), id: last.report.id, scope })
+          : null,
+    }
+  }
+
+  async hide(viewer: ServiceContext, id: string, correlation_id: string): Promise<StoredArticle> {
+    const moderator_id = requireModerator(viewer)
+    const current = await this.repository.find(id)
+    if (!current || current.status === 'deleted') throw new ModerationArticleNotFoundError()
+    if (current.status === 'hidden') return current
+    if (current.status !== 'published') throw new ArticleNotHideableError()
+    const next = await this.transition(id, 'hidden', 'content.article.hidden', correlation_id, moderator_id)
+    if (!next) throw new ModerationArticleNotFoundError()
+    return next
+  }
+
+  async restore(viewer: ServiceContext, id: string, correlation_id: string): Promise<StoredArticle> {
+    const moderator_id = requireModerator(viewer)
+    const current = await this.repository.find(id)
+    if (!current || current.status === 'deleted') throw new ModerationArticleNotFoundError()
+    if (current.status === 'published') return current
+    if (current.status !== 'hidden') throw new ArticleNotRestorableError()
+    const next = await this.transition(id, 'published', 'content.article.restored', correlation_id, moderator_id)
+    if (!next) throw new ModerationArticleNotFoundError()
+    return next
+  }
+
+  async remove(viewer: ServiceContext, id: string, correlation_id: string): Promise<void> {
+    const moderator_id = requireModerator(viewer)
+    const current = await this.repository.find(id)
+    if (!current || current.status === 'deleted') throw new ModerationArticleNotFoundError()
+    await this.transition(id, 'deleted', 'content.article.deleted', correlation_id, moderator_id)
+  }
+
+  async review(viewer: ServiceContext, id: string, action: ReviewAction = 'dismiss', correlation_id = 'moderation') {
+    const moderator_id = requireModerator(viewer)
+    const report = await this.repository.transaction(async (tx) => {
+      const locked = await this.repository.lockReport(tx, id)
+      if (!locked) throw new ReportNotFoundError()
+      if (locked.status === 'reviewed') return locked
+      if (action !== 'dismiss') await this.applyReportAction(tx, locked.article_id, action, correlation_id, moderator_id)
+      return (await this.repository.markReviewed(tx, locked.id)) ?? locked
+    })
+    return toReport(report)
+  }
+
+  private async applyReportAction(tx: TTx, article_id: string, action: 'hide' | 'delete', correlation_id: string, moderator_id: string): Promise<void> {
+    const current = await this.repository.lockArticle(tx, article_id)
+    if (!current) throw new ModerationArticleNotFoundError()
+    const status = action === 'hide' ? 'hidden' : 'deleted'
+    if (current.status === status || current.status === 'deleted') return
+    const next = await this.repository.setStatus(tx, current.id, status)
+    if (!next) throw new ModerationArticleNotFoundError()
+    await this.covers.requestArticleCover(tx, next.id, correlation_id)
+    await this.articles.appendEvent(tx, action === 'hide' ? 'content.article.hidden' : 'content.article.deleted', next, correlation_id, moderator_id)
+    if (action === 'hide') await this.articles.appendEvent(tx, 'content.article.updated', next, correlation_id)
+  }
+
+  private transition(
+    id: string,
+    status: StoredArticle['status'],
+    event_name: ModerationEventName,
+    correlation_id: string,
+    moderator_id: string,
+  ): Promise<StoredArticle | null> {
+    return this.repository.transaction(async (tx) => {
+      const next = await this.repository.setStatus(tx, id, status)
+      if (!next) return null
+      await this.covers.requestArticleCover(tx, next.id, correlation_id)
+      await this.articles.appendEvent(tx, event_name, next, correlation_id, moderator_id)
+      if (event_name !== 'content.article.deleted') await this.articles.appendEvent(tx, 'content.article.updated', next, correlation_id)
       return next
-    },
-
-    async restore(
-      viewer: ServiceContext,
-      id: string,
-      correlation_id: string,
-    ): Promise<StoredArticle> {
-      const moderator_id = requireModerator(viewer)
-      const current = await repository.find(id)
-      if (!current || current.status === 'deleted') throw new NotFoundError()
-      if (current.status === 'published') return current
-      if (current.status !== 'hidden')
-        throw new ConflictError({ message: 'Вернуть можно только скрытую статью' })
-      const next = await repository.transition({
-        id,
-        status: 'published',
-        event_name: 'content.article.restored',
-        correlation_id,
-        moderator_id,
-      })
-      if (!next) throw new NotFoundError()
-      return next
-    },
-
-    async remove(viewer: ServiceContext, id: string, correlation_id: string): Promise<void> {
-      const moderator_id = requireModerator(viewer)
-      const current = await repository.find(id)
-      if (!current || current.status === 'deleted') throw new NotFoundError()
-      await repository.transition({
-        id,
-        status: 'deleted',
-        event_name: 'content.article.deleted',
-        correlation_id,
-        moderator_id,
-      })
-    },
-
-    async review(
-      viewer: ServiceContext,
-      id: string,
-      action: 'dismiss' | 'hide' | 'delete' = 'dismiss',
-      correlation_id = 'moderation',
-    ) {
-      const moderator_id = requireModerator(viewer)
-      const report = await repository.reviewAction({ id, action, moderator_id, correlation_id })
-      if (!report) throw new NotFoundError()
-      return {
-        id: report.id,
-        article_id: report.article_id,
-        reporter_id: report.reporter_id,
-        created_at: report.created_at.toISOString(),
-        status: report.status,
-      }
-    },
+    })
   }
 }

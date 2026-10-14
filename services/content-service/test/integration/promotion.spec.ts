@@ -11,6 +11,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, profiles, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { feedRoutes } from '../../src/modules/feed/index.ts'
 import { promotionRoutes } from '../../src/modules/promotion/index.ts'
 
@@ -71,8 +72,9 @@ describe('content: продвижение', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(promotionRoutes, { database })
-    await app.register(feedRoutes, { database })
+    const modules = composeContent({ database, media_url: 'http://media.test' })
+    await app.register(promotionRoutes, { controller: modules.promotion })
+    await app.register(feedRoutes, { controller: modules.feed })
   }, 120_000)
 
   afterAll(async () => {

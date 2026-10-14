@@ -2,11 +2,11 @@ import { OutboxRelay, connectBroker, sampleQueueDepth, setConsumerMetrics } from
 import { registerShutdown } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { createServiceMetrics, startQueueMetrics, startTelemetry } from '@blog/telemetry'
-import { createCoverRenderer, createCoverJobsRepository, createCoverWorker, startCoverRequestedConsumer } from './modules/social-cover/index.ts'
+import { SocialCoverConsumer, SocialCoverPool, SocialCoverRepository, SocialCoverService, SocialCoverWorker } from './modules/social-cover/index.ts'
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
-import { createS3Store } from './modules/media/index.ts'
+import { MediaStorage } from './modules/media/index.ts'
 
 const SERVICE = 'media-service'
 
@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   const telemetry = startTelemetry({ service: SERVICE, otlp_endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT })
   const metrics = createServiceMetrics(SERVICE)
   const database = openDatabase(env.DATABASE_URL)
-  const store = createS3Store({
+  const store = new MediaStorage({
     endpoint: env.S3_ENDPOINT,
     region: env.S3_REGION,
     bucket: env.S3_BUCKET,
@@ -25,12 +25,12 @@ async function main(): Promise<void> {
   })
   const broker = await connectBroker({ url: env.NATS_URL, name: SERVICE })
   setConsumerMetrics(metrics)
-  const queues = startQueueMetrics(metrics, sampleQueueDepth)
-  const renderer = createCoverRenderer()
-  const repository = createCoverJobsRepository(database.db)
+  const queues = startQueueMetrics(metrics, sampleQueueDepth, (error) => logger.debug({ err: error }, 'опрос очередей брокера не удался'))
+  const renderer = new SocialCoverPool()
+  const repository = new SocialCoverRepository(database.db)
   const relay = new OutboxRelay({ db: database.db, broker, logger })
-  const worker = createCoverWorker({ repository, renderer, store, public_url: env.S3_PUBLIC_URL, logger, metrics })
-  const consumer = await startCoverRequestedConsumer({ db: database.db, broker, logger, repository })
+  const worker = new SocialCoverWorker(repository, new SocialCoverService(renderer, store, env.S3_PUBLIC_URL, logger), { logger, metrics })
+  const consumer = await new SocialCoverConsumer(repository).start({ db: database.db, broker, logger })
   relay.start()
   worker.start()
   const app = await buildApp({ env, logger, metrics, database, store, renderer, is_broker_ready: broker.isReady })

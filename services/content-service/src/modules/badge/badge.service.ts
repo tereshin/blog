@@ -1,6 +1,7 @@
-import { ValidationError } from '@blog/errors'
 import type { BadgeDefinition } from '@blog/contracts'
-import type { BadgeFacts, BadgeRepository, BadgeService } from './badge.types.ts'
+import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
+import { AwardedBadgeRemovalError } from './badge.errors.ts'
+import type { BadgeFacts, BadgeRepositoryPort } from './badge.types.ts'
 
 /** UTC calendar arithmetic, clamping leap days and the end of the month. */
 export function addCalendarMonths(created_at: Date, months: number): Date {
@@ -28,34 +29,38 @@ export function qualifiesForBadge(badge: BadgeDefinition, facts: BadgeFacts, now
   }
 }
 
-export function createBadgeService(repository: BadgeRepository): BadgeService {
-  const evaluateMany = async (user_ids: string[], now = new Date()) => {
+export class BadgeService<TTx> {
+  constructor(private readonly repository: BadgeRepositoryPort<TTx>) {}
+
+  evaluate(tx: TTx, user_id: string, now = new Date()): Promise<void> {
+    return this.evaluateMany(tx, [user_id], now)
+  }
+
+  async evaluateMany(tx: TTx, user_ids: string[], now = new Date()): Promise<void> {
     if (user_ids.length === 0) return
-    const definitions = await repository.definitions()
+    const definitions = await this.definitions(tx)
     if (!definitions.some((badge) => badge.status === 'active')) return
-    const facts = await repository.facts(user_ids)
+    const facts = await this.repository.facts(tx, user_ids)
     const awards = facts.flatMap((user) =>
       definitions
         .filter((badge) => qualifiesForBadge(badge, user, now))
         .map((badge) => ({ user_id: user.user_id, badge_id: badge.id })),
     )
-    if (awards.length > 0) await repository.award(awards, now)
+    if (awards.length > 0) await this.repository.award(tx, awards, now)
   }
-  return {
-    evaluate: (user_id: string, now = new Date()) => evaluateMany([user_id], now),
-    evaluateMany,
-    async validateReplacement(next) {
-      const previous = await repository.definitions(true)
-      if (next === undefined) return previous
-      const removed_ids = previous
-        .filter((badge) => !next.some((item) => item.id === badge.id))
-        .map((badge) => badge.id)
-      if (await repository.hasAwards(removed_ids)) {
-        throw new ValidationError({
-          message: 'Выданные бейджи можно архивировать, но нельзя удалять',
-        })
-      }
-      return next
-    },
+
+  /** Блокирует текущий каталог до конца транзакции и не даёт убрать уже выданный бейдж. */
+  async validateReplacement(tx: TTx, next: BadgeDefinition[] | undefined): Promise<BadgeDefinition[]> {
+    const previous = await this.definitions(tx, true)
+    if (next === undefined) return previous
+    const removed_ids = previous
+      .filter((badge) => !next.some((item) => item.id === badge.id))
+      .map((badge) => badge.id)
+    if (await this.repository.hasAwards(tx, removed_ids)) throw new AwardedBadgeRemovalError()
+    return next
+  }
+
+  private async definitions(tx: TTx, is_exclusive = false): Promise<BadgeDefinition[]> {
+    return (await this.repository.definitions(tx, is_exclusive)) ?? DEFAULT_PROFILE_BADGES
   }
 }

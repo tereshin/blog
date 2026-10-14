@@ -16,14 +16,12 @@ export const profileSchema = z.object({
   followers_count: z.number().int(),
   following_count: z.number().int(),
   badges: z.array(badgeIdSchema),
-  badge_ids: z.array(badgeIdSchema).optional(),
   is_own: z.boolean(),
   is_following: z.boolean(),
 })
 
 export function toProfile(dto: z.infer<typeof profileSchema>): Profile {
-  const { badge_ids, ...profile } = dto
-  return { ...profile, badges: badge_ids ?? dto.badges }
+  return dto
 }
 
 export function toUpdateBody(input: ProfileUpdate): ProfileUpdate {

@@ -11,7 +11,9 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, topics } from '../../src/infra/db/schema.ts'
-import { accessRoutes, canRead, visibleArticlesWhere } from '../../src/modules/access/index.ts'
+import { visibleArticlesWhere } from '../../src/infra/db/visible-articles.ts'
+import { AccessController, AccessRepository, AccessService, accessRoutes } from '../../src/modules/access/index.ts'
+import { canRead } from '../../src/shared/can-read.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const OTHER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
@@ -64,7 +66,7 @@ describe('content: доступ к статьям на PostgreSQL', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? viewerOf('guest')
     })
-    await app.register(accessRoutes, { database })
+    await app.register(accessRoutes, { controller: new AccessController(new AccessService(new AccessRepository(database.db))) })
   }, 120_000)
 
   afterAll(async () => {

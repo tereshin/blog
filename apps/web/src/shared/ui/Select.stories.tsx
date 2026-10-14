@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Select } from './Select.tsx'
-const meta = {
+const meta = preview.meta({
   title: 'shared/Select',
   component: Select,
   args: {
@@ -18,10 +18,8 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof Select>
-export default meta
-type Story = StoryObj<typeof meta>
-export const LightBasePrimary: Story = {
+})
+export const LightBasePrimary = meta.story({
   args: { size: 'base', variant: 'primary' },
   decorators: [
     (Story) => (
@@ -30,8 +28,8 @@ export const LightBasePrimary: Story = {
       </div>
     ),
   ],
-}
-export const LightBaseSecondary: Story = {
+})
+export const LightBaseSecondary = meta.story({
   args: { size: 'base', variant: 'secondary' },
   decorators: [
     (Story) => (
@@ -40,8 +38,8 @@ export const LightBaseSecondary: Story = {
       </div>
     ),
   ],
-}
-export const LightLgPrimary: Story = {
+})
+export const LightLgPrimary = meta.story({
   args: { size: 'lg', variant: 'primary' },
   decorators: [
     (Story) => (
@@ -50,8 +48,8 @@ export const LightLgPrimary: Story = {
       </div>
     ),
   ],
-}
-export const LightLgSecondary: Story = {
+})
+export const LightLgSecondary = meta.story({
   args: { size: 'lg', variant: 'secondary' },
   decorators: [
     (Story) => (
@@ -60,8 +58,8 @@ export const LightLgSecondary: Story = {
       </div>
     ),
   ],
-}
-export const DarkBasePrimary: Story = {
+})
+export const DarkBasePrimary = meta.story({
   args: { size: 'base', variant: 'primary' },
   decorators: [
     (Story) => (
@@ -70,8 +68,8 @@ export const DarkBasePrimary: Story = {
       </div>
     ),
   ],
-}
-export const DarkBaseSecondary: Story = {
+})
+export const DarkBaseSecondary = meta.story({
   args: { size: 'base', variant: 'secondary' },
   decorators: [
     (Story) => (
@@ -80,8 +78,8 @@ export const DarkBaseSecondary: Story = {
       </div>
     ),
   ],
-}
-export const DarkLgPrimary: Story = {
+})
+export const DarkLgPrimary = meta.story({
   args: { size: 'lg', variant: 'primary' },
   decorators: [
     (Story) => (
@@ -90,8 +88,8 @@ export const DarkLgPrimary: Story = {
       </div>
     ),
   ],
-}
-export const DarkLgSecondary: Story = {
+})
+export const DarkLgSecondary = meta.story({
   args: { size: 'lg', variant: 'secondary' },
   decorators: [
     (Story) => (
@@ -100,6 +98,6 @@ export const DarkLgSecondary: Story = {
       </div>
     ),
   ],
-}
-export const Disabled: Story = { args: { isDisabled: true } }
-export const Invalid: Story = { args: { isInvalid: true } }
+})
+export const Disabled = meta.story({ args: { isDisabled: true } })
+export const Invalid = meta.story({ args: { isInvalid: true } })

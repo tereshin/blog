@@ -25,7 +25,7 @@ export function SettingsShellFields({ value, onChange }: SettingsShellFieldsProp
         <ToggleField
           key={field.key}
           label={t(field.label)}
-          isSelected={value[field.key]}
+          is_selected={value[field.key]}
           onChange={(selected) => onChange({ ...value, [field.key]: selected })}
         />
       ))}

@@ -110,7 +110,7 @@ export function SettingsReactionAdd({ can_add, upload, onAdd }: SettingsReaction
         })
       )}
       {presentation === 'image' && image_url ? (
-        <img src={image_url} alt="" className="h-8 w-8 object-contain" />
+        <img loading="lazy" src={image_url} alt="" className="h-8 w-8 object-contain" />
       ) : null}
       {error === 'image' ? (
         <p className="text-sm text-danger">{t('admin.settings.appearance.image_missing')}</p>

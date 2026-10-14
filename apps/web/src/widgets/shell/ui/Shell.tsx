@@ -1,7 +1,7 @@
-import { useEffect, useId } from 'react'
+import { useId } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { useShellStore } from '../model/useShellStore.ts'
+import { useShellLayout } from '../model/useShellLayout.ts'
 import { BackToTop } from './BackToTop.tsx'
 import { LeftNavDrawer } from './LeftNavDrawer.tsx'
 
@@ -25,22 +25,8 @@ export function Shell({
   content_width = 640,
 }: ShellProps) {
   const { t } = useT()
-  const is_nav_open = useShellStore((state) => state.is_nav_open)
-  const setNavOpen = useShellStore((state) => state.setNavOpen)
-  const setCenterScrollTop = useShellStore((state) => state.setCenterScrollTop)
+  const { is_nav_open, setNavOpen } = useShellLayout(scroll_key)
   const mount_id = useId()
-
-  useEffect(() => {
-    const onScroll = () => setCenterScrollTop(window.scrollY)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [setCenterScrollTop])
-
-  useEffect(() => {
-    window.scrollTo({ top: 0 })
-    setCenterScrollTop(0)
-  }, [scroll_key, setCenterScrollTop])
 
   const show_rail = right != null && right !== false
   return (

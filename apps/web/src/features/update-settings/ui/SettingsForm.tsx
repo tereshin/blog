@@ -90,12 +90,12 @@ export function SettingsForm({
               <>
                 <ToggleField
                   label={t('admin.settings.registration_open')}
-                  isSelected={draft.registration_open}
+                  is_selected={draft.registration_open}
                   onChange={(registration_open) => setDraft({ ...draft, registration_open })}
                 />
                 <ToggleField
                   label={t('admin.settings.new_members_can_publish')}
-                  isSelected={draft.new_members_can_publish}
+                  is_selected={draft.new_members_can_publish}
                   onChange={(new_members_can_publish) =>
                     setDraft({ ...draft, new_members_can_publish })
                   }

@@ -6,9 +6,12 @@ import {
 } from '@blog/contracts'
 import { appendToOutbox, newEventId } from '@blog/broker'
 import type { Database } from '@blog/broker'
-import type { ArticleCounterSnapshot } from '../article-snapshot/index.ts'
-
-type Envelope = { correlation_id: string; occurred_at: string }
+import type {
+  CommentCreatedInput,
+  CommentEventsPort,
+  CommentHiddenInput,
+  CommentUpdatedInput,
+} from './write/comment-write.types.ts'
 
 function base(name: string, correlation_id: string, occurred_at: string) {
   return {
@@ -21,19 +24,7 @@ function base(name: string, correlation_id: string, occurred_at: string) {
   }
 }
 
-export function commentCreatedEvent(
-  input: Envelope & {
-    snapshot: ArticleCounterSnapshot
-    comment_id: string
-    author_id: string
-    parent_id: string | null
-    parent_author_id: string | null
-    article_author_id: string
-    mention_ids?: string[]
-    subscriber_ids?: string[]
-    excerpt: string
-  },
-) {
+export function commentCreatedEvent(input: CommentCreatedInput) {
   const { correlation_id, occurred_at } = input
   return CommentCreatedV1.parse({
     ...base('discussion.comment.created', correlation_id, occurred_at),
@@ -49,77 +40,50 @@ export function commentCreatedEvent(
   })
 }
 
-export async function appendCommentCreated(
-  tx: Database,
-  input: Envelope & {
-    snapshot: ArticleCounterSnapshot
-    comment_id: string
-    author_id: string
-    parent_id: string | null
-    parent_author_id: string | null
-    article_author_id: string
-    mention_ids?: string[]
-    subscriber_ids?: string[]
-    excerpt: string
-  },
-): Promise<void> {
-  const { correlation_id, occurred_at } = input
-  await appendToOutbox(tx, commentCreatedEvent(input))
-  await appendToOutbox(
-    tx,
-    ArticleCountersUpdatedV1.parse({
-      ...base('discussion.article_counters.updated', correlation_id, occurred_at),
-      ...input.snapshot,
-    }),
-  )
-}
+export class CommentEvents implements CommentEventsPort<Database> {
+  async appendCreated(tx: Database, input: CommentCreatedInput): Promise<void> {
+    const { correlation_id, occurred_at } = input
+    await appendToOutbox(tx, commentCreatedEvent(input))
+    await appendToOutbox(
+      tx,
+      ArticleCountersUpdatedV1.parse({
+        ...base('discussion.article_counters.updated', correlation_id, occurred_at),
+        ...input.snapshot,
+      }),
+    )
+  }
 
-export async function appendCommentUpdated(
-  tx: Database,
-  input: Envelope & {
-    snapshot: ArticleCounterSnapshot
-    comment_id: string
-    status: 'visible' | 'deleted' | 'hidden'
-    edited_at: string | null
-  },
-): Promise<void> {
-  const { correlation_id, occurred_at } = input
-  await appendToOutbox(
-    tx,
-    CommentUpdatedV1.parse({
-      ...base('discussion.comment.updated', correlation_id, occurred_at),
-      comment_id: input.comment_id,
-      article_id: input.snapshot.article_id,
-      status: input.status,
-      edited_at: input.edited_at,
-    }),
-  )
-  await appendToOutbox(
-    tx,
-    ArticleCountersUpdatedV1.parse({
-      ...base('discussion.article_counters.updated', correlation_id, occurred_at),
-      ...input.snapshot,
-    }),
-  )
-}
+  async appendUpdated(tx: Database, input: CommentUpdatedInput): Promise<void> {
+    const { correlation_id, occurred_at } = input
+    await appendToOutbox(
+      tx,
+      CommentUpdatedV1.parse({
+        ...base('discussion.comment.updated', correlation_id, occurred_at),
+        comment_id: input.comment_id,
+        article_id: input.snapshot.article_id,
+        status: input.status,
+        edited_at: input.edited_at,
+      }),
+    )
+    await appendToOutbox(
+      tx,
+      ArticleCountersUpdatedV1.parse({
+        ...base('discussion.article_counters.updated', correlation_id, occurred_at),
+        ...input.snapshot,
+      }),
+    )
+  }
 
-export async function appendCommentHidden(
-  tx: Database,
-  input: Envelope & {
-    comment_id: string
-    article_id: string
-    author_id: string
-    moderator_id: string
-  },
-): Promise<void> {
-  await appendToOutbox(
-    tx,
-    CommentHiddenV1.parse({
-      ...base('discussion.comment.hidden', input.correlation_id, input.occurred_at),
-      comment_id: input.comment_id,
-      article_id: input.article_id,
-      author_id: input.author_id,
-      moderator_id: input.moderator_id,
-    }),
-  )
+  async appendHidden(tx: Database, input: CommentHiddenInput): Promise<void> {
+    await appendToOutbox(
+      tx,
+      CommentHiddenV1.parse({
+        ...base('discussion.comment.hidden', input.correlation_id, input.occurred_at),
+        comment_id: input.comment_id,
+        article_id: input.article_id,
+        author_id: input.author_id,
+        moderator_id: input.moderator_id,
+      }),
+    )
+  }
 }

@@ -11,6 +11,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { topics } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { topicRoutes } from '../../src/modules/topic/index.ts'
 
 const SUPER = '22222222-2222-4222-8222-222222222222'
@@ -42,7 +43,8 @@ describe('content: темы', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(topicRoutes, { database, media_url: 'http://media.test' })
+    const modules = composeContent({ database, media_url: 'http://media.test' })
+    await app.register(topicRoutes, { controller: modules.topic })
   }, 120_000)
 
   afterAll(async () => {

@@ -1,7 +1,12 @@
+import { cva } from 'class-variance-authority'
 import { useEffect, useRef, useState } from 'react'
 import type { Topic } from '@/entities/topic'
 import { useT } from '@/shared/i18n'
 import { Avatar, BaseIcon, Link, ListBox, Popover, SearchIcon, Input } from '@/shared/ui'
+
+const chevron_class = cva('shrink-0', {
+  variants: { is_open: { true: 'rotate-180', false: '' } },
+})
 
 type TopicPickerProps = { topics: Topic[]; value: string; onChange: (topic_id: string) => void }
 
@@ -39,7 +44,7 @@ export function TopicPicker({ topics, value, onChange }: TopicPickerProps) {
           name="down"
           style="line"
           size={16}
-          className={is_open ? 'shrink-0 rotate-180' : 'shrink-0'}
+          className={chevron_class({ is_open })}
         />
       </Link>
       <Popover.Content

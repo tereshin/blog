@@ -1,2 +1,5 @@
 export { messageRoutes } from './message.routes.ts'
 export type { MessageRoutesOptions } from './message.routes.ts'
+export { MessageController } from './message.controller.ts'
+export { MessageRepository } from './message.repository.ts'
+export { MessageService } from './message.service.ts'

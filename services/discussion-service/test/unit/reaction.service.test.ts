@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ReactionKind, ServiceContext } from '@blog/contracts'
 import { applyOne } from '../../src/modules/reaction/reaction.rules.ts'
-import { createReactionService } from '../../src/modules/reaction/index.ts'
-import type { ReactionRepository, ReactionTarget } from '../../src/modules/reaction/reaction.types.ts'
+import { ReactionService } from '../../src/modules/reaction/index.ts'
+import type { ReactionRepositoryPort, ReactionTarget } from '../../src/modules/reaction/reaction.types.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const READER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
@@ -43,17 +43,48 @@ describe('одна реакция на объект', () => {
   })
 })
 
-describe('react: доступ', () => {
-  const repository: ReactionRepository = {
+/** Хранилище в памяти: транзакция — просто вызов работы, реакций у участника ещё нет. */
+function serviceWith(overrides: Partial<ReactionRepositoryPort<null>> = {}) {
+  const repository: ReactionRepositoryPort<null> = {
     findTarget: async () => target,
-    commit: async () => ({ reaction_counts: { laugh: 1, heart: 0, thumb: 0, fire: 0 }, reaction_count: 1, my_reaction: 'laugh' }),
+    transaction: (work) => work(null),
+    lock: async () => {},
+    findStoredResponse: async () => null,
+    saveResponse: async () => {},
+    findKind: async () => null,
+    insertReaction: async () => {},
+    updateKind: async () => {},
+    deleteReaction: async () => {},
+    countKinds: async () => ({ laugh: 1 }),
+    setCommentReactionCount: async () => {},
+    ...overrides,
   }
-  const service = createReactionService(repository)
+  return new ReactionService<null>(
+    repository,
+    { isActiveKind: async () => true },
+    {
+      loadCounters: async (_tx, article_id) => ({
+        article_id,
+        reaction_counts: { laugh: 1, heart: 0, thumb: 0, fire: 0 },
+        reaction_count: 1,
+        comment_count: 0,
+        view_count: 0,
+        bookmark_count: 0,
+        top_comment: null,
+      }),
+    },
+    { recompute: async () => 0 },
+    { appendReactionEvents: async () => {} },
+  )
+}
+
+describe('react: доступ', () => {
+  const service = serviceWith()
   const body = { target_type: 'article' as const, target_id: ARTICLE, kind: 'laugh' as const }
 
   it('гость получает 401 и запись не начинается', async () => {
     const calls = { n: 0 }
-    const guarded = createReactionService({ ...repository, commit: async (input) => { calls.n += 1; return repository.commit(input) } })
+    const guarded = serviceWith({ transaction: (work) => { calls.n += 1; return work(null) } })
     await expect(guarded.react({ viewer: { ...member, user_id: undefined, role: 'guest' }, body, idempotency_key: null, correlation_id: 'c' })).rejects.toMatchObject({ http_status: 401 })
     expect(calls.n).toBe(0)
   })
@@ -63,9 +94,8 @@ describe('react: доступ', () => {
   })
 
   it('недоступная статья — 404', async () => {
-    const hidden = createReactionService({
+    const hidden = serviceWith({
       findTarget: async () => ({ ...target, access: { ...target.access, visibility: 'author' } }),
-      commit: repository.commit,
     })
     await expect(hidden.react({ viewer: member, body, idempotency_key: null, correlation_id: 'c' })).rejects.toMatchObject({ http_status: 404, details: { reason: 'unavailable' } })
   })

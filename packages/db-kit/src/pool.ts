@@ -15,7 +15,11 @@ export type DbHandle = {
 export type CreateDbOptions = {
   url: string
   max_connections?: number
+  /** Потолок одного запроса на уровне пула; `0` — без ограничения (только для одноразовых задач). */
+  statement_timeout_ms?: number
 }
+
+export const DEFAULT_STATEMENT_TIMEOUT_MS = 15_000
 
 export function createDb(options: CreateDbOptions): DbHandle {
   const pool = new pg.Pool({
@@ -23,6 +27,7 @@ export function createDb(options: CreateDbOptions): DbHandle {
     max: options.max_connections ?? 10,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 3_000,
+    statement_timeout: options.statement_timeout_ms ?? DEFAULT_STATEMENT_TIMEOUT_MS,
   })
   return {
     pool,

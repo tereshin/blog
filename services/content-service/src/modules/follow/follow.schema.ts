@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import { followSchema, followTargetTypeSchema } from '@blog/contracts'
 
-export const followBodySchema = followSchema
+export const FollowBodySchema = followSchema
 
-export const followQuerySchema = z.object({
+export const FollowQuerySchema = z.object({
   target_type: followTargetTypeSchema.optional(),
   target_ids: z.string().optional(),
 })
-export type FollowQuery = z.infer<typeof followQuerySchema>
+export type FollowQuery = z.infer<typeof FollowQuerySchema>

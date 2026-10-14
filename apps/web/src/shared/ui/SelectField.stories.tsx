@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { SelectField } from './SelectField.tsx'
-const meta = {
+const meta = preview.meta({
   title: 'shared/SelectField',
   component: SelectField,
   args: {
@@ -12,8 +12,6 @@ const meta = {
     ],
     onChange: () => undefined,
   },
-} satisfies Meta<typeof SelectField>
-export default meta
-type Story = StoryObj<typeof meta>
-export const Default: Story = {}
-export const Disabled: Story = { args: { isDisabled: true } }
+})
+export const Default = meta.story()
+export const Disabled = meta.story({ args: { isDisabled: true } })

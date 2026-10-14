@@ -4,9 +4,15 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { appendToOutbox } from '@blog/broker'
 import type { Database } from '@blog/broker'
 import { auth_identities, auth_idempotency, sessions, settings_copy, users } from '../../infra/db/schema.ts'
-import { sessionRevokedEvent, userCreatedEvent } from './auth.events.ts'
+import { sessionRevokedEvent } from '../../shared/session-events.ts'
+import { AccountConflictError } from './auth.errors.ts'
+import { userCreatedEvent } from './auth.events.ts'
 import { displayNameFromEmail, normalizeEmail } from './auth.policy.ts'
-import type { AccountUser, AuthRepository } from './auth.types.ts'
+import type { AccountSettings, AccountUser, AuthRepositoryPort } from './auth.types.ts'
+
+type CreateMemberInput = Parameters<AuthRepositoryPort['createMember']>[0]
+type AttachUidInput = Parameters<AuthRepositoryPort['attachUid']>[0]
+type OpenSessionInput = Parameters<AuthRepositoryPort['openSession']>[0]
 
 function toUser(row: typeof users.$inferSelect): AccountUser {
   return {
@@ -23,7 +29,7 @@ function toUser(row: typeof users.$inferSelect): AccountUser {
 }
 
 /** Postgres `23505` иногда вложен в `cause`: гонка уникального индекса не должна стать 500. */
-export function isUniqueViolation(error: unknown): boolean {
+function isUniqueViolation(error: unknown): boolean {
   let current: unknown = error
   for (let depth = 0; current && typeof current === 'object' && depth < 5; depth += 1) {
     if ('code' in current && (current as { code: unknown }).code === '23505') return true
@@ -32,60 +38,73 @@ export function isUniqueViolation(error: unknown): boolean {
   return false
 }
 
-export function createAuthRepository(db: NodePgDatabase): AuthRepository {
-  const database = db as Database
+async function translateConflict<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work()
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new AccountConflictError(error)
+    throw error
+  }
+}
 
-  return {
-    async readSettings() {
-      const [row] = await db.select().from(settings_copy).where(eq(settings_copy.id, 1)).limit(1)
-      return row
-        ? { registration_open: row.registration_open, new_members_can_publish: row.new_members_can_publish }
-        : { registration_open: true, new_members_can_publish: true }
-    },
+export class AuthRepository implements AuthRepositoryPort {
+  private readonly database: Database
 
-    async findByUid(firebase_uid) {
-      const [row] = await db
-        .select({ user: users })
-        .from(auth_identities)
-        .innerJoin(users, eq(users.id, auth_identities.user_id))
-        .where(eq(auth_identities.firebase_uid, firebase_uid))
-        .limit(1)
-      return row ? toUser(row.user) : null
-    },
+  constructor(private readonly db: NodePgDatabase) {
+    this.database = db as Database
+  }
 
-    async findByEmail(email) {
-      const normalized = normalizeEmail(email)
-      if (!normalized) return null
-      const [row] = await db.select().from(users).where(sql`lower(${users.email}) = ${normalized} and ${users.email} <> ''`).limit(1)
-      return row ? toUser(row) : null
-    },
+  async readSettings(): Promise<AccountSettings> {
+    const [row] = await this.db.select().from(settings_copy).where(eq(settings_copy.id, 1)).limit(1)
+    return row
+      ? { registration_open: row.registration_open, new_members_can_publish: row.new_members_can_publish }
+      : { registration_open: true, new_members_can_publish: true }
+  }
 
-    async findIdentityUserId(firebase_uid) {
-      const [row] = await db.select({ user_id: auth_identities.user_id }).from(auth_identities).where(eq(auth_identities.firebase_uid, firebase_uid)).limit(1)
-      return row?.user_id ?? null
-    },
+  async findByUid(firebase_uid: string): Promise<AccountUser | null> {
+    const [row] = await this.db
+      .select({ user: users })
+      .from(auth_identities)
+      .innerJoin(users, eq(users.id, auth_identities.user_id))
+      .where(eq(auth_identities.firebase_uid, firebase_uid))
+      .limit(1)
+    return row ? toUser(row.user) : null
+  }
 
-    async findUidForUser(user_id) {
-      const [row] = await db.select({ firebase_uid: auth_identities.firebase_uid }).from(auth_identities).where(eq(auth_identities.user_id, user_id)).limit(1)
-      return row?.firebase_uid ?? null
-    },
+  async findByEmail(email: string): Promise<AccountUser | null> {
+    const normalized = normalizeEmail(email)
+    if (!normalized) return null
+    const [row] = await this.db.select().from(users).where(sql`lower(${users.email}) = ${normalized} and ${users.email} <> ''`).limit(1)
+    return row ? toUser(row) : null
+  }
 
-    async findBySession(session_id, now) {
-      const [row] = await db
-        .select({ user: users })
-        .from(sessions)
-        .innerJoin(users, eq(users.id, sessions.user_id))
-        .where(and(eq(sessions.id, session_id), isNull(sessions.revoked_at), gt(sessions.expires_at, now)))
-        .limit(1)
-      return row ? toUser(row.user) : null
-    },
+  async findIdentityUserId(firebase_uid: string): Promise<string | null> {
+    const [row] = await this.db.select({ user_id: auth_identities.user_id }).from(auth_identities).where(eq(auth_identities.firebase_uid, firebase_uid)).limit(1)
+    return row?.user_id ?? null
+  }
 
-    async openSession(input) {
-      await database.insert(sessions).values({ id: input.session_id, user_id: input.user_id, expires_at: input.expires_at })
-    },
+  async findUidForUser(user_id: string): Promise<string | null> {
+    const [row] = await this.db.select({ firebase_uid: auth_identities.firebase_uid }).from(auth_identities).where(eq(auth_identities.user_id, user_id)).limit(1)
+    return row?.firebase_uid ?? null
+  }
 
-    async attachUid(input) {
-      await database.transaction(async (tx) => {
+  async findBySession(session_id: string, now: Date): Promise<AccountUser | null> {
+    const [row] = await this.db
+      .select({ user: users })
+      .from(sessions)
+      .innerJoin(users, eq(users.id, sessions.user_id))
+      .where(and(eq(sessions.id, session_id), isNull(sessions.revoked_at), gt(sessions.expires_at, now)))
+      .limit(1)
+    return row ? toUser(row.user) : null
+  }
+
+  async openSession(input: OpenSessionInput): Promise<void> {
+    await translateConflict(() => this.database.insert(sessions).values({ id: input.session_id, user_id: input.user_id, expires_at: input.expires_at }))
+  }
+
+  async attachUid(input: AttachUidInput): Promise<void> {
+    await translateConflict(() =>
+      this.database.transaction(async (tx) => {
         await tx.insert(auth_identities).values({
           id: randomUUID(),
           user_id: input.user_id,
@@ -95,11 +114,13 @@ export function createAuthRepository(db: NodePgDatabase): AuthRepository {
         if (input.email_verified) {
           await tx.update(users).set({ email_verified: true }).where(eq(users.id, input.user_id))
         }
-      })
-    },
+      }),
+    )
+  }
 
-    async createMember(input) {
-      return database.transaction(async (tx) => {
+  async createMember(input: CreateMemberInput): Promise<AccountUser> {
+    return translateConflict(() =>
+      this.database.transaction(async (tx) => {
         const [row] = await tx
           .insert(users)
           .values({
@@ -135,79 +156,79 @@ export function createAuthRepository(db: NodePgDatabase): AuthRepository {
           }),
         )
         return user
-      })
-    },
+      }),
+    )
+  }
 
-    async setEmail(input) {
-      await database.update(users).set({ email: normalizeEmail(input.email), email_verified: false }).where(eq(users.id, input.user_id))
-    },
+  async setEmail(input: { user_id: string; email: string }): Promise<void> {
+    await this.database.update(users).set({ email: normalizeEmail(input.email), email_verified: false }).where(eq(users.id, input.user_id))
+  }
 
-    async markEmailVerified(firebase_uid) {
-      const [identity] = await database
-        .select({ user_id: auth_identities.user_id })
-        .from(auth_identities)
-        .where(eq(auth_identities.firebase_uid, firebase_uid))
-        .limit(1)
-      if (!identity) return false
-      await database.update(users).set({ email_verified: true }).where(eq(users.id, identity.user_id))
-      return true
-    },
+  async markEmailVerified(firebase_uid: string): Promise<boolean> {
+    const [identity] = await this.database
+      .select({ user_id: auth_identities.user_id })
+      .from(auth_identities)
+      .where(eq(auth_identities.firebase_uid, firebase_uid))
+      .limit(1)
+    if (!identity) return false
+    await this.database.update(users).set({ email_verified: true }).where(eq(users.id, identity.user_id))
+    return true
+  }
 
-    async claimIdempotency(scope, key) {
-      const inserted = await database
-        .insert(auth_idempotency)
-        .values({ scope, key, response: { status: 'pending' } })
-        .onConflictDoNothing()
-        .returning({ key: auth_idempotency.key })
-      return inserted.length > 0
-    },
+  async claimIdempotency(scope: string, key: string): Promise<boolean> {
+    const inserted = await this.database
+      .insert(auth_idempotency)
+      .values({ scope, key, response: { status: 'pending' } })
+      .onConflictDoNothing()
+      .returning({ key: auth_idempotency.key })
+    return inserted.length > 0
+  }
 
-    async revokeSession(session_id, correlation_id) {
-      await database.transaction(async (tx) => {
+  async revokeSession(session_id: string, correlation_id: string): Promise<void> {
+    await this.database.transaction(async (tx) => {
+      const [row] = await tx
+        .update(sessions)
+        .set({ revoked_at: new Date() })
+        .where(and(eq(sessions.id, session_id), isNull(sessions.revoked_at)))
+        .returning({ user_id: sessions.user_id })
+      if (!row) return
+      await appendToOutbox(tx, sessionRevokedEvent({ correlation_id, session_ids: [session_id], user_id: row.user_id }))
+    })
+  }
+
+  async provisionSuperadmin(input: { email: string; correlation_id: string }): Promise<{ created: boolean; user_id: string }> {
+    const email = normalizeEmail(input.email)
+    if (!email) throw new Error('SUPERADMIN_EMAIL не задан')
+    const existing = await this.db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
+    if (existing[0]) return { created: false, user_id: existing[0].id }
+    try {
+      return await this.database.transaction(async (tx) => {
         const [row] = await tx
-          .update(sessions)
-          .set({ revoked_at: new Date() })
-          .where(and(eq(sessions.id, session_id), isNull(sessions.revoked_at)))
-          .returning({ user_id: sessions.user_id })
-        if (!row) return
-        await appendToOutbox(tx, sessionRevokedEvent({ correlation_id, session_ids: [session_id], user_id: row.user_id }))
+          .insert(users)
+          .values({ id: randomUUID(), email, email_verified: false, role: 'superadmin', can_publish: true })
+          .returning()
+        if (!row) throw new Error('учётная запись суперадминистратора не создана')
+        const user = toUser(row)
+        await appendToOutbox(
+          tx,
+          userCreatedEvent({
+            correlation_id: input.correlation_id,
+            user_id: user.id,
+            public_number: user.public_number,
+            role: user.role,
+            can_publish: user.can_publish,
+            is_restricted: false,
+            created_at: user.created_at.toISOString(),
+            display_name: displayNameFromEmail(email),
+          }),
+        )
+        return { created: true, user_id: user.id }
       })
-    },
-
-    async provisionSuperadmin(input) {
-      const email = normalizeEmail(input.email)
-      if (!email) throw new Error('SUPERADMIN_EMAIL не задан')
-      const existing = await db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
-      if (existing[0]) return { created: false, user_id: existing[0].id }
-      try {
-        return await database.transaction(async (tx) => {
-          const [row] = await tx
-            .insert(users)
-            .values({ id: randomUUID(), email, email_verified: false, role: 'superadmin', can_publish: true })
-            .returning()
-          if (!row) throw new Error('учётная запись суперадминистратора не создана')
-          const user = toUser(row)
-          await appendToOutbox(
-            tx,
-            userCreatedEvent({
-              correlation_id: input.correlation_id,
-              user_id: user.id,
-              public_number: user.public_number,
-              role: user.role,
-              can_publish: user.can_publish,
-              is_restricted: false,
-              created_at: user.created_at.toISOString(),
-              display_name: displayNameFromEmail(email),
-            }),
-          )
-          return { created: true, user_id: user.id }
-        })
-      } catch (error) {
-        if (!isUniqueViolation(error)) throw error
-        const [row] = await db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
-        if (!row) throw error
-        return { created: false, user_id: row.id }
-      }
-    },
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error
+      const [row] = await this.db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
+      if (!row) throw error
+      return { created: false, user_id: row.id }
+    }
   }
 }

@@ -1,3 +1,3 @@
 import { z } from 'zod'
 
-export const reportParamsSchema = z.object({ id: z.uuid() })
+export const ReportParamsSchema = z.object({ id: z.uuid() })

@@ -9,6 +9,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, topics } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { seoRoutes } from '../../src/modules/seo/index.ts'
 
 const TOPIC = '5c9d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a01'
@@ -57,7 +58,8 @@ describe('content: страница для робота', () => {
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'content-test', level: 'silent' }) })
     await app.register(errorHandler)
-    await app.register(seoRoutes, { database, public_origin: 'https://blog.example', app_env: 'prod' })
+    const modules = composeContent({ database, media_url: 'http://media.test', public_origin: 'https://blog.example', app_env: 'prod' })
+    await app.register(seoRoutes, { controller: modules.seo })
   }, 120_000)
 
   afterAll(async () => {

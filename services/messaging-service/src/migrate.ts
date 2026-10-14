@@ -8,9 +8,9 @@ const SERVICE = 'messaging-service'
 async function main(): Promise<void> {
   const env = loadMigrateEnv()
   const logger = createLogger({ service: SERVICE })
-  const handle = openDatabase(env.DATABASE_URL)
+  const handle = openDatabase(env.DATABASE_URL, { statement_timeout_ms: 0 })
   try {
-    const applied = await migrate(handle.pool, { info: (message) => logger.info(message) })
+    const applied = await migrate(handle.pool, { info: (message) => logger.info(message), warn: (message) => logger.warn(message) })
     logger.info({ applied }, applied.length > 0 ? 'миграции применены' : 'новых миграций нет')
   } finally {
     await handle.close()

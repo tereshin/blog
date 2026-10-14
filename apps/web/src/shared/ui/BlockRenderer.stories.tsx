@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import type { DocumentBlock } from './document-block.ts'
 import { BlockRenderer } from './BlockRenderer.tsx'
 
@@ -39,7 +39,7 @@ const blocks: Record<string, DocumentBlock> = {
   table: {
     type: 'table',
     data: {
-      withHeadings: true,
+      with_headings: true,
       content: [
         ['Имя', 'Роль'],
         ['Анна', 'Автор'],
@@ -84,20 +84,17 @@ function Frame({ kind }: { kind: keyof typeof blocks }) {
   )
 }
 
-const meta = { title: 'shared/ui/BlockRenderer', component: Frame } satisfies Meta<typeof Frame>
-export default meta
-type Story = StoryObj<typeof Frame>
-
-export const Paragraph: Story = { args: { kind: 'paragraph' } }
-export const Header: Story = { args: { kind: 'header' } }
-export const List: Story = { args: { kind: 'list' } }
-export const Quote: Story = { args: { kind: 'quote' } }
-export const Warning: Story = { args: { kind: 'warning' } }
-export const Delimiter: Story = { args: { kind: 'delimiter' } }
-export const Code: Story = { args: { kind: 'code' } }
-export const Image: Story = { args: { kind: 'image' } }
-export const Embed: Story = { args: { kind: 'embed' } }
-export const Table: Story = { args: { kind: 'table' } }
-export const Attaches: Story = { args: { kind: 'attaches' } }
-export const Personality: Story = { args: { kind: 'personality' } }
-export const Buttons: Story = { args: { kind: 'buttons' } }
+const meta = preview.meta({ title: 'shared/ui/BlockRenderer', component: Frame })
+export const Paragraph = meta.story({ args: { kind: 'paragraph' } })
+export const Header = meta.story({ args: { kind: 'header' } })
+export const List = meta.story({ args: { kind: 'list' } })
+export const Quote = meta.story({ args: { kind: 'quote' } })
+export const Warning = meta.story({ args: { kind: 'warning' } })
+export const Delimiter = meta.story({ args: { kind: 'delimiter' } })
+export const Code = meta.story({ args: { kind: 'code' } })
+export const Image = meta.story({ args: { kind: 'image' } })
+export const Embed = meta.story({ args: { kind: 'embed' } })
+export const Table = meta.story({ args: { kind: 'table' } })
+export const Attaches = meta.story({ args: { kind: 'attaches' } })
+export const Personality = meta.story({ args: { kind: 'personality' } })
+export const Buttons = meta.story({ args: { kind: 'buttons' } })

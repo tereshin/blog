@@ -35,7 +35,7 @@ export function SettingsPublisherFields({
         : null}
       {value.logo_url ? (
         <div className="flex items-center gap-3">
-          <img src={value.logo_url} alt="" className="h-12 max-w-40 object-contain" />
+          <img loading="lazy" src={value.logo_url} alt="" className="h-12 max-w-40 object-contain" />
           <Button
             type="button"
             variant="ghost"

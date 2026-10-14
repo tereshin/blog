@@ -1,24 +1,22 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { BaseIcon } from './BaseIcon.tsx'
 import { Button } from './Button.tsx'
 import { PageCard } from './PageCard.tsx'
 
-const meta = {
+const meta = preview.meta({
   title: 'shared/ui/PageCard',
   component: PageCard,
   args: { children: null },
-} satisfies Meta<typeof PageCard>
-export default meta
-type Story = StoryObj<typeof meta>
-export const Content: Story = {
+})
+export const Content = meta.story({
   render: () => (
     <PageCard>
       <PageCard.Header title="Настройки" />
       <PageCard.Content>Содержимое страницы</PageCard.Content>
     </PageCard>
   ),
-}
-export const Form: Story = {
+})
+export const Form = meta.story({
   render: () => (
     <form onSubmit={(event) => event.preventDefault()}>
       <PageCard>
@@ -44,4 +42,4 @@ export const Form: Story = {
       </PageCard>
     </form>
   ),
-}
+})

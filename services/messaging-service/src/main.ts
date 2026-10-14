@@ -5,7 +5,7 @@ import { createServiceMetrics, startQueueMetrics, startTelemetry } from '@blog/t
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
-import { createConversationRepository, startMessagingConsumers } from './modules/conversation/index.ts'
+import { ConversationEvents, ConversationRepository } from './modules/conversation/index.ts'
 
 const SERVICE = 'messaging-service'
 
@@ -15,16 +15,16 @@ async function main(): Promise<void> {
   const telemetry = startTelemetry({ service: SERVICE, otlp_endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT })
   const metrics = createServiceMetrics(SERVICE)
   setConsumerMetrics(metrics)
-  const queues = startQueueMetrics(metrics, sampleQueueDepth)
+  const queues = startQueueMetrics(metrics, sampleQueueDepth, (error) => logger.debug({ err: error }, 'опрос очередей брокера не удался'))
 
   const database = openDatabase(env.DATABASE_URL)
   const broker = await connectBroker({ url: env.NATS_URL, name: SERVICE })
   const relay = new OutboxRelay({ db: database.db, broker, logger })
-  const repository = createConversationRepository(database.db)
+  const conversation_events = new ConversationEvents(new ConversationRepository(database.db))
 
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
   relay.start()
-  const consumers = await startMessagingConsumers({ db: database.db, broker, logger, repository })
+  const consumers = await conversation_events.start({ db: database.db, broker, logger })
 
   registerShutdown({
     app,

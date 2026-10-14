@@ -1,19 +1,19 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 
 type FallbackImageProps = {
   src: string
   label: string
   className?: string
-  /** Рядом уже есть текстовое имя: сломанная картинка его не повторяет. */
-  hide_label?: boolean
+  /** Если картинка не загрузилась: слот вместо подписи `label`. */
+  fallback?: ReactNode
 }
 
-/** Картинка. Если адрес пустой или файл не загрузился, на её месте видно `label`. */
-export function FallbackImage({ src, label, className, hide_label = false }: FallbackImageProps) {
+/** Картинка. Если адрес пустой или файл не загрузился, на её месте видно `label` или `fallback`. */
+export function FallbackImage({ src, label, className, fallback }: FallbackImageProps) {
   const [is_broken, setBroken] = useState(false)
   if (src.length === 0 || is_broken) {
-    if (hide_label) return null
-    return <span>{label}</span>
+    return fallback === undefined ? <span>{label}</span> : fallback
   }
-  return <img src={src} alt="" className={className} onError={() => setBroken(true)} />
+  return <img src={src} alt="" loading="lazy" decoding="async" className={className} onError={() => setBroken(true)} />
 }

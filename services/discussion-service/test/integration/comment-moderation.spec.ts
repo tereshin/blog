@@ -8,6 +8,7 @@ import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
+import { composeModules } from '../../src/app.ts'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
@@ -62,7 +63,8 @@ describe('discussion: модерация комментария', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(commentRoutes, { database })
+    const controllers = composeModules({ db: database.db })
+    await app.register(commentRoutes, { controller: controllers.comment })
   }, 120_000)
 
   afterAll(async () => {

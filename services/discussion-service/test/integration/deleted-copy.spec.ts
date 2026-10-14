@@ -9,13 +9,14 @@ import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
+import { composeModules } from '../../src/app.ts'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles_copy, bookmarks, comments, reactions, users_copy } from '../../src/infra/db/schema.ts'
 import { bookmarkRoutes } from '../../src/modules/bookmark/index.ts'
 import { commentRoutes } from '../../src/modules/comment/index.ts'
-import { createCopiesHandler } from '../../src/modules/copies/index.ts'
+import { CopiesConsumer, CopiesRepository, CopiesService } from '../../src/modules/copies/index.ts'
 import { reactionRoutes } from '../../src/modules/reaction/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -58,7 +59,7 @@ describe('discussion: удалённая статья не отдаёт обсу
   let postgres: TestPostgres
   let database: DbHandle
   let app: FastifyInstance
-  const apply = (item: OutboxEvent) => processEvent(database.db, 'test-deleted-copy', item, createCopiesHandler())
+  const apply = (item: OutboxEvent) => processEvent(database.db, 'test-deleted-copy', item, new CopiesConsumer(new CopiesService(new CopiesRepository())).handle)
 
   beforeAll(async () => {
     postgres = await startPostgres()
@@ -78,9 +79,10 @@ describe('discussion: удалённая статья не отдаёт обсу
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(commentRoutes, { database })
-    await app.register(bookmarkRoutes, { database })
-    await app.register(reactionRoutes, { database })
+    const controllers = composeModules({ db: database.db })
+    await app.register(commentRoutes, { controller: controllers.comment })
+    await app.register(bookmarkRoutes, { controller: controllers.bookmark })
+    await app.register(reactionRoutes, { controller: controllers.reaction })
   }, 120_000)
 
   afterAll(async () => {

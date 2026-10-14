@@ -5,13 +5,21 @@ import type { TestPostgres } from '@blog/db-kit/testing'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { createSettingsRepository, createSettingsService } from '../../src/modules/settings/index.ts'
+import { BadgeRepository, BadgeService } from '../../src/modules/badge/index.ts'
+import { SettingsRepository, SettingsService } from '../../src/modules/settings/index.ts'
+import { SocialCoverRepository, SocialCoverService } from '../../src/modules/social-cover/index.ts'
 
 describe('content: bootstrap', () => {
   let postgres: TestPostgres
   let database: DbHandle
 
-  const ensure = () => createSettingsService(createSettingsRepository(database.db), { media_url: 'http://localhost' }).ensureDefaults(randomUUID())
+  const ensure = () =>
+    new SettingsService(
+      new SettingsRepository(database.db),
+      new BadgeService(new BadgeRepository()),
+      new SocialCoverService(new SocialCoverRepository()),
+      { media_url: 'http://localhost' },
+    ).ensureDefaults(randomUUID())
 
   beforeAll(async () => {
     postgres = await startPostgres()

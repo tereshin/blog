@@ -1,7 +1,7 @@
-import { profileBadgeSchema, requireVerifiedEmail } from '@blog/contracts'
+import { requireVerifiedEmail } from '../../shared/require-verified-email.ts'
 import type { Profile, ServiceContext, UpdateProfile } from '@blog/contracts'
 import { EmailUnverifiedError, NotFoundError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
-import type { ProfileRecord, ProfileRepository, ProfileService } from './profile.types.ts'
+import type { ProfileRecord, ProfileRepositoryPort } from './profile.types.ts'
 
 const PUBLIC_NUMBER = /^[1-9]\d*$/
 
@@ -19,11 +19,7 @@ export function toProfile(row: ProfileRecord, viewer: ServiceContext): Profile {
     created_at: row.created_at.toISOString(),
     followers_count: Number(row.followers_count),
     following_count: Number(row.following_count),
-    badges: row.badges.flatMap((id) => {
-      const legacy = profileBadgeSchema.safeParse(id)
-      return legacy.success ? [legacy.data] : []
-    }),
-    badge_ids: row.badges,
+    badges: row.badges,
     is_own: viewer.user_id === row.user_id,
     is_following: row.is_following,
   }
@@ -41,31 +37,36 @@ function assertOwnedUrl(value: string | null, bases: readonly string[], field: s
   if (!allowed) throw new ValidationError({ message: 'Изображение должно быть загружено на площадку', details: { field, reason: 'media_url' } })
 }
 
-export function createProfileService(
-  repository: ProfileRepository,
-  options: { media_bases: readonly string[]; isStatusIconAvailable?: (id: string) => Promise<boolean> },
-): ProfileService {
-  return {
-    async getBySlug(viewer, slug) {
-      const by_slug = await repository.findBySlug(slug, viewer.user_id)
-      const row = by_slug ?? (PUBLIC_NUMBER.test(slug) ? await repository.findByPublicNumber(Number(slug), viewer.user_id) : null)
-      if (!row) throw new NotFoundError({ message: 'Профиль не найден' })
-      return toProfile(row, viewer)
-    },
+export type ProfileOptions = {
+  media_bases: readonly string[]
+  isStatusIconAvailable?: (id: string) => Promise<boolean>
+}
 
-    async updateMe(viewer, input: UpdateProfile, correlation_id) {
-      if (!viewer.user_id) throw new UnauthorizedError()
-      if (viewer.is_restricted) throw new RestrictedError()
-      if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
-      const next = { ...input, ...(input.bio !== undefined ? { bio: input.bio === '' ? null : input.bio } : {}) }
-      if (next.avatar_url !== undefined) assertOwnedUrl(next.avatar_url, options.media_bases, 'avatar_url')
-      if (next.cover_url !== undefined) assertOwnedUrl(next.cover_url, options.media_bases, 'cover_url')
-      if (next.status_icon_id && !(await options.isStatusIconAvailable?.(next.status_icon_id))) {
-        throw new ValidationError({ message: 'Этот статус недоступен', details: { field: 'status_icon_id' } })
-      }
-      const row = await repository.update(viewer.user_id, next, correlation_id)
-      if (!row) throw new NotFoundError({ message: 'Профиль не найден' })
-      return toProfile(row, viewer)
-    },
+export class ProfileService {
+  constructor(
+    private readonly repository: ProfileRepositoryPort,
+    private readonly options: ProfileOptions,
+  ) {}
+
+  async getBySlug(viewer: ServiceContext, slug: string): Promise<Profile> {
+    const by_slug = await this.repository.findBySlug(slug, viewer.user_id)
+    const row = by_slug ?? (PUBLIC_NUMBER.test(slug) ? await this.repository.findByPublicNumber(Number(slug), viewer.user_id) : null)
+    if (!row) throw new NotFoundError({ message: 'Профиль не найден' })
+    return toProfile(row, viewer)
+  }
+
+  async updateMe(viewer: ServiceContext, input: UpdateProfile, correlation_id: string): Promise<Profile> {
+    if (!viewer.user_id) throw new UnauthorizedError()
+    if (viewer.is_restricted) throw new RestrictedError()
+    if (!requireVerifiedEmail(viewer).allowed) throw new EmailUnverifiedError()
+    const next = { ...input, ...(input.bio !== undefined ? { bio: input.bio === '' ? null : input.bio } : {}) }
+    if (next.avatar_url !== undefined) assertOwnedUrl(next.avatar_url, this.options.media_bases, 'avatar_url')
+    if (next.cover_url !== undefined) assertOwnedUrl(next.cover_url, this.options.media_bases, 'cover_url')
+    if (next.status_icon_id && !(await this.options.isStatusIconAvailable?.(next.status_icon_id))) {
+      throw new ValidationError({ message: 'Этот статус недоступен', details: { field: 'status_icon_id' } })
+    }
+    const row = await this.repository.update(viewer.user_id, next, correlation_id)
+    if (!row) throw new NotFoundError({ message: 'Профиль не найден' })
+    return toProfile(row, viewer)
   }
 }

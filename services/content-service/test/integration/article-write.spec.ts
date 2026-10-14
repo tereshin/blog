@@ -11,6 +11,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, outbox, profiles, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { articleRoutes } from '../../src/modules/article/index.ts'
 import { feedRoutes } from '../../src/modules/feed/index.ts'
 import { profileRoutes } from '../../src/modules/profile/index.ts'
@@ -58,10 +59,17 @@ describe('content: запись статьи', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(topicRoutes, { database, media_url: 'http://media.test' })
-    await app.register(feedRoutes, { database })
-    await app.register(profileRoutes, { database, media_url: 'http://media.test', public_origin: 'http://blog.test' })
-    await app.register(articleRoutes, { database, media_urls: ['http://media.test'], lookupFile: async () => null })
+    const modules = composeContent({
+      database,
+      media_url: 'http://media.test',
+      public_origin: 'http://blog.test',
+      media_urls: ['http://media.test'],
+      lookupFile: async () => null,
+    })
+    await app.register(topicRoutes, { controller: modules.topic })
+    await app.register(feedRoutes, { controller: modules.feed })
+    await app.register(profileRoutes, { controller: modules.profile })
+    await app.register(articleRoutes, { controller: modules.article })
     const created = await app.inject({
       method: 'POST',
       url: '/v1/topics',

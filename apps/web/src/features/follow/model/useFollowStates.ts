@@ -2,7 +2,7 @@ import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { useViewer } from '@/entities/session'
 import { getFollowStates } from '../api/get-follow-states.ts'
 import { followKeys } from './follow-keys.ts'
-import { followVersion } from './follow-version.ts'
+import { beginFollowRead } from './follow-version.ts'
 
 type FollowIdentity = { target_type: 'user' | 'topic'; target_id: string }
 
@@ -27,20 +27,26 @@ export function useFollowStates(targets: readonly FollowIdentity[]) {
       enabled: viewer.status === 'member',
       staleTime: 30_000,
       queryFn: async ({ signal }: { signal: AbortSignal }) => {
-        const initial_versions = ids.map((id) => followVersion(client, type, id))
-        const response = await getFollowStates(type, ids, signal)
-        if (!signal.aborted) {
-          const states = new Map(response.items.map((item) => [item.target_id, item.is_following]))
-          ids.forEach((id, index) => {
-            if (
-              followVersion(client, type, id) !== initial_versions[index] ||
-              client.isMutating({ mutationKey: followKeys.mutation(type, id) })
+        const read = beginFollowRead(client, type, ids)
+        try {
+          const response = await getFollowStates(type, ids, signal)
+          if (!signal.aborted) {
+            const states = new Map(
+              response.items.map((item) => [item.target_id, item.is_following]),
             )
-              return
-            client.setQueryData(followKeys.flag(type, id), states.get(id) ?? false)
-          })
+            ids.forEach((id, index) => {
+              if (
+                !read.isCurrent(index) ||
+                client.isMutating({ mutationKey: followKeys.mutation(type, id) })
+              )
+                return
+              client.setQueryData(followKeys.flag(type, id), states.get(id) ?? false)
+            })
+          }
+          return response
+        } finally {
+          read.release()
         }
-        return response
       },
     })),
   })

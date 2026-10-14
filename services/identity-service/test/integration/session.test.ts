@@ -9,7 +9,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { sessions, users } from '../../src/infra/db/schema.ts'
-import { sessionRoutes } from '../../src/modules/session/index.ts'
+import { SessionController, SessionRepository, SessionService, sessionRoutes } from '../../src/modules/session/index.ts'
 
 const MEMBER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const RESTRICTED = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
@@ -41,7 +41,7 @@ describe('identity: миграция и GET /internal/sessions/{id} (PostgreSQL 
     app = Fastify()
     await app.register(requestContext, { logger })
     await app.register(errorHandler)
-    await app.register(sessionRoutes, { database })
+    await app.register(sessionRoutes, { controller: new SessionController(new SessionService(new SessionRepository(database.db))) })
   }, 120_000)
 
   afterAll(async () => {

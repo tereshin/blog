@@ -1,9 +1,10 @@
+import preview from '#.storybook/preview'
 import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badges'
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SHELL_VISIBILITY } from '@blog/contracts'
-import { StoryProviders } from '@/shared/api/mocks'
+import { StoryProviders } from '@/shared/lib'
 import type { AdminSettings } from '../api/update-settings.ts'
+import type { SettingsSection } from '../model/settings-sections.ts'
 import { SettingsForm } from './SettingsForm.tsx'
 
 const initial: AdminSettings = {
@@ -26,10 +27,12 @@ function upload({ label, onUploaded }: { label: string; onUploaded: (url: string
   )
 }
 
-const meta = {
+const defaults = { initial, upload, can_edit_media: true, section: 'reactions' as SettingsSection }
+
+const meta = preview.meta({
   title: 'features/update-settings/SettingsForm',
   component: SettingsForm,
-  args: { initial, upload, can_edit_media: true, section: 'reactions' },
+  args: defaults,
   decorators: [
     (Story) => (
       <StoryProviders>
@@ -39,12 +42,10 @@ const meta = {
       </StoryProviders>
     ),
   ],
-} satisfies Meta<typeof SettingsForm>
-export default meta
-type Story = StoryObj<typeof meta>
-
+})
 /** Суперадминистратор видит четыре реакции и может их менять — так же, как логотип. */
-export const Superadmin: Story = {
+export const Superadmin = meta.story({
+  args: defaults,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByText('Виды реакций')
@@ -52,11 +53,11 @@ export const Superadmin: Story = {
       expect(await canvas.findByRole('textbox', { name })).toBeEnabled()
     }
   },
-}
+})
 
 /** Администратор без роли суперадминистратора не меняет ни логотип, ни вид реакций. */
-export const Admin: Story = {
-  args: { can_edit_media: false },
+export const Admin = meta.story({
+  args: { ...defaults, can_edit_media: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByText('Виды реакций')
@@ -64,14 +65,20 @@ export const Admin: Story = {
       expect(await canvas.findByRole('textbox', { name })).toBeDisabled()
     }
   },
-}
+})
 
-export const General: Story = { args: { section: 'general' } }
-export const Access: Story = { args: { section: 'access' } }
-export const StatusIcons: Story = { args: { section: 'status-icons' } }
-export const Seo: Story = { args: { section: 'seo' } }
-export const Publisher: Story = { args: { section: 'publisher' } }
-export const Covers: Story = { args: { section: 'covers' } }
+export const General = meta.story({ args: { ...defaults, section: 'general' } })
+export const Access = meta.story({ args: { ...defaults, section: 'access' } })
+export const StatusIcons = meta.story({ args: { ...defaults, section: 'status-icons' } })
+export const Seo = meta.story({ args: { ...defaults, section: 'seo' } })
+export const Publisher = meta.story({ args: { ...defaults, section: 'publisher' } })
+export const Covers = meta.story({ args: { ...defaults, section: 'covers' } })
 
-export const Badges: Story = { args: { section: 'badges' } }
-export const ArchivedBadge: Story = { args: { section: 'badges', initial: { ...initial, profile_badges: initial.profile_badges.map((badge) => ({ ...badge, status: 'archived' })) } } }
+export const Badges = meta.story({ args: { ...defaults, section: 'badges' } })
+export const ArchivedBadge = meta.story({
+  args: {
+    ...defaults,
+    section: 'badges',
+    initial: { ...initial, profile_badges: initial.profile_badges.map((badge) => ({ ...badge, status: 'archived' })) },
+  },
+})

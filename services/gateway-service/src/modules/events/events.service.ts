@@ -1,18 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import { LRUCache } from 'lru-cache'
-import { canReadArticle } from '@blog/contracts'
 import type { ServiceContext } from '@blog/contracts'
+import { ForbiddenError, NotFoundError } from '@blog/errors'
 import type { Logger } from '@blog/logger'
-import type { NatsConnection } from '@nats-io/transport-node'
-import { eventFieldsSchema } from './events.types.ts'
+import { EventFieldsSchema } from './events.schema.ts'
+import type { EventFields, SubscriptionsInput } from './events.schema.ts'
 import type {
-  AccessChecker,
-  AccessFields,
+  ArticleAccessPort,
   Connection,
-  EventFields,
   EventFrame,
+  EventSourcePort,
   FrameType,
-  SubscriptionsInput,
 } from './events.types.ts'
 import { SubscriptionRegistry } from './subscription-registry.ts'
 
@@ -36,18 +34,6 @@ export function frameTypeOf(event_name: string): FrameType | null {
   return FRAME_BY_PREFIX.find((item) => event_name.startsWith(item.prefix))?.type ?? null
 }
 
-/**
- * Правило чтения по полям события — то же, что у владельца статьи (`canReadArticle` из @blog/contracts).
- * Поля, которых нет в событии, трактуются как «опубликовано и публично».
- */
-export function canReadFields(viewer: ServiceContext, fields: AccessFields): boolean {
-  return canReadArticle(viewer, {
-    author_id: fields.author_id ?? '',
-    visibility: fields.visibility ?? 'public',
-    status: fields.status ?? 'published',
-  })
-}
-
 export function toFrame(type: FrameType, event: EventFields): EventFrame {
   return {
     type,
@@ -65,12 +51,28 @@ export class EventsService {
   private pending_access: Promise<void>[] = []
 
   constructor(
-    private readonly check_access: AccessChecker,
+    private readonly access: ArticleAccessPort,
     private readonly logger: Logger,
   ) {}
 
   newConnectionId(): string {
     return randomUUID()
+  }
+
+  register(connection: Connection): void {
+    this.registry.add(connection)
+  }
+
+  unregister(connection_id: string): void {
+    this.registry.remove(connection_id)
+  }
+
+  /** Подписки меняет только владелец соединения: чужой `connection_id` — 403. */
+  async updateSubscriptions(viewer: ServiceContext, viewer_jwt: string, input: SubscriptionsInput): Promise<{ article_ids: string[] }> {
+    const connection = this.registry.get(input.connection_id)
+    if (!connection) throw new NotFoundError({ message: 'Соединение не найдено: переподключитесь' })
+    if (connection.viewer.viewer_key !== viewer.viewer_key) throw new ForbiddenError()
+    return this.subscribe(connection, viewer_jwt, input)
   }
 
   /**
@@ -91,7 +93,7 @@ export class EventsService {
 
   /** Разбирает событие брокера и рассылает кадры подходящим соединениям этой реплики. */
   dispatch(raw_event: unknown): number {
-    const parsed = eventFieldsSchema.safeParse(raw_event)
+    const parsed = EventFieldsSchema.safeParse(raw_event)
     if (!parsed.success) return 0
     const event = parsed.data
     const type = frameTypeOf(event.name)
@@ -115,8 +117,8 @@ export class EventsService {
   }
 
   /** Подписывается на события брокера; возвращает функцию остановки. */
-  start(nc: NatsConnection): { stop: () => void } {
-    const subscriptions = BROKER_SUBJECTS.map((subject) => nc.subscribe(subject))
+  start(source: EventSourcePort): { stop: () => void } {
+    const subscriptions = BROKER_SUBJECTS.map((subject) => source.subscribe(subject))
     for (const subscription of subscriptions) {
       void (async () => {
         for await (const message of subscription) {
@@ -154,10 +156,12 @@ export class EventsService {
         return this.registry.all()
       default: {
         if (!event.article_id) return []
-        const has_access_fields = event.status !== undefined || event.visibility !== undefined
         return this.registry
           .forArticle(event.article_id)
-          .filter((connection) => !has_access_fields || canReadFields(connection.viewer, event))
+          .filter((connection) => {
+            const cached = this.access_cache.get(`${connection.viewer.viewer_key}:${event.article_id}`)
+            return cached !== false
+          })
       }
     }
   }
@@ -180,7 +184,7 @@ export class EventsService {
         const key = `${connection.viewer.viewer_key}:${article_id}`
         this.access_cache.delete(key)
         if (!connection.viewer_jwt) return
-        const access = await this.check_access(connection.viewer_jwt, article_id)
+        const access = await this.access.check(connection.viewer_jwt, article_id)
         if (!access) return
         this.access_cache.set(key, access.can_read)
         if (!access.can_read) this.registry.dropArticle(connection.id, article_id)
@@ -198,7 +202,7 @@ export class EventsService {
     }
     for (let index = 0; index < pending.length; index += ACCESS_CONCURRENCY) {
       const batch = pending.slice(index, index + ACCESS_CONCURRENCY)
-      const results = await Promise.all(batch.map((id) => this.check_access(viewer_jwt, id)))
+      const results = await Promise.all(batch.map((id) => this.access.check(viewer_jwt, id)))
       batch.forEach((id, position) => {
         const can_read = results[position]?.can_read === true
         this.access_cache.set(`${viewer.viewer_key}:${id}`, can_read)

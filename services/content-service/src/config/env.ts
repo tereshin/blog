@@ -38,6 +38,11 @@ const seedEnvSchema = baseEnvSchema.extend({
 
 export type SeedEnv = z.infer<typeof seedEnvSchema>
 
+/** Первая проверка seed: только `APP_ENV`, чтобы в prod задача завершилась до чтения остального окружения. */
+export function loadSeedAppEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof baseEnvSchema> {
+  return defineEnv(baseEnvSchema, source)
+}
+
 /** Окружение одноразовой задачи seed: без брокера и ключей, только база и параметры данных. */
 export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
   const env = defineEnv(seedEnvSchema, source)

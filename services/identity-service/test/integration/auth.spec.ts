@@ -6,13 +6,12 @@ import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
-import type { Env } from '../../src/config/env.ts'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { auth_identities, outbox, settings_copy, users } from '../../src/infra/db/schema.ts'
-import { authRoutes } from '../../src/modules/auth/index.ts'
-import type { FirebaseGateway, VerifiedToken } from '../../src/modules/auth/firebase-admin.ts'
+import { AuthController, AuthRepository, AuthService, authRoutes } from '../../src/modules/auth/index.ts'
+import type { FirebaseGateway, VerifiedToken } from '../../src/modules/auth/index.ts'
 
 type FakeUser = { uid: string; email: string; password: string; email_verified: boolean }
 
@@ -80,6 +79,7 @@ function fakeFirebase(): FirebaseGateway & { users: Map<string, FakeUser>; codes
     async listProviders() {
       return [{ id: 'password' }, { id: 'google.com' }, { id: 'github.com' }]
     },
+    async close() {},
   }
   // createUser return type uses firebase_uid
   gateway.createUser = async (input) => {
@@ -110,23 +110,16 @@ describe('identity: вход через Firebase', () => {
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'identity-test', level: 'silent' }) })
     await app.register(errorHandler)
-    await app.register(authRoutes, {
-      database,
-      firebase,
-      env: {
-        APP_ENV: 'local',
-        SUPERADMIN_EMAIL: 'root@example.test',
-        SESSION_TTL_DAYS: 30,
-        FIREBASE_PROJECT_ID: 'demo-blog',
-        FIREBASE_AUTH_DOMAIN: 'demo.test',
-        FIREBASE_WEB_API_KEY: 'web',
-        FIREBASE_SERVER_API_KEY: 'server',
-        FIREBASE_CLIENT_EMAIL: 'a@b.c',
-        FIREBASE_PRIVATE_KEY: 'key',
-        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-        SEED_AUTH_PASSWORD: 'seed-password',
-      } as Env,
+    const service = new AuthService(new AuthRepository(database.db), firebase, app.log, {
+      superadmin_email: 'root@example.test',
+      session_ttl_days: 30,
+      web_api_key: 'web',
+      auth_domain: 'demo.test',
+      project_id: 'demo-blog',
+      emulator_host: '127.0.0.1:9099',
+      seed_password: 'seed-password',
     })
+    await app.register(authRoutes, { controller: new AuthController(service) })
   }, 120_000)
 
   afterAll(async () => {

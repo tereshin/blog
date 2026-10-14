@@ -1,6 +1,6 @@
 import { assertSeedAllowed, parseSeedArgs, runSeed } from '@blog/db-kit'
 import { createLogger } from '@blog/logger'
-import { loadSeedEnv } from './config/env.ts'
+import { loadSeedAppEnv, loadSeedEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
 import { createS3SeedStore } from './seed/object-store.ts'
 import { seedMedia } from './seed/seed.ts'
@@ -9,11 +9,11 @@ import { seedMedia } from './seed/seed.ts'
 const SERVICE = 'media-service'
 
 async function main(): Promise<void> {
-  assertSeedAllowed(process.env.APP_ENV)
+  assertSeedAllowed(loadSeedAppEnv().APP_ENV)
   const args = parseSeedArgs(process.argv.slice(2))
   const env = loadSeedEnv()
   const logger = createLogger({ service: SERVICE })
-  const handle = openDatabase(env.DATABASE_URL)
+  const handle = openDatabase(env.DATABASE_URL, { statement_timeout_ms: 0 })
   const store = createS3SeedStore({
     endpoint: env.S3_ENDPOINT,
     region: env.S3_REGION,

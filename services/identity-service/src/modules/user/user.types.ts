@@ -1,4 +1,4 @@
-import type { AdminUser, ServiceContext, UpdateAppearance, UpdateUserPublishing, UpdateUserRole } from '@blog/contracts'
+import type { UpdateAppearance } from '@blog/contracts'
 
 export type AccountRow = {
   id: string
@@ -10,7 +10,8 @@ export type AccountRow = {
   created_at: Date
 }
 
-export type UserRepository = {
+/** Порт хранилища участников: сервис зависит от него, реализацию подставляет app.ts. */
+export type UserRepositoryPort = {
   search: (query: { q: string; cursor: number; limit: number }) => Promise<AccountRow[]>
   findById: (id: string) => Promise<AccountRow | null>
   setRole: (input: { id: string; role: 'member' | 'admin'; correlation_id: string }) => Promise<AccountRow | null>
@@ -18,13 +19,4 @@ export type UserRepository = {
   restrict: (input: { id: string; correlation_id: string }) => Promise<AccountRow | null>
   unrestrict: (input: { id: string; correlation_id: string }) => Promise<AccountRow | null>
   setAppearance: (input: { id: string; appearance: UpdateAppearance['appearance']; correlation_id: string }) => Promise<UpdateAppearance | null>
-}
-
-export type UserService = {
-  list: (viewer: ServiceContext, query: { q?: string | undefined; cursor?: string | undefined; limit: number }) => Promise<{ items: AdminUser[]; next_cursor: string | null }>
-  setRole: (viewer: ServiceContext, id: string, body: UpdateUserRole, correlation_id: string) => Promise<AdminUser>
-  setPublishing: (viewer: ServiceContext, id: string, body: UpdateUserPublishing, correlation_id: string) => Promise<AdminUser>
-  restrict: (viewer: ServiceContext, id: string, correlation_id: string) => Promise<AdminUser>
-  unrestrict: (viewer: ServiceContext, id: string, correlation_id: string) => Promise<AdminUser>
-  setAppearance: (viewer: ServiceContext, body: UpdateAppearance, correlation_id: string) => Promise<UpdateAppearance>
 }

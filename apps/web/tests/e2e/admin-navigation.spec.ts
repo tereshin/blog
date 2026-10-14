@@ -25,7 +25,7 @@ const back = (page: Page) =>
 async function chooseLightTheme(page: Page) {
   await page
     .getByRole('navigation', { name: 'Навигация', exact: true })
-    .getByRole('button', { name: /тема$/ })
+    .getByRole('link', { name: /тема$/ })
     .click()
   await page.getByRole('menuitemradio', { name: 'Светлая', exact: true }).click()
 }
@@ -192,12 +192,13 @@ test('возврат из статьи сохраняет очередь мод�
   await expect(back(page)).toHaveAttribute('href', '/admin/moderation/articles')
   await back(page).click()
   await page.getByRole('button', { name: 'Скрыть', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Вернуть', exact: true })).toBeVisible()
+  await expect(page.getByRole('grid').getByRole('link', { name: /^Статья 1:/ })).toHaveCount(0)
   await back(page).click()
   await page
     .getByRole('main')
     .getByRole('link', { name: /^Скрытые статьи/ })
     .click()
+  await expect(page.getByRole('button', { name: 'Вернуть', exact: true })).toBeVisible()
   await page
     .getByRole('main')
     .getByRole('link', { name: /^Статья 1:/ })
@@ -299,13 +300,15 @@ test('реакции проверяют выбранный тип и сохра�
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   const response = await saved
   expect(response.ok()).toBe(true)
-  expect(response.request().postDataJSON()).toMatchObject({
-    name: 'Блог',
-    reaction_appearances: [
+  const body = response.request().postDataJSON() as {
+    name: string
+    reaction_appearances: Array<{ kind: string; presentation: string; emoji?: string }>
+  }
+  expect(body.name).toBe('Блог')
+  expect(body.reaction_appearances).toHaveLength(4)
+  expect(body.reaction_appearances).toEqual(
+    expect.arrayContaining([
       expect.objectContaining({ kind: 'laugh', presentation: 'emoji', emoji: '😂' }),
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
-    ],
-  })
+    ]),
+  )
 })

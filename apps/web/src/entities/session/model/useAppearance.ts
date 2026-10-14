@@ -1,14 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSyncExternalStore } from 'react'
-import { z } from 'zod'
-import { http } from '@/shared/api'
 import type { Session } from '../api/get-session.ts'
+import { updateAppearance } from '../api/update-appearance.ts'
 import { readStoredAppearance, storeAppearance } from './appearance-storage.ts'
 import type { AppearancePreference, Theme } from './appearance-storage.ts'
 import { sessionKeys } from './session-keys.ts'
 import { useViewer } from './useViewer.ts'
-
-const appearanceSchema = z.object({ appearance: z.enum(['light', 'dark']).nullable() })
 
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 
@@ -77,23 +74,22 @@ export function useAppearance(): {
   setAppearance: (preference: AppearancePreference) => void
 } {
   const { viewer } = useViewer()
-  const queryClient = useQueryClient()
+  const query_client = useQueryClient()
   const guest = useSyncExternalStore(subscribe, readGuestPreference, () => 'system' as AppearancePreference)
   const system_theme = useSyncExternalStore(subscribeSystem, readSystemTheme, () => 'dark' as Theme)
   const preference: AppearancePreference = viewer.status === 'member' ? (viewer.user.appearance ?? 'system') : guest
   const theme: Theme = preference === 'system' ? system_theme : preference
 
   const mutation = useMutation({
-    mutationFn: (next: AppearancePreference) =>
-      http.patch('/v1/users/me/appearance', appearanceSchema, { body: { appearance: next === 'system' ? null : next } }),
+    mutationFn: (next: AppearancePreference) => updateAppearance(next === 'system' ? null : next),
     onMutate: (next: AppearancePreference) => {
-      const previous = queryClient.getQueryData<Session>(sessionKeys.current())
-      queryClient.setQueryData(sessionKeys.current(), withAppearance(previous, next))
+      const previous = query_client.getQueryData<Session>(sessionKeys.current())
+      query_client.setQueryData(sessionKeys.current(), withAppearance(previous, next))
       applyTheme(resolveTheme(next))
       return { previous }
     },
     onError: (_error, _next, context) => {
-      queryClient.setQueryData(sessionKeys.current(), context?.previous)
+      query_client.setQueryData(sessionKeys.current(), context?.previous)
       applyTheme(resolveTheme(memberPreference(context?.previous) ?? readGuestPreference()))
     },
   })

@@ -42,7 +42,7 @@ test.describe('обсуждение на фикстурном gateway', () => {
     await reply.locator('xpath=ancestor::form').getByRole('button', { name: 'Отправить' }).click()
     await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
 
-    await root.getByRole('button', { name: 'Меню комментария' }).first().click()
+    await root.getByRole('link', { name: 'Меню комментария' }).first().click()
     await page.getByRole('menuitem', { name: 'Удалить', exact: true }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Удалить' }).click()
     await expect(page.getByText('Комментарий удалён')).toBeVisible()

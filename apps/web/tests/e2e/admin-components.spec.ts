@@ -79,7 +79,7 @@ test('revealing seen posts removes the banner immediately', async ({ page }) => 
   const banner = page.getByRole('button', { name: /Скрыт.*просмотренн/ })
   await expect(banner).toBeVisible()
   await banner.click()
-  await expect(banner).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Убрать полосу' })).toBeVisible()
   await expect(
     page.getByRole('main').getByRole('heading', { name: title, exact: true }),
   ).toBeVisible()

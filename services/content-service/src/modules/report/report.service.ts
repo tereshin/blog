@@ -1,12 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { canReadArticle } from '@blog/contracts'
 import type { Report, ServiceContext } from '@blog/contracts'
+import { canRead } from '../../shared/can-read.ts'
 import { ForbiddenError, NotFoundError, RestrictedError, UnauthorizedError } from '@blog/errors'
-import type { ReportRepository, ReportRow } from './report.types.ts'
-
-export type ReportService = {
-  create: (viewer: ServiceContext, article_id: string) => Promise<Report>
-}
+import type { ReportRepositoryPort, ReportRow } from './report.types.ts'
 
 function toReport(row: ReportRow): Report {
   return {
@@ -18,16 +14,22 @@ function toReport(row: ReportRow): Report {
   }
 }
 
-export function createReportService(repository: ReportRepository, options: { newId?: () => string } = {}): ReportService {
-  const newId = options.newId ?? randomUUID
-  return {
-    async create(viewer, article_id) {
-      if (viewer.user_id === undefined) throw new UnauthorizedError()
-      if (viewer.is_restricted) throw new RestrictedError()
-      const article = await repository.findArticle(article_id)
-      if (!article || !canReadArticle(viewer, article)) throw new NotFoundError({ message: 'Такой статьи нет' })
-      if (article.author_id === viewer.user_id) throw new ForbiddenError({ message: 'Нельзя пожаловаться на свою статью' })
-      return toReport(await repository.createOpen({ id: newId(), article_id, reporter_id: viewer.user_id }))
-    },
+export class ReportService {
+  constructor(
+    private readonly repository: ReportRepositoryPort,
+    private readonly options: { newId?: () => string } = {},
+  ) {}
+
+  async create(viewer: ServiceContext, article_id: string): Promise<Report> {
+    if (viewer.user_id === undefined) throw new UnauthorizedError()
+    if (viewer.is_restricted) throw new RestrictedError()
+    const article = await this.repository.findArticle(article_id)
+    if (!article || !canRead(viewer, article)) throw new NotFoundError({ message: 'Такой статьи нет' })
+    if (article.author_id === viewer.user_id) throw new ForbiddenError({ message: 'Нельзя пожаловаться на свою статью' })
+    return toReport(await this.repository.createOpen({ id: this.newId(), article_id, reporter_id: viewer.user_id }))
+  }
+
+  private newId(): string {
+    return this.options.newId?.() ?? randomUUID()
   }
 }

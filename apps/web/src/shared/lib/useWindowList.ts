@@ -2,7 +2,7 @@ import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useState } from 'react'
 
 export function useWindowList(ids: string[], estimated_height = 80) {
-  const [element, setElement] = useState<HTMLOListElement | null>(null)
+  const [element, setElement] = useState<HTMLElement | null>(null)
   const [scroll_margin, setScrollMargin] = useState(0)
   const virtualizer = useWindowVirtualizer({
     count: ids.length,

@@ -1,6 +1,7 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-vite'
+import type { Decorator } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { HttpResponse, delay, http } from 'msw'
-import { StoryProviders } from '@/shared/api/mocks'
+import { StoryProviders } from '@/shared/lib'
 import { ConversationList } from './ConversationList.tsx'
 
 const member: Decorator = (Story) => {
@@ -14,21 +15,18 @@ const member: Decorator = (Story) => {
   )
 }
 
-const meta = {
+const meta = preview.meta({
   title: 'widgets/conversation/ConversationList',
   component: ConversationList,
   args: { selected_id: null },
   decorators: [member],
-} satisfies Meta<typeof ConversationList>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Loading: Story = {
+})
+export const Loading = meta.story({
   parameters: { msw: { handlers: [http.get('*/v1/conversations', async () => { await delay('infinite'); return HttpResponse.json({ items: [], next_cursor: null }) })] } },
-}
-export const Empty: Story = {
+})
+export const Empty = meta.story({
   parameters: { msw: { handlers: [http.get('*/v1/conversations', () => HttpResponse.json({ items: [], next_cursor: null }))] } },
-}
-export const Error: Story = {
+})
+export const Error = meta.story({
   parameters: { msw: { handlers: [http.get('*/v1/conversations', () => new HttpResponse(null, { status: 500 }))] } },
-}
+})

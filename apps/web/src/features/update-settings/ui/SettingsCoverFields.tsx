@@ -49,7 +49,7 @@ export function SettingsCoverFields({
         : null}
       {value.logo_url ? (
         <div className="flex items-center gap-3">
-          <img src={value.logo_url} alt="" className="h-12 max-w-40 object-contain" />
+          <img loading="lazy" src={value.logo_url} alt="" className="h-12 max-w-40 object-contain" />
           <Button
             type="button"
             variant="ghost"
@@ -68,7 +68,7 @@ export function SettingsCoverFields({
         : null}
       {value.default_image_url ? (
         <div className="flex flex-col items-start gap-2">
-          <img src={value.default_image_url} alt="" className="w-full max-w-80 rounded-lg" />
+          <img loading="lazy" src={value.default_image_url} alt="" className="w-full max-w-80 rounded-lg" />
           <Button
             type="button"
             variant="ghost"

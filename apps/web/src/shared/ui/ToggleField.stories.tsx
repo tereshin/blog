@@ -1,12 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { ToggleField } from './ToggleField.tsx'
-const meta = {
+const meta = preview.meta({
   title: 'shared/ToggleField',
   component: ToggleField,
-  args: { label: 'Registration', isSelected: false, onChange: () => undefined },
-} satisfies Meta<typeof ToggleField>
-export default meta
-type Story = StoryObj<typeof meta>
-export const Off: Story = {}
-export const On: Story = { args: { isSelected: true } }
-export const Disabled: Story = { args: { isDisabled: true } }
+  args: { label: 'Registration', is_selected: false, onChange: () => undefined },
+})
+export const Off = meta.story()
+export const On = meta.story({ args: { is_selected: true } })
+export const Disabled = meta.story({ args: { is_disabled: true } })

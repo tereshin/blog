@@ -10,7 +10,7 @@ import { uploadEditorFile, editorUploadCount } from '../lib/editor-uploader.ts'
 import { PersonTool } from '../lib/person-tool.ts'
 import { TitleTool } from '../lib/title-tool.ts'
 import { loadEditor } from '../lib/load-editor.ts'
-import { parseEditorOutput } from '../lib/normalize-document.ts'
+import { parseEditorOutput, toEditorJsBlocks } from '../lib/normalize-document.ts'
 import type { BlockEditorHandle, EditorSnapshot } from '../model/useEditorDocument.ts'
 
 export type BlockEditorOptions = {
@@ -122,7 +122,7 @@ export function useBlockEditor({
             blocks: [
               { type: 'title', data: { text: title } },
               ...(initial?.blocks.length
-                ? initial.blocks
+                ? toEditorJsBlocks(initial.blocks)
                 : [{ type: 'paragraph', data: { text: '' } }]),
             ],
           } as OutputData,

@@ -3,7 +3,7 @@ import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SOCIAL_COVER_SETTINGS, SOCIAL_COVER_SIZES } from '@blog/contracts'
 import type { SocialCoverInput } from '@blog/contracts'
-import { ownedObjectKey, renderSocialCover, createCoverRenderer } from '../../src/modules/social-cover/index.ts'
+import { ownedObjectKey, renderSocialCover, SocialCoverPool } from '../../src/modules/social-cover/index.ts'
 const input: SocialCoverInput = { title: 'Как меняется город: технологии, люди и новые возможности', author_name: 'Ђорђе Јовановић · Анна Авторова', site_name: 'Площадка', image_url: null, settings: DEFAULT_SOCIAL_COVER_SETTINGS }
 describe('рендеринг социальных карточек', () => {
   it.each(['og', 'twitter', 'vk'] as const)('рендерит %s с кириллицей, сербским, фотографией и прозрачным логотипом', async (variant) => {
@@ -23,7 +23,7 @@ describe('рендеринг социальных карточек', () => {
     await writeFile('/tmp/blog-seo-preview/long-vk.jpg', result.bytes)
   })
   it('пул исполняет реальный worker и корректно закрывается', async () => {
-    const renderer = createCoverRenderer(1)
+    const renderer = new SocialCoverPool(1)
     try { expect(await sharp((await renderer.render({ input, variant: 'og' })).bytes).metadata()).toMatchObject(SOCIAL_COVER_SIZES.og) } finally { await renderer.close() }
   }, 15_000)
   it.each(['https://evil.example/media/uploads/a.jpg', 'http://localhost:9000/other/uploads/a.jpg', 'http://localhost:9000/media/social-covers/a.jpg', 'http://localhost:9000/media/uploads/%2e%2e%2fsecret', 'http://localhost:9000/media/uploads/a.jpg?token=1'])('отвергает ресурс %s', (url) => expect(ownedObjectKey(url, 'http://localhost:9000/media')).toBeNull())

@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { StoryProviders } from '@/shared/api/mocks'
+import preview from '#.storybook/preview'
+import { StoryProviders } from '@/shared/lib'
 import { Button, Skeleton } from '@/shared/ui'
 import { DiscoveryRow } from './DiscoveryRow.tsx'
 
-const meta = {
+const meta = preview.meta({
   title: 'widgets/discovery/DiscoveryRow',
   component: DiscoveryRow,
   decorators: [
@@ -16,11 +16,8 @@ const meta = {
     ),
   ],
   args: { href: '/u/anna', name: 'Анна Авторова', slug: 'anna', avatar_url: null },
-} satisfies Meta<typeof DiscoveryRow>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Blog: Story = {
+})
+export const Blog = meta.story({
   args: {
     rank: 1,
     action: (
@@ -29,8 +26,8 @@ export const Blog: Story = {
       </Button>
     ),
   },
-}
-export const Following: Story = {
+})
+export const Following = meta.story({
   args: {
     action: (
       <Button variant="tertiary" size="sm">
@@ -38,12 +35,12 @@ export const Following: Story = {
       </Button>
     ),
   },
-}
-export const OwnBlog: Story = { args: { rank: 5 } }
-export const LoadingFollow: Story = {
+})
+export const OwnBlog = meta.story({ args: { rank: 5 } })
+export const LoadingFollow = meta.story({
   args: { action: <Skeleton className="h-8 w-24 rounded-pill" /> },
-}
-export const Topic: Story = {
+})
+export const Topic = meta.story({
   args: {
     href: '/t/life',
     name: 'Личный опыт',
@@ -54,8 +51,8 @@ export const Topic: Story = {
       </Button>
     ),
   },
-}
-export const LongName: Story = {
+})
+export const LongName = meta.story({
   args: {
     rank: 125,
     name: 'Очень длинное название блога для проверки узкого экрана и доступности действий',
@@ -66,4 +63,4 @@ export const LongName: Story = {
       </Button>
     ),
   },
-}
+})

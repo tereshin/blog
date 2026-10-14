@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { CommentItem } from '@/entities/comment'
+import { CommentThread } from '@/entities/comment'
 import { useT } from '@/shared/i18n'
 import { BookmarkIcon, Button, EmptyState, ErrorState } from '@/shared/ui'
 import { useSavedComments } from '../model/useSavedComments.ts'
@@ -21,7 +21,7 @@ export function SavedComments() {
           >
             {item.article_title}
           </Link>
-          <CommentItem
+          <CommentThread.Item
             comment={{ ...item.comment, reply_count: 0, replies: [] }}
             renderActions={(comment) => <CommentOverflowMenu comment={comment} />}
           />

@@ -4,7 +4,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { commentKeys, getCommentReports, reviewCommentReport } from '@/entities/comment'
 import { useT } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
-const REPORTS_KEY = ['moderation', 'comment-reports'] as const
+import { moderationKeys } from './moderation-keys.ts'
 export function useCommentReportQueue(
   filters: ModerationFilters = moderationFiltersSchema.parse({}),
 ) {
@@ -12,7 +12,7 @@ export function useCommentReportQueue(
   const client = useQueryClient()
   const toast = useToast()
   const query = useInfiniteQuery({
-    queryKey: [...REPORTS_KEY, filters],
+    queryKey: moderationKeys.reports(filters),
     queryFn: ({ pageParam, signal }) => getCommentReports(pageParam, signal, filters),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.next_cursor ?? undefined,
@@ -21,7 +21,7 @@ export function useCommentReportQueue(
     mutationFn: ({ id, action }: { id: string; action: 'dismiss' | 'hide' | 'delete' }) =>
       reviewCommentReport(id, action),
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: REPORTS_KEY })
+      void client.invalidateQueries({ queryKey: moderationKeys.reports() })
       void client.invalidateQueries({ queryKey: commentKeys.all })
     },
     onError: () => toast.error(t('error.unknown')),

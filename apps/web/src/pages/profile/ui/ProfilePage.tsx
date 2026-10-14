@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useParams } from 'react-router'
 import { useProfile } from '@/entities/profile'
 import { useUpdateProfile } from '@/features/edit-profile'
@@ -9,25 +8,20 @@ import { useT } from '@/shared/i18n'
 import { BaseIcon, EmptyState, ErrorState, Tabs } from '@/shared/ui'
 import { FeedSortMenu } from '@/widgets/feed'
 import { OwnerActions, ProfileCard, ProfileStatus } from '@/widgets/profile-card'
-import { useShellStore } from '@/widgets/shell'
+import { useShellPage } from '@/widgets/shell'
 import { ProfileActivityFeed } from './ProfileActivityFeed.tsx'
 import { useProfileActivity } from '../model/useProfileActivity.ts'
 
 export default function ProfilePage() {
   const { slug = '' } = useParams()
   const { t } = useT()
-  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
-  const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
   const profile_query = useProfile(slug)
   const profile = profile_query.data
   const activity = useProfileActivity(slug, profile)
   const { tab, setTab, sort, setSort } = activity
   const update = useUpdateProfile()
 
-  useEffect(() => {
-    setHeaderCenter({ kind: 'empty' })
-    setArticleTopicId(null)
-  }, [setHeaderCenter, setArticleTopicId])
+  useShellPage({ should_clear_topic: true })
 
   if (profile_query.isPending) return <ProfileCard.Skeleton />
   if (profile_query.isError || !profile) {

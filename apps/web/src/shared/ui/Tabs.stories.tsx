@@ -1,11 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Tabs } from './Tabs.tsx'
 
-const meta = { title: 'shared/ui/Tabs', component: Tabs } satisfies Meta<typeof Tabs>
-export default meta
-type Story = StoryObj
-
-export const Default: Story = {
+const meta = preview.meta({ title: 'shared/ui/Tabs', component: Tabs })
+export const Default = meta.story({
   render: () => (
     <Tabs defaultSelectedKey="posts">
       <Tabs.List aria-label="Вкладки профиля">
@@ -16,4 +13,4 @@ export const Default: Story = {
       <Tabs.Panel id="comments">Список комментариев</Tabs.Panel>
     </Tabs>
   ),
-}
+})

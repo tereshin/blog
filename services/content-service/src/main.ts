@@ -18,7 +18,7 @@ async function main(): Promise<void> {
   const telemetry = startTelemetry({ service: SERVICE, otlp_endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT })
   const metrics = createServiceMetrics(SERVICE)
   setConsumerMetrics(metrics)
-  const queues = startQueueMetrics(metrics, sampleQueueDepth)
+  const queues = startQueueMetrics(metrics, sampleQueueDepth, (error) => logger.debug({ err: error }, 'опрос очередей брокера не удался'))
 
   const database = openDatabase(env.DATABASE_URL)
   const broker = await connectBroker({ url: env.NATS_URL, name: SERVICE })

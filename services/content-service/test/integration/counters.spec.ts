@@ -8,7 +8,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, profiles, topics } from '../../src/infra/db/schema.ts'
-import { createCountersHandler } from '../../src/modules/counters/index.ts'
+import { CountersHandler } from '../../src/modules/counters/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const ARTICLE = '7a1c2d30-1111-4a11-8a11-000000000020'
@@ -32,7 +32,7 @@ const counters = {
 describe('content: счётчики из событий обсуждения (PostgreSQL в контейнере)', () => {
   let postgres: TestPostgres
   let database: DbHandle
-  const handler = createCountersHandler()
+  const handler = new CountersHandler().handle
   const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, handler)
 
   beforeAll(async () => {

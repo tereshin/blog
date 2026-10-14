@@ -1,112 +1,58 @@
-import { moderationFiltersSchema } from '@blog/contracts'
-import type { ModerationFilters } from '@blog/contracts'
-import { createModerationReader } from './moderation.read.ts'
-import { createArticleReportReviewer } from './moderation.report-write.ts'
-import type { ModerationCursor } from './moderation.cursor.ts'
-import { requestArticleCover } from '../social-cover/index.ts'
 import { eq } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Database } from '@blog/broker'
-import { articles, profiles, reports, topics, users_copy } from '../../infra/db/schema.ts'
-import { appendArticleEvent } from '../article/article.events.ts'
-import type { StoredArticle } from '../article/article.types.ts'
+import { articles, reports } from '../../infra/db/schema.ts'
+import type { StoredArticle } from '../article/index.ts'
+import { ModerationReadRepository, REPORT_COLUMNS } from './moderation.read.repository.ts'
+import type { ModerationReport, ModerationRepositoryPort } from './moderation.types.ts'
 
-export type ModerationArticle = {
-  article: typeof articles.$inferSelect
-  topic: typeof topics.$inferSelect
-  profile: typeof profiles.$inferSelect | null
-  user: typeof users_copy.$inferSelect | null
+const STORED_COLUMNS = {
+  id: articles.id,
+  author_id: articles.author_id,
+  topic_id: articles.topic_id,
+  title: articles.title,
+  slug: articles.slug,
+  blocks: articles.blocks,
+  visibility: articles.visibility,
+  comments_enabled: articles.comments_enabled,
+  status: articles.status,
+  published_at: articles.published_at,
+  excerpt: articles.excerpt,
+  first_image_url: articles.first_image_url,
+  seo_title: articles.seo_title,
+  seo_description: articles.seo_description,
 }
 
-export type ModerationRepository = {
-  listReports: (
-    limit: number,
-    filters: ModerationFilters,
-    cursor: ModerationCursor | null,
-  ) => Promise<(ModerationArticle & { report: typeof reports.$inferSelect })[]>
-  reviewAction: ReturnType<typeof createArticleReportReviewer>
-  list: (
-    filter: 'reported' | 'hidden' | 'search',
-    limit: number,
-    filters?: ModerationFilters,
-    cursor?: ModerationCursor | null,
-  ) => Promise<{ articles: ModerationArticle[]; reports: (typeof reports.$inferSelect)[] }>
-  find: (id: string) => Promise<StoredArticle | null>
-  transition: (input: {
-    id: string
-    status: StoredArticle['status']
-    event_name: 'content.article.hidden' | 'content.article.restored' | 'content.article.deleted'
-    correlation_id: string
-    moderator_id: string
-  }) => Promise<StoredArticle | null>
-  reviewReport: (id: string) => Promise<typeof reports.$inferSelect | null>
-}
-
-function stored(row: typeof articles.$inferSelect): StoredArticle {
-  return {
-    id: row.id,
-    author_id: row.author_id,
-    topic_id: row.topic_id,
-    title: row.title,
-    slug: row.slug,
-    blocks: row.blocks,
-    visibility: row.visibility,
-    comments_enabled: row.comments_enabled,
-    status: row.status,
-    published_at: row.published_at,
-    excerpt: row.excerpt,
-    first_image_url: row.first_image_url,
-    seo_title: row.seo_title,
-    seo_description: row.seo_description,
+export class ModerationRepository extends ModerationReadRepository implements ModerationRepositoryPort<Database> {
+  transaction<T>(work: (tx: Database) => Promise<T>): Promise<T> {
+    return this.db.transaction((tx) => work(tx))
   }
-}
 
-export function createModerationRepository(db: NodePgDatabase): ModerationRepository {
-  const reader = createModerationReader(db)
-  return {
-    listReports: reader.reports,
-    reviewAction: createArticleReportReviewer(db),
-    list: (filter, limit, filters = moderationFiltersSchema.parse({}), cursor = null) =>
-      reader.articles(filter, limit, filters, cursor),
+  async find(id: string): Promise<StoredArticle | null> {
+    const [row] = await this.db.select(STORED_COLUMNS).from(articles).where(eq(articles.id, id)).limit(1)
+    return row ?? null
+  }
 
-    async find(id) {
-      const [row] = await db.select().from(articles).where(eq(articles.id, id)).limit(1)
-      return row ? stored(row) : null
-    },
+  async lockArticle(tx: Database, id: string): Promise<StoredArticle | null> {
+    const [row] = await tx.select(STORED_COLUMNS).from(articles).where(eq(articles.id, id)).limit(1).for('update')
+    return row ?? null
+  }
 
-    async transition(input) {
-      return (db as Database).transaction(async (tx) => {
-        const [current] = await tx.select().from(articles).where(eq(articles.id, input.id)).limit(1)
-        if (!current) return null
-        const [row] = await tx
-          .update(articles)
-          .set({ status: input.status, updated_at: new Date() })
-          .where(eq(articles.id, input.id))
-          .returning()
-        if (!row) return null
-        const next = stored(row)
-        await requestArticleCover(tx, row.id, input.correlation_id)
-        await appendArticleEvent(
-          tx,
-          input.event_name,
-          next,
-          input.correlation_id,
-          input.moderator_id,
-        )
-        if (input.event_name !== 'content.article.deleted') {
-          await appendArticleEvent(tx, 'content.article.updated', next, input.correlation_id)
-        }
-        return next
-      })
-    },
+  async setStatus(tx: Database, id: string, status: StoredArticle['status']): Promise<StoredArticle | null> {
+    const [row] = await tx
+      .update(articles)
+      .set({ status, updated_at: new Date() })
+      .where(eq(articles.id, id))
+      .returning(STORED_COLUMNS)
+    return row ?? null
+  }
 
-    async reviewReport(id) {
-      const [row] = await db
-        .update(reports)
-        .set({ status: 'reviewed' })
-        .where(eq(reports.id, id))
-        .returning()
-      return row ?? null
-    },
+  async lockReport(tx: Database, id: string): Promise<ModerationReport | null> {
+    const [row] = await tx.select(REPORT_COLUMNS).from(reports).where(eq(reports.id, id)).limit(1).for('update')
+    return row ?? null
+  }
+
+  async markReviewed(tx: Database, id: string): Promise<ModerationReport | null> {
+    const [row] = await tx.update(reports).set({ status: 'reviewed' }).where(eq(reports.id, id)).returning(REPORT_COLUMNS)
+    return row ?? null
   }
 }

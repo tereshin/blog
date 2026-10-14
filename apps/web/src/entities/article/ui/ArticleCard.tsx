@@ -6,7 +6,7 @@ import { Avatar, Card, Skeleton } from '@/shared/ui'
 import type { ArticleCardModel } from '../model/article-types.ts'
 import { ArticleByline } from './ArticleByline.tsx'
 import { ArticleActions } from './ArticleActions.tsx'
-import { ArticleCardContext, useArticleCardModel } from './article-card-context.ts'
+import { ArticleCardContext, useArticleCard } from './article-card-context.ts'
 
 type ArticleCardRootProps = { article: ArticleCardModel; children: ReactNode; className?: string }
 
@@ -39,7 +39,7 @@ type HeaderProps = {
 }
 
 function Header({ follow, menu }: HeaderProps) {
-  const article = useArticleCardModel()
+  const article = useArticleCard()
   return (
     <Card.Header className="flex flex-row items-center overflow-visible px-5 pt-4">
       <ArticleByline
@@ -55,7 +55,7 @@ function Header({ follow, menu }: HeaderProps) {
 }
 
 function Title({ children }: { children?: ReactNode }) {
-  const article = useArticleCardModel()
+  const article = useArticleCard()
   return (
     <Card.Content className="px-5 pb-0 pt-3">
       <h2
@@ -73,7 +73,7 @@ function Title({ children }: { children?: ReactNode }) {
 }
 
 function Excerpt() {
-  const article = useArticleCardModel()
+  const article = useArticleCard()
   if (!article.excerpt) return null
   return (
     <Card.Content className="px-5 pb-0 pt-2">
@@ -86,7 +86,7 @@ function Excerpt() {
 
 /** Первое изображение статьи; без него часть не рендерится. Размеры заданы, чтобы лента не «прыгала». */
 function Image() {
-  const article = useArticleCardModel()
+  const article = useArticleCard()
   if (!article.first_image_url) return null
   return (
     <Card.Content className="px-5 pb-0 pt-3">
@@ -122,13 +122,13 @@ type ActionsProps = {
 }
 
 function Actions({ bookmark, share }: ActionsProps) {
-  const article = useArticleCardModel()
+  const article = useArticleCard()
   return <ArticleActions article={article} bookmark={bookmark} share={share} />
 }
 
 /** Одна строка: маленький аватар и начало самого обсуждаемого комментария; без комментария не рендерится (FR-064). */
 function CommentPeek() {
-  const article = useArticleCardModel()
+  const article = useArticleCard()
   const { t } = useT()
   const comment = article.top_comment
   if (!comment) return null

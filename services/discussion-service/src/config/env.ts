@@ -1,7 +1,7 @@
 import { baseEnvSchema, defineEnv, rejectPlaceholders } from '@blog/config'
 import { z } from 'zod'
 
-const envSchema = baseEnvSchema.extend({
+const EnvSchema = baseEnvSchema.extend({
   HTTP_PORT: z.coerce.number().int().positive().default(3003),
   DATABASE_URL: z.string().min(1),
   MEDIA_URL: z.url().default('http://media:3006'),
@@ -11,36 +11,41 @@ const envSchema = baseEnvSchema.extend({
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
 })
 
-export type Env = z.infer<typeof envSchema>
+export type Env = z.infer<typeof EnvSchema>
 
 /** Единственное место чтения окружения сервиса: падает при старте, если чего-то нет. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
-  const env = defineEnv(envSchema, source)
+  const env = defineEnv(EnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
 
-const migrateEnvSchema = baseEnvSchema.extend({ DATABASE_URL: z.string().min(1) })
+const MigrateEnvSchema = baseEnvSchema.extend({ DATABASE_URL: z.string().min(1) })
 
 /** Одноразовой задаче миграции нужны только `APP_ENV` и `DATABASE_URL`. */
 export function loadMigrateEnv(
   source: Record<string, string | undefined> = process.env,
-): z.infer<typeof migrateEnvSchema> {
-  const env = defineEnv(migrateEnvSchema, source)
+): z.infer<typeof MigrateEnvSchema> {
+  const env = defineEnv(MigrateEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
 
-const seedEnvSchema = baseEnvSchema.extend({
+const SeedEnvSchema = baseEnvSchema.extend({
   DATABASE_URL: z.string().min(1),
   S3_PUBLIC_URL: z.url(),
 })
 
-export type SeedEnv = z.infer<typeof seedEnvSchema>
+export type SeedEnv = z.infer<typeof SeedEnvSchema>
+
+/** Первая проверка seed: только `APP_ENV`, чтобы в prod задача завершилась до чтения остального окружения. */
+export function loadSeedAppEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof baseEnvSchema> {
+  return defineEnv(baseEnvSchema, source)
+}
 
 /** Окружение одноразовой задачи seed: без брокера и ключей, только база и параметры данных. */
 export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
-  const env = defineEnv(seedEnvSchema, source)
+  const env = defineEnv(SeedEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }

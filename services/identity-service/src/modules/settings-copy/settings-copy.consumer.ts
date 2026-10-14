@@ -28,11 +28,17 @@ export function createSettingsCopyHandler(): EventHandler {
   }
 }
 
-export async function startSettingsCopyConsumer(deps: { db: Database; broker: BrokerClient; logger: Logger }): Promise<RunningConsumer> {
-  return createIdempotentConsumer({
-    ...deps,
-    durable: SETTINGS_COPY_CONSUMER,
-    subject: 'content.settings.updated',
-    handler: createSettingsCopyHandler(),
-  })
+export type SettingsCopyConsumerDeps = { db: Database; broker: BrokerClient; logger: Logger }
+
+export class SettingsCopyConsumer {
+  constructor(private readonly deps: SettingsCopyConsumerDeps) {}
+
+  start(): Promise<RunningConsumer> {
+    return createIdempotentConsumer({
+      ...this.deps,
+      durable: SETTINGS_COPY_CONSUMER,
+      subject: 'content.settings.updated',
+      handler: createSettingsCopyHandler(),
+    })
+  }
 }

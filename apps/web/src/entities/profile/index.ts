@@ -8,5 +8,3 @@ export { formatReputation } from './lib/format-reputation.ts'
 export { profileKeys } from './model/profile-keys.ts'
 export { useProfile } from './model/useProfile.ts'
 export type { Profile, ProfileArticleStatus, ProfileBadge, ProfileUpdate } from './model/profile-types.ts'
-
-export { legacyBadgeViews } from './lib/legacy-badges.ts'

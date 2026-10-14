@@ -1,12 +1,9 @@
-import { randomUUID } from 'node:crypto'
 import { asc, eq, max } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Database } from '@blog/broker'
-import { ValidationError } from '@blog/errors'
 import { topics } from '../../infra/db/schema.ts'
-import { replaceSlug, reserveSlug } from '../slug/index.ts'
+import type { TopicPatch, TopicRepositoryPort, TopicRow, TopicWrite } from './topic.types.ts'
 
-const topic_columns = {
+const TOPIC_COLUMNS = {
   id: topics.id,
   title: topics.title,
   description: topics.description,
@@ -17,86 +14,61 @@ const topic_columns = {
   position: topics.position,
 }
 
-export type TopicRow = {
-  id: string
-  title: string
-  description: string | null
-  avatar_url: string | null
-  cover_url: string | null
-  slug: string
-  status: 'active' | 'archived'
-  position: number
-}
+export class TopicRepository implements TopicRepositoryPort<Database> {
+  constructor(private readonly db: Database) {}
 
-export type TopicWrite = {
-  title: string
-  description: string | null
-  avatar_url: string | null
-  cover_url: string | null
-  slug: string
-}
+  transaction<T>(work: (tx: Database) => Promise<T>): Promise<T> {
+    return this.db.transaction((tx) => work(tx))
+  }
 
-export type TopicPatch = Partial<TopicWrite> & { status?: 'active' | 'archived' }
+  listActive(): Promise<TopicRow[]> {
+    return this.db
+      .select(TOPIC_COLUMNS)
+      .from(topics)
+      .where(eq(topics.status, 'active'))
+      .orderBy(asc(topics.position), asc(topics.title))
+  }
 
-export type TopicRepository = {
-  listActive: () => Promise<TopicRow[]>
-  listAll: () => Promise<TopicRow[]>
-  findBySlug: (slug: string) => Promise<TopicRow | null>
-  findById: (id: string) => Promise<TopicRow | null>
-  create: (input: TopicWrite) => Promise<TopicRow>
-  update: (id: string, patch: TopicPatch) => Promise<TopicRow | null>
-  reorder: (topic_ids: readonly string[]) => Promise<TopicRow[]>
-}
+  listAll(tx: Database = this.db): Promise<TopicRow[]> {
+    return tx.select(TOPIC_COLUMNS).from(topics).orderBy(asc(topics.position), asc(topics.title))
+  }
 
-export function createTopicRepository(db: NodePgDatabase): TopicRepository {
-  return {
-    listActive: () => db.select(topic_columns).from(topics).where(eq(topics.status, 'active')).orderBy(asc(topics.position), asc(topics.title)),
-    listAll: () => db.select(topic_columns).from(topics).orderBy(asc(topics.position), asc(topics.title)),
-    async findBySlug(slug) {
-      const [row] = await db.select(topic_columns).from(topics).where(eq(topics.slug, slug)).limit(1)
-      return row ?? null
-    },
-    async findById(id) {
-      const [row] = await db.select(topic_columns).from(topics).where(eq(topics.id, id)).limit(1)
-      return row ?? null
-    },
+  async findBySlug(slug: string): Promise<TopicRow | null> {
+    const [row] = await this.db
+      .select(TOPIC_COLUMNS)
+      .from(topics)
+      .where(eq(topics.slug, slug))
+      .limit(1)
+    return row ?? null
+  }
 
-    async create(input) {
-      return (db as Database).transaction(async (tx) => {
-        const database = tx as Database
-        const id = randomUUID()
-        const [max_row] = await database.select({ value: max(topics.position) }).from(topics)
-        const position = max_row?.value === null || max_row?.value === undefined ? 0 : Number(max_row.value) + 1
-        await reserveSlug(database, input.slug, 'topic', id)
-        const [row] = await database.insert(topics).values({ id, ...input, position }).returning(topic_columns)
-        if (!row) throw new Error('topic row was not written')
-        return row
-      })
-    },
+  async findById(id: string, tx: Database = this.db): Promise<TopicRow | null> {
+    const [row] = await tx.select(TOPIC_COLUMNS).from(topics).where(eq(topics.id, id)).limit(1)
+    return row ?? null
+  }
 
-    async update(id, patch) {
-      return (db as Database).transaction(async (tx) => {
-        const database = tx as Database
-        const [current] = await database.select(topic_columns).from(topics).where(eq(topics.id, id)).limit(1)
-        if (!current) return null
-        if (patch.slug !== undefined && patch.slug !== current.slug) await replaceSlug(database, patch.slug, 'topic', id)
-        const [row] = await database.update(topics).set(patch).where(eq(topics.id, id)).returning(topic_columns)
-        return row ?? null
-      })
-    },
+  async maxPosition(tx: Database): Promise<number | null> {
+    const [max_row] = await tx.select({ value: max(topics.position) }).from(topics)
+    return max_row?.value === null || max_row?.value === undefined ? null : Number(max_row.value)
+  }
 
-    async reorder(topic_ids) {
-      return (db as Database).transaction(async (tx) => {
-        const database = tx as Database
-        const rows = await database.select({ id: topics.id }).from(topics)
-        const current = new Set(rows.map((row) => row.id))
-        const same = topic_ids.length === current.size && topic_ids.every((id) => current.has(id))
-        if (!same) throw new ValidationError({ message: 'Список должен содержать все темы по одному разу', details: { field: 'topic_ids' } })
-        for (const [index, id] of topic_ids.entries()) {
-          await database.update(topics).set({ position: index }).where(eq(topics.id, id))
-        }
-        return database.select(topic_columns).from(topics).orderBy(asc(topics.position), asc(topics.title))
-      })
-    },
+  async insert(tx: Database, row: TopicWrite & { id: string; position: number }): Promise<TopicRow> {
+    const [inserted] = await tx.insert(topics).values(row).returning(TOPIC_COLUMNS)
+    if (!inserted) throw new Error('topic row was not written')
+    return inserted
+  }
+
+  async update(tx: Database, id: string, patch: TopicPatch): Promise<TopicRow | null> {
+    const [row] = await tx.update(topics).set(patch).where(eq(topics.id, id)).returning(TOPIC_COLUMNS)
+    return row ?? null
+  }
+
+  async listIds(tx: Database): Promise<string[]> {
+    const rows = await tx.select({ id: topics.id }).from(topics)
+    return rows.map((row) => row.id)
+  }
+
+  async setPosition(tx: Database, id: string, position: number): Promise<void> {
+    await tx.update(topics).set({ position }).where(eq(topics.id, id))
   }
 }

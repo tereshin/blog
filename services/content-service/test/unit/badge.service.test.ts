@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 import type { BadgeDefinition } from '@blog/contracts'
 import {
   addCalendarMonths,
-  createBadgeService,
+  BadgeService,
   qualifiesForBadge,
 } from '../../src/modules/badge/index.ts'
+
+// Транзакция тестовому хранилищу не нужна: проверяем, что сервис передаёт её дальше без изменений.
+const TX = { tx: 'test' }
 
 const facts = {
   user_id: 'user',
@@ -57,9 +60,10 @@ describe('badge achievement rules', () => {
       award: vi.fn(async () => {}),
     }
     const now = new Date()
-    await createBadgeService(repository).evaluateMany(['user', 'other'], now)
-    expect(repository.facts).toHaveBeenCalledExactlyOnceWith(['user', 'other'])
+    await new BadgeService<typeof TX>(repository).evaluateMany(TX, ['user', 'other'], now)
+    expect(repository.facts).toHaveBeenCalledExactlyOnceWith(TX, ['user', 'other'])
     expect(repository.award).toHaveBeenCalledExactlyOnceWith(
+      TX,
       [{ user_id: 'user', badge_id: 'first_post' }],
       now,
     )
@@ -71,11 +75,11 @@ describe('badge achievement rules', () => {
       facts: vi.fn(async () => []),
       award: vi.fn(async () => {}),
     }
-    const service = createBadgeService(repository)
-    await expect(service.validateReplacement([])).rejects.toThrow('Выданные бейджи')
-    expect(repository.definitions).toHaveBeenCalledWith(true)
-    expect(repository.hasAwards).toHaveBeenCalledWith(['first_post'])
-    expect(await service.validateReplacement(undefined)).toEqual([badge('reputation', 10)])
+    const service = new BadgeService<typeof TX>(repository)
+    await expect(service.validateReplacement(TX, [])).rejects.toThrow('Выданные бейджи')
+    expect(repository.definitions).toHaveBeenCalledWith(TX, true)
+    expect(repository.hasAwards).toHaveBeenCalledWith(TX, ['first_post'])
+    expect(await service.validateReplacement(TX, undefined)).toEqual([badge('reputation', 10)])
     expect(repository.hasAwards).toHaveBeenCalledTimes(1)
   })
 

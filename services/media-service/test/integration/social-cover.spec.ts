@@ -16,16 +16,18 @@ import { createServiceMetrics } from '@blog/telemetry'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { createCoverRenderer, createCoverJobsRepository, createCoverWorker, startCoverRequestedConsumer } from '../../src/modules/social-cover/index.ts'
+import { SocialCoverConsumer, SocialCoverPool, SocialCoverRepository, SocialCoverService, SocialCoverWorker } from '../../src/modules/social-cover/index.ts'
 import type { CoverRenderer } from '../../src/modules/social-cover/index.ts'
-import { createS3Store } from '../../src/modules/media/index.ts'
+import { MediaStorage } from '../../src/modules/media/index.ts'
+import type { ObjectStore } from '../../src/modules/media/index.ts'
 import { migrate as migrateContent } from '../../../content-service/src/infra/db/migrate.ts'
 import { articles, topics, profiles } from '../../../content-service/src/infra/db/schema.ts'
-import { requestArticleCover, startSocialCoverConsumer } from '../../../content-service/src/modules/social-cover/index.ts'
-import { createSeoRepository } from '../../../content-service/src/modules/seo/index.ts'
+import { SocialCoverConsumer as ContentSocialCoverConsumer, SocialCoverRepository as ContentSocialCoverRepository, SocialCoverService as ContentSocialCoverService } from '../../../content-service/src/modules/social-cover/index.ts'
+import { SeoRepository } from '../../../content-service/src/modules/seo/index.ts'
 
 const logger = createLogger({ service: 'social-cover-test', level: 'silent' })
 const metrics = createServiceMetrics('social_cover_integration')
+const content_covers = new ContentSocialCoverService(new ContentSocialCoverRepository())
 const ARTICLE = randomUUID(), AUTHOR = randomUUID(), TOPIC = randomUUID()
 async function eventually(check: () => Promise<boolean>, timeout = 20_000) {
   const end = Date.now() + timeout
@@ -46,9 +48,9 @@ describe('превью: PostgreSQL → NATS → worker → MinIO → NATS → co
     database = openDatabase(media_pg.url); content = openDatabase(content_pg.url)
     await Promise.all([migrate(database.pool), migrateContent(content.pool)])
     broker = await connectBroker({ url: nats.url, name: 'social-cover-test' })
-    renderer = createCoverRenderer(2)
-    input_consumer = await startCoverRequestedConsumer({ db: database.db, broker, logger, repository: createCoverJobsRepository(database.db) })
-    output_consumer = await startSocialCoverConsumer({ db: content.db, broker, logger })
+    renderer = new SocialCoverPool(2)
+    input_consumer = await new SocialCoverConsumer(new SocialCoverRepository(database.db)).start({ db: database.db, broker, logger })
+    output_consumer = await new ContentSocialCoverConsumer(content_covers).start({ db: content.db, broker, logger })
     await content.db.insert(topics).values({ id: TOPIC, title: 'Тема', slug: 'topic', position: 0 })
     await content.db.insert(profiles).values({ user_id: AUTHOR, display_name: 'Ђорђе' })
     await content.db.insert(articles).values({ id: ARTICLE, author_id: AUTHOR, topic_id: TOPIC, title: 'Превью с кириллицей и сербским', slug: 'social-post', status: 'published', visibility: 'public', published_at: new Date(), blocks: { time: 1, version: '2.28.0', blocks: [] } })
@@ -59,22 +61,23 @@ describe('превью: PostgreSQL → NATS → worker → MinIO → NATS → co
     await Promise.all([media_pg?.stop(), content_pg?.stop(), nats?.stop(), minio?.stop()])
   }, 120_000)
   it('публикует сразу, доставляет дубли без повторной задачи и возвращает три JPEG', async () => {
-    await content.db.transaction(async (tx) => requestArticleCover(tx, ARTICLE, randomUUID()))
-    expect(await createSeoRepository(content.db).covers(ARTICLE)).toBeNull()
+    await content.db.transaction(async (tx) => content_covers.requestArticleCover(tx, ARTICLE, randomUUID()))
+    expect(await new SeoRepository(content.db).covers(ARTICLE)).toBeNull()
     const input_relay = new OutboxRelay({ db: content.db, broker, logger })
     expect(await input_relay.flushOnce()).toBe(1)
     await eventually(async () => Number((await database.pool.query("select count(*) as n from social_cover_jobs")).rows[0]?.n) === 1)
     const event = SocialCoverRequestedV1.parse((await content.pool.query('select payload from outbox')).rows[0]?.payload)
     await broker.js.publish(event.name, JSON.stringify(event))
     await broker.nc.flush()
-    const store = createS3Store({ endpoint, region: 'us-east-1', bucket: 'media', access_key: 'testaccess', secret_key: 'testsecret' })
-    const repository = createCoverJobsRepository(database.db)
-    expect(await createCoverWorker({ repository, renderer, store, public_url, logger, metrics }).runOnce()).toBe(true)
-    expect(await createCoverWorker({ repository, renderer, store, public_url, logger, metrics }).runOnce()).toBe(false)
+    const store = new MediaStorage({ endpoint, region: 'us-east-1', bucket: 'media', access_key: 'testaccess', secret_key: 'testsecret' })
+    const repository = new SocialCoverRepository(database.db)
+    const workerWith = (cover_store: ObjectStore) => new SocialCoverWorker(repository, new SocialCoverService(renderer, cover_store, public_url, logger), { logger, metrics })
+    expect(await workerWith(store).runOnce()).toBe(true)
+    expect(await workerWith(store).runOnce()).toBe(false)
     const output_relay = new OutboxRelay({ db: database.db, broker, logger })
     expect(await output_relay.flushOnce()).toBe(1)
-    await eventually(async () => !!await createSeoRepository(content.db).covers(ARTICLE))
-    const images = await createSeoRepository(content.db).covers(ARTICLE)
+    await eventually(async () => !!await new SeoRepository(content.db).covers(ARTICLE))
+    const images = await new SeoRepository(content.db).covers(ARTICLE)
     expect(images?.og).toMatchObject({ width: 1200, height: 630 })
     expect(images?.twitter).toMatchObject({ width: 1200, height: 630 })
     expect(images?.vk).toMatchObject({ width: 1074, height: 480 })
@@ -88,12 +91,12 @@ describe('превью: PostgreSQL → NATS → worker → MinIO → NATS → co
   }, 30_000)
   it('после перезапуска возвращает зависшую задачу; ошибка хранилища повторяется и завершается после пяти попыток', async () => {
     await database.pool.query("update social_cover_jobs set status='processing', lease_until=now()-interval '1 second', lease_id=$1", [randomUUID()])
-    const repository = createCoverJobsRepository(database.db)
+    const repository = new SocialCoverRepository(database.db)
     const job = await repository.claim(); expect(job?.attempts).toBe(2)
     if (!job) throw new Error('Missing leased job')
     await repository.fail(job, 'interrupted')
     const broken_store = { async put() { throw new Error('S3 unavailable') } }
-    const worker = createCoverWorker({ repository, renderer, store: broken_store, public_url, logger, metrics })
+    const worker = new SocialCoverWorker(repository, new SocialCoverService(renderer, broken_store, public_url, logger), { logger, metrics })
     for (let index = 0; index < 3; index++) {
       await database.pool.query("update social_cover_jobs set available_at=now()-interval '1 second'")
       expect(await worker.runOnce()).toBe(true)
@@ -106,7 +109,7 @@ describe('превью: PostgreSQL → NATS → worker → MinIO → NATS → co
     const retry = await repository.claim()
     expect(retry?.attempts).toBe(1)
     if (!retry) throw new Error('Missing retried job')
-    const images = await createSeoRepository(content.db).covers(ARTICLE)
+    const images = await new SeoRepository(content.db).covers(ARTICLE)
     if (!images) throw new Error('Missing generated images')
     await repository.complete(job, images)
     expect((await database.pool.query('select status from social_cover_jobs')).rows[0]?.status).toBe('processing')

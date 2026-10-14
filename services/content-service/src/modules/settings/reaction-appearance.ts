@@ -1,5 +1,5 @@
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
-import { ValidationError } from '@blog/errors'
+import { ReactionEmojiInvalidError } from './settings.errors.ts'
 
 export { DEFAULT_REACTION_APPEARANCES }
 
@@ -13,10 +13,7 @@ export function assertSingleEmoji(emoji: string, field = 'emoji'): string {
   const segments = [...GRAPHEMES.segment(emoji)]
   const grapheme = segments.length === 1 ? (segments[0]?.segment ?? '') : ''
   if (grapheme.length === 0 || !/\p{Extended_Pictographic}/u.test(grapheme)) {
-    throw new ValidationError({
-      message: 'Эмодзи реакции должно быть одной графемой',
-      details: { field },
-    })
+    throw new ReactionEmojiInvalidError(field)
   }
   return grapheme
 }

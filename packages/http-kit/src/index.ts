@@ -21,3 +21,5 @@ export {
 export type { ServiceClient, ServiceClientOptions, ServiceRequest, ServiceResponse } from './service-client.ts'
 export { registerShutdown } from './shutdown.ts'
 export type { ShutdownOptions } from './shutdown.ts'
+export { idempotency } from './idempotency.ts'
+export type { IdempotencyOptions } from './idempotency.ts'

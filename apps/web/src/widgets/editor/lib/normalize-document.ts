@@ -38,9 +38,30 @@ export function parseEditorOutput(data: OutputData): BlocksDocument {
     if (block.type === 'delimiter') return [{ ...(block.id ? { id: block.id } : {}), type: 'delimiter' as const, data: {} }]
     if (block.type === 'attaches')
       return [{ ...(block.id ? { id: block.id } : {}), type: block.type, data: { ...block.data, title: plainTitle(block.data['title']) } }]
+    if (block.type === 'table') {
+      const data = { ...block.data }
+      data.with_headings = data.with_headings ?? data.withHeadings
+      delete data.withHeadings
+      return [{ ...(block.id ? { id: block.id } : {}), type: block.type, data }]
+    }
     return [{ ...(block.id ? { id: block.id } : {}), type: block.type, data: block.data }]
   })
   const parsed = blocksDocumentSchema.safeParse({ time: data.time, blocks, version: data.version })
   if (!parsed.success) throw new InvalidEditorDocumentError(parsed.error.message)
   return parsed.data
+}
+
+/** Editor.js table tool still reads `withHeadings`; the contract stores `with_headings`. */
+export function toEditorJsBlocks(blocks: BlocksDocument['blocks']): OutputData['blocks'] {
+  return blocks.map((block) => {
+    if (block.type !== 'table') {
+      return { ...block, data: block.data ?? {} }
+    }
+    const data: Record<string, unknown> = { ...block.data }
+    if (data.with_headings !== undefined) {
+      data.withHeadings = data.with_headings
+      delete data.with_headings
+    }
+    return { ...block, data }
+  })
 }

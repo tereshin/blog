@@ -1,3 +1,3 @@
 import { z } from 'zod'
 
-export const promotionParamsSchema = z.object({ id: z.uuid() })
+export const PromotionParamsSchema = z.object({ id: z.uuid() })

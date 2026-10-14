@@ -14,8 +14,14 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { conversations, messages, outbox } from '../../src/infra/db/schema.ts'
-import { createConversationRepository, createUsersCopyHandler, conversationRoutes } from '../../src/modules/conversation/index.ts'
-import { messageRoutes } from '../../src/modules/message/index.ts'
+import {
+  ConversationController,
+  ConversationEvents,
+  ConversationRepository,
+  ConversationService,
+  conversationRoutes,
+} from '../../src/modules/conversation/index.ts'
+import { MessageController, MessageRepository, MessageService, messageRoutes } from '../../src/modules/message/index.ts'
 
 const ALICE = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const BORIS = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99'
@@ -51,8 +57,9 @@ describe('messaging: один диалог на пару (PostgreSQL в конт
     postgres = await startPostgres()
     database = openDatabase(postgres.url)
     await migrate(database.pool)
-    const repository = createConversationRepository(database.db)
-    const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, createUsersCopyHandler(repository))
+    const repository = new ConversationRepository(database.db)
+    const events = new ConversationEvents(repository)
+    const apply = (item: OutboxEvent) => processEvent(database.db, CONSUMER, item, events.handle)
     await apply(event('identity.user.created', { ...snapshot, user_id: ALICE, display_name: 'Анна' }))
     await apply(event('identity.user.created', { ...snapshot, user_id: BORIS, public_number: 8, display_name: 'Борис' }))
     await apply(event('identity.user.created', { ...snapshot, user_id: RITA, public_number: 9, display_name: 'Рита', is_restricted: true }))
@@ -67,8 +74,8 @@ describe('messaging: один диалог на пару (PostgreSQL в конт
       const key = request.headers['x-test-viewer']
       request.viewer = typeof key === 'string' && key in viewers ? (viewers[key] ?? guest) : guest
     })
-    await app.register(conversationRoutes, { database })
-    await app.register(messageRoutes, { database })
+    await app.register(conversationRoutes, { controller: new ConversationController(new ConversationService(repository)) })
+    await app.register(messageRoutes, { controller: new MessageController(new MessageService(new MessageRepository(database.db))) })
   }, 120_000)
 
   afterAll(async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pairOf } from '../../src/modules/conversation/index.ts'
+import { pairOf } from '../../src/shared/pair.ts'
 import { toExcerpt } from '../../src/shared/excerpt.ts'
 
 describe('пара диалога и фрагмент', () => {

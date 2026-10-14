@@ -1,23 +1,17 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { z } from 'zod'
 import { articleKeys, mapFeedCards } from '@/entities/article'
 import { profileKeys } from '@/entities/profile'
 import type { Profile } from '@/entities/profile'
 import { useViewer } from '@/entities/session'
 import { topicKeys } from '@/entities/topic'
 import type { Topic } from '@/entities/topic'
-import { ApiError, http, sessionEvents } from '@/shared/api'
+import { ApiError, sessionEvents } from '@/shared/api'
 import { useT } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
+import { setFollow } from '../api/set-follow.ts'
 import { followKeys } from './follow-keys.ts'
 import { advanceFollowVersion } from './follow-version.ts'
-
-const followStateSchema = z.object({
-  target_type: z.enum(['user', 'topic']),
-  target_id: z.string(),
-  is_following: z.boolean(),
-})
 
 export type FollowTarget = {
   target_type: 'user' | 'topic'
@@ -47,13 +41,13 @@ function isTopic(data: unknown): data is Topic {
   )
 }
 
-function applyFollow(queryClient: QueryClient, target: FollowTarget, next: boolean): void {
+function applyFollow(query_client: QueryClient, target: FollowTarget, next: boolean): void {
   const previous =
-    queryClient.getQueryData<boolean>(followKeys.flag(target.target_type, target.target_id)) ??
+    query_client.getQueryData<boolean>(followKeys.flag(target.target_type, target.target_id)) ??
     target.is_following
   const delta = next === previous ? 0 : next ? 1 : -1
-  queryClient.setQueryData(followKeys.flag(target.target_type, target.target_id), next)
-  queryClient.setQueriesData({ queryKey: profileKeys.all }, (data) => {
+  query_client.setQueryData(followKeys.flag(target.target_type, target.target_id), next)
+  query_client.setQueriesData({ queryKey: profileKeys.all }, (data) => {
     if (!isProfile(data)) return data
     if (target.target_type === 'user' && data.user_id === target.target_id) {
       return {
@@ -66,12 +60,12 @@ function applyFollow(queryClient: QueryClient, target: FollowTarget, next: boole
     return data
   })
   if (target.target_type === 'topic') {
-    queryClient.setQueriesData({ queryKey: topicKeys.all }, (data) =>
+    query_client.setQueriesData({ queryKey: topicKeys.all }, (data) =>
       isTopic(data) && data.id === target.target_id ? { ...data, is_following: next } : data,
     )
   }
   if (target.target_type === 'user') {
-    queryClient.setQueriesData({ queryKey: articleKeys.lists() }, (data) =>
+    query_client.setQueriesData({ queryKey: articleKeys.lists() }, (data) =>
       mapFeedCards(data, (card) =>
         card.author.user_id === target.target_id ? { ...card, is_following: next } : card,
       ),
@@ -85,7 +79,7 @@ export function useFollow(target: FollowTarget): {
   toggle: () => void
   is_pending: boolean
 } {
-  const queryClient = useQueryClient()
+  const query_client = useQueryClient()
   const { viewer } = useViewer()
   const toast = useToast()
   const { t } = useT()
@@ -101,35 +95,30 @@ export function useFollow(target: FollowTarget): {
   })
   const mutation = useMutation({
     mutationKey: followKeys.mutation(target.target_type, target.target_id),
-    mutationFn: (next: boolean) => {
-      const body = { target_type: target.target_type, target_id: target.target_id }
-      return next
-        ? http.put('/v1/follows', followStateSchema, { body })
-        : http.delete('/v1/follows', followStateSchema, { body })
-    },
+    mutationFn: (next: boolean) => setFollow(target, next),
     onMutate: async (next) => {
-      advanceFollowVersion(queryClient, target.target_type, target.target_id)
-      await queryClient.cancelQueries({
+      advanceFollowVersion(query_client, target.target_type, target.target_id)
+      await query_client.cancelQueries({
         queryKey: followKeys.flag(target.target_type, target.target_id),
       })
-      await queryClient.cancelQueries({ queryKey: profileKeys.all })
-      await queryClient.cancelQueries({ queryKey: topicKeys.all })
-      await queryClient.cancelQueries({ queryKey: articleKeys.lists() })
+      await query_client.cancelQueries({ queryKey: profileKeys.all })
+      await query_client.cancelQueries({ queryKey: topicKeys.all })
+      await query_client.cancelQueries({ queryKey: articleKeys.lists() })
       const previous =
-        queryClient.getQueryData<boolean>(followKeys.flag(target.target_type, target.target_id)) ??
+        query_client.getQueryData<boolean>(followKeys.flag(target.target_type, target.target_id)) ??
         target.is_following
-      applyFollow(queryClient, target, next)
+      applyFollow(query_client, target, next)
       return { previous }
     },
     onError: (error, _next, context) => {
-      advanceFollowVersion(queryClient, target.target_type, target.target_id)
-      if (context) applyFollow(queryClient, target, context.previous)
+      advanceFollowVersion(query_client, target.target_type, target.target_id)
+      if (context) applyFollow(query_client, target, context.previous)
       const restricted = error instanceof ApiError && error.code === 'restricted'
       toast.error(restricted ? t('follow.restricted') : t('follow.failed'))
     },
     onSuccess: (response) => {
-      advanceFollowVersion(queryClient, target.target_type, target.target_id)
-      applyFollow(queryClient, target, response.is_following)
+      advanceFollowVersion(query_client, target.target_type, target.target_id)
+      applyFollow(query_client, target, response.is_following)
     },
   })
 

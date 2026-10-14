@@ -1,10 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Skeleton } from './Skeleton.tsx'
 
-const meta = { title: 'shared/ui/Skeleton', component: Skeleton } satisfies Meta<typeof Skeleton>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Line: Story = { args: { shape: 'line' } }
-export const Block: Story = { args: { shape: 'block' } }
-export const Circle: Story = { args: { shape: 'circle' } }
+const meta = preview.meta({ title: 'shared/ui/Skeleton', component: Skeleton })
+export const Line = meta.story({ args: { shape: 'line' } })
+export const Block = meta.story({ args: { shape: 'block' } })
+export const Circle = meta.story({ args: { shape: 'circle' } })

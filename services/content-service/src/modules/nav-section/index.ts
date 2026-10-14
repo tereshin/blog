@@ -1,3 +1,7 @@
 export { navSectionRoutes } from './nav-section.routes.ts'
+export type { NavSectionRoutesOptions } from './nav-section.routes.ts'
 export { detachPageFromNavItems } from './nav-section.page-link.ts'
 export { toAdminItem } from './nav-section.mapper.ts'
+export { NavSectionController } from './nav-section.controller.ts'
+export { NavSectionRepository } from './nav-section.repository.ts'
+export { NavSectionService, requireNavAdmin } from './nav-section.service.ts'

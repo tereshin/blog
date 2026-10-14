@@ -15,7 +15,7 @@ async function openMessages(page: Page, path = '/messages') {
   if (test.info().project.name === 'wide-light') {
     const is_member = await page.evaluate(() => window.localStorage.getItem('mock_viewer') !== null)
     if (is_member) {
-      await page.getByRole('navigation', { name: 'Навигация' }).getByRole('button', { name: 'Тёмная тема' }).click()
+      await page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Тёмная тема' }).click()
       await page.getByRole('menuitemradio', { name: 'Светлая' }).click()
     }
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')

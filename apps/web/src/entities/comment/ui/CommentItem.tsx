@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react'
+import { cva } from 'class-variance-authority'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { Avatar, BaseIcon, Button, ErrorState, Link } from '@/shared/ui'
 import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
+import { useCommentItem } from '../model/useCommentItem.ts'
 import { CommentSortMenu } from './CommentSortMenu.tsx'
-import type { CommentSort } from '../model/sort-comments.ts'
-import { sortComments } from '../model/sort-comments.ts'
-import { useReplies } from '../model/useReplies.ts'
+
+const body_class = cva('mt-3 whitespace-pre-wrap break-words text-[15px] leading-6', {
+  variants: { stub: { true: 'text-muted', false: 'text-foreground' } },
+})
+const chevron_class = cva(undefined, {
+  variants: { is_expanded: { true: 'rotate-180', false: '' } },
+})
 
 type CommentItemProps = {
   article_id?: string | undefined
@@ -22,12 +27,6 @@ type CommentItemProps = {
   renderReply?: (comment: CommentNode) => ReactNode
 }
 
-function containsAnchor(comments: CommentNode[], anchor_id: string): boolean {
-  return comments.some(
-    (comment) => comment.id === anchor_id || containsAnchor(comment.replies, anchor_id),
-  )
-}
-
 /** Ответы свёрнуты; прямая ссылка и ответ раскрывают нужную ветку. */
 export function CommentItem({
   comment,
@@ -39,15 +38,12 @@ export function CommentItem({
   renderReply,
 }: CommentItemProps) {
   const { t } = useT()
-  const [expansion, setExpansion] = useState({ is_open: false, dismissed_anchor: '' })
-  const is_expanded =
-    expansion.is_open ||
-    (anchor_id !== expansion.dismissed_anchor && containsAnchor(comment.replies, anchor_id))
-  const setExpanded = (is_open: boolean) =>
-    setExpansion({ is_open, dismissed_anchor: is_open ? '' : anchor_id })
-
-  const [sort, setSort] = useState<CommentSort>('oldest')
-
+  const { is_expanded, setExpanded, sort, setSort, query, replies } = useCommentItem(
+    comment,
+    article_id,
+    anchor_id,
+    placement,
+  )
   const stub =
     comment.status === 'deleted'
       ? t('comment.deleted')
@@ -60,16 +56,6 @@ export function CommentItem({
   )
   const reply_count = comment.reply_count ?? comment.replies.length
   const has_replies = reply_count > 0
-  const query = useReplies(article_id, comment.id, sort, is_expanded && placement.root_id === null)
-  const loaded = query.data?.pages.flatMap((page) => page.comments) ?? []
-  const pinned = comment.replies.filter(
-    (reply) => reply.id === anchor_id && !loaded.some((item) => item.id === reply.id),
-  )
-  const replies = article_id ? [...pinned, ...loaded] : sortComments(comment.replies, sort)
-  useEffect(() => {
-    if (is_expanded && anchor_id)
-      document.getElementById(`comment-${anchor_id}`)?.scrollIntoView({ block: 'center' })
-  }, [is_expanded, anchor_id, query.data])
   const replies_id = `replies-${comment.id}`
   return (
     <article
@@ -98,7 +84,7 @@ export function CommentItem({
         </div>
       </div>
       <p
-        className={`mt-3 whitespace-pre-wrap break-words text-[15px] leading-6 ${stub ? 'text-muted' : 'text-foreground'}`}
+        className={body_class({ stub: Boolean(stub) })}
       >
         {stub ?? comment.body}
       </p>
@@ -141,7 +127,7 @@ export function CommentItem({
               name="down"
               style="line"
               size={16}
-              className={is_expanded ? 'rotate-180' : ''}
+              className={chevron_class({ is_expanded })}
             />
           </Link>
         ) : null}

@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useParams } from 'react-router'
 import { useTopic } from '@/entities/topic'
 import { ApiError } from '@/shared/api'
@@ -9,7 +8,7 @@ import { ImageUploadButton } from '@/features/upload-media'
 import { FollowButton } from '@/features/follow'
 import { BaseIcon, EmptyState, ErrorState, IdentityHeader, Tabs } from '@/shared/ui'
 import { ArticleFeed } from '@/widgets/feed'
-import { useShellStore } from '@/widgets/shell'
+import { useShellPage } from '@/widgets/shell'
 import { TopicHeader } from '@/widgets/topic-header'
 
 export default function TopicPage() {
@@ -18,13 +17,7 @@ export default function TopicPage() {
   const topic = useTopic(slug)
   const { is_superadmin } = useViewer()
   const { update } = useManageTopics()
-  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
-  const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
-
-  useEffect(() => {
-    setHeaderCenter({ kind: 'empty' })
-    setArticleTopicId(null)
-  }, [setArticleTopicId, setHeaderCenter])
+  useShellPage({ should_clear_topic: true })
 
   if (topic.isPending) return <IdentityHeader.Skeleton />
   if (topic.isError || !topic.data) {

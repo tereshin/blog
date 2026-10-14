@@ -6,6 +6,7 @@ import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
+import { composeModules } from '../../src/app.ts'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
@@ -45,7 +46,8 @@ describe('discussion: просмотренное в ленте', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = guest
     })
-    await app.register(seenRoutes, { database })
+    const controllers = composeModules({ db: database.db })
+    await app.register(seenRoutes, { controller: controllers.seen })
   }, 120_000)
 
   afterAll(async () => {

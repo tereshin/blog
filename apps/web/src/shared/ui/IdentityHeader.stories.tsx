@@ -1,15 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
 import { IdentityHeader } from './IdentityHeader.tsx'
 import { Tabs } from './Tabs.tsx'
 
-const meta = { title: 'shared/ui/IdentityHeader', component: IdentityHeader } satisfies Meta<
-  typeof IdentityHeader
->
-export default meta
-type Story = StoryObj
+const meta = preview.meta({ title: 'shared/ui/IdentityHeader', component: IdentityHeader })
 
-export const Default: Story = {
+export const Default = meta.story({
   render: () => (
     <div className="max-w-2xl">
       <Tabs variant="secondary" defaultSelectedKey="posts">
@@ -36,9 +32,9 @@ export const Default: Story = {
       </Tabs>
     </div>
   ),
-}
-export const Loading: Story = { render: () => <IdentityHeader.Skeleton /> }
-export const CoverAndAvatar: Story = {
+})
+export const Loading = meta.story({ render: () => <IdentityHeader.Skeleton /> })
+export const CoverAndAvatar = meta.story({
   render: () => (
     <IdentityHeader>
       <IdentityHeader.Cover url="/badges/one_year.svg" action={<Button>Изменить обложку</Button>} />
@@ -50,4 +46,4 @@ export const CoverAndAvatar: Story = {
       </IdentityHeader.Content>
     </IdentityHeader>
   ),
-}
+})

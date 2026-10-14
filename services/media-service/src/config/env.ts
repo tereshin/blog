@@ -1,7 +1,7 @@
 import { baseEnvSchema, defineEnv, rejectPlaceholders } from '@blog/config'
 import { z } from 'zod'
 
-const envSchema = baseEnvSchema.extend({
+const EnvSchema = baseEnvSchema.extend({
   NATS_URL: z.string().min(1).default('nats://localhost:4222'),
   HTTP_PORT: z.coerce.number().int().positive().default(3006),
   DATABASE_URL: z.string().min(1),
@@ -16,23 +16,23 @@ const envSchema = baseEnvSchema.extend({
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
 })
 
-export type Env = z.infer<typeof envSchema>
+export type Env = z.infer<typeof EnvSchema>
 
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
-  const env = defineEnv(envSchema, source)
+  const env = defineEnv(EnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL', 'S3_SECRET_KEY', 'S3_ACCESS_KEY'])
   return env
 }
 
-const migrateEnvSchema = baseEnvSchema.extend({ DATABASE_URL: z.string().min(1) })
+const MigrateEnvSchema = baseEnvSchema.extend({ DATABASE_URL: z.string().min(1) })
 
-export function loadMigrateEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof migrateEnvSchema> {
-  const env = defineEnv(migrateEnvSchema, source)
+export function loadMigrateEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof MigrateEnvSchema> {
+  const env = defineEnv(MigrateEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
 
-const seedEnvSchema = baseEnvSchema.extend({
+const SeedEnvSchema = baseEnvSchema.extend({
   DATABASE_URL: z.string().min(1),
   S3_ENDPOINT: z.url(),
   S3_BUCKET: z.string().min(1),
@@ -43,11 +43,16 @@ const seedEnvSchema = baseEnvSchema.extend({
   SUPERADMIN_EMAIL: z.email(),
 })
 
-export type SeedEnv = z.infer<typeof seedEnvSchema>
+export type SeedEnv = z.infer<typeof SeedEnvSchema>
+
+/** Первая проверка seed: только `APP_ENV`, чтобы в prod задача завершилась до чтения остального окружения. */
+export function loadSeedAppEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof baseEnvSchema> {
+  return defineEnv(baseEnvSchema, source)
+}
 
 /** Одноразовая задача seed: база, MinIO и те же публичные адреса, что у статей. */
 export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
-  const env = defineEnv(seedEnvSchema, source)
+  const env = defineEnv(SeedEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL', 'S3_SECRET_KEY', 'S3_ACCESS_KEY'])
   return env
 }

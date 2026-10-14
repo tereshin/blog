@@ -5,7 +5,7 @@ import { createServiceMetrics, startQueueMetrics, startTelemetry } from '@blog/t
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
-import { startSettingsCopyConsumer } from './modules/settings-copy/index.ts'
+import { SettingsCopyConsumer } from './modules/settings-copy/index.ts'
 
 const SERVICE = 'identity-service'
 
@@ -15,7 +15,7 @@ async function main(): Promise<void> {
   const telemetry = startTelemetry({ service: SERVICE, otlp_endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT })
   const metrics = createServiceMetrics(SERVICE)
   setConsumerMetrics(metrics)
-  const queues = startQueueMetrics(metrics, sampleQueueDepth)
+  const queues = startQueueMetrics(metrics, sampleQueueDepth, (error) => logger.debug({ err: error }, 'опрос очередей брокера не удался'))
 
   const database = openDatabase(env.DATABASE_URL)
   const broker = await connectBroker({ url: env.NATS_URL, name: SERVICE })
@@ -23,7 +23,7 @@ async function main(): Promise<void> {
 
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
   relay.start()
-  const settings_copy = await startSettingsCopyConsumer({ db: database.db, broker, logger })
+  const settings_copy = await new SettingsCopyConsumer({ db: database.db, broker, logger }).start()
 
   registerShutdown({
     app,

@@ -178,7 +178,7 @@ test('быстрая реакция и заполненная закладка �
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'member'))
   await page.goto('/')
   const card = page.getByRole('main').getByRole('article').first()
-  const quick = card.getByRole('button', { name: 'Смех', exact: true })
+  const quick = card.getByRole('button', { name: 'Сердце', exact: true })
   await expect(quick).toBeVisible()
   const sizes = await quick.evaluate((element) => {
     const css = getComputedStyle(element)
@@ -186,7 +186,7 @@ test('быстрая реакция и заполненная закладка �
   })
   expect(sizes).toEqual({ height: '30px', left: '8px', right: '8px' })
   await quick.click()
-  await expect(card.getByRole('button', { name: 'Смех 1' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(card.getByRole('button', { name: 'Сердце 1' })).toHaveAttribute('aria-pressed', 'true')
   const bookmark = card.getByRole('button', { name: 'В закладки', exact: true })
   const outline = await bookmark.locator('svg path').getAttribute('d')
   expect(outline).toContain('M7 4')

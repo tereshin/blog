@@ -1,2 +1,5 @@
 export { reportRoutes } from './report.routes.ts'
 export type { ReportRoutesOptions } from './report.routes.ts'
+export { ReportController } from './report.controller.ts'
+export { ReportRepository } from './report.repository.ts'
+export { ReportService } from './report.service.ts'

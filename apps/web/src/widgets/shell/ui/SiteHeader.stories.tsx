@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { expect, within } from 'storybook/test'
-import { StoryProviders } from '@/shared/api/mocks'
+import { StoryProviders } from '@/shared/lib'
 import { LeftNav } from './LeftNav.tsx'
 import { RightRail } from './RightRail.tsx'
 import { Shell } from './Shell.tsx'
@@ -14,7 +14,7 @@ function Notifications() {
   )
 }
 
-const meta = {
+const meta = preview.meta({
   title: 'widgets/shell/SiteHeader',
   component: SiteHeader,
   decorators: [
@@ -26,12 +26,9 @@ const meta = {
       </StoryProviders>
     ),
   ],
-} satisfies Meta<typeof SiteHeader>
-export default meta
-type Story = StoryObj<typeof meta>
-
+})
 /** Широкая шапка: поиск стоит сразу перед уведомлениями, меню спрятано от 768px. */
-export const Wide: Story = {
+export const Wide = meta.story({
   args: { notifications: <Notifications /> },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -42,10 +39,10 @@ export const Wide: Story = {
     expect(menu?.className ?? '').toContain('min-[768px]:hidden')
     expect(menu?.className ?? '').not.toContain('1200')
   },
-}
+})
 
 /** Три зоны широкой полосы: шапка, левый список без карточки, правая стопка с «Популярные комментарии». */
-export const WideLayout: Story = {
+export const WideLayout = meta.story({
   args: { notifications: <Notifications /> },
   render: () => (
     <StoryProviders>
@@ -70,6 +67,6 @@ export const WideLayout: Story = {
     await canvas.findByText('Популярные комментарии')
     expect(canvasElement.textContent).not.toContain('Подписка Plus')
   },
-}
+})
 
-export const Expanded: Story = { args: { content_width: 848 } }
+export const Expanded = meta.story({ args: { content_width: 848 } })

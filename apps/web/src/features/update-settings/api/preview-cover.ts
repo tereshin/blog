@@ -7,7 +7,7 @@ export async function previewCover(
   variant: SocialCoverVariant,
 ): Promise<string> {
   const result = await http.post(
-    '/v1/media/social-cover-preview',
+    '/v1/media/social-cover-previews',
     socialCoverPreviewResponseSchema,
     { body: { input, variant } },
   )

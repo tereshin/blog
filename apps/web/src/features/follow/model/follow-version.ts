@@ -1,17 +1,38 @@
 import type { QueryClient } from '@tanstack/react-query'
 
-// A request started before a mutation must not replace its optimistic or confirmed state.
-const FOLLOW_VERSIONS = new WeakMap<QueryClient, Map<string, number>>()
+type FollowRead = { version: number; readers: number }
+// Only in-flight reads need mutation versions. Entries are released in queryFn's finally.
+const READS_BY_CLIENT = new WeakMap<QueryClient, Map<string, FollowRead>>()
 
-export function followVersion(client: QueryClient, type: string, id: string): number {
-  return FOLLOW_VERSIONS.get(client)?.get(`${type}:${id}`) ?? 0
+export function beginFollowRead(client: QueryClient, type: string, ids: string[]) {
+  let reads = READS_BY_CLIENT.get(client)
+  if (!reads) {
+    reads = new Map()
+    READS_BY_CLIENT.set(client, reads)
+  }
+  const records = ids.map((id) => {
+    const key = `${type}:${id}`
+    const state = reads.get(key) ?? { version: 0, readers: 0 }
+    state.readers++
+    reads.set(key, state)
+    return { key, state, version: state.version }
+  })
+  return {
+    isCurrent: (index: number) => {
+      const record = records[index]
+      return record !== undefined && record.state.version === record.version
+    },
+    release: () => {
+      for (const { key, state } of records) {
+        state.readers--
+        if (state.readers === 0) reads.delete(key)
+      }
+      if (reads.size === 0) READS_BY_CLIENT.delete(client)
+    },
+  }
 }
 
 export function advanceFollowVersion(client: QueryClient, type: string, id: string): void {
-  let values = FOLLOW_VERSIONS.get(client)
-  if (!values) {
-    values = new Map()
-    FOLLOW_VERSIONS.set(client, values)
-  }
-  values.set(`${type}:${id}`, followVersion(client, type, id) + 1)
+  const state = READS_BY_CLIENT.get(client)?.get(`${type}:${id}`)
+  if (state) state.version++
 }

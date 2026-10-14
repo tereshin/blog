@@ -7,7 +7,8 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles_copy, outbox, views } from '../../src/infra/db/schema.ts'
-import { createViewRepository, createViewService } from '../../src/modules/view/index.ts'
+import { ArticleSnapshotRepository, ArticleSnapshotService } from '../../src/modules/article-snapshot/index.ts'
+import { ViewEvents, ViewRepository, ViewService } from '../../src/modules/view/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const MEMBER = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a91'
@@ -44,7 +45,7 @@ describe('discussion: просмотры (PostgreSQL в контейнере)', 
   })
 
   it('окно 30 минут, автор не считается, два одновременных открытия — один просмотр', async () => {
-    const service = createViewService(createViewRepository(database.db))
+    const service = new ViewService(new ViewRepository(database.db), new ArticleSnapshotService(new ArticleSnapshotRepository()), new ViewEvents())
     const member = viewer({ user_id: MEMBER, role: 'member', viewer_key: `user:${MEMBER}` })
     const guest = viewer({ role: 'guest', can_publish: false, viewer_key: 'guest:device' })
 

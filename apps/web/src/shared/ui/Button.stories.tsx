@@ -1,13 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
 
-const meta = { title: 'shared/ui/Button', component: Button, args: { children: 'Написать' } } satisfies Meta<typeof Button>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Primary: Story = { args: { variant: 'primary', shape: 'pill' } }
-export const Secondary: Story = { args: { variant: 'secondary' } }
-export const Ghost: Story = { args: { variant: 'ghost' } }
-export const Danger: Story = { args: { variant: 'danger', children: 'Удалить' } }
-export const Rounded: Story = { args: { variant: 'primary', shape: 'rounded' } }
-export const Disabled: Story = { args: { variant: 'primary', isDisabled: true } }
+const meta = preview.meta({ title: 'shared/ui/Button', component: Button, args: { children: 'Написать' } })
+export const Primary = meta.story({ args: { variant: 'primary', shape: 'pill' } })
+export const Secondary = meta.story({ args: { variant: 'secondary' } })
+export const Ghost = meta.story({ args: { variant: 'ghost' } })
+export const Danger = meta.story({ args: { variant: 'danger', children: 'Удалить' } })
+export const Rounded = meta.story({ args: { variant: 'primary', shape: 'rounded' } })
+export const Disabled = meta.story({ args: { variant: 'primary', isDisabled: true } })

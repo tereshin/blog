@@ -11,7 +11,10 @@ export type ShutdownOptions = {
   grace_ms?: number
 }
 
-/** Graceful shutdown: readiness → false, дождаться запросов ≤ 10 с, остановить консьюмеры, закрыть пул. */
+/**
+ * Graceful shutdown: readiness → false, дождаться запросов ≤ 10 с, остановить консьюмеры, закрыть пул.
+ * close-with-grace подписывается и на `uncaughtException`/`unhandledRejection`: ошибка попадает в лог, процесс выходит с кодом 1.
+ */
 export function registerShutdown(options: ShutdownOptions): void {
   closeWithGrace({ delay: options.grace_ms ?? 10_000, logger: options.logger }, async ({ signal, err }) => {
     if (err) options.logger.error({ err }, 'аварийная остановка')

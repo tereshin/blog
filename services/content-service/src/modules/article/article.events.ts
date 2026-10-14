@@ -1,7 +1,7 @@
 import { ArticleDeletedV1, ArticleHiddenV1, ArticlePublishedV1, ArticleRestoredV1, ArticleUpdatedV1 } from '@blog/contracts'
 import { appendToOutbox, newEventId } from '@blog/broker'
 import type { Database } from '@blog/broker'
-import type { StoredArticle } from './article.types.ts'
+import type { ArticleEventName, StoredArticle } from './article.types.ts'
 
 const SCHEMAS = {
   'content.article.published': ArticlePublishedV1,
@@ -9,9 +9,7 @@ const SCHEMAS = {
   'content.article.hidden': ArticleHiddenV1,
   'content.article.restored': ArticleRestoredV1,
   'content.article.deleted': ArticleDeletedV1,
-} as const
-
-type ArticleEventName = keyof typeof SCHEMAS
+} as const satisfies Record<ArticleEventName, unknown>
 
 /** Снимок статьи в outbox в той же транзакции, что и запись. Брокер получит его отдельно. */
 export async function appendArticleEvent(

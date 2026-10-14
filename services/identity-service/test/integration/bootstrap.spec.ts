@@ -7,7 +7,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { auth_identities, outbox, users } from '../../src/infra/db/schema.ts'
-import { createAuthRepository } from '../../src/modules/auth/index.ts'
+import { AuthRepository } from '../../src/modules/auth/index.ts'
 
 const run = promisify(execFile)
 const SUPERADMIN_EMAIL = 'superadmin@blog.test'
@@ -16,7 +16,7 @@ describe('identity: bootstrap', () => {
   let postgres: TestPostgres
   let database: DbHandle
 
-  const provision = () => createAuthRepository(database.db).provisionSuperadmin({ email: SUPERADMIN_EMAIL, correlation_id: 'bootstrap' })
+  const provision = () => new AuthRepository(database.db).provisionSuperadmin({ email: SUPERADMIN_EMAIL, correlation_id: 'bootstrap' })
 
   beforeAll(async () => {
     postgres = await startPostgres()

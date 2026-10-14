@@ -1,11 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
-import { ToastProvider, useToast } from './Toast.tsx'
+import { ToastProvider, useToast } from './ToastProvider.tsx'
 
-const meta = { title: 'shared/ui/Toast', component: ToastProvider } satisfies Meta<typeof ToastProvider>
-export default meta
-type Story = StoryObj<typeof meta>
-
+const meta = preview.meta({ title: 'shared/ui/Toast', component: ToastProvider })
 function Demo() {
   const toast = useToast()
   return (
@@ -18,4 +15,4 @@ function Demo() {
   )
 }
 
-export const Default: Story = { render: () => <Demo /> }
+export const Default = meta.story({ render: () => <Demo /> })

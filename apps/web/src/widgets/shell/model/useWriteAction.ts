@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router'
 import { useViewer } from '@/entities/session'
-import { useLoginDialog } from '@/features/login'
+import { useLoginDialogStore } from '@/features/login'
 import { useT } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
 import { useShellStore } from './useShellStore.ts'
@@ -9,7 +9,7 @@ import { useShellStore } from './useShellStore.ts'
 export function useWriteAction(onWrite?: () => void): () => void {
   const { t } = useT()
   const { viewer } = useViewer()
-  const openLogin = useLoginDialog((state) => state.open)
+  const openLogin = useLoginDialogStore((state) => state.open)
   const toast = useToast()
   const navigate = useNavigate()
   const location = useLocation()

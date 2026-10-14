@@ -35,7 +35,7 @@ export function SettingsFaviconFields({
           <p className="font-medium">{t(keys[variant])}</p>
           <div className="flex flex-wrap items-center gap-3">
             {icons[variant] && variant !== 'manifest' ? (
-              <img
+              <img loading="lazy"
                 src={icons[variant]}
                 alt={t(keys[variant])}
                 className="size-12 rounded-lg object-contain"

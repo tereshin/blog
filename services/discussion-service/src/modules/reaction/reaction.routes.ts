@@ -1,13 +1,9 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { DbHandle } from '../../infra/db/client.ts'
-import { createReactionController } from './reaction.controller.ts'
-import { createReactionRepository } from './reaction.repository.ts'
-import { createReactionService } from './reaction.service.ts'
+import type { ReactionController } from './reaction.controller.ts'
 
-export type ReactionRoutesOptions = { database: DbHandle }
+export type ReactionRoutesOptions = { controller: ReactionController }
 
 /** `POST /v1/reactions` — одна реакция участника на статью или комментарий. */
-export const reactionRoutes: FastifyPluginAsync<ReactionRoutesOptions> = async (app, options) => {
-  const controller = createReactionController(createReactionService(createReactionRepository(options.database.db)))
+export const reactionRoutes: FastifyPluginAsync<ReactionRoutesOptions> = async (app, { controller }) => {
   app.post('/v1/reactions', (request, reply) => controller.create(request, reply))
 }

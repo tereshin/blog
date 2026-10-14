@@ -1,34 +1,22 @@
-import { createSettingsRepository, createSettingsService } from '../settings/index.ts'
-import { createBadgeRepository, createBadgeService } from '../badge/index.ts'
-import { createCountersService } from './counters.service.ts'
+import { BadgeRepository, BadgeService } from '../badge/index.ts'
+import { CountersService } from './counters.service.ts'
 import { createIdempotentConsumer } from '@blog/broker'
 import type { BrokerClient, Database, EventHandler, RunningConsumer } from '@blog/broker'
 import { ArticleCountersUpdatedV1, ReputationUpdatedV1 } from '@blog/contracts'
 import type { Logger } from '@blog/logger'
-import { countersRepository } from './counters.repository.ts'
+import { CountersRepository } from './counters.repository.ts'
 
-type CountersRepository = typeof countersRepository
+export class CountersHandler {
+  constructor(private readonly repository: CountersRepository = new CountersRepository()) {}
 
-/** Записывает счётчики из события целиком. Повтор того же события оставляет те же числа. */
-export function createCountersHandler(
-  repository: CountersRepository = countersRepository,
-): EventHandler {
-  return async (tx, event) => {
-    const settings = createSettingsService(createSettingsRepository(tx), { media_url: '' })
-    const badges = createBadgeService(createBadgeRepository(tx, settings.getBadgeDefinitions))
-    const service = createCountersService(
-      {
-        applyArticle: (payload) => repository.applyArticle(tx, payload),
-        applyReputation: (payload) => repository.applyReputation(tx, payload),
-      },
-      badges,
-    )
+  handle: EventHandler = async (tx, event) => {
+    const service = new CountersService(this.repository, new BadgeService(new BadgeRepository()))
     switch (event.name) {
       case 'discussion.article_counters.updated':
-        await service.applyArticle(ArticleCountersUpdatedV1.parse(event))
+        await service.applyArticle(tx, ArticleCountersUpdatedV1.parse(event))
         return
       case 'discussion.reputation.updated':
-        await service.applyReputation(ReputationUpdatedV1.parse(event))
+        await service.applyReputation(tx, ReputationUpdatedV1.parse(event))
         return
       default:
         return
@@ -41,7 +29,7 @@ export type CountersConsumerDeps = { db: Database; broker: BrokerClient; logger:
 export async function startCountersConsumers(
   deps: CountersConsumerDeps,
 ): Promise<RunningConsumer[]> {
-  const handler = createCountersHandler()
+  const handler = new CountersHandler().handle
   const articles = await createIdempotentConsumer({
     ...deps,
     durable: 'content-counters-articles',

@@ -1,34 +1,10 @@
-import { createSettingsRepository, createSettingsService } from '../settings/index.ts'
-import { createBadgeRepository, createBadgeService } from '../badge/index.ts'
 import type { FastifyPluginAsync } from 'fastify'
-import type { DbHandle } from '../../infra/db/client.ts'
-import { createArticleController } from './article.controller.ts'
-import { createArticleRepository } from './article.repository.ts'
-import { createArticleService } from './article.service.ts'
-import type { FileOwner } from './article.sanitizer.ts'
+import type { ArticleController } from './article.controller.ts'
 
-export type ArticleRoutesOptions = {
-  database: DbHandle
-  media_urls: readonly string[]
-  lookupFile: (url: string) => Promise<FileOwner | null>
-}
+export type ArticleRoutesOptions = { controller: ArticleController }
 
 /** Чтение статьи и запись черновика: создание, правка, публикация, удаление. */
-export const articleRoutes: FastifyPluginAsync<ArticleRoutesOptions> = async (app, options) => {
-  const controller = createArticleController(
-    createArticleService(createArticleRepository(options.database.db), {
-      publishTransaction: (operation) =>
-        options.database.db.transaction((tx) => {
-          const settings = createSettingsService(createSettingsRepository(tx), {
-            media_url: options.media_urls[0] ?? '',
-          })
-          const badges = createBadgeService(createBadgeRepository(tx, settings.getBadgeDefinitions))
-          return operation(createArticleRepository(tx), badges)
-        }),
-      media_urls: options.media_urls,
-      lookupFile: options.lookupFile,
-    }),
-  )
+export const articleRoutes: FastifyPluginAsync<ArticleRoutesOptions> = async (app, { controller }) => {
   app.post('/v1/articles', (request, reply) => controller.create(request, reply))
   app.get('/v1/me/articles', (request, reply) => controller.myDrafts(request, reply))
   app.get('/v1/articles/:id/draft', (request, reply) => controller.draft(request, reply))

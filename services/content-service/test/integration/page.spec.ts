@@ -12,6 +12,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { outbox, pages } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { pageRoutes } from '../../src/modules/page/index.ts'
 import { seoRoutes } from '../../src/modules/seo/index.ts'
 const A = '11111111-1111-4111-8111-111111111111'
@@ -75,15 +76,19 @@ describe('simple pages real PostgreSQL', () => {
       req.viewer =
         viewers[String(req.headers['x-test-viewer'])] ?? viewers.guest ?? viewer(A, 'guest')
     })
-    await app.register(pageRoutes, {
+    const modules = composeContent({
       database,
+      media_url: 'https://media.test/files',
+      public_origin: 'https://blog.test',
+      app_env: 'prod',
       media_urls: ['https://media.test/files'],
       lookupFile: async (url) =>
         url.startsWith('https://media.test/files/')
           ? { uploader_id: url.includes('file-b') ? B : A }
           : null,
     })
-    await app.register(seoRoutes, { database, app_env: 'prod', public_origin: 'https://blog.test' })
+    await app.register(pageRoutes, { controller: modules.page })
+    await app.register(seoRoutes, { controller: modules.seo })
   }, 120_000)
   afterAll(async () => {
     await app?.close()

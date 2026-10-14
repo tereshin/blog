@@ -1,4 +1,4 @@
-import { PopularCommentItem, usePopularComments } from '@/entities/comment'
+import { CommentThread, usePopularComments } from '@/entities/comment'
 import { useT } from '@/shared/i18n'
 import { Card, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
 
@@ -6,8 +6,8 @@ function RailSkeleton() {
   const { t } = useT()
   return (
     <div role="status" aria-label={t('common.loading')} className="flex flex-col gap-5">
-      {[0, 1].map((index) => (
-        <div key={index} className="flex flex-col gap-3">
+      {['lead', 'next'].map((slot) => (
+        <div key={slot} className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <Skeleton shape="circle" className="size-9 shrink-0" />
             <div className="flex flex-1 flex-col gap-2">
@@ -54,7 +54,7 @@ export function RightRail() {
           ) : (
             <ul className="flex flex-col gap-5">
               {items.map((comment) => (
-                <PopularCommentItem key={comment.id} comment={comment} />
+                <CommentThread.Popular key={comment.id} comment={comment} />
               ))}
             </ul>
           )}

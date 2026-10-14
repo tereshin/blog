@@ -1,5 +1,6 @@
 export { promotionRoutes } from './promotion.routes.ts'
 export type { PromotionRoutesOptions } from './promotion.routes.ts'
 export { PROMOTION_DURATION_MS } from './promotion.types.ts'
-export { createPromotionService } from './promotion.service.ts'
-export type { PromotionService } from './promotion.service.ts'
+export { PromotionController } from './promotion.controller.ts'
+export { PromotionRepository } from './promotion.repository.ts'
+export { PromotionService } from './promotion.service.ts'

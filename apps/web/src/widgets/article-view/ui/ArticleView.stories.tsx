@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { MemoryRouter } from 'react-router'
 import type { ArticleModel } from '@/entities/article'
 import { ArticleSkeleton } from './ArticleSkeleton.tsx'
@@ -55,14 +55,9 @@ function Frame({ own }: { own: boolean }) {
   )
 }
 
-const meta = { title: 'widgets/article-view/ArticleView', component: Frame } satisfies Meta<
-  typeof Frame
->
-export default meta
-type Story = StoryObj<typeof Frame>
-
-export const Own: Story = { args: { own: true } }
-export const Others: Story = { args: { own: false } }
-export const Unavailable: Story = { render: () => <ArticleUnavailable status="unavailable" /> }
-export const MembersOnly: Story = { render: () => <ArticleUnavailable status="members_only" /> }
-export const Loading: Story = { render: () => <ArticleSkeleton /> }
+const meta = preview.meta({ title: 'widgets/article-view/ArticleView', component: Frame })
+export const Own = meta.story({ args: { own: true } })
+export const Others = meta.story({ args: { own: false } })
+export const Unavailable = meta.story({ render: () => <ArticleUnavailable status="unavailable" /> })
+export const MembersOnly = meta.story({ render: () => <ArticleUnavailable status="members_only" /> })
+export const Loading = meta.story({ render: () => <ArticleSkeleton /> })

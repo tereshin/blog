@@ -1,18 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
-import { z } from 'zod'
-import { http } from '@/shared/api'
-
-const seenSchema = z.object({
-  feed_key: z.string(),
-  article_id: z.string(),
-})
-const seenListSchema = z.object({ article_ids: z.array(z.string()) })
-
-export const seenKeys = {
-  all: ['feed-seen'] as const,
-  list: (feed_key: string) => [...seenKeys.all, feed_key] as const,
-}
+import { getSeenArticles, markSeenArticle, seenKeys } from '../api/feed-seen.ts'
 
 function dismissedKey(feed_key: string): string {
   return `bannerDismissed:${feed_key}`
@@ -29,14 +17,9 @@ function visitIds(feed_key: string): Set<string> {
   return created
 }
 
-/** Запоминает просмотр, не пряча карточку в этом же заходе: полоса появится при следующем открытии ленты. */
-export async function markSeenArticle(feed_key: string, article_id: string): Promise<void> {
-  await http.put('/v1/feed-seen', seenSchema, { body: { feed_key, article_id } })
-}
-
 /** Просмотренные карточки режима и полоса «Скрыто N». */
 export function useSeenArticles(feed_key: string, auto_reveal_ids: readonly string[] = []) {
-  const queryClient = useQueryClient()
+  const query_client = useQueryClient()
   const [banner_key, setBannerKey] = useState(feed_key)
   const [reveal_mode, setRevealMode] = useState<'hidden' | 'manual' | 'automatic'>('hidden')
   const [is_dismissed, setDismissed] = useState(() => sessionStorage.getItem(dismissedKey(feed_key)) === '1')
@@ -47,7 +30,7 @@ export function useSeenArticles(feed_key: string, auto_reveal_ids: readonly stri
   }
   const query = useQuery({
     queryKey: seenKeys.list(feed_key),
-    queryFn: ({ signal }) => http.get('/v1/feed-seen', seenListSchema, { query: { feed_key }, signal }),
+    queryFn: ({ signal }) => getSeenArticles(feed_key, signal),
   })
   const server_ids = query.data?.article_ids ?? []
   const seen_ids = new Set(server_ids.filter((id) => !visitIds(feed_key).has(id)))
@@ -67,13 +50,13 @@ export function useSeenArticles(feed_key: string, auto_reveal_ids: readonly stri
   const mark = useCallback(
     (article_id: string) => {
       visitIds(feed_key).add(article_id)
-      queryClient.setQueryData(seenKeys.list(feed_key), (current: { article_ids: string[] } | undefined) => {
+      query_client.setQueryData(seenKeys.list(feed_key), (current: { article_ids: string[] } | undefined) => {
         const article_ids = current?.article_ids ?? []
         return article_ids.includes(article_id) ? current : { article_ids: [...article_ids, article_id] }
       })
       void markSeenArticle(feed_key, article_id)
     },
-    [feed_key, queryClient],
+    [feed_key, query_client],
   )
 
   return {

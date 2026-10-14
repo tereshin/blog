@@ -13,7 +13,7 @@ export function ProfileStatus({ profile }: { profile: Profile }) {
 
   if (icons.length === 0) return null
   if (!profile.is_own) return selected ? (
-    <img src={selected.image_url} alt={selected.label} title={selected.label} width={28} height={28} className="size-7 shrink-0 object-contain" />
+    <img loading="lazy" src={selected.image_url} alt={selected.label} title={selected.label} width={28} height={28} className="size-7 shrink-0 object-contain" />
   ) : null
 
   return (
@@ -21,7 +21,7 @@ export function ProfileStatus({ profile }: { profile: Profile }) {
       <Menu>
         <Button variant="ghost" size="sm" isIconOnly isDisabled={update.isPending} aria-label={t('profile.status_choose')} className="size-7 min-h-7 min-w-7 p-0 top-[2px]">
           {selected ? (
-            <img src={selected.image_url} alt={selected.label} width={22} height={22} className="size-5 object-contain" />
+            <img loading="lazy" src={selected.image_url} alt={selected.label} width={22} height={22} className="size-5 object-contain" />
           ) : <BaseIcon name="add" style="fill" size={22} />}
         </Button>
         <Menu.Content
@@ -39,7 +39,7 @@ export function ProfileStatus({ profile }: { profile: Profile }) {
           {icons.map((icon) => (
             <Menu.Item key={icon.id} id={icon.id} textValue={icon.label}>
               <span className="flex items-center gap-2">
-                <img src={icon.image_url} alt="" width={24} height={24} className="size-6 object-contain" />
+                <img loading="lazy" src={icon.image_url} alt="" width={24} height={24} className="size-6 object-contain" />
                 {icon.label}
               </span>
             </Menu.Item>

@@ -1,4 +1,5 @@
 export { topicRoutes } from './topic.routes.ts'
 export type { TopicRoutesOptions } from './topic.routes.ts'
-export { createTopicService } from './topic.service.ts'
-export type { TopicService } from './topic.service.ts'
+export { TopicController } from './topic.controller.ts'
+export { TopicRepository } from './topic.repository.ts'
+export { TopicService } from './topic.service.ts'

@@ -13,6 +13,7 @@ declare module 'fastify' {
     request_id: string
     correlation_id: string
     log_ctx: Logger
+    idempotency_key: string | null
   }
 }
 

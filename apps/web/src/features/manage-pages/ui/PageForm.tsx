@@ -1,13 +1,11 @@
 import type { EditorPanelSlots } from '@/shared/ui'
-import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link, useBlocker, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import type { AdminPage } from '@/entities/page'
-import { useViewer, memberMutationBlock } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { Button, FormTextField } from '@/shared/ui'
 import { PageDialogs } from './PageDialogs.tsx'
-import { usePageForm } from '../model/usePageForm.ts'
+import { usePageFormScreen } from '../model/usePageFormScreen.ts'
 import type { PageSnapshot } from '../model/usePageForm.ts'
 type Props = {
   renderPanel: (slots: EditorPanelSlots) => ReactNode
@@ -28,35 +26,17 @@ export function PageForm({
   renderPanel,
 }: Props) {
   const { t } = useT()
-  const form = usePageForm({ initial, read, acknowledge })
-  const { viewer, is_superadmin } = useViewer()
-  const navigate = useNavigate()
-  const [confirm_delete, setConfirmDelete] = useState(false)
-  const skip_leave = useRef(false)
-  const dirty = is_dirty || form.metadata_dirty
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      !skip_leave.current && dirty && currentLocation.pathname !== nextLocation.pathname,
-  )
-  const can_write = is_superadmin && memberMutationBlock(viewer) === null
-  const mutation_disabled = !can_write || !is_ready || form.is_pending
-  const disabled = mutation_disabled || form.can_retry
-  useEffect(() => {
-    if (form.is_deleted) {
-      skip_leave.current = true
-      navigate('/admin/pages')
-    }
-  }, [form.is_deleted, navigate])
-  useEffect(() => {
-    if (!dirty) return
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
-    window.addEventListener('beforeunload', warn)
-    return () => window.removeEventListener('beforeunload', warn)
-  }, [dirty])
-  async function remove() {
-    await form.submit('delete')
-    setConfirmDelete(false)
-  }
+  const {
+    form,
+    dirty,
+    blocker,
+    disabled,
+    mutation_disabled,
+    confirm_delete,
+    setConfirmDelete,
+    handleReload,
+    remove,
+  } = usePageFormScreen({ initial, read, acknowledge, is_dirty, is_ready })
   return (
     <>
       {renderPanel({
@@ -164,10 +144,7 @@ export function PageForm({
         onLeave={() => {
           if (blocker.state === 'blocked') blocker.proceed()
         }}
-        onReload={() => {
-          skip_leave.current = true
-          window.location.assign(`/admin/pages/${form.saved?.id}`)
-        }}
+        onReload={handleReload}
         disabled={disabled}
       />
     </>

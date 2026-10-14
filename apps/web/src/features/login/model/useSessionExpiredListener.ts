@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { sessionKeys } from '@/entities/session'
 import type { Session } from '@/entities/session'
 import { sessionEvents } from '@/shared/api'
-import { useLoginDialog } from './useLoginDialog.ts'
+import { useLoginDialogStore } from './useLoginDialogStore.ts'
 
 const GUEST: Session = { status: 'guest' }
 
@@ -13,7 +13,7 @@ const GUEST: Session = { status: 'guest' }
  */
 export function useSessionExpiredListener(): void {
   const query_client = useQueryClient()
-  const openLogin = useLoginDialog((state) => state.open)
+  const openLogin = useLoginDialogStore((state) => state.open)
 
   useEffect(() => {
     const stop_required = sessionEvents.on('login_required', () => openLogin('required'))

@@ -8,6 +8,6 @@ export type ArticleAccess = {
   author_id: string
 }
 
-export type AccessRepository = {
+export type AccessRepositoryPort = {
   findArticle: (article_id: string) => Promise<ArticleAccessFields | null>
 }

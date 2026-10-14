@@ -24,8 +24,8 @@ export { Skeleton } from './Skeleton.tsx'
 export { SvgIcon } from './SvgIcon.tsx'
 export type { SkeletonProps } from './Skeleton.tsx'
 export { Tabs } from './Tabs.tsx'
-export { ToastProvider, useToast } from './Toast.tsx'
-export type { ToastApi } from './Toast.tsx'
+export { ToastProvider, useToast } from './ToastProvider.tsx'
+export type { ToastApi } from './ToastProvider.tsx'
 export { Tooltip } from './Tooltip.tsx'
 export {
   AlertIcon,
@@ -57,6 +57,7 @@ export { FormTextField } from './FormTextField.tsx'
 export { FormTextArea } from './FormTextArea.tsx'
 
 export { BlockRenderer } from './BlockRenderer.tsx'
+export { VirtualList } from './VirtualList.tsx'
 
 export { PageCard } from './PageCard.tsx'
 export type { EditorPanelSlots } from './document-editor.ts'

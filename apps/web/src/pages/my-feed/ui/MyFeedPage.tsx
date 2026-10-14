@@ -1,25 +1,19 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router'
 import { useViewer } from '@/entities/session'
-import { useLoginDialog } from '@/features/login'
+import { useLoginDialogStore } from '@/features/login'
 import { useT } from '@/shared/i18n'
 import { Button, EmptyState, ErrorState, InboxIcon } from '@/shared/ui'
 import { ArticleFeed, useFeed } from '@/widgets/feed'
-import { useShellStore } from '@/widgets/shell'
+import { useShellPage } from '@/widgets/shell'
 
 export default function MyFeedPage() {
   const { t } = useT()
   const { viewer } = useViewer()
-  const openLogin = useLoginDialog((state) => state.open)
-  const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
-  const markFeedSeen = useShellStore((state) => state.markFeedSeen)
+  const openLogin = useLoginDialogStore((state) => state.open)
   const is_member = viewer.status === 'member'
   const feed = useFeed('mine', is_member)
 
-  useEffect(() => {
-    setHeaderCenter({ kind: 'empty' })
-    if (is_member) markFeedSeen('mine')
-  }, [is_member, markFeedSeen, setHeaderCenter])
+  useShellPage({ seen_feed: is_member ? 'mine' : null })
 
   if (viewer.status === 'guest') {
     return (

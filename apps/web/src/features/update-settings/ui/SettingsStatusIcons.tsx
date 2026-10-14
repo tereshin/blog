@@ -27,7 +27,7 @@ export function SettingsStatusIcons({
           key={icon.id}
           className="grid max-w-lg grid-cols-[32px_minmax(0,1fr)] items-end gap-4 border-b border-separator pb-6"
         >
-          <img
+          <img loading="lazy"
             src={icon.image_url}
             alt=""
             width={32}

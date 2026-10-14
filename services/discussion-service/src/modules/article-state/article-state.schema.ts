@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const ARTICLE_STATES_LIMIT = 50
 
-export const articleStatesQuerySchema = z.object({
+export const ArticleStatesQuerySchema = z.object({
   article_ids: z
     .string()
     .optional()

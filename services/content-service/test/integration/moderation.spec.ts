@@ -11,6 +11,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, profiles, reports, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { articleRoutes } from '../../src/modules/article/index.ts'
 import { feedRoutes } from '../../src/modules/feed/index.ts'
 import { moderationRoutes } from '../../src/modules/moderation/index.ts'
@@ -100,19 +101,18 @@ describe('content: модерация статей', () => {
       request.viewer =
         viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(moderationRoutes, { database })
-    await app.register(feedRoutes, { database })
-    await app.register(searchRoutes, { database })
-    await app.register(profileRoutes, {
+    const modules = composeContent({
       database,
       media_url: 'http://media.test',
       public_origin: 'http://blog.test',
-    })
-    await app.register(articleRoutes, {
-      database,
       media_urls: ['http://media.test'],
       lookupFile: async () => null,
     })
+    await app.register(moderationRoutes, { controller: modules.moderation })
+    await app.register(feedRoutes, { controller: modules.feed })
+    await app.register(searchRoutes, { controller: modules.search })
+    await app.register(profileRoutes, { controller: modules.profile })
+    await app.register(articleRoutes, { controller: modules.article })
   }, 120_000)
 
   afterAll(async () => {

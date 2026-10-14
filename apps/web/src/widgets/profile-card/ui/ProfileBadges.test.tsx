@@ -4,7 +4,7 @@ import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badg
 import type { BadgeDefinition } from '@blog/contracts'
 import { ProfileCard } from './ProfileCard.tsx'
 
-const settings = vi.hoisted(() => ({ profile_badges: [] as BadgeDefinition[] | null }))
+const settings = vi.hoisted(() => ({ profile_badges: [] as BadgeDefinition[] }))
 vi.mock('@/entities/settings', () => ({ useSettings: () => ({ data: settings }) }))
 afterEach(cleanup)
 
@@ -37,13 +37,9 @@ describe('profile badges from the configured catalog', () => {
     render(<ProfileCard.Badges badges={[]} />)
     expect(screen.queryByRole('list')).toBeNull()
   })
-  it('renders legacy awards with an older server, but respects an explicitly empty catalog', () => {
-    settings.profile_badges = null
-    const { rerender } = render(<ProfileCard.Badges badges={['first_post']} />)
-    expect(screen.getByRole('button', { name: 'Первая публикация' })).toBeVisible()
+  it('respects an explicitly empty catalog', () => {
     settings.profile_badges = []
-    rerender(<ProfileCard.Badges badges={['first_post']} />)
+    render(<ProfileCard.Badges badges={['first_post']} />)
     expect(screen.queryByRole('list')).toBeNull()
   })
-
 })

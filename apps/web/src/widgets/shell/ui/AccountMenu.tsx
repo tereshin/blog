@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router'
 import { useProfile } from '@/entities/profile'
 import { useViewer } from '@/entities/session'
 import { EditProfileDialog } from '@/features/edit-profile'
-import { useLoginDialog } from '@/features/login'
+import { useLoginDialogStore } from '@/features/login'
 import { LogoutMenuItem } from '@/features/logout'
 import { useT } from '@/shared/i18n'
 import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
@@ -14,7 +14,7 @@ import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
 export function AccountMenu({ trigger }: { trigger?: ReactNode }) {
   const { t } = useT()
   const { viewer, is_admin } = useViewer()
-  const openLogin = useLoginDialog((state) => state.open)
+  const openLogin = useLoginDialogStore((state) => state.open)
   const navigate = useNavigate()
   const [is_editing, setEditing] = useState(false)
   const address =

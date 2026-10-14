@@ -26,7 +26,7 @@ export function SettingsLogoFields({
                 data-theme={field === 'logo_url' ? 'light' : 'dark'}
                 className="flex size-20 items-center justify-center rounded-xl border border-border bg-surface-secondary p-3"
               >
-                <img
+                <img loading="lazy"
                   src={value[field]}
                   alt={t('admin.settings.logo')}
                   className="max-h-full max-w-full object-contain"

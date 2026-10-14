@@ -1,81 +1,66 @@
 import { and, asc, desc, eq, or, sql } from 'drizzle-orm'
-import type { ArticleCountersUpdatedV1 } from '@blog/contracts'
 import type { Database } from '@blog/broker'
-import { sumReactionCounts } from '@blog/contracts'
-import type { ReactionCounts } from '@blog/contracts'
+import type { ReactionKind } from '@blog/contracts'
 import { bookmarks, comments, reactions, views } from '../../infra/db/schema.ts'
+import type { ArticleSnapshotRepositoryPort, TopComment } from './article-snapshot.types.ts'
 
-export type ArticleCounterSnapshot = Pick<
-  ArticleCountersUpdatedV1,
-  'article_id' | 'reaction_counts' | 'reaction_count' | 'comment_count' | 'view_count' | 'bookmark_count' | 'top_comment'
->
+/** Читает только через переданную транзакцию, поэтому собственного подключения не держит. */
+export class ArticleSnapshotRepository implements ArticleSnapshotRepositoryPort<Database> {
+  async countReactionKinds(tx: Database, article_id: string): Promise<Array<{ kind: ReactionKind; total: number }>> {
+    const rows = await tx
+      .select({ kind: reactions.kind, total: sql<number>`count(*)::int` })
+      .from(reactions)
+      .where(and(eq(reactions.target_type, 'article'), eq(reactions.target_id, article_id)))
+      .groupBy(reactions.kind)
+    return rows.map((row) => ({ kind: row.kind, total: Number(row.total) }))
+  }
 
-async function countOf(tx: Database, table: typeof bookmarks, article_id: string): Promise<number> {
-  const [row] = await tx
-    .select({ total: sql<number>`count(*)::int` })
-    .from(table)
-    .where(eq(table.article_id, article_id))
-  return Number(row?.total ?? 0)
-}
-
-/** Сумма `times`: одна строка зрителя может дать больше одного просмотра, если окно 30 минут истекло. */
-async function viewTotal(tx: Database, article_id: string): Promise<number> {
-  const [row] = await tx
-    .select({ total: sql<number>`coalesce(sum(${views.times}), 0)::int` })
-    .from(views)
-    .where(eq(views.article_id, article_id))
-  return Number(row?.total ?? 0)
-}
-
-/**
- * Снимок счётчиков статьи из таблиц обсуждения. Вызывается в той же транзакции, что и изменение,
- * поэтому числа уже включают только что записанную реакцию или закладку.
- */
-export async function loadArticleCounters(tx: Database, article_id: string): Promise<ArticleCounterSnapshot> {
-  const kind_rows = await tx
-    .select({ kind: reactions.kind, total: sql<number>`count(*)::int` })
-    .from(reactions)
-    .where(and(eq(reactions.target_type, 'article'), eq(reactions.target_id, article_id)))
-    .groupBy(reactions.kind)
-  const reaction_counts: ReactionCounts = {}
-  for (const row of kind_rows) reaction_counts[row.kind] = Number(row.total)
-  const reaction_count = sumReactionCounts(reaction_counts)
-
-  const [comment_row] = await tx
-    .select({ total: sql<number>`count(*)::int` })
-    .from(comments)
-    .where(
-      and(
-        eq(comments.article_id, article_id),
-        or(
-          eq(comments.status, 'visible'),
-          sql`exists (select 1 from comments reply where reply.parent_id = ${comments.id} and reply.status = 'visible')`,
+  async countThreadComments(tx: Database, article_id: string): Promise<number> {
+    const [row] = await tx
+      .select({ total: sql<number>`count(*)::int` })
+      .from(comments)
+      .where(
+        and(
+          eq(comments.article_id, article_id),
+          or(
+            eq(comments.status, 'visible'),
+            sql`exists (select 1 from comments reply where reply.parent_id = ${comments.id} and reply.status = 'visible')`,
+          ),
         ),
-      ),
-    )
+      )
+    return Number(row?.total ?? 0)
+  }
 
-  const [top] = await tx
-    .select({
-      id: comments.id,
-      author_id: comments.author_id,
-      body: comments.body,
-      reaction_count: comments.reaction_count,
-      reply_count: comments.reply_count,
-    })
-    .from(comments)
-    .where(and(eq(comments.article_id, article_id), eq(comments.status, 'visible')))
-    .orderBy(desc(sql`${comments.reaction_count} + ${comments.reply_count}`), asc(comments.created_at), asc(comments.id))
-    .limit(1)
+  async findTopComment(tx: Database, article_id: string): Promise<TopComment | null> {
+    const [top] = await tx
+      .select({
+        id: comments.id,
+        author_id: comments.author_id,
+        body: comments.body,
+        reaction_count: comments.reaction_count,
+        reply_count: comments.reply_count,
+      })
+      .from(comments)
+      .where(and(eq(comments.article_id, article_id), eq(comments.status, 'visible')))
+      .orderBy(desc(sql`${comments.reaction_count} + ${comments.reply_count}`), asc(comments.created_at), asc(comments.id))
+      .limit(1)
+    return top ?? null
+  }
 
-  return {
-    article_id,
-    reaction_counts,
-    reaction_count,
-    comment_count: Number(comment_row?.total ?? 0),
-    view_count: await viewTotal(tx, article_id),
-    bookmark_count: await countOf(tx, bookmarks, article_id),
-    top_comment: top
-      ? { id: top.id, author_id: top.author_id, body: top.body, reaction_count: top.reaction_count, reply_count: top.reply_count }
-      : null,
+  /** Сумма `times`: одна строка зрителя может дать больше одного просмотра, если окно 30 минут истекло. */
+  async sumViews(tx: Database, article_id: string): Promise<number> {
+    const [row] = await tx
+      .select({ total: sql<number>`coalesce(sum(${views.times}), 0)::int` })
+      .from(views)
+      .where(eq(views.article_id, article_id))
+    return Number(row?.total ?? 0)
+  }
+
+  async countBookmarks(tx: Database, article_id: string): Promise<number> {
+    const [row] = await tx
+      .select({ total: sql<number>`count(*)::int` })
+      .from(bookmarks)
+      .where(eq(bookmarks.article_id, article_id))
+    return Number(row?.total ?? 0)
   }
 }

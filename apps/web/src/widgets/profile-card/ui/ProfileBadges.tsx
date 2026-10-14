@@ -17,7 +17,7 @@ export function ProfileBadges({ badges }: ProfileBadgesProps) {
                 aria-label={item.label}
                 className="grid size-10 place-items-center rounded-avatar outline-offset-2 hover:bg-surface-secondary"
               >
-                <img src={item.image_url} alt="" width={32} height={32} className="size-8 object-contain" />
+                <img loading="lazy" src={item.image_url} alt="" width={32} height={32} className="size-8 object-contain" />
               </Tooltip.Trigger>
               <Tooltip.Content>{item.label}</Tooltip.Content>
             </Tooltip>

@@ -1,4 +1,4 @@
-export { createDb } from './pool.ts'
+export { DEFAULT_STATEMENT_TIMEOUT_MS, createDb } from './pool.ts'
 export type { CreateDbOptions, DbHandle, DbPool } from './pool.ts'
 export { listMigrations, runMigrations } from './migrate.ts'
 export type { MigrationFile, MigrationLogger, RunMigrationsOptions } from './migrate.ts'

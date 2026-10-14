@@ -1,12 +1,9 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { DbHandle } from '../../infra/db/client.ts'
-import { createArticleStateController } from './article-state.controller.ts'
-import { createArticleStateService } from './article-state.service.ts'
+import type { ArticleStateController } from './article-state.controller.ts'
 
-export type ArticleStateRoutesOptions = { database: DbHandle }
+export type ArticleStateRoutesOptions = { controller: ArticleStateController }
 
 /** Состояния зрителя для карточек ленты: своя реакция и закладка, не больше 50 id. */
-export const articleStateRoutes: FastifyPluginAsync<ArticleStateRoutesOptions> = async (app, options) => {
-  const controller = createArticleStateController(createArticleStateService(options.database.db))
+export const articleStateRoutes: FastifyPluginAsync<ArticleStateRoutesOptions> = async (app, { controller }) => {
   app.get('/v1/me/article-states', (request, reply) => controller.get(request, reply))
 }

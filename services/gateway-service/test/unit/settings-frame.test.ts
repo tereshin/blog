@@ -28,7 +28,7 @@ function open(viewer: ServiceContext): { connection: Connection; frames: EventFr
 
 describe('кадр настроек', () => {
   it('content.settings.updated уходит каждому соединению и не несёт статью', () => {
-    const events = new EventsService(async () => null, createLogger({ service: 'gateway-test', level: 'silent' }))
+    const events = new EventsService({ check: async () => null }, createLogger({ service: 'gateway-test', level: 'silent' }))
     const guest = open({ role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' })
     const reader = open({
       user_id: '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a99',

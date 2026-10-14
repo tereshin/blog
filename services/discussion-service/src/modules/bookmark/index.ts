@@ -1,4 +1,6 @@
 export { bookmarkRoutes } from './bookmark.routes.ts'
 export type { BookmarkRoutesOptions } from './bookmark.routes.ts'
-export { createBookmarkService } from './bookmark.service.ts'
-export type { BookmarkService } from './bookmark.types.ts'
+export { BookmarkController } from './bookmark.controller.ts'
+export { BookmarkEvents } from './bookmark.events.ts'
+export { BookmarkRepository } from './bookmark.repository.ts'
+export { BookmarkService } from './bookmark.service.ts'

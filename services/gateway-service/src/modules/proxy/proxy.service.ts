@@ -1,73 +1,27 @@
 import { Transform } from 'node:stream'
-import type { Readable } from 'node:stream'
 import { Pool } from 'undici'
 import type { Dispatcher } from 'undici'
-import { AppError } from '@blog/errors'
-import { CircuitBreaker, ServiceUnavailableError } from '@blog/http-kit'
-import { DEFAULT_MAX_BODY_BYTES, DEFAULT_TIMEOUT_MS } from './route-table.ts'
-import type { RouteEntry, UpstreamName } from './route-table.ts'
-
-/** Заголовки, которые не пересылаются сервисам: hop-by-hop, cookie и всё, что клиент мог подделать. */
-const STRIP_REQUEST_HEADERS = new Set([
-  'connection',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-  'host',
-  'cookie',
-  'authorization',
-  'x-service-context',
-  'x-session-id',
-  'x-forwarded-for',
-  'x-forwarded-host',
-  'x-forwarded-proto',
-  // Внутренние заголовки моста сессий: от клиента их быть не может.
-  'x-set-session',
-  'x-set-session-max-age',
-  'x-clear-session',
-])
-
-/** Заголовки ответа, которые не уходят клиенту: hop-by-hop и `set-cookie` (cookie ставит только gateway). */
-const STRIP_RESPONSE_HEADERS = new Set([
-  'connection',
-  'keep-alive',
-  'transfer-encoding',
-  'upgrade',
-  'proxy-authenticate',
-  'set-cookie',
-  // Мост сессий: gateway читает эти заголовки сам и клиенту их не показывает.
-  'x-set-session',
-  'x-set-session-max-age',
-  'x-clear-session',
-])
-
-export function filterRequestHeaders(headers: Record<string, string | string[] | undefined>): Record<string, string | string[]> {
-  const result: Record<string, string | string[]> = {}
-  for (const [name, value] of Object.entries(headers)) {
-    if (value === undefined || STRIP_REQUEST_HEADERS.has(name.toLowerCase())) continue
-    result[name.toLowerCase()] = value
-  }
-  return result
-}
-
-export function filterResponseHeaders(headers: Record<string, string | string[] | undefined>): Record<string, string | string[]> {
-  const result: Record<string, string | string[]> = {}
-  for (const [name, value] of Object.entries(headers)) {
-    if (value === undefined || STRIP_RESPONSE_HEADERS.has(name.toLowerCase())) continue
-    result[name.toLowerCase()] = value
-  }
-  return result
-}
-
-export class PayloadTooLargeError extends AppError {
-  constructor(limit: number) {
-    super({ code: 'payload_too_large', http_status: 413, message: 'Слишком большой запрос', details: { limit_bytes: limit } })
-  }
-}
+import { SERVICE_CONTEXT_HEADER } from '@blog/contracts'
+import { NotFoundError } from '@blog/errors'
+import {
+  CircuitBreaker,
+  CORRELATION_ID_HEADER,
+  IDEMPOTENCY_KEY_HEADER,
+  REQUEST_ID_HEADER,
+  ServiceUnavailableError,
+} from '@blog/http-kit'
+import {
+  CLEAR_SESSION_HEADER,
+  SESSION_ID_HEADER,
+  SET_SESSION_HEADER,
+  SET_SESSION_MAX_AGE_HEADER,
+} from '../session/index.ts'
+import { firstHeader } from '../../shared/first-header.ts'
+import { DEFAULT_MAX_BODY_BYTES, DEFAULT_TIMEOUT_MS, resolveRoute } from '../../shared/route-table.ts'
+import type { RouteEntry, UpstreamName } from '../../shared/route-table.ts'
+import { PayloadTooLargeError } from './proxy.errors.ts'
+import { filterRequestHeaders } from './proxy.headers.ts'
+import type { ForwardInput, ForwardResult, SessionBridge, Upstream, ViewerHeadersInput } from './proxy.types.ts'
 
 /** Считает байты потоком: тело без `Content-Length` (chunked) тоже ограничено. */
 export function limitBytes(limit: number): Transform {
@@ -80,24 +34,6 @@ export function limitBytes(limit: number): Transform {
     },
   })
 }
-
-export type ForwardInput = {
-  entry: RouteEntry
-  method: string
-  /** Путь вместе с query, как пришёл (`request.raw.url`). */
-  url: string
-  headers: Record<string, string | string[]>
-  body: Readable | undefined
-  content_length: number | undefined
-}
-
-export type ForwardResult = {
-  status: number
-  headers: Record<string, string | string[] | undefined>
-  body: Dispatcher.ResponseData['body']
-}
-
-export type Upstream = { pool: Pool; breaker: CircuitBreaker }
 
 export class ProxyService {
   private readonly upstreams: Record<UpstreamName, Upstream>
@@ -115,6 +51,39 @@ export class ProxyService {
       notification: make(urls.notification),
       media: make(urls.media),
     }
+  }
+
+  /** Сервис-владелец пути; неизвестный префикс — 404. */
+  routeFor(url: string): RouteEntry {
+    const entry = resolveRoute(url)
+    if (!entry) throw new NotFoundError()
+    return entry
+  }
+
+  /** Заголовки клиента без подделываемых и служебный контекст зрителя вместо cookie. */
+  upstreamHeaders(entry: RouteEntry, input: ViewerHeadersInput): Record<string, string | string[]> {
+    const headers = filterRequestHeaders(input.headers)
+    headers[SERVICE_CONTEXT_HEADER] = input.service_context_jwt
+    headers[REQUEST_ID_HEADER] = input.request_id
+    headers[CORRELATION_ID_HEADER] = input.correlation_id
+    headers['x-forwarded-for'] = input.ip
+    const idempotency_key = firstHeader(input.headers[IDEMPOTENCY_KEY_HEADER])
+    if (idempotency_key) headers[IDEMPOTENCY_KEY_HEADER] = idempotency_key
+    // Идентификатор сессии нужен только identity (выход, список сессий); остальным он не отдаётся.
+    if (entry.service === 'identity' && input.session_id) headers[SESSION_ID_HEADER] = input.session_id
+    return headers
+  }
+
+  /** Мост сессий: ставить или снимать cookie может просить только identity. */
+  sessionBridge(entry: RouteEntry, headers: ForwardResult['headers']): SessionBridge {
+    if (entry.service !== 'identity') return { action: 'none' }
+    const new_session = firstHeader(headers[SET_SESSION_HEADER])
+    if (new_session) {
+      const max_age = Number(firstHeader(headers[SET_SESSION_MAX_AGE_HEADER]))
+      return { action: 'set', session_id: new_session, max_age_seconds: Number.isFinite(max_age) && max_age > 0 ? max_age : undefined }
+    }
+    if (firstHeader(headers[CLEAR_SESSION_HEADER])) return { action: 'clear' }
+    return { action: 'none' }
   }
 
   async forward(input: ForwardInput): Promise<ForwardResult> {

@@ -9,6 +9,7 @@ export type QueueSample = {
 export function startQueueMetrics(
   metrics: ServiceMetrics,
   sample: () => Promise<QueueSample>,
+  onError: (error: unknown) => void,
   interval_ms = 15_000,
 ): { stop: () => Promise<void> } {
   const tick = (): void => {
@@ -17,9 +18,8 @@ export function startQueueMetrics(
         for (const item of snapshot.lag) metrics.consumer_lag.labels({ durable: item.durable }).set(item.pending)
         for (const item of snapshot.dlq) metrics.dlq_depth.labels({ stream: item.stream }).set(item.messages)
       })
-      .catch(() => {
-        // Брокер ещё не готов — следующий опрос.
-      })
+      // Брокер ещё не готов — следующий опрос; причина уходит в лог.
+      .catch(onError)
   }
   tick()
   const timer = setInterval(tick, interval_ms)

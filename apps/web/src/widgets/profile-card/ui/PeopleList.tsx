@@ -1,11 +1,12 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router'
-import { useProfile } from '@/entities/profile'
+import { useCallback, useMemo } from 'react'
 import { UserListItem } from '@/entities/user'
 import type { UserListPage } from '@/entities/user'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
-import { Button, Card, EmptyState, ErrorState } from '@/shared/ui'
+import { Button, Card, EmptyState, ErrorState, VirtualList } from '@/shared/ui'
+import { usePeopleList } from '../model/usePeopleList.ts'
+
+const VIRTUALIZATION_THRESHOLD = 100
 
 type PeopleListProps = {
   title_key: MessageKey
@@ -15,19 +16,13 @@ type PeopleListProps = {
 
 /** Список подписчиков или подписок с заголовком из имени профиля. */
 export function PeopleList({ title_key, query_key, load }: PeopleListProps) {
-  const { slug = '' } = useParams()
   const { t } = useT()
-  const profile = useProfile(slug)
-  const people = useInfiniteQuery({
-    queryKey: query_key,
-    queryFn: ({ pageParam, signal }) => load(slug, pageParam, signal),
-    initialPageParam: null as string | null,
-    getNextPageParam: (page) => page.next_cursor,
-    enabled: Boolean(slug),
-  })
-
-  const items = (people.data?.pages ?? []).flatMap((page) => page.items)
-  const title = profile.data ? `${t(title_key)} · ${profile.data.display_name}` : t(title_key)
+  const { people, items, title } = usePeopleList(title_key, query_key, load)
+  const user_by_id = useMemo(() => new Map(items.map((user) => [user.user_id, user])), [items])
+  const ids = items.map((user) => user.user_id)
+  const handleNearEnd = useCallback(() => {
+    if (people.hasNextPage && !people.isFetchingNextPage) void people.fetchNextPage()
+  }, [people])
 
   return (
     <Card className="gap-0 max-w-[var(--shell-content-width,640px)] mx-auto">
@@ -43,10 +38,22 @@ export function PeopleList({ title_key, query_key, load }: PeopleListProps) {
             className="min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none"
           />
         ) : null}
-        {items.length > 0 ? (
+        {items.length > VIRTUALIZATION_THRESHOLD ? (
+          <VirtualList
+            ids={ids}
+            estimate_size={56}
+            onNearEnd={handleNearEnd}
+            renderItem={(id) => {
+              const user = user_by_id.get(id)
+              return user ? <UserListItem user={user} /> : null
+            }}
+          />
+        ) : items.length > 0 ? (
           <ul>
             {items.map((user) => (
-              <UserListItem key={user.user_id} user={user} />
+              <li key={user.user_id}>
+                <UserListItem user={user} />
+              </li>
             ))}
           </ul>
         ) : null}

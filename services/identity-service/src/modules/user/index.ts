@@ -1,2 +1,5 @@
 export { userRoutes } from './user.routes.ts'
 export type { UserRoutesOptions } from './user.routes.ts'
+export { UserController } from './user.controller.ts'
+export { UserRepository } from './user.repository.ts'
+export { UserService } from './user.service.ts'

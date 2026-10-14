@@ -30,9 +30,9 @@ export function ButtonsView({ items }: ButtonsViewProps) {
   if (buttons.length === 0) return null
   return (
     <div className="my-4 flex flex-wrap items-center gap-3">
-      {buttons.map((button, index) => (
+      {buttons.map((button) => (
         <a
-          key={index}
+          key={`${button.href}:${button.text}`}
           href={button.href}
           rel="noopener noreferrer"
           target="_blank"

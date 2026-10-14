@@ -1,5 +1,5 @@
+import preview from '#.storybook/preview'
 import { useState } from 'react'
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
 import type { ReactionAppearances } from '@blog/contracts'
@@ -72,18 +72,15 @@ function Row({
   )
 }
 
-const meta = { title: 'features/react/ReactionRow', component: Row } satisfies Meta<typeof Row>
-export default meta
-type Story = StoryObj<typeof Row>
-
-export const None: Story = { args: { counts: empty, my_reaction: null } }
-export const Some: Story = { args: { counts: some, my_reaction: null } }
-export const Mine: Story = { args: { counts: some, my_reaction: 'heart' } }
-export const Guest: Story = { args: { counts: some, my_reaction: null } }
-export const Emoji: Story = { args: { counts: some, my_reaction: null, appearances: DEFAULT_REACTION_APPEARANCES } }
-export const Image: Story = { args: { counts: some, my_reaction: 'heart', appearances: images } }
+const meta = preview.meta({ title: 'features/react/ReactionRow', component: Row })
+export const None = meta.story({ args: { counts: empty, my_reaction: null } })
+export const Some = meta.story({ args: { counts: some, my_reaction: null } })
+export const Mine = meta.story({ args: { counts: some, my_reaction: 'heart' } })
+export const Guest = meta.story({ args: { counts: some, my_reaction: null } })
+export const Emoji = meta.story({ args: { counts: some, my_reaction: null, appearances: DEFAULT_REACTION_APPEARANCES } })
+export const Image = meta.story({ args: { counts: some, my_reaction: 'heart', appearances: images } })
 /** Полный каталог: пять колонок, четвёртый ряд доступен прокруткой. */
-export const Picker: Story = {
+export const Picker = meta.story({
   args: { counts: { heart: 1 }, my_reaction: null, appearances: picker_appearances },
   globals: { theme: 'light' },
   decorators: [(Story) => <div className="pl-[50px] pt-[184px]"><Story /></div>],
@@ -108,9 +105,9 @@ export const Picker: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Добавить реакцию' }))
     await waitFor(() => expect(body.getByRole('listbox')).toBeVisible())
   },
-}
+})
 /** Несработавшая картинка показывает текстовое имя, кнопка ставит и снимает реакцию. */
-export const BrokenImage: Story = {
+export const BrokenImage = meta.story({
   args: { counts: some, my_reaction: null, appearances: broken },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -121,4 +118,4 @@ export const BrokenImage: Story = {
     await userEvent.click(laugh)
     await expect(laugh).toHaveAttribute('aria-pressed', 'false')
   },
-}
+})

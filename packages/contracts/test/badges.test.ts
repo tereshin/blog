@@ -13,12 +13,8 @@ describe('configurable badge contracts', () => {
     expect(badgeDefinitionsSchema.parse([BADGE])).toEqual([BADGE])
     expect(badgeDefinitionsSchema.parse([])).toEqual([])
     expect(
-      profileSchema.shape.badge_ids.parse(['first_post', '11111111-1111-4111-8111-111111111111']),
+      profileSchema.shape.badges.parse(['first_post', '11111111-1111-4111-8111-111111111111']),
     ).toHaveLength(2)
-  })
-  it('keeps the legacy badges enum unchanged', () => {
-    expect(profileSchema.shape.badges.parse(['first_post', 'one_year'])).toHaveLength(2)
-    expect(profileSchema.shape.badges.safeParse(['11111111-1111-4111-8111-111111111111']).success).toBe(false)
   })
   it('rejects duplicate IDs and invalid thresholds', () => {
     const first = [BADGE][0]
@@ -31,7 +27,7 @@ describe('configurable badge contracts', () => {
       ).toBe(false)
     }
   })
-  it('does not default the catalog in updates from older clients', () => {
+  it('leaves an omitted catalog unchanged in partial updates', () => {
     const parsed = updateSettingsSchema.parse({
       name: 'Blog',
       logo_url: null,

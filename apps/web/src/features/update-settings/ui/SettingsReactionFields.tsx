@@ -103,7 +103,7 @@ export function SettingsReactionFields({
                     {item.emoji}
                   </span>
                 ) : item.image_url ? (
-                  <img src={item.image_url} alt="" className="size-6 object-contain" />
+                  <img loading="lazy" src={item.image_url} alt="" className="size-6 object-contain" />
                 ) : null}
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {can_edit_media ? (

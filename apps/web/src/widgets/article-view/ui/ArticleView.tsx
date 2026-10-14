@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { ArticleActions, ArticleByline, BlockRenderer } from '@/entities/article'
+import { ArticleActions, ArticleByline } from '@/entities/article'
 import type { ArticleModel } from '@/entities/article'
-import { Card } from '@/shared/ui'
-import { ArticleViewContext, useArticleViewModel } from './article-view-context.ts'
+import { BlockRenderer, Card } from '@/shared/ui'
+import { ArticleViewContext, useArticleView } from './article-view-context.ts'
 
 type ArticleViewRootProps = { article: ArticleModel; children: ReactNode }
 
@@ -20,7 +20,7 @@ function ArticleViewRoot({ article, children }: ArticleViewRootProps) {
 type BylineProps = { follow?: ReactNode; menu?: ReactNode }
 
 function Byline({ follow, menu }: BylineProps) {
-  const article = useArticleViewModel()
+  const article = useArticleView()
   return (
     <ArticleByline
       author={article.author}
@@ -33,12 +33,12 @@ function Byline({ follow, menu }: BylineProps) {
 }
 
 function Title() {
-  const article = useArticleViewModel()
+  const article = useArticleView()
   return <h1 className="text-xl font-semibold leading-snug tracking-[-0.005em]">{article.title}</h1>
 }
 
 function Body() {
-  const article = useArticleViewModel()
+  const article = useArticleView()
   return (
     <div className="text-md leading-7 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
       <BlockRenderer blocks={article.blocks} />
@@ -52,7 +52,7 @@ function Reactions({ children }: { children?: ReactNode }) {
 }
 
 function Actions({ bookmark, share }: { bookmark?: ReactNode; share?: ReactNode }) {
-  const article = useArticleViewModel()
+  const article = useArticleView()
   return (
     <ArticleActions
       article={{ ...article, href: `/p/${encodeURIComponent(article.slug)}` }}

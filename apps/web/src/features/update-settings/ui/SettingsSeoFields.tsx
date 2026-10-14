@@ -40,7 +40,7 @@ export function SettingsSeoFields({
 
         <ToggleField
           label={t('seo.indexing')}
-          isSelected={value.indexing_enabled}
+          is_selected={value.indexing_enabled}
           onChange={(indexing_enabled) => onChange({ ...value, indexing_enabled })}
         />
         <p className="text-xs text-muted">{t('seo.indexing_hint')}</p>

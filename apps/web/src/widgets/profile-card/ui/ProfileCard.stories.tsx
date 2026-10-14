@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { StoryProviders } from '@/shared/api/mocks'
+import preview from '#.storybook/preview'
+import { StoryProviders } from '@/shared/lib'
 import type { Profile } from '@/entities/profile'
 import { Button, Tabs } from '@/shared/ui'
 import { ProfileCard } from './ProfileCard.tsx'
@@ -78,21 +78,17 @@ function Frame({ profile, action }: { profile: Profile; action?: boolean }) {
   )
 }
 
-const meta = { title: 'widgets/profile-card/ProfileCard', component: ProfileCard } satisfies Meta<
-  typeof ProfileCard
->
-export default meta
-type Story = StoryObj
+const meta = preview.meta({ title: 'widgets/profile-card/ProfileCard', component: ProfileCard })
 
-export const OwnWithoutCover: Story = { render: () => <Frame profile={own} action /> }
-export const OwnWithCover: Story = {
+export const OwnWithoutCover = meta.story({ render: () => <Frame profile={own} action /> })
+export const OwnWithCover = meta.story({
   render: () => (
     <Frame profile={{ ...own, cover_url: 'https://example.com/cover.jpg', bio: 'О себе' }} />
   ),
-}
-export const Foreign: Story = { render: () => <Frame profile={foreign} /> }
-export const WithoutBioAndBadges: Story = {
+})
+export const Foreign = meta.story({ render: () => <Frame profile={foreign} /> })
+export const WithoutBioAndBadges = meta.story({
   render: () => <Frame profile={{ ...foreign, bio: null, badges: [] }} />,
-}
-export const ZeroReputation: Story = { render: () => <Frame profile={own} /> }
-export const Loading: Story = { render: () => <ProfileCard.Skeleton /> }
+})
+export const ZeroReputation = meta.story({ render: () => <Frame profile={own} /> })
+export const Loading = meta.story({ render: () => <ProfileCard.Skeleton /> })

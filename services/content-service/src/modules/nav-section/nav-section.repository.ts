@@ -16,8 +16,10 @@ function targetFields(input: CreateNavSectionItem) {
     : { page_id: null, url: input.target.url }
 }
 
-export function createNavSectionRepository(db: Database) {
-  async function load(database: Database): Promise<AdminNavSection[]> {
+export class NavSectionRepository {
+  constructor(private readonly db: Database) {}
+
+  private async load(database: Database): Promise<AdminNavSection[]> {
     const sections = await database
       .select({
         id: nav_sections.id,
@@ -50,11 +52,11 @@ export function createNavSectionRepository(db: Database) {
     return sections.map((section) => ({ ...section, items: items_by_section.get(section.id) ?? [] }))
   }
 
-  async function mutate<T>(
+  private async mutate<T>(
     operation: MutationOperation,
     run: (database: Database) => Promise<MutationResult<T>>,
   ): Promise<MutationResult<T>> {
-    return db.transaction(async (tx) => {
+    return this.db.transaction(async (tx) => {
       const database = tx as Database
       await database.execute(
         sql`SELECT pg_advisory_xact_lock(hashtextextended(${operation.actor_id + ':' + operation.key}, 0))`,
@@ -87,7 +89,7 @@ export function createNavSectionRepository(db: Database) {
     })
   }
 
-  async function requireSection(database: Database, id: string) {
+  private async requireSection(database: Database, id: string) {
     const [row] = await database
       .select({ id: nav_sections.id })
       .from(nav_sections)
@@ -96,7 +98,7 @@ export function createNavSectionRepository(db: Database) {
     if (!row) throw navError('nav_section_not_found', 404)
   }
 
-  async function assertPage(database: Database, page_id: string) {
+  private async assertPage(database: Database, page_id: string) {
     const [page] = await database
       .select({ status: pages.status })
       .from(pages)
@@ -105,38 +107,42 @@ export function createNavSectionRepository(db: Database) {
     if (!page || page.status === 'deleted') throw navError('nav_section_page_not_found', 422)
   }
 
-  async function readSection(database: Database, id: string): Promise<AdminNavSection> {
-    const section = (await load(database)).find((item) => item.id === id)
+  private async readSection(database: Database, id: string): Promise<AdminNavSection> {
+    const section = (await this.load(database)).find((item) => item.id === id)
     if (!section) throw navError('nav_section_not_found', 404)
     return section
   }
 
-  return {
-    list: () => load(db),
-    createSection(operation: MutationOperation, title: string) {
-      return mutate(operation, async (database) => {
+  list() {
+    return this.load(this.db)
+  }
+
+  createSection(operation: MutationOperation, title: string) {
+      return this.mutate(operation, async (database) => {
         const [row] = await database.select({ value: count() }).from(nav_sections)
         if (Number(row?.value ?? 0) >= MAX_NAV_SECTIONS) throw navError('nav_section_limit', 422)
         const [max_row] = await database.select({ value: max(nav_sections.position) }).from(nav_sections)
         const position = max_row?.value == null ? 0 : Number(max_row.value) + 1
         const id = randomUUID()
         await database.insert(nav_sections).values({ id, title, position })
-        return { status: 201, body: await readSection(database, id) }
+        return { status: 201, body: await this.readSection(database, id) }
       })
-    },
+    }
+
     updateSection(operation: MutationOperation, id: string, title: string) {
-      return mutate(operation, async (database) => {
+      return this.mutate(operation, async (database) => {
         const [row] = await database
           .update(nav_sections)
           .set({ title, updated_at: new Date() })
           .where(eq(nav_sections.id, id))
           .returning({ id: nav_sections.id })
         if (!row) throw navError('nav_section_not_found', 404)
-        return { status: 200, body: await readSection(database, id) }
+        return { status: 200, body: await this.readSection(database, id) }
       })
-    },
+    }
+
     deleteSection(operation: MutationOperation, id: string) {
-      return mutate(operation, async (database) => {
+      return this.mutate(operation, async (database) => {
         const [row] = await database
           .delete(nav_sections)
           .where(eq(nav_sections.id, id))
@@ -144,9 +150,10 @@ export function createNavSectionRepository(db: Database) {
         if (!row) throw navError('nav_section_not_found', 404)
         return { status: 204, body: null }
       })
-    },
+    }
+
     reorderSections(operation: MutationOperation, section_ids: readonly string[]) {
-      return mutate(operation, async (database) => {
+      return this.mutate(operation, async (database) => {
         const rows = await database.select({ id: nav_sections.id }).from(nav_sections)
         const current = rows.map((row) => row.id)
         const same = section_ids.length === current.length && section_ids.every((id) => current.includes(id))
@@ -155,18 +162,19 @@ export function createNavSectionRepository(db: Database) {
         for (const [index, id] of section_ids.entries()) {
           await database.update(nav_sections).set({ position: index, updated_at: now }).where(eq(nav_sections.id, id))
         }
-        return { status: 200, body: { items: await load(database) } }
+        return { status: 200, body: { items: await this.load(database) } }
       })
-    },
+    }
+
     createItem(operation: MutationOperation, section_id: string, input: CreateNavSectionItem) {
-      return mutate(operation, async (database) => {
-        await requireSection(database, section_id)
+      return this.mutate(operation, async (database) => {
+        await this.requireSection(database, section_id)
         const [row] = await database
           .select({ value: count() })
           .from(nav_section_items)
           .where(eq(nav_section_items.section_id, section_id))
         if (Number(row?.value ?? 0) >= MAX_NAV_SECTION_ITEMS) throw navError('nav_section_item_limit', 422)
-        if (input.target.kind === 'page') await assertPage(database, input.target.page_id)
+        if (input.target.kind === 'page') await this.assertPage(database, input.target.page_id)
         const [max_row] = await database
           .select({ value: max(nav_section_items.position) })
           .from(nav_section_items)
@@ -181,20 +189,21 @@ export function createNavSectionRepository(db: Database) {
           position,
           ...targetFields(input),
         })
-        const section = await readSection(database, section_id)
+        const section = await this.readSection(database, section_id)
         const item = section.items.find((entry) => entry.id === id)
         if (!item) throw navError('nav_section_item_not_found', 404)
         return { status: 201, body: item }
       })
-    },
+    }
+
     updateItem(
       operation: MutationOperation,
       section_id: string,
       item_id: string,
       input: CreateNavSectionItem,
     ) {
-      return mutate(operation, async (database) => {
-        if (input.target.kind === 'page') await assertPage(database, input.target.page_id)
+      return this.mutate(operation, async (database) => {
+        if (input.target.kind === 'page') await this.assertPage(database, input.target.page_id)
         const [row] = await database
           .update(nav_section_items)
           .set({
@@ -206,14 +215,15 @@ export function createNavSectionRepository(db: Database) {
           .where(and(eq(nav_section_items.id, item_id), eq(nav_section_items.section_id, section_id)))
           .returning({ id: nav_section_items.id })
         if (!row) throw navError('nav_section_item_not_found', 404)
-        const section = await readSection(database, section_id)
+        const section = await this.readSection(database, section_id)
         const item = section.items.find((entry) => entry.id === item_id)
         if (!item) throw navError('nav_section_item_not_found', 404)
         return { status: 200, body: item }
       })
-    },
+    }
+
     deleteItem(operation: MutationOperation, section_id: string, item_id: string) {
-      return mutate(operation, async (database) => {
+      return this.mutate(operation, async (database) => {
         const [row] = await database
           .delete(nav_section_items)
           .where(and(eq(nav_section_items.id, item_id), eq(nav_section_items.section_id, section_id)))
@@ -221,10 +231,11 @@ export function createNavSectionRepository(db: Database) {
         if (!row) throw navError('nav_section_item_not_found', 404)
         return { status: 204, body: null }
       })
-    },
+    }
+
     reorderItems(operation: MutationOperation, section_id: string, item_ids: readonly string[]) {
-      return mutate(operation, async (database) => {
-        await requireSection(database, section_id)
+      return this.mutate(operation, async (database) => {
+        await this.requireSection(database, section_id)
         const rows = await database
           .select({ id: nav_section_items.id })
           .from(nav_section_items)
@@ -239,10 +250,7 @@ export function createNavSectionRepository(db: Database) {
             .set({ position: index, updated_at: now })
             .where(eq(nav_section_items.id, id))
         }
-        return { status: 200, body: await readSection(database, section_id) }
+        return { status: 200, body: await this.readSection(database, section_id) }
       })
-    },
-  }
+    }
 }
-
-export type NavSectionRepository = ReturnType<typeof createNavSectionRepository>

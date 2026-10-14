@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef } from 'react'
-import type { MouseEvent } from 'react'
+import { useCallback } from 'react'
+import type { ReactNode } from 'react'
 import { ArticleCard, useArticleStates } from '@/entities/article'
 import type { FeedMode } from '@/entities/article'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
-import { findScrollParent, readFeedReturn, saveFeedReturn } from '@/shared/lib'
 import { Button, EmptyState, ErrorState, EyeIcon } from '@/shared/ui'
 import { useFeedLive } from '../model/useFeedLive.ts'
 import { useFeed } from '../model/useFeed.ts'
+import { useFeedReturn } from '../model/useFeedReturn.ts'
 import { useSeenArticles } from '../model/useSeenArticles.ts'
 import { FeedEmpty } from './FeedEmpty.tsx'
 import { FeedItem } from './FeedItem.tsx'
@@ -24,24 +24,24 @@ type FeedProps = FeedSlots & {
   mode: FeedMode
   /** Ключ полосы просмотренного. Для темы это `topic:{id}`, иначе совпадает с режимом. */
   feed_key?: string
+  empty?: ReactNode
 }
 
 function FeedSkeletons({ count }: { count: number }) {
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 max-w-[var(--shell-content-width,640px)] mx-auto">
-      {Array.from({ length: count }, (_, index) => (
-        <ArticleCard.Skeleton key={index} />
+      {Array.from({ length: count }, (_, slot) => (
+        <ArticleCard.Skeleton key={`skeleton-${slot}`} />
       ))}
     </div>
   )
 }
 
 /** Лента карточек выбранного режима. Загрузка, пустота и ошибка показываются в центре, подгрузка не сбрасывает прокрутку. */
-export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
+export function Feed({ mode, feed_key = mode, empty, ...slots }: FeedProps) {
   const { t } = useT()
   const { viewer } = useViewer()
   const state = useFeed(mode)
-  const root_ref = useRef<HTMLDivElement>(null)
   const article_ids = state.status === 'ok' ? state.article_ids : []
   const seen = useSeenArticles(feed_key)
   const should_hide_seen = mode !== 'fresh' && mode !== 'mine'
@@ -55,32 +55,14 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
     if (has_next && !is_busy) fetchNext?.()
   }, [has_next, is_busy, fetchNext])
 
-  // Возврат со статьи: каркас сначала ставит центр в начало, затем кадр возвращает сохранённую прокрутку.
   const is_ready = state.status === 'ok' && state.article_ids.length > 0
-  useEffect(() => {
-    const saved = readFeedReturn()
-    if (!is_ready || !saved || saved.mode !== mode) return
-    const frame = requestAnimationFrame(() => {
-      const scroller = findScrollParent(root_ref.current)
-      if (scroller) scroller.scrollTo({ top: saved.scroll_top })
-      else window.scrollTo({ top: saved.scroll_top })
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [mode, is_ready])
-
-  const rememberReturn = (event: MouseEvent<HTMLDivElement>) => {
-    const link = event.target instanceof Element ? event.target.closest('a') : null
-    const href = link?.getAttribute('href') ?? ''
-    if (!href.startsWith('/p/') || href.includes('#')) return
-    const scroller = findScrollParent(root_ref.current)
-    saveFeedReturn({ mode, feed_key, scroll_top: scroller?.scrollTop ?? window.scrollY })
-  }
+  const { root_ref, rememberReturn } = useFeedReturn(mode, feed_key, is_ready)
 
   if (state.status === 'loading' || state.status === 'idle')
     return <FeedSkeletons count={SKELETON_COUNT} />
   if (state.status === 'error')
     return <ErrorState title={t('feed.load_error')} onRetry={state.refetch} />
-  if (state.article_ids.length === 0) return <FeedEmpty mode={mode} />
+  if (state.article_ids.length === 0) return empty ?? <FeedEmpty description={t('feed.empty_hint')} />
 
   const hidden_ids = should_hide_seen ? state.article_ids.filter((id) => seen.seen_ids.has(id)) : []
   const visible_ids =
@@ -88,7 +70,7 @@ export function Feed({ mode, feed_key = mode, ...slots }: FeedProps) {
       ? state.article_ids
       : state.article_ids.filter((id) => !seen.seen_ids.has(id))
   const banner =
-    hidden_ids.length > 0 && !seen.is_dismissed && !seen.is_revealed ? (
+    hidden_ids.length > 0 && !seen.is_dismissed ? (
       <SeenBanner count={hidden_ids.length} onReveal={seen.reveal} onDismiss={seen.dismiss} />
     ) : null
   const renderItem = (article_id: string) => {

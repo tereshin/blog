@@ -6,6 +6,7 @@ import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
+import { composeModules } from '../../src/app.ts'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
@@ -87,12 +88,13 @@ describe('comment interface API', () => {
       request.viewer =
         contexts[String(request.headers['x-viewer'])] ?? (contexts.guest as ServiceContext)
     })
-    await app.register(commentRoutes, {
-      database,
+    const controllers = composeModules({
+      db: database.db,
       lookup_file: async (url) =>
         url === 'https://media.test/uploads/owned' ? { uploader_id: MEMBER, kind: 'image' } : null,
     })
-    await app.register(commentInteractionRoutes, { database })
+    await app.register(commentRoutes, { controller: controllers.comment })
+    await app.register(commentInteractionRoutes, { controller: controllers.comment_interaction })
   }, 120000)
   afterAll(async () => {
     await app?.close()

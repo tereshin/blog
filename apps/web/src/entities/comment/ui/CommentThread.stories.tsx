@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { MemoryRouter } from 'react-router'
 import type { CommentNode } from '../model/comment-types.ts'
 import type { CommentsState } from '../model/useComments.ts'
@@ -57,7 +57,7 @@ const hidden: CommentNode = {
   replies: [],
 }
 
-const meta = {
+const meta = preview.meta({
   title: 'entities/comment/CommentThread',
   component: CommentThread,
   decorators: [
@@ -67,32 +67,29 @@ const meta = {
       </MemoryRouter>
     ),
   ],
-} satisfies Meta<typeof CommentThread>
-export default meta
-type Story = StoryObj<typeof CommentThread>
-
-function story(state: CommentsState): Story {
+})
+function story(state: CommentsState) {
   return { args: { state } }
 }
 
-export const Loading: Story = story({ status: 'loading' })
-export const Empty: Story = story({ status: 'empty' })
-export const Error: Story = story({ status: 'error', refetch: () => undefined })
-export const Visible: Story = story({
+export const Loading = meta.story(story({ status: 'loading' }))
+export const Empty = meta.story(story({ status: 'empty' }))
+export const Error = meta.story(story({ status: 'error', refetch: () => undefined }))
+export const Visible = meta.story(story({
   status: 'ok',
   comments: [visible],
   has_next: false,
   fetchNext: () => undefined,
-})
-export const Deleted: Story = story({
+}))
+export const Deleted = meta.story(story({
   status: 'ok',
   comments: [deleted],
   has_next: false,
   fetchNext: () => undefined,
-})
-export const Hidden: Story = story({
+}))
+export const Hidden = meta.story(story({
   status: 'ok',
   comments: [hidden],
   has_next: false,
   fetchNext: () => undefined,
-})
+}))

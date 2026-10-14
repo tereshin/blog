@@ -47,9 +47,13 @@ describe('документ блоков', () => {
         { type: 'delimiter', data: {} },
         { type: 'code', data: { code: 'const n = 1' } },
         { type: 'image', data: { file: { url: 'https://cdn.example/a.png' }, caption: 'Рис' } },
+        { type: 'table', data: { content: [['A', 'B']], withHeadings: true } },
       ],
     })
-    expect(document.blocks).toHaveLength(7)
+    expect(document.blocks).toHaveLength(8)
+    const table = document.blocks[7]
+    expect(table?.type).toBe('table')
+    if (table?.type === 'table') expect(table.data.with_headings).toBe(true)
   })
 
   it('неизвестный тип блока не проходит', () => {

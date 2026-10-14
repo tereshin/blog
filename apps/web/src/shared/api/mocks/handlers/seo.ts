@@ -76,7 +76,7 @@ export const seoHandlers = [
     }
     return HttpResponse.json(page)
   }),
-  http.post('*/v1/media/social-cover-preview', async ({ request }) => {
+  http.post('*/v1/media/social-cover-previews', async ({ request }) => {
     if (readMockViewer() !== 'superadmin')
       return HttpResponse.json(
         { code: 'forbidden', title: 'Forbidden', status: 403 },
@@ -112,6 +112,27 @@ export const seoHandlers = [
     context.fillText(input.author_name ?? '', 70, canvas.height - 70)
     context.textAlign = 'right'
     context.fillText(input.site_name, canvas.width - 70, canvas.height - 70)
+    return HttpResponse.json({ image_url: canvas.toDataURL('image/jpeg') })
+  }),
+  http.post('*/v1/media/social-cover-preview', async ({ request }) => {
+    if (readMockViewer() !== 'superadmin')
+      return HttpResponse.json(
+        { code: 'forbidden', title: 'Forbidden', status: 403 },
+        { status: 403 },
+      )
+    const parsed = socialCoverPreviewSchema.safeParse(await request.json())
+    if (!parsed.success)
+      return HttpResponse.json(
+        { code: 'validation_failed', title: 'Invalid preview', status: 422 },
+        { status: 422 },
+      )
+    const { input, variant } = parsed.data
+    const canvas = document.createElement('canvas')
+    Object.assign(canvas, SOCIAL_COVER_SIZES[variant])
+    const context = canvas.getContext('2d')
+    if (!context) return HttpResponse.json({ status: 503 }, { status: 503 })
+    context.fillStyle = input.settings.background_color
+    context.fillRect(0, 0, canvas.width, canvas.height)
     return HttpResponse.json({ image_url: canvas.toDataURL('image/jpeg') })
   }),
 ]

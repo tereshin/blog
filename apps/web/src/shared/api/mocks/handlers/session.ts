@@ -35,6 +35,10 @@ export const sessionHandlers = [
     window.localStorage.removeItem(MOCK_VIEWER_KEY)
     return new HttpResponse(null, { status: 204 })
   }),
+  http.delete('*/v1/sessions/current', () => {
+    window.localStorage.removeItem(MOCK_VIEWER_KEY)
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.get('*/v1/auth/config', () =>
     HttpResponse.json({
       api_key: 'demo-web-key',

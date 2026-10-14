@@ -1,4 +1,5 @@
-import type { ModerationFilters } from '@blog/contracts'
+import { commentSchema } from '@blog/contracts'
+import type { Comment, ModerationFilters } from '@blog/contracts'
 import { z } from 'zod'
 import { feedCardDtoSchema, toArticleCard } from '@/entities/article'
 import type { ArticleCardModel } from '@/entities/article'
@@ -83,22 +84,22 @@ export function deleteModeratedArticle(article_id: string): Promise<void> {
   return http.delete(`/v1/moderation/articles/${article_id}`, emptyResponseSchema)
 }
 
-export function hideComment(comment_id: string): Promise<unknown> {
-  return http.post(`/v1/comments/${comment_id}/hide`, z.unknown())
+export function hideComment(comment_id: string): Promise<Comment> {
+  return http.post(`/v1/comments/${comment_id}/hide`, commentSchema)
 }
 
-export function restoreComment(comment_id: string): Promise<unknown> {
-  return http.post(`/v1/comments/${comment_id}/restore`, z.unknown())
+export function restoreComment(comment_id: string): Promise<Comment> {
+  return http.post(`/v1/comments/${comment_id}/restore`, commentSchema)
 }
 
-export function deleteModeratedComment(comment_id: string): Promise<unknown> {
-  return http.delete(`/v1/moderation/comments/${comment_id}`, z.unknown())
+export function deleteModeratedComment(comment_id: string): Promise<Comment> {
+  return http.delete(`/v1/moderation/comments/${comment_id}`, commentSchema)
 }
 
 export function reviewReport(
   report_id: string,
   action: 'dismiss' | 'hide' | 'delete' = 'dismiss',
-): Promise<unknown> {
+): Promise<z.infer<typeof reportSchema>> {
   return http.patch(`/v1/reports/${report_id}`, reportSchema, { body: { action } })
 }
 

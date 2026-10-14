@@ -1,15 +1,13 @@
 import { useNavigate } from 'react-router'
-import { EditorWindow } from './EditorWindow.tsx'
-import { EditorPanel } from './EditorPanel.tsx'
-import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getAdminPage, pageKeys } from '@/entities/page'
-import type { AdminPage } from '@/entities/page'
-import { useViewer, RequireRole } from '@/entities/session'
-import { PageDocumentEditor } from './PageDocumentEditor.tsx'
-import { EditorSkeleton } from './EditorSkeleton.tsx'
+import { useState } from 'react'
+import { RequireRole } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { ErrorState } from '@/shared/ui'
+import { usePageEditor } from '../model/usePageEditor.ts'
+import { EditorWindow } from './EditorWindow.tsx'
+import { EditorPanel } from './EditorPanel.tsx'
+import { PageDocumentEditor } from './PageDocumentEditor.tsx'
+import { EditorSkeleton } from './EditorSkeleton.tsx'
 
 /** Freeze only the authorized initial data; session expiry must not unmount the local editor. */
 export function PageEditor({ id }: { id?: string }) {
@@ -22,21 +20,7 @@ export function PageEditor({ id }: { id?: string }) {
     onClose,
     onToggleFullscreen: () => setFullscreen((current) => !current),
   }
-  const { is_superadmin } = useViewer()
-  const query = useQuery({
-    queryKey: pageKeys.admin(id ?? 'new'),
-    queryFn: ({ signal }) => getAdminPage(id ?? '', signal),
-    enabled: Boolean(id) && is_superadmin,
-    retry: false,
-  })
-  const [opened, setOpened] = useState<{ initial: AdminPage | null } | null>(null)
-  useEffect(() => {
-    if (!opened && is_superadmin && (!id || query.data)) {
-      // Persistent edit session is intentionally independent of the volatile auth/query cache.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOpened({ initial: query.data ?? null })
-    }
-  }, [opened, is_superadmin, id, query.data])
+  const { query, opened } = usePageEditor(id)
   return (
     <EditorWindow label={t('pages.title')} is_fullscreen={is_fullscreen} onClose={onClose}>
       {opened ? (

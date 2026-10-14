@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { HttpResponse, http } from 'msw'
 import { userEvent, within } from 'storybook/test'
-import { StoryProviders } from '@/shared/api/mocks/StoryProviders.tsx'
+import { StoryProviders } from '@/shared/lib'
 import { CommentForm } from './CommentForm.tsx'
 
-const meta = {
+const meta = preview.meta({
   title: 'features/send-comment/CommentForm',
   component: CommentForm,
   decorators: [
@@ -29,34 +29,31 @@ const meta = {
     onSent: () => undefined,
     requireSession: (action: () => void) => action(),
   },
-} satisfies Meta<typeof CommentForm>
-export default meta
-type Story = StoryObj<typeof CommentForm>
-
-export const Compact: Story = {}
-export const Focused: Story = {
+})
+export const Compact = meta.story()
+export const Focused = meta.story({
   args: { article_id: 'focused-comment-story' },
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('textbox'))
   },
-}
-export const Mentioning: Story = {
+})
+export const Mentioning = meta.story({
   args: { article_id: 'mentioning-comment-story' },
   play: async ({ canvasElement }) => {
     await userEvent.type(within(canvasElement).getByRole('textbox'), '@')
   },
-}
-export const Filled: Story = {
+})
+export const Filled = meta.story({
   args: { article_id: 'filled-comment-story' },
   play: async ({ canvasElement }) => {
     await userEvent.type(within(canvasElement).getByRole('textbox'), 'Спасибо за статью!')
   },
-}
-export const Reply: Story = {
+})
+export const Reply = meta.story({
   args: { parent: { id: '7a1c2d30-1111-4a11-8a11-000000000010', name: 'Анна Авторова' } },
-}
-export const DiscussionDisabled: Story = { args: { comments_enabled: false } }
-export const SendError: Story = {
+})
+export const DiscussionDisabled = meta.story({ args: { comments_enabled: false } })
+export const SendError = meta.story({
   parameters: {
     msw: {
       handlers: [
@@ -69,4 +66,4 @@ export const SendError: Story = {
       ],
     },
   },
-}
+})

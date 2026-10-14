@@ -31,7 +31,7 @@ export function SettingsBadgeFields({
           className="flex flex-col gap-4 border-b border-separator pb-6"
         >
           <div className="flex items-center gap-3">
-            <img
+            <img loading="lazy"
               src={badge.image_url}
               alt=""
               width={32}

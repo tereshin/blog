@@ -11,7 +11,7 @@ import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, topics, profiles, settings } from '../../src/infra/db/schema.ts'
 import { requestArticleCover, requestAuthorCovers, requestSiteCover, applyGeneratedCover } from '../../src/modules/social-cover/index.ts'
-import { createSeoService, createSeoRepository, createCrawlService } from '../../src/modules/seo/index.ts'
+import { SeoService, SeoRepository, CrawlService } from '../../src/modules/seo/index.ts'
 const AUTHOR = randomUUID(), TOPIC = randomUUID(), ARTICLE = randomUUID(), LEGACY = randomUUID()
 const image = { url: 'https://cdn.example/social.jpg', width: 1200, height: 630, alt: 'Статья', mime: 'image/jpeg' }
 const images: SocialImages = { og: image, twitter: image, vk: { ...image, width: 1074, height: 480 } }
@@ -20,7 +20,7 @@ describe('content: версии превью и индексация (PostgreSQL
   const events = async () => (await database.pool.query<{ payload: unknown }>("select payload from outbox where name='content.social_cover.requested' order by created_at,id")).rows.map((row) => SocialCoverRequestedV1.parse(row.payload))
   const request = () => database.db.transaction(async (tx) => requestArticleCover(tx, ARTICLE, randomUUID()))
   const generated = (event: SocialCoverRequestedV1) => SocialCoverGeneratedV1.parse({ event_id: randomUUID(), name: 'media.social_cover.generated', version: 1, occurred_at: new Date().toISOString(), correlation_id: event.correlation_id, causation_id: event.event_id, target_id: event.target_id, revision: event.revision, images })
-  const covers = () => createSeoRepository(database.db).covers(ARTICLE)
+  const covers = () => new SeoRepository(database.db).covers(ARTICLE)
   beforeAll(async () => {
     postgres = await startPostgres(); database = openDatabase(postgres.url); await migrate(database.pool)
     await database.db.insert(topics).values({ id: TOPIC, title: 'Тема', slug: 'topic', position: 0 })
@@ -32,7 +32,7 @@ describe('content: версии превью и индексация (PostgreSQL
     expect(await events()).toHaveLength(0)
     await request(); await request()
     expect(await events()).toHaveLength(1)
-    expect(await createSeoRepository(database.db).covers(LEGACY)).toBeNull()
+    expect(await new SeoRepository(database.db).covers(LEGACY)).toBeNull()
   })
   it('принимает актуальную версию один раз, устаревшая версия не меняет результат', async () => {
     const first = (await events())[0]; expect(first).toBeDefined(); if (!first) return
@@ -58,7 +58,7 @@ describe('content: версии превью и индексация (PostgreSQL
     await database.db.update(articles).set({ visibility: 'members' }).where(eq(articles.id, ARTICLE)); await request()
     await processEvent(database.db, 'test-covers', generated(last), applyGeneratedCover)
     expect(await covers()).toBeNull()
-    const page = await createSeoService(createSeoRepository(database.db), { public_origin: 'https://blog.example', app_env: 'prod' }).page('/p/article')
+    const page = await new SeoService(new SeoRepository(database.db), { public_origin: 'https://blog.example', app_env: 'prod' }).page('/p/article')
     expect(page.body_text).toBe(''); expect(JSON.stringify(page)).not.toContain('Новый заголовок')
     const before = (await events()).length
     await database.db.update(articles).set({ visibility: 'public' }).where(eq(articles.id, ARTICLE)); await request()
@@ -73,8 +73,8 @@ describe('content: версии превью и индексация (PostgreSQL
   })
   it('sitemap содержит только публичные canonical, реальные даты; local закрыт', async () => {
     await database.db.update(articles).set({ status: 'hidden' }).where(eq(articles.id, LEGACY))
-    const repository = createSeoRepository(database.db)
-    const crawl = createCrawlService(database.db, repository, { public_origin: 'https://blog.example', app_env: 'prod' })
+    const repository = new SeoRepository(database.db)
+    const crawl = new CrawlService(database.db, repository, { public_origin: 'https://blog.example', app_env: 'prod' })
     expect((await crawl.sitemap())?.body).toContain('/sitemaps/articles-start.xml')
     const static_part = (await crawl.sitemap('static'))?.body
     expect(static_part).toContain('https://blog.example/discovery')
@@ -84,7 +84,7 @@ describe('content: версии превью и индексация (PostgreSQL
     const part = (await crawl.sitemap('articles-start'))?.body
     expect(part).toContain('https://blog.example/p/article'); expect(part).toContain('<lastmod>'); expect(part).not.toContain('legacy')
     expect(await crawl.sitemap('articles-INVALID')).toBeNull()
-    const local = createCrawlService(database.db, repository, { public_origin: 'http://localhost', app_env: 'local' })
+    const local = new CrawlService(database.db, repository, { public_origin: 'http://localhost', app_env: 'local' })
     expect((await local.robots()).body).toBe('User-agent: *\nDisallow: /\n')
     expect((await local.sitemap())?.body).not.toContain('<loc>')
   })

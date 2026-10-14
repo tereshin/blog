@@ -7,7 +7,7 @@ export type ActiveSession = {
   email_verified: boolean
 }
 
-export type SessionRepository = {
+export type SessionRepositoryPort = {
   /** Сессия, не отозванная и не истёкшая на момент `now`, вместе с участником. */
   findActive: (session_id: string, now: Date) => Promise<ActiveSession | null>
 }

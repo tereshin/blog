@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { reputationOf } from '../../src/modules/reputation/index.ts'
+import { ReputationService } from '../../src/modules/reputation/index.ts'
+
+const service = new ReputationService<null>({ listFacts: async () => [] })
 
 describe('репутация', () => {
   const facts = [
@@ -13,10 +15,10 @@ describe('репутация', () => {
   ]
 
   it('считает реакции только на опубликованные статьи и видимые комментарии', () => {
-    expect(reputationOf(facts)).toBe(3)
+    expect(service.reputationOf(facts)).toBe(3)
   })
 
   it('пустое множество — ноль', () => {
-    expect(reputationOf([])).toBe(0)
+    expect(service.reputationOf([])).toBe(0)
   })
 })

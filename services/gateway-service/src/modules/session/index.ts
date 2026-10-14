@@ -8,20 +8,25 @@ export {
   setSessionCookie,
 } from './session.cookies.ts'
 export type { CookieNames } from './session.cookies.ts'
-export { authGatewayRoutes } from './session.routes.ts'
-export type { AuthGatewayOptions } from './session.routes.ts'
+export { sessionRoutes } from './session.routes.ts'
+export type { SessionRoutesOptions } from './session.routes.ts'
+export { SessionController } from './session.controller.ts'
 export { sessionModule } from './session.plugin.ts'
 export type { SessionPluginOptions } from './session.plugin.ts'
 export { subscribeSessionRevocations } from './session.revocations.ts'
 export type { RevocationHandler } from './session.revocations.ts'
+export { ContextSigner } from './context-signer.ts'
 export {
   SESSION_CACHE_TTL_MS,
   SessionService,
-  createContextSigner,
-  createIdentityLookup,
   guestContext,
   isValidSessionId,
   memberContext,
 } from './session.service.ts'
-export type { ContextSigner } from './session.service.ts'
-export type { SessionInfo, SessionLookup, ViewerSession } from './session.types.ts'
+export type {
+  RevocationSourcePort,
+  SessionInfo,
+  SessionLookupPort,
+  UpstreamForwardPort,
+  ViewerSession,
+} from './session.types.ts'

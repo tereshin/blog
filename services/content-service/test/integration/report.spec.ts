@@ -10,6 +10,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, topics, users_copy } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { reportRoutes } from '../../src/modules/report/index.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -51,7 +52,8 @@ describe('content: жалобы', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(reportRoutes, { database })
+    const modules = composeContent({ database, media_url: 'http://media.test' })
+    await app.register(reportRoutes, { controller: modules.report })
   }, 120_000)
 
   afterAll(async () => {

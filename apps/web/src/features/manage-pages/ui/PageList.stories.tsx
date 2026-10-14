@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { http, HttpResponse } from 'msw'
-import { StoryProviders } from '@/shared/api/mocks'
+import { StoryProviders } from '@/shared/lib'
 import { PageList } from './PageList.tsx'
-const meta = {
+const meta = preview.meta({
   title: 'features/manage-pages/PageList',
   component: PageList,
   decorators: [
@@ -12,10 +12,8 @@ const meta = {
       </StoryProviders>
     ),
   ],
-} satisfies Meta<typeof PageList>
-export default meta
-type Story = StoryObj<typeof PageList>
-export const Empty: Story = {
+})
+export const Empty = meta.story({
   parameters: {
     msw: {
       handlers: [
@@ -23,8 +21,8 @@ export const Empty: Story = {
       ],
     },
   },
-}
-export const Loading: Story = {
+})
+export const Loading = meta.story({
   parameters: {
     msw: {
       handlers: [
@@ -35,8 +33,8 @@ export const Loading: Story = {
       ],
     },
   },
-}
-export const Error: Story = {
+})
+export const Error = meta.story({
   parameters: {
     msw: {
       handlers: [
@@ -46,4 +44,4 @@ export const Error: Story = {
       ],
     },
   },
-}
+})

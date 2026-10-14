@@ -1,13 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { ArticleUnavailable } from './ArticleUnavailable.tsx'
 
-const meta = {
+const meta = preview.meta({
   title: 'widgets/article-view/ArticleUnavailable',
   component: ArticleUnavailable,
   args: { status: 'unavailable' },
-} satisfies Meta<typeof ArticleUnavailable>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Unavailable: Story = {}
-export const MembersOnly: Story = { args: { status: 'members_only' } }
+})
+export const Unavailable = meta.story({ args: { status: 'unavailable' } })
+export const MembersOnly = meta.story({ args: { status: 'members_only' } })

@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { emptyResponseSchema, http } from '@/shared/api'
+import { logout } from '../api/logout.ts'
 import { sessionChannel } from './session-channel.ts'
 
 export function postLoggedOut(): void {
@@ -12,7 +12,7 @@ export function useLogout() {
   const navigate = useNavigate()
 
   return async () => {
-    await http.post('/v1/auth/logout', emptyResponseSchema)
+    await logout()
     query_client.clear()
     postLoggedOut()
     await navigate('/')

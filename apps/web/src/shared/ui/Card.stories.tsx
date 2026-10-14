@@ -1,12 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
 import { Card } from './Card.tsx'
 
-const meta = { title: 'shared/ui/Card', component: Card } satisfies Meta<typeof Card>
-export default meta
-type Story = StoryObj
-
-export const Default: Story = {
+const meta = preview.meta({ title: 'shared/ui/Card', component: Card })
+export const Default = meta.story({
   render: () => (
     <Card className="max-w-sm">
       <Card.Header>
@@ -18,12 +15,12 @@ export const Default: Story = {
       </Card.Footer>
     </Card>
   ),
-}
+})
 
-export const ContentOnly: Story = {
+export const ContentOnly = meta.story({
   render: () => (
     <Card className="max-w-sm">
       <Card.Content>Только содержимое</Card.Content>
     </Card>
   ),
-}
+})

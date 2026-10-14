@@ -1,75 +1,16 @@
-import type { SVGProps } from 'react'
-import { BaseIcon } from './BaseIcon.tsx'
-
-type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'>
-
-/** Совместимые обёртки над перенесённым каталогом SVG. */
-export function SearchIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="search_2" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function BellIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="notification" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function PenIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="pencil" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function ChevronDownIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="down" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function MenuIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="menu" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function ArrowUpIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="arrow_up" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function ArrowLeftIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="arrow_left" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function CommentIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="chat_1" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function BookmarkIcon({ style, icon_style = 'line', ...props }: IconProps & { icon_style?: 'line' | 'fill' }) {
-  return icon_style === 'fill'
-    ? <BaseIcon name="bookmark" style="fill" size={20} {...props} svg_style={style} />
-    : <BaseIcon name="bookmark" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function HomeIcon({ style, icon_style = 'line', ...props }: IconProps & { icon_style?: 'line' | 'fill' }) {
-  return icon_style === 'fill'
-    ? <BaseIcon name="home_4" style="fill" size={20} {...props} svg_style={style} />
-    : <BaseIcon name="home_4" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function MessageIcon({ style, icon_style = 'line', ...props }: IconProps & { icon_style?: 'line' | 'fill' }) {
-  return icon_style === 'fill'
-    ? <BaseIcon name="message_1" style="fill" size={20} {...props} svg_style={style} />
-    : <BaseIcon name="message_1" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function ShareIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="forward_2" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function EyeIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="eye" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function InboxIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="inbox" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function AlertIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="alert" style="line" size={20} {...props} svg_style={style} />
-}
-
-export function MoreIcon({ style, ...props }: IconProps) {
-  return <BaseIcon name="more_1" style="line" size={20} {...props} svg_style={style} />
-}
+export { AlertIcon } from './icons/AlertIcon.tsx'
+export { ArrowLeftIcon } from './icons/ArrowLeftIcon.tsx'
+export { ArrowUpIcon } from './icons/ArrowUpIcon.tsx'
+export { BellIcon } from './icons/BellIcon.tsx'
+export { BookmarkIcon } from './icons/BookmarkIcon.tsx'
+export { ChevronDownIcon } from './icons/ChevronDownIcon.tsx'
+export { CommentIcon } from './icons/CommentIcon.tsx'
+export { EyeIcon } from './icons/EyeIcon.tsx'
+export { HomeIcon } from './icons/HomeIcon.tsx'
+export { InboxIcon } from './icons/InboxIcon.tsx'
+export { MenuIcon } from './icons/MenuIcon.tsx'
+export { MessageIcon } from './icons/MessageIcon.tsx'
+export { MoreIcon } from './icons/MoreIcon.tsx'
+export { PenIcon } from './icons/PenIcon.tsx'
+export { SearchIcon } from './icons/SearchIcon.tsx'
+export { ShareIcon } from './icons/ShareIcon.tsx'

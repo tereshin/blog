@@ -1,78 +1,9 @@
 import type { PageSeo, SocialImages } from '@blog/contracts'
-import type { SeoGraphNode, SeoOptions, SeoRepository, SeoSite } from './seo.types.ts'
+import type { SeoGraphNode, SeoOptions, SeoRepositoryPort, SeoSite } from './seo.types.ts'
 import { breadcrumbGraph, pageGraph, siteGraph } from './seo.graph.ts'
 import { documentText, plainText, shortDescription } from './seo.text.ts'
-
-const LABELS = {
-  ru: {
-    home: 'Свежее',
-    popular: 'Популярное',
-    rating: 'Обзор',
-    blogs: 'Блоги',
-    topics: 'Темы',
-    feed: 'Моя лента',
-    search: 'Поиск',
-    bookmarks: 'Закладки',
-    messages: 'Сообщения',
-    write: 'Редактор',
-    admin: 'Администрирование',
-    auth: 'Авторизация',
-    followers: 'Подписчики',
-    following: 'Подписки',
-    missing: 'Страница не найдена',
-  },
-  en: {
-    home: 'Fresh',
-    popular: 'Popular',
-    rating: 'Discovery',
-    blogs: 'Blogs',
-    topics: 'Topics',
-    feed: 'My feed',
-    search: 'Search',
-    bookmarks: 'Bookmarks',
-    messages: 'Messages',
-    write: 'Editor',
-    admin: 'Administration',
-    auth: 'Authentication',
-    followers: 'Followers',
-    following: 'Following',
-    missing: 'Page not found',
-  },
-  sr: {
-    home: 'Sveže',
-    popular: 'Popularno',
-    rating: 'Otkrij',
-    blogs: 'Blogovi',
-    topics: 'Teme',
-    feed: 'Moj feed',
-    search: 'Pretraga',
-    bookmarks: 'Sačuvano',
-    messages: 'Poruke',
-    write: 'Uređivač',
-    admin: 'Administracija',
-    auth: 'Prijava',
-    followers: 'Pratioci',
-    following: 'Praćenja',
-    missing: 'Stranica nije pronađena',
-  },
-} as const
-
-function localPath(value: string): string | null {
-  if (
-    !value.startsWith('/') ||
-    value.startsWith('//') ||
-    value.includes('\\') ||
-    Array.from(value).some((char) => char.charCodeAt(0) < 32)
-  )
-    return null
-  const path = value.split(/[?#]/)[0] ?? '/'
-  try {
-    decodeURIComponent(path)
-  } catch {
-    return null
-  }
-  return path.length > 1 ? path.replace(/\/+$/, '') : path
-}
+import { SEO_LABELS } from './seo.labels.ts'
+import { localPath } from './seo.path.ts'
 
 function templateTitle(site: SeoSite, title: string): string {
   return site.seo.title_template
@@ -93,12 +24,18 @@ function simpleImages(url: string | null, alt: string): SocialImages | null {
   return { og: image, twitter: image, vk: image }
 }
 
-export function createSeoService(repository: SeoRepository, options: SeoOptions) {
-  const origin = new URL(options.public_origin).origin
-  return {
-    async page(input_path: string): Promise<PageSeo> {
+export class SeoService {
+  constructor(
+    private readonly repository: SeoRepositoryPort,
+    private readonly options: SeoOptions,
+  ) {}
+
+  async page(input_path: string): Promise<PageSeo> {
+    const repository = this.repository
+    const options = this.options
+    const origin = new URL(options.public_origin).origin
       const site = await repository.site()
-      const labels = LABELS[site.locale]
+      const labels = SEO_LABELS[site.locale]
       const requested_path = localPath(input_path)
       const path =
         requested_path === '/rating'
@@ -359,6 +296,5 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
         )
       if (private_key && known_private) return makePage(labels[private_key], '', 'WebPage', false)
       return missing()
-    },
   }
 }

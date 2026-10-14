@@ -1,12 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
 import { Popover } from './Popover.tsx'
 
-const meta = { title: 'shared/ui/Popover', component: Popover } satisfies Meta<typeof Popover>
-export default meta
-type Story = StoryObj
-
-export const Default: Story = {
+const meta = preview.meta({ title: 'shared/ui/Popover', component: Popover })
+export const Default = meta.story({
   render: () => (
     <Popover>
       <Button>Подробнее</Button>
@@ -15,4 +12,4 @@ export const Default: Story = {
       </Popover.Content>
     </Popover>
   ),
-}
+})

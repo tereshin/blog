@@ -115,7 +115,7 @@ export const publicSettingsSchema = z.strictObject({
   locale: localeSchema,
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
-  profile_badges: badgeDefinitionsSchema.default([]),
+  profile_badges: badgeDefinitionsSchema,
   seo: seoSettingsSchema.optional(),
   social_cover: socialCoverSettingsSchema.optional(),
   shell: shellVisibilitySchema.default(DEFAULT_SHELL_VISIBILITY),

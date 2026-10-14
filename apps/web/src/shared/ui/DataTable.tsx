@@ -1,9 +1,19 @@
+import { cva } from 'class-variance-authority'
 import { Virtualizer, TableLayout } from 'react-aria-components/Virtualizer'
 import { Table } from '@heroui/react/table'
 import type { ReactNode } from 'react'
 import { Button } from './Button.tsx'
 import { ErrorState } from './ErrorState.tsx'
 import { Skeleton } from './Skeleton.tsx'
+const table_content_class = cva(undefined, {
+  variants: {
+    is_virtual: {
+      true: 'h-[480px] overflow-auto',
+      false: 'min-w-[640px]',
+    },
+  },
+})
+
 export type DataColumn<TItem> = { id: string; label: string; render: (item: TItem) => ReactNode }
 export type DataTableProps<TItem> = {
   label: string
@@ -30,7 +40,7 @@ export function DataTable<TItem>({
   const content = (
     <Table.Content
       aria-label={label}
-      className={items.length > 100 ? 'h-[480px] overflow-auto' : 'min-w-[640px]'}
+      className={table_content_class({ is_virtual: items.length > 100 })}
     >
       <Table.Header>
         {columns.map((column, index) => (
@@ -51,27 +61,29 @@ export function DataTable<TItem>({
     </Table.Content>
   )
   return (
-    <Table variant="secondary" className="min-w-0 max-w-full">
-      <Table.ScrollContainer>
-        {items.length > 100 ? (
-          <Virtualizer layout={TableLayout} shouldObserveItemSize>
-            {content}
-          </Virtualizer>
-        ) : (
-          content
-        )}
-      </Table.ScrollContainer>
-      {pagination ? (
-        <Table.Footer>
-          <Button
-            variant="ghost"
-            isDisabled={pagination.is_loading}
-            onPress={pagination.onLoadMore}
-          >
-            {pagination.label}
-          </Button>
-        </Table.Footer>
-      ) : null}
-    </Table>
+    <div className="min-w-0 max-w-full overflow-x-auto">
+      <Table variant="secondary" className="min-w-0">
+        <Table.ScrollContainer>
+          {items.length > 100 ? (
+            <Virtualizer layout={TableLayout} shouldObserveItemSize>
+              {content}
+            </Virtualizer>
+          ) : (
+            content
+          )}
+        </Table.ScrollContainer>
+        {pagination ? (
+          <Table.Footer>
+            <Button
+              variant="ghost"
+              isDisabled={pagination.is_loading}
+              onPress={pagination.onLoadMore}
+            >
+              {pagination.label}
+            </Button>
+          </Table.Footer>
+        ) : null}
+      </Table>
+    </div>
   )
 }

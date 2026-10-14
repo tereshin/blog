@@ -1,2 +1,5 @@
 export { seenRoutes } from './seen.routes.ts'
 export type { SeenRoutesOptions } from './seen.routes.ts'
+export { SeenController } from './seen.controller.ts'
+export { SeenRepository } from './seen.repository.ts'
+export { SeenService } from './seen.service.ts'

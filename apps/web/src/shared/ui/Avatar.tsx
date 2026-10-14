@@ -31,7 +31,7 @@ function getInitials(name: string): string {
 export function Avatar({ src, name, ring, className, ...rest }: AvatarProps) {
   return (
     <HeroAvatar className={cn(avatar_variants({ ring }), className as string | undefined)} {...rest}>
-      {src ? <HeroAvatar.Image src={src} alt={name} /> : null}
+      {src ? <HeroAvatar.Image src={src} alt={name} loading="lazy" /> : null}
       <HeroAvatar.Fallback>{getInitials(name)}</HeroAvatar.Fallback>
     </HeroAvatar>
   )

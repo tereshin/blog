@@ -12,8 +12,8 @@ import {
   setGuestCookie,
 } from './session.cookies.ts'
 import type { CookieNames } from './session.cookies.ts'
-import { guestContext, isValidSessionId, memberContext } from './session.service.ts'
-import type { ContextSigner, SessionService } from './session.service.ts'
+import type { ContextSigner } from './context-signer.ts'
+import type { SessionService } from './session.service.ts'
 
 export type SessionPluginOptions = {
   cookies: CookieNames
@@ -48,18 +48,8 @@ const sessionPlugin: FastifyPluginAsync<SessionPluginOptions> = async (app, opti
       setGuestCookie(reply, cookies, guest_id)
     }
 
-    const session_cookie = request.cookies[cookies.session]
-    let context = guestContext(guest_id)
-    let session_id: string | null = null
-    if (session_cookie) {
-      const info = isValidSessionId(session_cookie) ? await sessions.resolve(session_cookie) : null
-      if (info) {
-        context = memberContext(info)
-        session_id = session_cookie
-      } else {
-        clearSessionCookie(reply, cookies)
-      }
-    }
+    const { context, session_id, should_clear_cookie } = await sessions.resolveViewer(guest_id, request.cookies[cookies.session])
+    if (should_clear_cookie) clearSessionCookie(reply, cookies)
 
     request.viewer_session = { context, session_id, service_context_jwt: await signer.sign(context) }
   })

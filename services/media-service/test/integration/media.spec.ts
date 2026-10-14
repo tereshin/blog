@@ -10,7 +10,7 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { mediaRoutes } from '../../src/modules/media/index.ts'
+import { MediaController, MediaRepository, MediaService, mediaRoutes } from '../../src/modules/media/index.ts'
 import type { ObjectStore } from '../../src/modules/media/index.ts'
 
 const MEMBER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -67,7 +67,9 @@ describe('media: загрузка файла', () => {
       request.viewer =
         viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(mediaRoutes, { database, store, public_url: 'http://files.test/media' })
+    await app.register(mediaRoutes, {
+      controller: new MediaController(new MediaService(new MediaRepository(database.db), store, 'http://files.test/media')),
+    })
   }, 120_000)
 
   afterAll(async () => {

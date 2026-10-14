@@ -1,9 +1,7 @@
-import { badgeDefinitionsSchema } from '@blog/contracts'
-import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
-import { requestSiteCover } from '../social-cover/index.ts'
-import { eq, sql } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { eq } from 'drizzle-orm'
+import type { Database } from '@blog/broker'
 import {
+  badgeDefinitionsSchema,
   faviconSettingsSchema,
   profileStatusIconsSchema,
   reactionAppearancesSchema,
@@ -11,13 +9,12 @@ import {
   shellVisibilitySchema,
   socialCoverSettingsSchema,
 } from '@blog/contracts'
-import type { Database } from '@blog/broker'
+import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
+import type { SettingsRepositoryPort, SettingsRow } from './settings.types.ts'
 
-import type { SettingsRepository, SettingsRow } from './settings.types.ts'
-
-const columns = {
+const COLUMNS = {
   welcome_content: settings.welcome_content,
   name: settings.name,
   logo_url: settings.logo_url,
@@ -47,50 +44,38 @@ function readRow(row: SettingsRow): SettingsRow {
   }
 }
 
+export class SettingsRepository implements SettingsRepositoryPort<Database> {
+  constructor(private readonly db: Database) {}
 
-export function createSettingsRepository(db: NodePgDatabase): SettingsRepository {
-  return {
-    async badgeDefinitions(is_exclusive = false) {
-      await db.execute(is_exclusive
-        ? sql`select pg_advisory_xact_lock(74192832)`
-        : sql`select pg_advisory_xact_lock_shared(74192832)`)
-      const [row] = await db.select({ badges: settings.profile_badges }).from(settings)
-        .where(eq(settings.id, 1)).for(is_exclusive ? 'update' : 'share')
-      return row?.badges ?? null
-    },
-    async find() {
-      const [row] = await db.select(columns).from(settings).where(eq(settings.id, 1)).limit(1)
-      return row ? readRow(row) : null
-    },
+  transaction<T>(work: (tx: Database) => Promise<T>): Promise<T> {
+    return this.db.transaction((tx) => work(tx))
+  }
 
-    async insertIfAbsent(input, correlation_id) {
-      return (db as Database).transaction(async (tx) => {
-        const database = tx as Database
-        const [row] = await database
-          .insert(settings)
-          .values({ id: 1, ...input })
-          .onConflictDoNothing()
-          .returning(columns)
-        if (!row) return null
-        await appendSettingsUpdated(database, { ...input, correlation_id })
-        await requestSiteCover(database, correlation_id)
-        return readRow(row)
-      })
-    },
+  async find(): Promise<SettingsRow | null> {
+    const [row] = await this.db.select(COLUMNS).from(settings).where(eq(settings.id, 1)).limit(1)
+    return row ? readRow(row) : null
+  }
 
-    async save(input, correlation_id) {
-      return (db as Database).transaction(async (tx) => {
-        const database = tx as Database
-        const [row] = await database
-          .insert(settings)
-          .values({ id: 1, ...input })
-          .onConflictDoUpdate({ target: settings.id, set: input })
-          .returning(columns)
-        if (!row) throw new Error('settings row was not written')
-        await appendSettingsUpdated(database, { ...input, correlation_id })
-        await requestSiteCover(database, correlation_id)
-        return readRow(row)
-      })
-    },
+  async insertIfAbsent(tx: Database, input: SettingsRow): Promise<SettingsRow | null> {
+    const [row] = await tx
+      .insert(settings)
+      .values({ id: 1, ...input })
+      .onConflictDoNothing()
+      .returning(COLUMNS)
+    return row ? readRow(row) : null
+  }
+
+  async save(tx: Database, input: SettingsRow): Promise<SettingsRow> {
+    const [row] = await tx
+      .insert(settings)
+      .values({ id: 1, ...input })
+      .onConflictDoUpdate({ target: settings.id, set: input })
+      .returning(COLUMNS)
+    if (!row) throw new Error('settings row was not written')
+    return readRow(row)
+  }
+
+  appendUpdated(tx: Database, input: SettingsRow, correlation_id: string): Promise<void> {
+    return appendSettingsUpdated(tx, { ...input, correlation_id })
   }
 }

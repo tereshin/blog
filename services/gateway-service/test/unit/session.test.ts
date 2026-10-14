@@ -1,14 +1,14 @@
 import { generateKeyPairSync } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
 import { jwtVerify } from 'jose'
-import { SessionService, createContextSigner, guestContext, isCsrfValid, isValidSessionId } from '../../src/modules/session/index.ts'
+import { ContextSigner, SessionService, guestContext, isCsrfValid, isValidSessionId } from '../../src/modules/session/index.ts'
 
 const info = { user_id: '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22', role: 'member', is_restricted: false, can_publish: true } as const
 
 describe('SessionService', () => {
   it('кэширует ответ identity, в том числе «сессии нет»', async () => {
     const lookup = vi.fn().mockResolvedValueOnce(info).mockResolvedValueOnce(null)
-    const sessions = new SessionService(lookup)
+    const sessions = new SessionService({ find: lookup }, { forward: vi.fn() })
     expect(await sessions.resolve('a'.repeat(20))).toEqual(info)
     expect(await sessions.resolve('a'.repeat(20))).toEqual(info)
     expect(lookup).toHaveBeenCalledTimes(1)
@@ -19,7 +19,7 @@ describe('SessionService', () => {
 
   it('invalidate заставляет перечитать сессию у владельца', async () => {
     const lookup = vi.fn().mockResolvedValue(info)
-    const sessions = new SessionService(lookup)
+    const sessions = new SessionService({ find: lookup }, { forward: vi.fn() })
     await sessions.resolve('a'.repeat(20))
     sessions.invalidate(['a'.repeat(20)])
     await sessions.resolve('a'.repeat(20))
@@ -28,7 +28,7 @@ describe('SessionService', () => {
 
   it('ошибка identity не кэшируется', async () => {
     const lookup = vi.fn().mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce(info)
-    const sessions = new SessionService(lookup)
+    const sessions = new SessionService({ find: lookup }, { forward: vi.fn() })
     await expect(sessions.resolve('a'.repeat(20))).rejects.toThrow('down')
     expect(await sessions.resolve('a'.repeat(20))).toEqual(info)
   })
@@ -37,7 +37,7 @@ describe('SessionService', () => {
 describe('служебный контекст', () => {
   it('подписанный JWT проверяется публичным ключом и живёт не дольше 60 с', async () => {
     const { privateKey, publicKey } = generateKeyPairSync('ed25519')
-    const signer = createContextSigner(privateKey.export({ type: 'pkcs8', format: 'pem' }).toString())
+    const signer = new ContextSigner(privateKey.export({ type: 'pkcs8', format: 'pem' }).toString())
     const token = await signer.sign(guestContext('abc'))
     const { payload } = await jwtVerify(token, publicKey, { algorithms: ['EdDSA'] })
     expect(payload['viewer_key']).toBe('guest:abc')

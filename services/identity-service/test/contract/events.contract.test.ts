@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { UserCreatedV1 } from '@blog/contracts'
 import { describe, expect, it } from 'vitest'
-import { sessionRevokedEvent, userCreatedEvent } from '../../src/modules/auth/auth.events.ts'
+import { userCreatedEvent } from '../../src/modules/auth/auth.events.ts'
+import { sessionRevokedEvent } from '../../src/shared/session-events.ts'
 
 const fixture = new URL('../../../../packages/contracts/test/fixtures/identity/user-created.json', import.meta.url)
 

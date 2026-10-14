@@ -1,23 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { DbHandle } from '../../infra/db/client.ts'
-import { createCommentController } from './comment.controller.ts'
-import { createCommentRepository } from './comment.repository.ts'
-import { createCommentService } from './comment.service.ts'
-import { createCommentWriter } from './comment.write.ts'
+import type { CommentController } from './comment.controller.ts'
 
-export type CommentRoutesOptions = {
-  database: DbHandle
-  lookup_file?: (url: string) => Promise<{ uploader_id: string; kind: string } | null>
-}
+export type CommentRoutesOptions = { controller: CommentController }
 
 /** `GET /v1/comments/popular` — до 10 самых популярных комментариев статей, доступных зрителю. */
-export const commentRoutes: FastifyPluginAsync<CommentRoutesOptions> = async (app, options) => {
-  const controller = createCommentController(
-    createCommentService(
-      createCommentRepository(options.database.db),
-      createCommentWriter(options.database.db, options.lookup_file),
-    ),
-  )
+export const commentRoutes: FastifyPluginAsync<CommentRoutesOptions> = async (app, { controller }) => {
   app.get('/v1/comments/popular', (request, reply) => controller.popular(request, reply))
   app.get('/v1/articles/:article_id/comments', (request, reply) => controller.list(request, reply))
   app.post('/v1/articles/:article_id/comments', (request, reply) =>

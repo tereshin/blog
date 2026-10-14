@@ -12,7 +12,7 @@ function reputationLabel(value: number): string {
 /** Строка списка людей: аватар, имя ведёт в профиль, репутация зелёным. */
 export function UserListItem({ user }: UserListItemProps) {
   return (
-    <li className="flex items-center gap-3 py-2">
+    <div className="flex items-center gap-3 py-2">
       <Link to={user.href} className="shrink-0 rounded-avatar outline-offset-2" aria-label={user.display_name}>
         <Avatar src={user.avatar_url} name={user.display_name} size="md" />
       </Link>
@@ -20,6 +20,6 @@ export function UserListItem({ user }: UserListItemProps) {
         {user.display_name}
       </Link>
       <span className="text-sm font-medium text-positive">{reputationLabel(user.reputation)}</span>
-    </li>
+    </div>
   )
 }

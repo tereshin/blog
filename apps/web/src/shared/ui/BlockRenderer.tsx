@@ -5,8 +5,8 @@ import { DocumentBlockView } from './document-blocks/DocumentBlockView.tsx'
 export function BlockRenderer({ blocks }: { blocks: readonly DocumentBlock[] }) {
   return (
     <div>
-      {blocks.map((block, index) => (
-        <DocumentBlockView key={block.id ?? index} block={block} />
+      {blocks.map((block, offset) => (
+        <DocumentBlockView key={block.id ?? `${block.type}-${offset}`} block={block} />
       ))}
     </div>
   )

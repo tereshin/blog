@@ -39,8 +39,10 @@ describe('поток: смена видимости снимает статью 
       ['guest-jwt', false],
       ['member-jwt', true],
     ])
-    const events = new EventsService(async (jwt): Promise<ArticleAccess> => {
-      return { can_read: readable.get(jwt) === true, visibility: 'members', status: 'published', author_id: AUTHOR }
+    const events = new EventsService({
+      check: async (jwt): Promise<ArticleAccess> => {
+        return { can_read: readable.get(jwt) === true, visibility: 'members', status: 'published', author_id: AUTHOR }
+      },
     }, createLogger({ service: 'gateway-test', level: 'silent' }))
 
     const guest = open({ role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' }, 'guest-jwt')

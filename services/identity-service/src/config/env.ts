@@ -5,7 +5,7 @@ export function firebaseProdIssuer(project_id: string): string {
   return `https://securetoken.google.com/${project_id}`
 }
 
-const firebaseSchema = {
+const FirebaseSchema = {
   FIREBASE_PROJECT_ID: z.string().min(1),
   FIREBASE_AUTH_DOMAIN: z.string().min(1),
   FIREBASE_WEB_API_KEY: z.string().min(1),
@@ -16,7 +16,7 @@ const firebaseSchema = {
   SEED_AUTH_PASSWORD: z.string().min(1).optional(),
 }
 
-const envSchema = baseEnvSchema.extend({
+const EnvSchema = baseEnvSchema.extend({
   HTTP_PORT: z.coerce.number().int().positive().default(3001),
   DATABASE_URL: z.string().min(1),
   NATS_URL: z.string().min(1),
@@ -25,14 +25,14 @@ const envSchema = baseEnvSchema.extend({
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
-  ...firebaseSchema,
+  ...FirebaseSchema,
 })
 
-export type Env = z.infer<typeof envSchema>
+export type Env = z.infer<typeof EnvSchema>
 
 function assertFirebaseEnv(env: Env): void {
-  const localish = env.APP_ENV === 'local' || env.APP_ENV === 'dev'
-  if (!localish && (env.FIREBASE_AUTH_EMULATOR_HOST || env.SEED_AUTH_PASSWORD)) {
+  const is_local_like = env.APP_ENV === 'local' || env.APP_ENV === 'dev'
+  if (!is_local_like && (env.FIREBASE_AUTH_EMULATOR_HOST || env.SEED_AUTH_PASSWORD)) {
     throw new Error('FIREBASE_AUTH_EMULATOR_HOST и SEED_AUTH_PASSWORD допустимы только в local и dev')
   }
   if (env.APP_ENV === 'prod') {
@@ -53,21 +53,27 @@ function assertFirebaseEnv(env: Env): void {
 
 /** Единственное место чтения окружения сервиса: падает при старте, если чего-то нет. */
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
-  const env = defineEnv(envSchema, source)
+  const env = defineEnv(EnvSchema, source)
   assertFirebaseEnv(env)
+  exposeFirebaseEmulatorHost(env)
   return env
 }
 
-const migrateEnvSchema = baseEnvSchema.extend({ DATABASE_URL: z.string().min(1) })
+/** firebase-admin находит эмулятор только по `process.env.FIREBASE_AUTH_EMULATOR_HOST`. */
+function exposeFirebaseEmulatorHost(env: Env): void {
+  if (env.FIREBASE_AUTH_EMULATOR_HOST) process.env.FIREBASE_AUTH_EMULATOR_HOST = env.FIREBASE_AUTH_EMULATOR_HOST
+}
+
+const MigrateEnvSchema = baseEnvSchema.extend({ DATABASE_URL: z.string().min(1) })
 
 /** Одноразовой задаче миграции нужны только `APP_ENV` и `DATABASE_URL`. */
-export function loadMigrateEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof migrateEnvSchema> {
-  const env = defineEnv(migrateEnvSchema, source)
+export function loadMigrateEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof MigrateEnvSchema> {
+  const env = defineEnv(MigrateEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL'])
   return env
 }
 
-const seedEnvSchema = baseEnvSchema.extend({
+const SeedEnvSchema = baseEnvSchema.extend({
   DATABASE_URL: z.string().min(1),
   SUPERADMIN_EMAIL: z.email(),
   S3_PUBLIC_URL: z.string().optional(),
@@ -76,11 +82,16 @@ const seedEnvSchema = baseEnvSchema.extend({
   SEED_AUTH_PASSWORD: z.string().min(1).optional(),
 })
 
-export type SeedEnv = z.infer<typeof seedEnvSchema>
+export type SeedEnv = z.infer<typeof SeedEnvSchema>
+
+/** Первая проверка seed: только `APP_ENV`, чтобы в prod задача завершилась до чтения остального окружения. */
+export function loadSeedAppEnv(source: Record<string, string | undefined> = process.env): z.infer<typeof baseEnvSchema> {
+  return defineEnv(baseEnvSchema, source)
+}
 
 /** Окружение одноразовой задачи seed: без брокера и ключей, только база и параметры данных. */
 export function loadSeedEnv(source: Record<string, string | undefined> = process.env): SeedEnv {
-  const env = defineEnv(seedEnvSchema, source)
+  const env = defineEnv(SeedEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL'])
   if (env.APP_ENV === 'prod' && (env.FIREBASE_AUTH_EMULATOR_HOST || env.SEED_AUTH_PASSWORD)) {
     throw new Error('В prod эмулятор и тестовый пароль запрещены')
@@ -88,16 +99,16 @@ export function loadSeedEnv(source: Record<string, string | undefined> = process
   return env
 }
 
-const bootstrapEnvSchema = baseEnvSchema.extend({
+const BootstrapEnvSchema = baseEnvSchema.extend({
   DATABASE_URL: z.string().min(1),
   SUPERADMIN_EMAIL: z.email(),
 })
 
-export type BootstrapEnv = z.infer<typeof bootstrapEnvSchema>
+export type BootstrapEnv = z.infer<typeof BootstrapEnvSchema>
 
 /** Окружение `bootstrap`: база и почта суперадминистратора. Без почты процесс не стартует. */
 export function loadBootstrapEnv(source: Record<string, string | undefined> = process.env): BootstrapEnv {
-  const env = defineEnv(bootstrapEnvSchema, source)
+  const env = defineEnv(BootstrapEnvSchema, source)
   rejectPlaceholders(env, ['DATABASE_URL', 'SUPERADMIN_EMAIL'])
   return env
 }

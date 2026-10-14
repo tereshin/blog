@@ -1,4 +1,4 @@
-import type { LoginReason } from './useLoginDialog.ts'
+import type { LoginReason } from './useLoginDialogStore.ts'
 
 const AUTH_ERROR_PARAM = 'auth_error'
 

@@ -1,7 +1,7 @@
 import { and, eq, gt } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { articles, profiles, topics, users_copy } from '../../infra/db/schema.ts'
-import type { SeoOptions, SeoRepository } from './seo.types.ts'
+import type { SeoOptions, SeoRepositoryPort } from './seo.types.ts'
 
 const PAGE_SIZE = 10_000
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -23,19 +23,29 @@ function urlset(entries: { url: string; modified_at?: Date }[]): string {
 }
 
 /** Keyset pages keep each document below the sitemap limits without OFFSET or loading the whole site. */
-export function createCrawlService(
-  db: NodePgDatabase,
-  repository: SeoRepository,
-  options: SeoOptions,
-  published_pages?: (
-    cursor?: string,
-    limit?: number,
-  ) => Promise<{ id: string; slug: string; updated_at: Date }[]>,
-) {
-  const origin = new URL(options.public_origin).origin
-  const enabled = async () =>
-    options.app_env === 'prod' && (await repository.site()).seo.indexing_enabled
-  async function entries(kind: Kind, cursor: string | undefined) {
+export class CrawlService {
+  constructor(
+    private readonly db: NodePgDatabase,
+    private readonly repository: SeoRepositoryPort,
+    private readonly options: SeoOptions,
+    private readonly published_pages?: (
+      cursor?: string,
+      limit?: number,
+    ) => Promise<{ id: string; slug: string; updated_at: Date }[]>,
+  ) {}
+
+  private origin() {
+    return new URL(this.options.public_origin).origin
+  }
+
+  private async enabled() {
+    return this.options.app_env === 'prod' && (await this.repository.site()).seo.indexing_enabled
+  }
+
+  private async entries(kind: Kind, cursor: string | undefined) {
+    const origin = this.origin()
+    const published_pages = this.published_pages
+    const db = this.db
     if (kind === 'pages') {
       const rows = (await published_pages?.(cursor, PAGE_SIZE)) ?? []
       return rows.map((row) => ({
@@ -88,18 +98,21 @@ export function createCrawlService(
       .limit(PAGE_SIZE)
     return rows.map((row) => ({ id: row.id, url: `${origin}/t/${encodeURIComponent(row.slug)}` }))
   }
-  return {
-    async robots(): Promise<CrawlDocument> {
-      const allow = await enabled()
+
+  async robots(): Promise<CrawlDocument> {
+      const origin = this.origin()
+      const allow = await this.enabled()
       return {
         content_type: 'text/plain',
         body: allow
           ? `User-agent: *\nDisallow: /v1/\nDisallow: /internal/\nSitemap: ${origin}/sitemap.xml\n`
           : 'User-agent: *\nDisallow: /\n',
       }
-    },
-    async sitemap(part?: string): Promise<CrawlDocument | null> {
-      if (!(await enabled())) return { content_type: 'application/xml', body: urlset([]) }
+  }
+
+  async sitemap(part?: string): Promise<CrawlDocument | null> {
+      const origin = this.origin()
+      if (!(await this.enabled())) return { content_type: 'application/xml', body: urlset([]) }
       if (part === 'static')
         return {
           content_type: 'application/xml',
@@ -113,7 +126,7 @@ export function createCrawlService(
         return {
           content_type: 'application/xml',
           body: urlset(
-            await entries(match[1] as Kind, match[2] === 'start' ? undefined : match[2]),
+            await this.entries(match[1] as Kind, match[2] === 'start' ? undefined : match[2]),
           ),
         }
       }
@@ -121,7 +134,7 @@ export function createCrawlService(
       for (const kind of KINDS) {
         let cursor: string | undefined
         for (;;) {
-          const rows = await entries(kind, cursor)
+          const rows = await this.entries(kind, cursor)
           if (rows.length === 0) break
           locations.push(`${origin}/sitemaps/${kind}-${cursor ?? 'start'}.xml`)
           if (rows.length < PAGE_SIZE) break
@@ -132,6 +145,5 @@ export function createCrawlService(
         content_type: 'application/xml',
         body: `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${locations.map((url) => `<sitemap><loc>${xml(url)}</loc></sitemap>`).join('')}</sitemapindex>`,
       }
-    },
   }
 }

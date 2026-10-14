@@ -1,12 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { useState } from 'react'
 import { Button } from './Button.tsx'
 import { Dialog } from './Dialog.tsx'
 
-const meta = { title: 'shared/ui/Dialog', component: Dialog } satisfies Meta<typeof Dialog>
-export default meta
-type Story = StoryObj<typeof meta>
-
+const meta = preview.meta({ title: 'shared/ui/Dialog', component: Dialog })
 function Demo() {
   const [is_open, setIsOpen] = useState(true)
   return (
@@ -28,4 +25,4 @@ function Demo() {
   )
 }
 
-export const Default: Story = { args: { is_open: true, onOpenChange: () => {}, children: null }, render: () => <Demo /> }
+export const Default = meta.story({ args: { is_open: true, onOpenChange: () => {}, children: null }, render: () => <Demo /> })

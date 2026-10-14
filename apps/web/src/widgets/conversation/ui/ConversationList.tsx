@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { ConversationListItem, useConversations } from '@/entities/conversation'
 import { useViewer } from '@/entities/session'
 import { useT } from '@/shared/i18n'
@@ -11,8 +11,11 @@ import {
   PenIcon,
   Skeleton,
   Tooltip,
+  VirtualList,
 } from '@/shared/ui'
 import { PeerPicker } from './PeerPicker.tsx'
+
+const VIRTUALIZATION_THRESHOLD = 100
 
 type ConversationListProps = {
   selected_id: string | null
@@ -24,6 +27,18 @@ export function ConversationList({ selected_id }: ConversationListProps) {
   const { viewer } = useViewer()
   const conversations = useConversations(viewer.status === 'member')
   const [is_picker_open, setPickerOpen] = useState(false)
+  const items = useMemo(
+    () => (conversations.status === 'ok' ? conversations.items : []),
+    [conversations],
+  )
+  const conversation_by_id = useMemo(
+    () => new Map(items.map((conversation) => [conversation.id, conversation])),
+    [items],
+  )
+  const ids = items.map((conversation) => conversation.id)
+  const handleNearEnd = useCallback(() => {
+    if (conversations.status === 'ok' && conversations.has_next) conversations.fetchNext()
+  }, [conversations])
 
   return (
     <Card
@@ -64,9 +79,26 @@ export function ConversationList({ selected_id }: ConversationListProps) {
             className="py-8"
           />
         ) : null}
-        {conversations.status === 'ok' ? (
+        {conversations.status === 'ok' && ids.length > VIRTUALIZATION_THRESHOLD ? (
+          <VirtualList
+            ids={ids}
+            estimate_size={80}
+            onNearEnd={handleNearEnd}
+            item_className="pb-1"
+            renderItem={(id) => {
+              const conversation = conversation_by_id.get(id)
+              return conversation ? (
+                <ConversationListItem
+                  conversation={conversation}
+                  is_selected={conversation.id === selected_id}
+                />
+              ) : null
+            }}
+          />
+        ) : null}
+        {conversations.status === 'ok' && ids.length <= VIRTUALIZATION_THRESHOLD ? (
           <ul className="flex flex-col gap-1">
-            {conversations.items.map((conversation) => (
+            {items.map((conversation) => (
               <li key={conversation.id}>
                 <ConversationListItem
                   conversation={conversation}

@@ -5,7 +5,7 @@ import type { PageSeo } from '@blog/contracts'
 import type { ServiceClient } from '@blog/http-kit'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
-import { prerenderRoutes } from '../../src/modules/prerender/index.ts'
+import { PrerenderController, PrerenderService, prerenderRoutes } from '../../src/modules/prerender/index.ts'
 import { contentSecurityPolicy } from '../../src/modules/security/content-security-policy.ts'
 
 const image = { url: 'https://cdn.example/cover.jpg', alt: 'Обложка', width: 1200, height: 630, mime: 'image/jpeg' }
@@ -29,7 +29,7 @@ describe('gateway: SEO для роботов', () => {
     app.addHook('onRequest', async (_request, reply) => { reply.header('Content-Security-Policy', contentSecurityPolicy({ nonce: 'test-nonce', image_origin: null })) })
     await app.register(requestContext, { logger: createLogger({ service: 'gateway-test', level: 'silent' }) })
     await app.register(errorHandler)
-    await app.register(prerenderRoutes, { content: contentClient() })
+    await app.register(prerenderRoutes, { controller: new PrerenderController(new PrerenderService(contentClient())) })
   })
   afterAll(async () => { await app.close() })
   it.each(['TelegramBot', 'vkShare', 'Googlebot', 'Google-InspectionTool'])('%s получает все социальные теги, JSON-LD и текст', async (ua) => {

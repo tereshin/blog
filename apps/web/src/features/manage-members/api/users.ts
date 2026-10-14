@@ -33,9 +33,9 @@ export function setMemberPublishing(id: string, can_publish: boolean): Promise<A
 }
 
 export function restrictMember(id: string): Promise<AdminUser> {
-  return http.post(`/v1/users/${id}/restrict`, adminUserSchema, { body: {} })
+  return http.put(`/v1/users/${id}/restriction`, adminUserSchema, { body: {} })
 }
 
 export function unrestrictMember(id: string): Promise<AdminUser> {
-  return http.delete(`/v1/users/${id}/restrict`, adminUserSchema)
+  return http.delete(`/v1/users/${id}/restriction`, adminUserSchema)
 }

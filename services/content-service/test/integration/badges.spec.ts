@@ -20,14 +20,15 @@ import {
   topics,
   users_copy,
 } from '../../src/infra/db/schema.ts'
+import { composeContent } from '../../src/app.modules.ts'
 import { runBadgeSweep } from '../../src/infra/workers/badge-worker.ts'
-import { createSettingsRepository, createSettingsService } from '../../src/modules/settings/index.ts'
-import { createArticleRepository } from '../../src/modules/article/article.repository.ts'
-import { createCountersHandler } from '../../src/modules/counters/index.ts'
-import { createArticleService } from '../../src/modules/article/index.ts'
-import { createBadgeRepository, createBadgeService } from '../../src/modules/badge/index.ts'
+import { ArticleRepository, ArticleWriteService } from '../../src/modules/article/index.ts'
+import { BadgeRepository, BadgeService } from '../../src/modules/badge/index.ts'
+import { CountersHandler } from '../../src/modules/counters/index.ts'
 import { profileRoutes } from '../../src/modules/profile/index.ts'
 import { settingsRoutes } from '../../src/modules/settings/index.ts'
+import { SlugRepository, SlugService } from '../../src/modules/slug/index.ts'
+import { SocialCoverRepository, SocialCoverService } from '../../src/modules/social-cover/index.ts'
 
 const USER = '11111111-1111-4111-8111-111111111111'
 const TOPIC = '22222222-2222-4222-8222-222222222222'
@@ -101,12 +102,9 @@ describe('permanent badge awards and settings', () => {
         viewer_key: `user:${USER}`,
       } satisfies ServiceContext
     })
-    await app.register(settingsRoutes, { database, media_url: 'http://media.test' })
-    await app.register(profileRoutes, {
-      database,
-      media_url: 'http://media.test',
-      public_origin: 'http://blog.test',
-    })
+    const modules = composeContent({ database, media_url: 'http://media.test', public_origin: 'http://blog.test' })
+    await app.register(settingsRoutes, { controller: modules.settings })
+    await app.register(profileRoutes, { controller: modules.profile })
   }, 120000)
 
   beforeEach(async () => {
@@ -122,17 +120,17 @@ describe('permanent badge awards and settings', () => {
   })
 
   it('issues after publication and reputation update in their transactions, retaining awards', async () => {
-    const service = createArticleService(createArticleRepository(database.db), {
-      media_urls: ['http://media.test'],
-      lookupFile: async () => null,
-      publishTransaction: (operation) => database.db.transaction((tx) =>
-        operation(createArticleRepository(tx), createBadgeService(createBadgeRepository(tx, createSettingsService(createSettingsRepository(tx), { media_url: '' }).getBadgeDefinitions))),
-      ),
-    })
+    const service = new ArticleWriteService(
+      new ArticleRepository(database.db),
+      new SlugService(new SlugRepository()),
+      new SocialCoverService(new SocialCoverRepository()),
+      new BadgeService(new BadgeRepository()),
+      { media_urls: ['http://media.test'], lookupFile: async () => null },
+    )
     await service.publish({ user_id: USER, role: 'member', email_verified: true, is_restricted: false, can_publish: true, viewer_key: `user:${USER}` }, ARTICLE, 'test')
     expect(await awards()).toContain('first_post')
     await database.db.transaction(async (tx) => {
-      await createCountersHandler()(tx, {
+      await new CountersHandler().handle(tx, {
         user_id: USER,
         reputation: 10,
         event_id: '55555555-5555-4555-8555-555555555555',
@@ -154,14 +152,14 @@ describe('permanent badge awards and settings', () => {
     await expect(
       database.db.transaction(async (tx) => {
         await tx.update(profiles).set({ reputation: 10 })
-        await createBadgeService(createBadgeRepository(tx, createSettingsService(createSettingsRepository(tx), { media_url: '' }).getBadgeDefinitions)).evaluate(USER, now)
+        await new BadgeService(new BadgeRepository()).evaluate(tx, USER, now)
         throw new Error('rollback')
       }),
     ).rejects.toThrow('rollback')
     expect(await awards()).toEqual([])
   })
 
-  it('applies new rules retroactively, survives archive and edits, and keeps older update clients compatible', async () => {
+  it('applies new rules retroactively, survives archive and edits, and preserves unspecified settings', async () => {
     let body = await admin()
     expect(
       (await save({ ...body, profile_badges: [...body.profile_badges, custom] })).statusCode,
@@ -178,12 +176,10 @@ describe('permanent badge awards and settings', () => {
     expect((await save({ ...body, profile_badges: updated })).statusCode).toBe(200)
     await runBadgeSweep(database, () => false, now)
     const profile = (await app.inject('/v1/profiles/1')).json()
-    expect(profile.badge_ids).toContain(BADGE)
-    expect(profile.badges).not.toContain(BADGE)
-    expect(profile.badges.every((id: string) => ['first_post', 'ten_reactions', 'one_year'].includes(id))).toBe(true)
-    const old_body = await admin()
-    delete old_body.profile_badges
-    expect((await save({ ...old_body, name: 'Renamed' })).statusCode).toBe(200)
+    expect(profile.badges).toContain(BADGE)
+    const partial_body = await admin()
+    delete partial_body.profile_badges
+    expect((await save({ ...partial_body, name: 'Renamed' })).statusCode).toBe(200)
     expect((await admin()).profile_badges).toEqual(updated)
   })
 
@@ -213,7 +209,7 @@ describe('permanent badge awards and settings', () => {
     await database.db.update(profiles).set({ reputation: 10 })
     await Promise.all(
       Array.from({ length: 3 }, () =>
-        database.db.transaction((tx) => createBadgeService(createBadgeRepository(tx, createSettingsService(createSettingsRepository(tx), { media_url: '' }).getBadgeDefinitions)).evaluate(USER, now)),
+        database.db.transaction((tx) => new BadgeService(new BadgeRepository()).evaluate(tx, USER, now)),
       ),
     )
     await Promise.all([

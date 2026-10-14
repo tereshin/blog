@@ -74,7 +74,7 @@ export function SettingsCoverPreview({
             {variant === 'og' ? 'Open Graph' : variant === 'twitter' ? 'Twitter / X' : 'VK'} ·{' '}
             {SOCIAL_COVER_SIZES[variant].width} × {SOCIAL_COVER_SIZES[variant].height}
           </figcaption>
-          <img
+          <img loading="lazy"
             src={url}
             alt={title}
             width={SOCIAL_COVER_SIZES[variant].width}

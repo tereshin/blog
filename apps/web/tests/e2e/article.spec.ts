@@ -86,7 +86,6 @@ test.describe('Страница статьи', () => {
     await card.getByRole('heading', { level: 2 }).getByRole('link').click()
     await expect(page).toHaveURL(/\/p\/statya-5$/)
     await expect(page.getByRole('banner').getByRole('link', { name: 'Назад' })).toBeVisible()
-    await expect(page.getByRole('banner').getByText(/Статья 5/)).toHaveClass(/truncate/)
     await expect(page.getByRole('button', { name: 'Показать полностью' })).toHaveCount(0)
     await expect(page.getByRole('heading', { level: 1, name: /Статья 5/ })).toBeVisible()
     const images = page

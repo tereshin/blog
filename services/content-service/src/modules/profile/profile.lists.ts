@@ -4,7 +4,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ServiceContext } from '@blog/contracts'
 import { articles, follows, profiles, topics, users_copy } from '../../infra/db/schema.ts'
 import { has_more_content } from '../../infra/db/article-preview.ts'
-import { visibleArticlesWhere } from '../access/index.ts'
+import { visibleArticlesWhere } from '../../infra/db/visible-articles.ts'
 import type { ProfileCursor } from './profile.cursor.ts'
 
 const score = sql<number>`(${articles.reaction_count} + ${articles.comment_count})`
@@ -91,16 +91,17 @@ function timeAfter(cursor: Extract<ProfileCursor, { k: 'time' }> | null, column:
   return sql`(${column}, ${articles.id}) < (${new Date(cursor.t)}, ${cursor.id})`
 }
 
-export function createProfileLists(db: NodePgDatabase) {
-  return {
-    async listArticles(viewer: ServiceContext, author_id: string, sort: 'fresh' | 'popular', cursor: ProfileCursor | null, limit: number) {
+export class ProfileListsRepository {
+  constructor(private readonly db: NodePgDatabase) {}
+
+  async listArticles(viewer: ServiceContext, author_id: string, sort: 'fresh' | 'popular', cursor: ProfileCursor | null, limit: number) {
       const after =
         sort === 'popular'
           ? cursor?.k === 'score'
             ? sql`(${score}, ${articles.id}) < (${cursor.s}, ${cursor.id})`
             : undefined
           : timeAfter(cursor?.k === 'time' ? cursor : null, fresh_at)
-      const rows = await db
+      const rows = await this.db
         .select(card_columns)
         .from(articles)
         .innerJoin(topics, eq(topics.id, articles.topic_id))
@@ -110,22 +111,22 @@ export function createProfileLists(db: NodePgDatabase) {
         .orderBy(sort === 'popular' ? desc(score) : desc(fresh_at), desc(articles.id))
         .limit(limit)
       return rows.filter((row): row is ProfileArticleRow => row.status !== 'deleted')
-    },
+  }
 
-    async findProfiles(user_ids: string[]) {
+  async findProfiles(user_ids: string[]) {
       const result = new Map<string, { display_name: string; avatar_url: string | null }>()
       if (user_ids.length === 0) return result
-      const rows = await db
+      const rows = await this.db
         .select({ user_id: profiles.user_id, display_name: profiles.display_name, avatar_url: profiles.avatar_url })
         .from(profiles)
         .where(inArray(profiles.user_id, user_ids))
       for (const row of rows) result.set(row.user_id, { display_name: row.display_name, avatar_url: row.avatar_url })
       return result
-    },
+  }
 
-    async listFollowers(user_id: string, cursor: ProfileCursor | null, limit: number) {
+  async listFollowers(user_id: string, cursor: ProfileCursor | null, limit: number) {
       const after = cursor?.k === 'follow' ? sql`(${follows.created_at}, ${follows.follower_id}) < (${new Date(cursor.t)}, ${cursor.id})` : undefined
-      return db
+      return this.db
         .select({
           user_id: profiles.user_id,
           display_name: profiles.display_name,
@@ -141,11 +142,11 @@ export function createProfileLists(db: NodePgDatabase) {
         .where(and(eq(follows.target_type, 'user'), eq(follows.target_id, user_id), after))
         .orderBy(desc(follows.created_at), desc(follows.follower_id))
         .limit(limit)
-    },
+  }
 
-    async listFollowing(user_id: string, cursor: ProfileCursor | null, limit: number) {
+  async listFollowing(user_id: string, cursor: ProfileCursor | null, limit: number) {
       const after = cursor?.k === 'follow' ? sql`(${follows.created_at}, ${follows.target_id}) < (${new Date(cursor.t)}, ${cursor.id})` : undefined
-      return db
+      return this.db
         .select({
           user_id: profiles.user_id,
           display_name: profiles.display_name,
@@ -161,17 +162,17 @@ export function createProfileLists(db: NodePgDatabase) {
         .where(and(eq(follows.follower_id, user_id), eq(follows.target_type, 'user'), after))
         .orderBy(desc(follows.created_at), desc(follows.target_id))
         .limit(limit)
-    },
+  }
 
-    async stats(user_id: string) {
-      const [counts] = await db
+  async stats(user_id: string) {
+      const [counts] = await this.db
         .select({
           view_count: sql<number>`coalesce(sum(${articles.view_count}), 0)::int`,
           reaction_count: sql<number>`coalesce(sum(${articles.reaction_count}), 0)::int`,
         })
         .from(articles)
         .where(and(eq(articles.author_id, user_id), inArray(articles.status, ['published', 'hidden'])))
-      const [followers] = await db
+      const [followers] = await this.db
         .select({ followers_count: sql<number>`count(*)::int` })
         .from(follows)
         .where(and(eq(follows.target_type, 'user'), eq(follows.target_id, user_id)))
@@ -180,14 +181,14 @@ export function createProfileLists(db: NodePgDatabase) {
         reaction_count: counts?.reaction_count ?? 0,
         followers_count: followers?.followers_count ?? 0,
       }
-    },
+  }
 
-    async rating(cursor: ProfileCursor | null, limit: number) {
+  async rating(cursor: ProfileCursor | null, limit: number) {
       const after =
         cursor?.k === 'rep'
           ? sql`(${profiles.reputation} < ${cursor.s} or (${profiles.reputation} = ${cursor.s} and ${profiles.user_id} > ${cursor.id}))`
           : undefined
-      return db
+      return this.db
         .select({
           user_id: profiles.user_id,
           display_name: profiles.display_name,
@@ -202,6 +203,5 @@ export function createProfileLists(db: NodePgDatabase) {
         .where(after)
         .orderBy(desc(profiles.reputation), asc(profiles.user_id))
         .limit(limit)
-    },
   }
 }

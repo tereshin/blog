@@ -13,36 +13,12 @@ import type { AdminNavSection, AdminNavSectionItem, CreateNavSectionItem } from 
 import { readMockPages } from './pages.ts'
 import { readMockViewer } from './session.ts'
 
-const WELCOME = '33333333-3333-4333-8333-333333333333'
-const INFO_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 8h.01"/></svg>'
-const LINK_ICON =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>'
-let sections: AdminNavSection[] = [
-  {
-    id: '44444444-4444-4444-8444-444444444444',
-    title: 'О площадке',
-    position: 0,
-    items: [
-      {
-        id: '55555555-5555-4555-8555-555555555555',
-        title: 'О проекте',
-        icon: INFO_ICON,
-        position: 0,
-        target: { kind: 'page', page_id: WELCOME, slug: 'welcome-page', status: 'published' },
-      },
-      {
-        id: '66666666-6666-4666-8666-666666666666',
-        title: 'Реклама',
-        icon: LINK_ICON,
-        position: 1,
-        target: { kind: 'url', url: 'https://example.com' },
-      },
-    ],
-  },
-]
+import { NAV_SECTIONS_FIXTURE } from '../fixtures/nav-sections.ts'
+import { IdempotencyReplay } from './idempotency-replay.ts'
+
+let sections: AdminNavSection[] = structuredClone(NAV_SECTIONS_FIXTURE)
 type MockBody = AdminNavSection | AdminNavSectionItem | { items: AdminNavSection[] } | null
-const results = new Map<string, { input: string; status: number; body: MockBody }>()
+const replays = new IdempotencyReplay<MockBody>()
 
 function failure(code: string, status: number) {
   return HttpResponse.json({ code, title: code, status }, { status })
@@ -56,25 +32,6 @@ function shown(): AdminNavSection[] {
   return typeof localStorage !== 'undefined' && localStorage.getItem('mock_nav_sections') === 'empty'
     ? []
     : sections
-}
-function replay(request: Request, body: unknown) {
-  const key = request.headers.get('X-Idempotency-Key') ?? ''
-  const input = JSON.stringify({ path: new URL(request.url).pathname, method: request.method, body })
-  const previous = results.get(key)
-  if (!previous) return { key, input, response: null }
-  if (previous.input !== input) return { key, input, response: failure('idempotency_key_conflict', 409) }
-  return {
-    key,
-    input,
-    response:
-      previous.status === 204
-        ? new HttpResponse(null, { status: 204 })
-        : HttpResponse.json(previous.body, { status: previous.status }),
-  }
-}
-function remember(key: string, input: string, status: number, body: MockBody) {
-  if (key) results.set(key, { input, status, body })
-  return status === 204 ? new HttpResponse(null, { status: 204 }) : HttpResponse.json(body, { status })
 }
 function pageTarget(page_id: string): AdminNavSectionItem['target'] | null {
   const page = readMockPages().find((item) => item.id === page_id)
@@ -103,7 +60,7 @@ export const navSectionHandlers = [
     const denied = auth()
     if (denied) return denied
     const json: unknown = await request.json()
-    const played = replay(request, json)
+    const played = replays.replay(request, json)
     if (played.response) return played.response
     const parsed = createNavSectionSchema.safeParse(json)
     if (!parsed.success) return failure('validation_error', 400)
@@ -114,13 +71,13 @@ export const navSectionHandlers = [
       items: [],
     }
     sections = [...sections, section]
-    return remember(played.key, played.input, 201, section)
+    return replays.remember(played.key, played.input, 201, section)
   }),
   http.patch('*/v1/admin/nav-sections/order', async ({ request }) => {
     const denied = auth()
     if (denied) return denied
     const json: unknown = await request.json()
-    const played = replay(request, json)
+    const played = replays.replay(request, json)
     if (played.response) return played.response
     const parsed = navSectionOrderSchema.safeParse(json)
     if (!parsed.success) return failure('validation_error', 400)
@@ -131,13 +88,13 @@ export const navSectionHandlers = [
       const section = by_id.get(id)
       return section ? [{ ...section, position }] : []
     })
-    return remember(played.key, played.input, 200, { items: sections })
+    return replays.remember(played.key, played.input, 200, { items: sections })
   }),
   http.patch('*/v1/admin/nav-sections/:id/items/order', async ({ request, params }) => {
     const denied = auth()
     if (denied) return denied
     const json: unknown = await request.json()
-    const played = replay(request, json)
+    const played = replays.replay(request, json)
     if (played.response) return played.response
     const parsed = navSectionItemOrderSchema.safeParse(json)
     const section = sections.find((item) => item.id === params.id)
@@ -153,13 +110,13 @@ export const navSectionHandlers = [
       }),
     }
     sections = sections.map((item) => (item.id === section.id ? next : item))
-    return remember(played.key, played.input, 200, next)
+    return replays.remember(played.key, played.input, 200, next)
   }),
   http.post('*/v1/admin/nav-sections/:id/items', async ({ request, params }) => {
     const denied = auth()
     if (denied) return denied
     const json: unknown = await request.json()
-    const played = replay(request, json)
+    const played = replays.replay(request, json)
     if (played.response) return played.response
     const section = sections.find((item) => item.id === params.id)
     const parsed = createNavSectionItemSchema.safeParse(json)
@@ -169,13 +126,13 @@ export const navSectionHandlers = [
     sections = sections.map((item) =>
       item.id === section.id ? { ...item, items: [...item.items, created] } : item,
     )
-    return remember(played.key, played.input, 201, created)
+    return replays.remember(played.key, played.input, 201, created)
   }),
   http.patch('*/v1/admin/nav-sections/:id/items/:item_id', async ({ request, params }) => {
     const denied = auth()
     if (denied) return denied
     const json: unknown = await request.json()
-    const played = replay(request, json)
+    const played = replays.replay(request, json)
     if (played.response) return played.response
     const section = sections.find((item) => item.id === params.id)
     const current = section?.items.find((item) => item.id === params.item_id)
@@ -189,40 +146,40 @@ export const navSectionHandlers = [
         ? { ...item, items: item.items.map((entry) => (entry.id === current.id ? updated : entry)) }
         : item,
     )
-    return remember(played.key, played.input, 200, updated)
+    return replays.remember(played.key, played.input, 200, updated)
   }),
   http.delete('*/v1/admin/nav-sections/:id/items/:item_id', ({ request, params }) => {
     const denied = auth()
     if (denied) return denied
-    const played = replay(request, null)
+    const played = replays.replay(request, null)
     if (played.response) return played.response
     const section = sections.find((item) => item.id === params.id)
     if (!section?.items.some((item) => item.id === params.item_id)) return failure('nav_section_item_not_found', 404)
     sections = sections.map((item) =>
       item.id === section.id ? { ...item, items: item.items.filter((entry) => entry.id !== params.item_id) } : item,
     )
-    return remember(played.key, played.input, 204, null)
+    return replays.remember(played.key, played.input, 204, null)
   }),
   http.patch('*/v1/admin/nav-sections/:id', async ({ request, params }) => {
     const denied = auth()
     if (denied) return denied
     const json: unknown = await request.json()
-    const played = replay(request, json)
+    const played = replays.replay(request, json)
     if (played.response) return played.response
     const parsed = updateNavSectionSchema.safeParse(json)
     const section = sections.find((item) => item.id === params.id)
     if (!section || !parsed.success) return failure(section ? 'validation_error' : 'nav_section_not_found', section ? 400 : 404)
     const next = { ...section, title: parsed.data.title }
     sections = sections.map((item) => (item.id === section.id ? next : item))
-    return remember(played.key, played.input, 200, next)
+    return replays.remember(played.key, played.input, 200, next)
   }),
   http.delete('*/v1/admin/nav-sections/:id', ({ request, params }) => {
     const denied = auth()
     if (denied) return denied
-    const played = replay(request, null)
+    const played = replays.replay(request, null)
     if (played.response) return played.response
     if (!sections.some((item) => item.id === params.id)) return failure('nav_section_not_found', 404)
     sections = sections.filter((item) => item.id !== params.id)
-    return remember(played.key, played.input, 204, null)
+    return replays.remember(played.key, played.input, 204, null)
   }),
 ]

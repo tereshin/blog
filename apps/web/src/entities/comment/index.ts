@@ -17,10 +17,8 @@ export type {
   CommentPlacement,
   CommentStatus,
 } from './model/comment-types.ts'
-export { CommentItem } from './ui/CommentItem.tsx'
 export { CommentThread } from './ui/CommentThread.tsx'
 export { CommentReactionGlyphsProvider } from './model/comment-reaction-glyphs.tsx'
-export { PopularCommentItem } from './ui/PopularCommentItem.tsx'
 
 export * from './api/comment-interactions.ts'
 export type { CommentSort } from './model/sort-comments.ts'

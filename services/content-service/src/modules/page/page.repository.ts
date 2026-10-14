@@ -7,7 +7,8 @@ import { appendPageEvent } from './page.events.ts'
 import { pageDto } from './page.mapper.ts'
 import { decodeCursor, encodeCursor } from './page.cursor.ts'
 import { pageError } from './page.errors.ts'
-import type { PageRepository } from './page.types.ts'
+import type { AdminPagesQuery } from '@blog/contracts'
+import type { PageRepositoryPort } from './page.types.ts'
 const columns = {
   id: pages.id,
   title: pages.title,
@@ -22,11 +23,12 @@ const columns = {
   deleted_at: pages.deleted_at,
 }
 
-export function createPageRepository(db: Database): PageRepository {
-  return {
-    async list(query) {
+export class PageRepository implements PageRepositoryPort {
+  constructor(private readonly db: Database) {}
+
+    async list(query: AdminPagesQuery) {
       const cursor = decodeCursor(query)
-      const rows = await db
+      const rows = await this.db
         .select(columns)
         .from(pages)
         .where(
@@ -49,33 +51,38 @@ export function createPageRepository(db: Database): PageRepository {
             ? encodeCursor(last.created_at, last.id, query.status)
             : null,
       }
-    },
-    async find(id) {
-      const [row] = await db
+    }
+
+    async find(id: string) {
+      const [row] = await this.db
         .select()
         .from(pages)
         .where(and(eq(pages.id, id), ne(pages.status, 'deleted')))
         .limit(1)
       return row ?? null
-    },
-    async publicPage(slug) {
-      const [row] = await db
+    }
+
+    async publicPage(slug: string) {
+      const [row] = await this.db
         .select()
         .from(pages)
         .where(and(eq(pages.slug, slug), eq(pages.status, 'published')))
         .limit(1)
       return row ?? null
-    },
-    published: (cursor, limit = 10_000) =>
-      db
+    }
+
+    published(cursor?: string, limit = 10_000) {
+      return this.db
         .select()
         .from(pages)
         .where(and(eq(pages.status, 'published'), cursor ? gt(pages.id, cursor) : undefined))
         .orderBy(pages.id)
-        .limit(limit),
-    async mutate(operation, prepare) {
+        .limit(limit)
+    }
+
+    async mutate(operation: Parameters<PageRepositoryPort['mutate']>[0], prepare: Parameters<PageRepositoryPort['mutate']>[1]) {
       try {
-        return await db.transaction(async (tx) => {
+        return await this.db.transaction(async (tx) => {
           // Transaction-scoped lock deduplicates concurrent requests and survives process restarts.
           await tx.execute(
             sql`SELECT pg_advisory_xact_lock(hashtextextended(${operation.actor_id + ':' + operation.key}, 0))`,
@@ -164,6 +171,5 @@ export function createPageRepository(db: Database): PageRepository {
           throw pageError('page_slug_taken', 409)
         throw error
       }
-    },
-  }
+    }
 }

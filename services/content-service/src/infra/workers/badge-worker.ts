@@ -4,8 +4,7 @@ import type { Database } from '@blog/broker'
 import type { Logger } from '@blog/logger'
 import type { DbHandle } from '../db/client.ts'
 import { profiles } from '../db/schema.ts'
-import { createBadgeRepository, createBadgeService } from '../../modules/badge/index.ts'
-import { createSettingsRepository, createSettingsService } from '../../modules/settings/index.ts'
+import { BadgeRepository, BadgeService } from '../../modules/badge/index.ts'
 
 const SWEEP_LOCK = 74192831
 const INTERVAL_MS = 5 * 60 * 1000
@@ -35,12 +34,10 @@ export async function runBadgeSweep(
         .limit(500)
       if (rows.length === 0) return
       await db.transaction(async (tx) => {
-        const settings = createSettingsService(createSettingsRepository(tx), { media_url: '' })
-        const service = createBadgeService(
-          createBadgeRepository(tx as Database, settings.getBadgeDefinitions),
-        )
+        const service = new BadgeService(new BadgeRepository())
         if (!should_stop())
           await service.evaluateMany(
+            tx as Database,
             rows.map((row) => row.user_id),
             now,
           )

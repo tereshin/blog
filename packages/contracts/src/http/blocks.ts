@@ -109,7 +109,16 @@ export const editorBlockSchema = z.discriminatedUnion('type', [
   z.object({
     ...blockId,
     type: z.literal('table'),
-    data: z.object({ content: z.array(z.array(z.string())), withHeadings: z.boolean().optional() }),
+    data: z
+      .object({
+        content: z.array(z.array(z.string())),
+        with_headings: z.boolean().optional(),
+        withHeadings: z.boolean().optional(),
+      })
+      .transform(({ content, with_headings, withHeadings }) => ({
+        content,
+        with_headings: with_headings ?? withHeadings,
+      })),
   }),
   z.object({
     ...blockId,

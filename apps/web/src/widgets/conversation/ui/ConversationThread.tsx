@@ -1,14 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router'
-import { useQueryClient } from '@tanstack/react-query'
-import {
-  MessageBubble,
-  conversationKeys,
-  markConversationRead,
-  useMessages,
-} from '@/entities/conversation'
-import { useViewer } from '@/entities/session'
-import { useRequireSession } from '@/features/login'
+import { useCallback, useMemo } from 'react'
+import { MessageBubble } from '@/entities/conversation'
 import { MessageComposer } from '@/features/send-message'
 import { useT } from '@/shared/i18n'
 import {
@@ -21,8 +12,9 @@ import {
   ErrorState,
   Skeleton,
   Tooltip,
+  VirtualList,
 } from '@/shared/ui'
-import { useConversationLive } from '../model/useConversationLive.ts'
+import { useConversationThread } from '../model/useConversationThread.ts'
 
 type Peer = { user_id: string; display_name: string; avatar_url?: string | null }
 
@@ -31,37 +23,18 @@ type ConversationThreadProps = {
   peer: Peer | null
 }
 
+const VIRTUALIZATION_THRESHOLD = 50
+
 /** Открытый диалог: подгрузка вверх, поле ввода и отметка прочитанного. */
 export function ConversationThread({ conversation_id, peer }: ConversationThreadProps) {
   const { t } = useT()
-  const { viewer } = useViewer()
-  const requireSession = useRequireSession()
-  const query_client = useQueryClient()
-  const navigate = useNavigate()
-  const messages = useMessages(conversation_id)
-  useConversationLive(conversation_id)
-  const end_ref = useRef<HTMLDivElement>(null)
-  const my_id = viewer.status === 'member' ? viewer.user.id : null
-  const items = messages.status === 'ok' ? messages.items : []
-  const newest_id = items.at(-1)?.id
-  const incoming = items.find((message) => message.sender_id !== my_id && message.read_at === null)
-
-  useEffect(() => {
-    end_ref.current?.scrollIntoView({ block: 'nearest' })
-  }, [newest_id])
-
-  useEffect(() => {
-    if (!conversation_id) return
-    let cancelled = false
-    void markConversationRead(conversation_id).then(() => {
-      if (cancelled) return
-      void query_client.invalidateQueries({ queryKey: conversationKeys.unread() })
-      void query_client.invalidateQueries({ queryKey: conversationKeys.list() })
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [conversation_id, incoming?.id, query_client])
+  const { messages, items, my_id, end_ref, requireSession, navigate } =
+    useConversationThread(conversation_id)
+  const message_by_id = useMemo(() => new Map(items.map((message) => [message.id, message])), [items])
+  const ids = items.map((message) => message.id)
+  const handleNearEnd = useCallback(() => {
+    if (messages.status === 'ok' && messages.has_next) messages.fetchNext()
+  }, [messages])
 
   return (
     <Card
@@ -114,9 +87,24 @@ export function ConversationThread({ conversation_id, peer }: ConversationThread
             className="my-auto min-h-0 rounded-none bg-transparent px-0 py-6 shadow-none"
           />
         ) : null}
-        {items.map((message) => (
-          <MessageBubble key={message.id} message={message} is_own={message.sender_id === my_id} />
-        ))}
+        {ids.length > VIRTUALIZATION_THRESHOLD ? (
+          <VirtualList
+            ids={ids}
+            estimate_size={64}
+            onNearEnd={handleNearEnd}
+            item_className="pb-2"
+            renderItem={(id) => {
+              const message = message_by_id.get(id)
+              return message ? (
+                <MessageBubble message={message} is_own={message.sender_id === my_id} />
+              ) : null
+            }}
+          />
+        ) : (
+          items.map((message) => (
+            <MessageBubble key={message.id} message={message} is_own={message.sender_id === my_id} />
+          ))
+        )}
         <div ref={end_ref} />
       </Card.Content>
       <Card.Footer className="shrink-0 border-t border-separator px-4 py-3 min-[768px]:px-5">

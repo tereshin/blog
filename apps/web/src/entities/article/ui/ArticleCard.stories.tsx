@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Link, MemoryRouter } from 'react-router'
 import { Button, MoreIcon } from '@/shared/ui'
 import type { ArticleCardModel } from '../model/article-types.ts'
@@ -45,7 +45,7 @@ function FullCard({ article, is_own = false }: Props) {
   )
 }
 
-const meta = {
+const meta = preview.meta({
   title: 'entities/article/ArticleCard',
   component: FullCard,
   decorators: [
@@ -56,16 +56,13 @@ const meta = {
     ),
   ],
   args: { article: makeArticle() },
-} satisfies Meta<typeof FullCard>
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const WithImage: Story = {}
-export const WithoutImage: Story = { args: { article: makeArticle({ first_image_url: null }) } }
-export const WithoutComments: Story = {
+})
+export const WithImage = meta.story()
+export const WithoutImage = meta.story({ args: { article: makeArticle({ first_image_url: null }) } })
+export const WithoutComments = meta.story({
   args: { article: makeArticle({ top_comment: null, comment_count: 0 }) },
-}
-export const WithoutReactions: Story = {
+})
+export const WithoutReactions = meta.story({
   args: {
     article: makeArticle({
       reaction_counts: { laugh: 0, heart: 0, thumb: 0, fire: 0 },
@@ -74,17 +71,17 @@ export const WithoutReactions: Story = {
       view_count: 3,
     }),
   },
-}
-export const Own: Story = { args: { is_own: true } }
-export const Loading: Story = {
+})
+export const Own = meta.story({ args: { is_own: true } })
+export const Loading = meta.story({
   render: () => (
     <div className="mx-auto max-w-2xl p-4">
       <ArticleCard.Skeleton />
     </div>
   ),
-}
+})
 
-export const CustomTitleLink: Story = {
+export const CustomTitleLink = meta.story({
   render: ({ article }) => (
     <ArticleCard article={article}>
       <ArticleCard.Header />
@@ -99,4 +96,4 @@ export const CustomTitleLink: Story = {
       <ArticleCard.Excerpt />
     </ArticleCard>
   ),
-}
+})

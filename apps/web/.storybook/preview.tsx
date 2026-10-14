@@ -1,4 +1,5 @@
-import type { Decorator, Preview } from '@storybook/react-vite'
+import { definePreview } from '@storybook/react-vite'
+import type { Decorator } from '@storybook/react-vite'
 import type { RequestHandler } from 'msw'
 import { setupWorker } from 'msw/browser'
 import addonMsw from 'msw-storybook-addon'
@@ -25,10 +26,12 @@ const with_theme: Decorator = (Story, context) => {
   return <Story />
 }
 
-const preview: Preview = {
+const preview = definePreview({
+  addons: [],
   decorators: [with_theme],
   async beforeEach(context) {
-    const cleanup = await msw.beforeEach?.(context)
+    const hook = msw.beforeEach
+    const cleanup = typeof hook === 'function' ? await hook(context) : undefined
     const worker = (context as { msw?: { use: (...next: RequestHandler[]) => void } }).msw
     const story = listedHandlers(context.parameters['msw'])
     worker?.use(...story, ...handlers)
@@ -50,6 +53,6 @@ const preview: Preview = {
   },
   initialGlobals: { theme: 'dark' },
   parameters: { layout: 'fullscreen' },
-}
+})
 
 export default preview

@@ -1,12 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
 import { Tooltip } from './Tooltip.tsx'
 
-const meta = { title: 'shared/ui/Tooltip', component: Tooltip } satisfies Meta<typeof Tooltip>
-export default meta
-type Story = StoryObj
-
-export const Default: Story = {
+const meta = preview.meta({ title: 'shared/ui/Tooltip', component: Tooltip })
+export const Default = meta.story({
   render: () => (
     <Tooltip delay={0}>
       <Tooltip.Trigger>
@@ -15,4 +12,4 @@ export const Default: Story = {
       <Tooltip.Content>Подсказка</Tooltip.Content>
     </Tooltip>
   ),
-}
+})

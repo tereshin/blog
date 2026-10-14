@@ -6,7 +6,7 @@ import { ApiError } from '@/shared/api'
 import { claimEmail, getAuthConfig, registerWithPassword, requestPasswordReset, sendEmailVerification, signInWithPassword } from '../api/auth-api.ts'
 import { credentialFieldError, looksLikeEmail } from '../lib/credentials.ts'
 import { isPopupCancelled, signInWithProvider } from '../lib/firebase-auth.ts'
-import { useLoginDialog } from './useLoginDialog.ts'
+import { useLoginDialogStore } from './useLoginDialogStore.ts'
 
 export type AuthPhase = 'sign_in' | 'register' | 'pending' | 'reset' | 'claim'
 
@@ -20,8 +20,8 @@ export function providerLabel(provider_id: string): string {
 
 export function useAuthPanel(is_open: boolean) {
   const query_client = useQueryClient()
-  const openLogin = useLoginDialog((state) => state.open)
-  const close = useLoginDialog((state) => state.close)
+  const openLogin = useLoginDialogStore((state) => state.open)
+  const close = useLoginDialogStore((state) => state.close)
   const [phase, setPhase] = useState<AuthPhase>('sign_in')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -65,7 +65,7 @@ export function useAuthPanel(is_open: boolean) {
     setNotice('incomplete')
   }
 
-  async function submitPassword(): Promise<void> {
+  async function handleSubmitPassword(): Promise<void> {
     setNotice(null)
     if (is_submitting) return
     if (phase === 'register' && (!name.trim() || name.trim().length > 50)) {
@@ -110,7 +110,7 @@ export function useAuthPanel(is_open: boolean) {
     }
   }
 
-  async function submitProvider(provider_id: string): Promise<void> {
+  async function handleSubmitProvider(provider_id: string): Promise<void> {
     if (is_submitting) return
     setNotice(null)
     setSubmitting(true)
@@ -124,7 +124,7 @@ export function useAuthPanel(is_open: boolean) {
     }
   }
 
-  async function submitTestParticipant(participant_email: string): Promise<void> {
+  async function handleSubmitTestParticipant(participant_email: string): Promise<void> {
     const test_password = config?.test_password
     if (!test_password || is_submitting) return
     setNotice(null)
@@ -139,7 +139,7 @@ export function useAuthPanel(is_open: boolean) {
     }
   }
 
-  async function resendVerification(): Promise<void> {
+  async function handleResendVerification(): Promise<void> {
     if (is_submitting) return
     setSubmitting(true)
     setNotice(null)
@@ -169,9 +169,9 @@ export function useAuthPanel(is_open: boolean) {
     has_password,
     oauth_providers,
     test_participants,
-    submitPassword,
-    submitProvider,
-    submitTestParticipant,
-    resendVerification,
+    handleSubmitPassword,
+    handleSubmitProvider,
+    handleSubmitTestParticipant,
+    handleResendVerification,
   }
 }

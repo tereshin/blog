@@ -7,7 +7,7 @@ import type { ServiceClient } from '@blog/http-kit'
 import { errorHandler, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { ProxyService } from '../../src/modules/proxy/index.ts'
-import { siteAssetRoutes } from '../../src/modules/site-assets/index.ts'
+import { SiteAssetsController, SiteAssetsService, siteAssetsRoutes } from '../../src/modules/site-assets/index.ts'
 import { renderPrerenderHtml } from '../../src/modules/prerender/html-template.ts'
 
 const MIME = {
@@ -64,7 +64,7 @@ describe('public site assets', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer_session = { context: { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:test' }, session_id: null, service_context_jwt: 'test' }
     })
-    await app.register(siteAssetRoutes, { content, proxy })
+    await app.register(siteAssetsRoutes, { controller: new SiteAssetsController(new SiteAssetsService(content, proxy)) })
   })
   afterAll(async () => {
     await app.close()

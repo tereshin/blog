@@ -1,11 +1,11 @@
 import Fastify from 'fastify'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
-import { errorHandler, health, requestContext, serviceContext } from '@blog/http-kit'
+import { errorHandler, health, idempotency, requestContext, serviceContext } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
-import { notificationRoutes } from './modules/notification/index.ts'
+import { NotificationController, NotificationRepository, NotificationService, notificationRoutes } from './modules/notification/index.ts'
 
 export type AppDeps = {
   env: Env
@@ -15,12 +15,16 @@ export type AppDeps = {
   is_broker_ready: () => boolean
 }
 
+
+/** Явный потолок JSON-тела; файлы идут в media-service со своим лимитом. */
+const BODY_LIMIT_BYTES = 1_048_576
 /** Сборка Fastify: плагины, хуки, регистрация модулей. Бизнес-логики здесь нет. */
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const { env, logger } = deps
-  const app: FastifyInstance = Fastify({ loggerInstance: logger as FastifyBaseLogger, trustProxy: true })
+  const app: FastifyInstance = Fastify({ loggerInstance: logger as FastifyBaseLogger, trustProxy: true, bodyLimit: BODY_LIMIT_BYTES })
 
   await app.register(requestContext, { logger })
+  await app.register(idempotency)
   await app.register(errorHandler)
   await app.register(health, {
     metrics: deps.metrics,
@@ -30,6 +34,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     ],
   })
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
-  await app.register(notificationRoutes, { database: deps.database })
+  await app.register(notificationRoutes, {
+    controller: new NotificationController(new NotificationService(new NotificationRepository(deps.database.db))),
+  })
   return app
 }

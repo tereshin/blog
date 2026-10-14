@@ -54,6 +54,14 @@ export const messageHandlers = [
       next_cursor: null,
     })
   }),
+  http.patch('*/v1/conversations/:id', ({ request, params }) => {
+    const user_id = actorId(request)
+    if (!user_id) return unauthorized()
+    if (!markMockConversationRead(String(params.id), user_id)) {
+      return HttpResponse.json({ code: 'not_found', title: 'Диалог не найден' }, { status: 404 })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.post('*/v1/conversations/:id/read', ({ request, params }) => {
     const user_id = actorId(request)
     if (!user_id) return unauthorized()

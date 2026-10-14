@@ -24,3 +24,20 @@ export class AuthFieldError extends ValidationError {
     super({ message, details: { field } })
   }
 }
+
+/** Адрес уже занят в Firebase: регистрация отвечает так же, как на свободный адрес. */
+export class FirebaseEmailExistsError extends AppError {
+  constructor() {
+    super({ code: 'email_exists', http_status: 409, message: 'адрес уже есть в Firebase' })
+  }
+}
+
+/**
+ * Гонка уникального индекса учётной записи (почта, firebase uid, сессия).
+ * Неоперационная: если сервис её не разобрал, наружу уходит обычный 500 без причины.
+ */
+export class AccountConflictError extends AppError {
+  constructor(cause: unknown) {
+    super({ code: 'account_conflict', http_status: 500, message: 'Конфликт уникальности учётной записи', is_operational: false, cause })
+  }
+}

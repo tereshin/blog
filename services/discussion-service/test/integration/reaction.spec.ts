@@ -8,7 +8,20 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles_copy, reaction_catalog, reactions } from '../../src/infra/db/schema.ts'
-import { createReactionRepository, createReactionService } from '../../src/modules/reaction/index.ts'
+import { ArticleSnapshotRepository, ArticleSnapshotService } from '../../src/modules/article-snapshot/index.ts'
+import { ReactionEvents, ReactionRepository, ReactionService } from '../../src/modules/reaction/index.ts'
+import { ReactionCatalogRepository, ReactionCatalogService } from '../../src/modules/reaction-catalog/index.ts'
+import { ReputationRepository, ReputationService } from '../../src/modules/reputation/index.ts'
+
+function reactionService(database: DbHandle) {
+  return new ReactionService(
+    new ReactionRepository(database.db),
+    new ReactionCatalogService(new ReactionCatalogRepository()),
+    new ArticleSnapshotService(new ArticleSnapshotRepository()),
+    new ReputationService(new ReputationRepository()),
+    new ReactionEvents(),
+  )
+}
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const ALICE = '9a1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a91'
@@ -45,7 +58,7 @@ describe('discussion: реакции (PostgreSQL в контейнере)', () =
   })
 
   it('двое ставят один вид — две реакции; повтор одного снимает его и оставляет одну; тот же ключ не снимает чужую', async () => {
-    const service = createReactionService(createReactionRepository(database.db))
+    const service = reactionService(database)
     const body = { target_type: 'article' as const, target_id: ARTICLE, kind: 'laugh' as const }
     const count = async () => (await database.db.select().from(reactions).where(eq(reactions.target_id, ARTICLE))).length
 
@@ -72,7 +85,7 @@ describe('discussion: реакции (PostgreSQL в контейнере)', () =
   })
 
   it('новый вид ставится только пока он в каталоге, снятый не ставится, своя снятая реакция снимается', async () => {
-    const service = createReactionService(createReactionRepository(database.db))
+    const service = reactionService(database)
     const rocket = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     const before = await database.db.select().from(reactions)
     const place = (user_id: string, kind: string, idempotency_key: string) =>

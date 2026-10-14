@@ -1,18 +1,14 @@
 import { ADMIN_ROUTES } from '@/entities/admin'
-import { useQuery } from '@tanstack/react-query'
-import { settingsKeys } from '@/entities/settings'
-import { SettingsForm, getAdminSettings } from '@/features/update-settings'
+import { SettingsForm } from '@/features/update-settings'
 import type { SettingsSection } from '@/features/update-settings'
 import { ImageUploadButton, FaviconUploadButton } from '@/features/upload-media'
 import { useT } from '@/shared/i18n'
 import { ErrorState, PageCard, Skeleton } from '@/shared/ui'
+import { useAdminSettings } from '../model/useAdminSettings.ts'
 
 export function AdminSettingsContent({ section }: { section: SettingsSection }) {
   const { t } = useT()
-  const settings = useQuery({
-    queryKey: settingsKeys.admin(),
-    queryFn: ({ signal }) => getAdminSettings(signal),
-  })
+  const settings = useAdminSettings()
   if (settings.isPending || settings.isError)
     return (
       <PageCard>

@@ -10,7 +10,7 @@ export function CommentAttachments({ extras }: { extras: CommentExtras }) {
         <div className="flex flex-wrap gap-2">
           {extras.media.map((file) => (
             <div key={file.url} className="relative">
-              <img src={file.url} alt={file.alt} className="h-20 w-24 rounded-lg object-cover" />
+              <img loading="lazy" src={file.url} alt={file.alt} className="h-20 w-24 rounded-lg object-cover" />
               <CloseButton
                 type="button"
                 className="absolute right-0 top-0"

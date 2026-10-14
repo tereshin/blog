@@ -1,12 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import preview from '#.storybook/preview'
 import { Button } from './Button.tsx'
 import { Menu } from './Menu.tsx'
 
-const meta = { title: 'shared/ui/Menu', component: Menu } satisfies Meta<typeof Menu>
-export default meta
-type Story = StoryObj
-
-export const Default: Story = {
+const meta = preview.meta({ title: 'shared/ui/Menu', component: Menu })
+export const Default = meta.story({
   render: () => (
     <Menu>
       <Button aria-label="Меню учётной записи">Меню</Button>
@@ -20,4 +17,4 @@ export const Default: Story = {
       </Menu.Content>
     </Menu>
   ),
-}
+})

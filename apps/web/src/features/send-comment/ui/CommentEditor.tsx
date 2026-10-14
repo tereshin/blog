@@ -4,7 +4,7 @@ import { useContextProps } from 'react-aria-components'
 import { FieldInputContext } from 'react-aria-components/Autocomplete'
 import type { useCommentDrafts } from '../model/useCommentDrafts.ts'
 import type { useCommentMentions } from '../model/useCommentMentions.ts'
-import { editorSelection, setEditorSelection } from '../lib/comment-editor.ts'
+import { appendEditorText, editorSelection, editorText, setEditorSelection } from '../lib/comment-editor.ts'
 
 type CommentEditorProps = {
   draft: ReturnType<typeof useCommentDrafts>
@@ -31,19 +31,27 @@ export function CommentEditor({
     if (!element) return
     const pending = pending_caret.current
     pending_caret.current = null
+    const unchanged =
+      !pending &&
+      draft.mention_ranges.length === 0 &&
+      !element.querySelector('.comment-composer__mention') &&
+      editorText(element) === draft.text
+    if (unchanged) return
     const selection = pending ?? editorSelection(element)
     const fragment = document.createDocumentFragment()
     let offset = 0
     for (const range of [...draft.mention_ranges].sort((a, b) => a.start - b.start)) {
-      fragment.append(document.createTextNode(draft.text.slice(offset, range.start)))
-      const span = document.createElement('span')
-      span.className = 'comment-composer__mention'
-      span.dataset.mentionId = range.user.user_id
-      span.textContent = draft.text.slice(range.start, range.end)
-      fragment.append(span)
+      appendEditorText(fragment, draft.text.slice(offset, range.start))
+      appendEditorText(fragment, draft.text.slice(range.start, range.end), (line) => {
+        const span = document.createElement('span')
+        span.className = 'comment-composer__mention'
+        span.dataset.mentionId = range.user.user_id
+        span.textContent = line
+        return span
+      })
       offset = range.end
     }
-    fragment.append(document.createTextNode(draft.text.slice(offset)))
+    appendEditorText(fragment, draft.text.slice(offset))
     element.replaceChildren(fragment)
     if (selection) setEditorSelection(element, selection.start, selection.end)
   }, [draft.text, draft.mention_ranges, field_ref])
@@ -69,7 +77,7 @@ export function CommentEditor({
       data-placeholder={placeholder}
       className="comment-composer__input"
       onInput={(event) => {
-        const text = event.currentTarget.innerText.replace(/\r/g, '')
+        const text = editorText(event.currentTarget).replace(/\r/g, '')
         const selection = editorSelection(event.currentTarget)
         draft.update(text)
         mention.updateCaret(selection?.start ?? text.length)

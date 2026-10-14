@@ -19,21 +19,22 @@ function toUserCopy(event: UserSnapshot): UserCopy {
   }
 }
 
-/** Применяет одно событие участника к копиям. Чужие события пропускает. */
-export function createCopiesHandler(repository: CopiesRepository = copiesRepository): EventHandler {
-  return async (tx: Database, event) => {
+export class CopiesHandler {
+  constructor(private readonly repository: CopiesRepository = copiesRepository) {}
+
+  handle: EventHandler = async (tx, event) => {
     switch (event.name) {
       case 'identity.user.created': {
         const parsed = UserCreatedV1.parse(event)
-        await repository.upsertUser(tx, toUserCopy(parsed))
-        await repository.createProfileIfMissing(tx, parsed.user_id, parsed.display_name)
+        await this.repository.upsertUser(tx, toUserCopy(parsed))
+        await this.repository.createProfileIfMissing(tx, parsed.user_id, parsed.display_name)
         return
       }
       case 'identity.user.updated':
-        await repository.upsertUser(tx, toUserCopy(UserUpdatedV1.parse(event)))
+        await this.repository.upsertUser(tx, toUserCopy(UserUpdatedV1.parse(event)))
         return
       case 'identity.user.restricted':
-        await repository.upsertUser(tx, toUserCopy(UserRestrictedV1.parse(event)))
+        await this.repository.upsertUser(tx, toUserCopy(UserRestrictedV1.parse(event)))
         return
       default:
         return
@@ -45,5 +46,5 @@ export type CopiesConsumerDeps = { db: Database; broker: BrokerClient; logger: L
 
 /** Запускает потребителя копий участника (durable, своя запись в `processed_events`). */
 export async function startCopiesConsumers(deps: CopiesConsumerDeps): Promise<RunningConsumer> {
-  return createIdempotentConsumer({ ...deps, durable: 'content-copies-users', subject: 'identity.user.>', handler: createCopiesHandler() })
+  return createIdempotentConsumer({ ...deps, durable: 'content-copies-users', subject: 'identity.user.>', handler: new CopiesHandler().handle })
 }

@@ -11,7 +11,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { outbox, sessions, users } from '../../src/infra/db/schema.ts'
-import { userRoutes } from '../../src/modules/user/index.ts'
+import { UserController, UserRepository, UserService, userRoutes } from '../../src/modules/user/index.ts'
 
 const SUPER = '11111111-1111-4111-8111-111111111111'
 const ADMIN = '22222222-2222-4222-8222-222222222222'
@@ -50,7 +50,7 @@ describe('identity: управление участниками', () => {
     app.addHook('onRequest', async (request) => {
       request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(userRoutes, { database })
+    await app.register(userRoutes, { controller: new UserController(new UserService(new UserRepository(database.db))) })
   }, 120_000)
 
   afterAll(async () => {

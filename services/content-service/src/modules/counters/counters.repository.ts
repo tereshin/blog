@@ -2,8 +2,9 @@ import { eq } from 'drizzle-orm'
 import type { ArticleCountersUpdatedV1, ReputationUpdatedV1 } from '@blog/contracts'
 import type { Database } from '@blog/broker'
 import { articles, profiles } from '../../infra/db/schema.ts'
+import type { CountersRepositoryPort } from './counters.types.ts'
 
-export const countersRepository = {
+export class CountersRepository implements CountersRepositoryPort {
   async applyArticle(tx: Database, event: ArticleCountersUpdatedV1): Promise<void> {
     await tx
       .update(articles)
@@ -16,9 +17,9 @@ export const countersRepository = {
         top_comment: event.top_comment,
       })
       .where(eq(articles.id, event.article_id))
-  },
+  }
 
   async applyReputation(tx: Database, event: ReputationUpdatedV1): Promise<void> {
     await tx.update(profiles).set({ reputation: event.reputation }).where(eq(profiles.user_id, event.user_id))
-  },
+  }
 }

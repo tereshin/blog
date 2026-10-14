@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { canReadArticle } from '@blog/contracts'
+import { canReadArticle } from '../../src/shared/can-read.ts'
 import type { PageQuery, ServiceContext } from '@blog/contracts'
-import { createCommentService } from '../../src/modules/comment/index.ts'
-import type { CommentWriter } from '../../src/modules/comment/comment.write.ts'
+import { CommentService } from '../../src/modules/comment/index.ts'
 import { assembleCommentTree } from '../../src/modules/comment/comment.tree.ts'
 import type { CommentRow } from '../../src/modules/comment/comment.tree.ts'
-import type { CommentRepository } from '../../src/modules/comment/comment.types.ts'
+import type { CommentRepositoryPort, CommentWriterPort } from '../../src/modules/comment/comment.types.ts'
 
 const AUTHOR = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
 const ROOT = '7a1c2d30-1111-4a11-8a11-000000000010'
@@ -58,7 +57,7 @@ describe('listForArticle', () => {
     viewer_key: 'guest:1',
   }
   const query: PageQuery = { limit: 20 }
-  const repository: CommentRepository = {
+  const repository: CommentRepositoryPort = {
     findByIds: async () => [],
     findComment: async () => null,
     findBookmarks: async () => [],
@@ -78,7 +77,7 @@ describe('listForArticle', () => {
   }
 
   it('гость не читает обсуждение статьи только для участников', async () => {
-    const writer: CommentWriter = {
+    const writer: CommentWriterPort = {
       insert: async () => {
         throw new Error('unused')
       },
@@ -92,7 +91,7 @@ describe('listForArticle', () => {
         throw new Error('unused')
       },
     }
-    const service = createCommentService(repository, writer)
+    const service = new CommentService(repository, writer)
     await expect(
       service.listForArticle(guest, '7a1c2d30-1111-4a11-8a11-000000000099', query),
     ).rejects.toMatchObject({ http_status: 404 })

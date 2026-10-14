@@ -45,7 +45,7 @@ function fakeBus() {
 describe('gateway: identity.session.revoked', () => {
   it('сбрасывает кэш сессии, следующий запрос идёт к identity заново', async () => {
     const lookup = vi.fn().mockResolvedValueOnce(info).mockResolvedValueOnce(null)
-    const sessions = new SessionService(lookup)
+    const sessions = new SessionService({ find: lookup }, { forward: vi.fn() })
     expect(await sessions.resolve(SESSION_ID)).toEqual(info)
 
     const bus = fakeBus()

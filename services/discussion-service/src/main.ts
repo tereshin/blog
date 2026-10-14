@@ -5,8 +5,8 @@ import { createServiceMetrics, startQueueMetrics, startTelemetry } from '@blog/t
 import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
-import { startCopiesConsumers } from './modules/copies/index.ts'
-import { startReactionCatalogConsumer } from './modules/reaction-catalog/index.ts'
+import { CopiesConsumer, CopiesRepository, CopiesService } from './modules/copies/index.ts'
+import { ReactionCatalogConsumer, ReactionCatalogRepository, ReactionCatalogService } from './modules/reaction-catalog/index.ts'
 
 const SERVICE = 'discussion-service'
 
@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   const telemetry = startTelemetry({ service: SERVICE, otlp_endpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT })
   const metrics = createServiceMetrics(SERVICE)
   setConsumerMetrics(metrics)
-  const queues = startQueueMetrics(metrics, sampleQueueDepth)
+  const queues = startQueueMetrics(metrics, sampleQueueDepth, (error) => logger.debug({ err: error }, 'опрос очередей брокера не удался'))
 
   const database = openDatabase(env.DATABASE_URL)
   const broker = await connectBroker({ url: env.NATS_URL, name: SERVICE })
@@ -24,8 +24,12 @@ async function main(): Promise<void> {
 
   const app = await buildApp({ env, logger, metrics, database, is_broker_ready: broker.isReady })
   relay.start()
-  const copies = await startCopiesConsumers({ db: database.db, broker, logger })
-  const reaction_catalog = await startReactionCatalogConsumer({ db: database.db, broker, logger })
+  const copies = await new CopiesConsumer(new CopiesService(new CopiesRepository())).start({ db: database.db, broker, logger })
+  const reaction_catalog = await new ReactionCatalogConsumer(new ReactionCatalogService(new ReactionCatalogRepository())).start({
+    db: database.db,
+    broker,
+    logger,
+  })
 
   registerShutdown({
     app,

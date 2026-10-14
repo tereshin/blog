@@ -59,7 +59,7 @@ export function UserCommentRow({ comment, profile }: UserCommentRowProps) {
               <div className="flex min-w-0 items-center gap-1">
                 <span className="min-w-0 truncate font-semibold">{profile.display_name}</span>
                 {status_icon ? (
-                  <img
+                  <img loading="lazy"
                     src={status_icon.image_url}
                     alt={status_icon.label}
                     width={18}
