@@ -2,7 +2,7 @@ import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { errorHandler, requestContext } from '@blog/http-kit'
+import { errorHandler, idempotency, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -109,6 +109,7 @@ describe('identity: вход через Firebase', () => {
     firebase = fakeFirebase()
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'identity-test', level: 'silent' }) })
+    await app.register(idempotency)
     await app.register(errorHandler)
     const service = new AuthService(new AuthRepository(database.db), firebase, app.log, {
       superadmin_email: 'root@example.test',

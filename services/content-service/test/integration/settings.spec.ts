@@ -142,6 +142,7 @@ describe('content: настройки площадки', () => {
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      public_origin: 'http://localhost',
     })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
       welcome_content: null,

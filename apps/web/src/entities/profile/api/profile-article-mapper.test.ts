@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { toArticleCard } from '@/entities/article'
 import { getProfileArticles } from '@/entities/profile'
 import { http } from '@/shared/api'
 import { buildFeedFixture } from '@/shared/api/mocks/fixtures/feed.ts'
@@ -22,9 +21,8 @@ describe('карточки статей профиля', () => {
     vi.mocked(http.get).mockImplementation(async (_path, schema) => schema.parse(response))
     const page = await getProfileArticles('anna', 'fresh', null)
     const parsed = page.items[0]
-    if (!parsed || !parsed.published_at) throw new Error('Missing published article')
-    const card = toArticleCard({ ...parsed, published_at: parsed.published_at })
-    expect(card.topic.avatar_url).toBe('https://example.com/topic.png')
-    expect(card.has_more_content).toBe(false)
+    if (!parsed) throw new Error('Missing published article')
+    expect(parsed.topic.avatar_url).toBe('https://example.com/topic.png')
+    expect(parsed.has_more_content).toBe(false)
   })
 })

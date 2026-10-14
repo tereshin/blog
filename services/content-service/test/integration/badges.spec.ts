@@ -49,8 +49,10 @@ describe('permanent badge awards and settings', () => {
   let app: FastifyInstance
   const awards = async () =>
     (await database.db.select().from(profile_badge_awards)).map((row) => row.badge_id).sort()
-  const save = (body: object, role = 'superadmin') =>
-    app.inject({ method: 'PUT', url: '/v1/settings', headers: { 'x-role': role }, payload: body })
+  const save = (body: object, role = 'superadmin') => {
+    const payload = Object.fromEntries(Object.entries(body).filter(([key]) => key !== 'public_origin'))
+    return app.inject({ method: 'PUT', url: '/v1/settings', headers: { 'x-role': role }, payload })
+  }
   const admin = async () =>
     (await app.inject({ url: '/v1/settings/admin', headers: { 'x-role': 'superadmin' } })).json()
 

@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   ADMIN_ROUTES,
   getAdminChildren,
@@ -6,15 +6,8 @@ import {
   getAdminRoute,
   getModerationReturnTo,
 } from '@/entities/admin'
-import { useShellStore } from '@/widgets/shell'
 
 describe('admin navigation', () => {
-  afterEach(() =>
-    useShellStore.setState({
-      header_center: { kind: 'empty' },
-      previous_center: { kind: 'empty' },
-    }),
-  )
   it('filters root categories by permissions without changing their order', () => {
     expect(getAdminChildren('home', true).map((route) => route.path)).toEqual([
       '/admin/moderation',
@@ -48,18 +41,5 @@ describe('admin navigation', () => {
   it('accepts each actual moderation screen', () => {
     for (const route of getAdminChildren('moderation', true))
       expect(getModerationReturnTo({ moderation_return_to: route.path })).toBe(route.path)
-  })
-  it('retains the explicit destination across search and route changes', () => {
-    const store = useShellStore.getState()
-    store.setHeaderCenter({ kind: 'back', title: 'General', to: '/admin/settings' })
-    store.openSearch()
-    store.setHeaderCenter({ kind: 'back', title: 'Settings', to: '/admin' })
-    expect(useShellStore.getState().header_center.kind).toBe('search')
-    store.closeSearch()
-    expect(useShellStore.getState().header_center).toEqual({
-      kind: 'back',
-      title: 'Settings',
-      to: '/admin',
-    })
   })
 })

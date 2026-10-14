@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { DEFAULT_SEO_SETTINGS, DEFAULT_SHELL_VISIBILITY, DEFAULT_SOCIAL_COVER_SETTINGS, DEFAULT_REACTION_APPEARANCES, feedPageSchema, topicListSchema } from '@blog/contracts'
 import type { FeedPage, ServiceContext } from '@blog/contracts'
+import { DEFAULT_PROFILE_BADGES } from '../../src/shared/profile-badges.ts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
 import { errorHandler, requestContext } from '@blog/http-kit'
@@ -245,6 +246,7 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       locale: 'ru',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
+      profile_badges: DEFAULT_PROFILE_BADGES,
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
@@ -259,6 +261,7 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       locale: 'sr',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
+      profile_badges: DEFAULT_PROFILE_BADGES,
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,

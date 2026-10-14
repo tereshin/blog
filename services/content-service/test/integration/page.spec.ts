@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
-import { errorHandler, requestContext } from '@blog/http-kit'
+import { errorHandler, idempotency, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import type { AdminPage, ServiceContext } from '@blog/contracts'
 import { PageUpdatedV1, PageDeletedV1 } from '@blog/contracts'
@@ -69,6 +69,7 @@ describe('simple pages real PostgreSQL', () => {
     await app.register(requestContext, {
       logger: createLogger({ service: 'pages-test', level: 'silent' }),
     })
+    await app.register(idempotency)
     await app.register(errorHandler)
     // Fastify decorator is populated by the following onRequest test hook.
     app.decorateRequest('viewer', undefined as unknown as ServiceContext)

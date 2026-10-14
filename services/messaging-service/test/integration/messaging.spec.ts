@@ -8,7 +8,7 @@ import { conversationPageSchema, messageSchema } from '@blog/contracts'
 import type { ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
-import { errorHandler, requestContext } from '@blog/http-kit'
+import { errorHandler, idempotency, requestContext } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
@@ -68,6 +68,7 @@ describe('messaging: один диалог на пару (PostgreSQL в конт
 
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'messaging-test', level: 'silent' }) })
+    await app.register(idempotency)
     await app.register(errorHandler)
     app.decorateRequest('viewer', undefined as unknown as ServiceContext)
     app.addHook('onRequest', async (request) => {
