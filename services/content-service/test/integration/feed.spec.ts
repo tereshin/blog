@@ -32,6 +32,8 @@ const viewers: Record<string, ServiceContext> = {
   lonely: { user_id: LONELY, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${LONELY}` },
 }
 
+const EMPTY_FAVICON = { svg: null, png: null, ico: null, apple: null, manifest: null }
+
 function id(index: number): string {
   return `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
 }
@@ -244,6 +246,9 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      welcome_content: null,
+      logo_dark_url: null,
+      favicon: EMPTY_FAVICON,
     })
     await database.db.insert(settings).values({ id: 1, name: 'Мой блог', locale: 'sr', reaction_appearances: DEFAULT_REACTION_APPEARANCES })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
@@ -255,6 +260,9 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      welcome_content: null,
+      logo_dark_url: null,
+      favicon: EMPTY_FAVICON,
     })
   })
 })

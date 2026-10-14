@@ -17,6 +17,7 @@ export function NavSection({
   header_action,
   children,
 }: NavSectionProps) {
+  const arrow_class = 'shrink-0 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
   return (
     <section aria-label={title} className="flex flex-col gap-1 pt-3">
       <div className="flex items-center justify-between gap-2 px-3">
@@ -27,13 +28,11 @@ export function NavSection({
           onClick={onToggle}
         >
           <span className="truncate">{title}</span>
-          <BaseIcon
-            name={is_expanded ? 'down' : 'right'}
-            style="line"
-            size={16}
-            aria-hidden="true"
-            className="shrink-0 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
-          />
+          {is_expanded ? (
+            <BaseIcon name="down" style="line" size={16} aria-hidden="true" className={arrow_class} />
+          ) : (
+            <BaseIcon name="right" style="line" size={16} aria-hidden="true" className={arrow_class} />
+          )}
         </button>
         {header_action}
       </div>

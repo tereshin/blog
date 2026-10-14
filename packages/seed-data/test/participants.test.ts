@@ -44,12 +44,12 @@ describe('seed-data: участники', () => {
     const by = Object.fromEntries(users.map((user) => [user.key, user.avatar_url]))
     expect(by.admin).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=0')
     expect(by.superadmin).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=1')
-    expect(by.author_b).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=2')
-    expect(by.author_a).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=3')
-    expect(by.reader).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=4')
+    expect(by.author_a).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=2')
+    expect(by.author_b).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=3')
+    expect(by.restricted).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=4')
     expect(by.no_publish).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=5')
-    expect(by.newcomer).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=6')
-    expect(by.restricted).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=7')
+    expect(by.reader).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=7')
+    expect(by.newcomer).toBe('https://img.heroui.chat/image/avatar?w=400&h=400&u=8')
   })
 
   it('author_a появился больше года назад, newcomer — только что', () => {

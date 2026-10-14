@@ -10,7 +10,7 @@ describe('i18n', () => {
   })
 
   it('берёт строку своего каталога, а не запасной русский текст', () => {
-    expect(translate('en', 'header.write')).toBe('Write')
+    expect(translate('en', 'header.write')).toBe('Write a post')
     expect(translate('sr', 'common.retry')).toBe('Pokušaj ponovo')
     expect(translate('ru', 'header.write')).toBe('Написать')
   })

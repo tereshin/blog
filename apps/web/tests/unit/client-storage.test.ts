@@ -18,9 +18,12 @@ describe('хранилища браузера', () => {
     return !rel.startsWith('shared/api/mocks') && !rel.endsWith('.stories.tsx')
   })
 
-  it('localStorage только у вида оформления', () => {
-    const hits = sources.filter((path) => /localStorage\./.test(readFileSync(path, 'utf8')))
-    expect(hits.map((path) => relative(SRC, path))).toEqual(['entities/session/model/appearance-storage.ts'])
+  it('localStorage только у предпочтений интерфейса: вид оформления и свёрнутые секции сайдбара', () => {
+    const hits = sources
+      .filter((path) => /localStorage\./.test(readFileSync(path, 'utf8')))
+      .map((path) => relative(SRC, path))
+      .sort()
+    expect(hits).toEqual(['entities/session/model/appearance-storage.ts', 'widgets/shell/model/useNavSectionCollapsed.ts'])
   })
 
   it('sessionStorage только у возврата ленты, полосы просмотренного и последнего визита', () => {

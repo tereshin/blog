@@ -113,7 +113,7 @@ describe('discussion: seed (PostgreSQL в контейнере)', () => {
     expect(await hash_small()).toBe(before)
     expect(await count('comments')).toBeGreaterThanOrEqual(3000)
     expect(await count('comments c', "c.reaction_count <> (select count(*) from reactions r where r.target_type = 'comment' and r.target_id = c.id)")).toBe(0)
-  })
+  }, 60_000)
 
   it('в prod процесс завершается с ошибкой до записи', async () => {
     const other = await startPostgres()

@@ -1,6 +1,6 @@
 const HEROUI_IMAGE = 'https://img.heroui.chat/image'
 
-/** Портретов на сервисе двенадцать: чётный `u` — мужчина, нечётный — женщина. */
+/** Портретов на сервисе двенадцать. Пол по `u` не чередуется: портрет участника подбирается по картинке. */
 export const AVATAR_COUNT = 12
 
 export const PHOTO_KINDS = [

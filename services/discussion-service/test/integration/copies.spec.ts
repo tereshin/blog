@@ -62,7 +62,7 @@ describe('discussion: копии из событий (PostgreSQL в контей
 
   it('identity.user.created создаёт копию участника с именем', async () => {
     await apply(event('identity.user.created', { ...user, display_name: 'Мария' }))
-    expect(await readUser()).toEqual({ user_id: USER, display_name: 'Мария', avatar_url: null, is_restricted: false })
+    expect(await readUser()).toEqual({ user_id: USER, display_name: 'Мария', avatar_url: null, slug: null, is_restricted: false })
   })
 
   it('событие дважды — эффект один', async () => {
@@ -79,7 +79,7 @@ describe('discussion: копии из событий (PostgreSQL в контей
   it('content.profile.updated меняет имя и аватар, ограничение не трогает', async () => {
     await apply(event('identity.user.restricted', { ...user, is_restricted: true }))
     await apply(event('content.profile.updated', { user_id: USER, display_name: 'Мария Иванова', avatar_url: 'http://media/a.png', slug: 'maria' }))
-    expect(await readUser()).toEqual({ user_id: USER, display_name: 'Мария Иванова', avatar_url: 'http://media/a.png', is_restricted: true })
+    expect(await readUser()).toEqual({ user_id: USER, display_name: 'Мария Иванова', avatar_url: 'http://media/a.png', slug: 'maria', is_restricted: true })
   })
 
   it('профиль раньше участника не теряется: копия создаётся, ограничение по умолчанию снято', async () => {

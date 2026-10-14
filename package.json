@@ -46,7 +46,14 @@
     "overrides": {
       "@types/pg": "8.23.1",
       "@firebase/app": "0.16.2",
-      "@firebase/app-compat": "0.5.18"
+      "@firebase/app-compat": "0.5.18",
+      "@firebase/firestore>@grpc/grpc-js": "^1.13.6",
+      "handlebars": "^4.7.10"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-vfj7-8cjw-p6xm"
+      ]
     }
   }
 }

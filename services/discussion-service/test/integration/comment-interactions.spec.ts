@@ -287,7 +287,7 @@ describe('comment interface API', () => {
       (await mutate('DELETE', `/v1/comments/subscriptions/${ARTICLE}`, undefined, 'admin')).json(),
     ).toEqual({ is_subscribed: false })
     expect((await get('/v1/comments/mentions?q=Mem')).json()).toEqual([
-      { user_id: MEMBER, display_name: 'Member', avatar_url: null },
+      { user_id: MEMBER, display_name: 'Member', avatar_url: null, slug: null },
     ])
     expect((await get('/v1/comments/mentions?q=Mem', 'guest')).statusCode).toBe(401)
   })

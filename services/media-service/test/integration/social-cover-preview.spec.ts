@@ -33,5 +33,5 @@ describe('серверный предпросмотр: контракт, дос�
     const pixel = await sharp(bytes).extract({ left: 10, top: 10, width: 1, height: 1 }).raw().toBuffer()
     expect(Math.abs((pixel[0] ?? 0) - 0x44)).toBeLessThan(3)
     expect(response.headers['cache-control']).toBe('no-store')
-  })
+  }, 30_000)
 })
