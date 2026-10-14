@@ -25,7 +25,8 @@ const PEOPLE = [
 /** Поиск фикстур: черновик в выдачу не попадает. */
 export const searchHandlers = [
   http.get('*/v1/search', ({ request }) => {
-    const q = new URL(request.url).searchParams.get('q')?.trim() ?? ''
+    const url = new URL(request.url)
+    const q = url.searchParams.get('q')?.trim() ?? ''
     if (q.length < 2 || q.length > 100)
       return HttpResponse.json(
         { code: 'validation_failed', title: 'Данные не прошли проверку' },
@@ -65,6 +66,8 @@ export const searchHandlers = [
         avatar_url: topic.avatar_url ?? null,
         cover_url: topic.cover_url ?? null,
       }))
-    return HttpResponse.json({ articles: articles.slice(0, 20), people, topics, next_cursor: null })
+    const start = Number(url.searchParams.get('cursor') ?? 0)
+    const limit = Number(url.searchParams.get('limit') ?? 20)
+    return HttpResponse.json({ articles: articles.slice(start, start + limit), people: start ? [] : people.slice(0, 8), topics: start ? [] : topics.slice(0, 8), next_cursor: start + limit < articles.length ? String(start + limit) : null })
   }),
 ]

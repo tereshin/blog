@@ -48,11 +48,30 @@ const blocks: Record<string, DocumentBlock> = {
   },
   attaches: {
     type: 'attaches',
-    data: { file: { url: 'https://example.com/file.pdf' }, title: 'Файл' },
+    data: {
+      file: { url: 'https://example.com/report.pdf', size: 248_320, extension: 'pdf' },
+      title: 'Отчёт за октябрь.pdf',
+    },
   },
   personality: {
     type: 'personality',
     data: { name: 'Анна', position: 'Редактор', photo: 'https://example.com/anna.png' },
+  },
+  buttons: {
+    type: 'buttons',
+    data: {
+      items: [
+        {
+          text: 'Скачать',
+          url: 'https://example.com/download',
+          size: 'lg',
+          variant: 'primary',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>',
+        },
+        { text: 'Подробнее', url: 'https://example.com', size: 'lg', variant: 'outline' },
+        { text: 'Удалить', url: 'https://example.com/delete', size: 'sm', variant: 'danger-soft' },
+      ],
+    },
   },
 }
 
@@ -81,3 +100,4 @@ export const Embed: Story = { args: { kind: 'embed' } }
 export const Table: Story = { args: { kind: 'table' } }
 export const Attaches: Story = { args: { kind: 'attaches' } }
 export const Personality: Story = { args: { kind: 'personality' } }
+export const Buttons: Story = { args: { kind: 'buttons' } }

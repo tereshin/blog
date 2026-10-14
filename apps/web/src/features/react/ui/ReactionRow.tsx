@@ -2,10 +2,11 @@ import type { ReactionAppearance, ReactionAppearances } from '@blog/contracts'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
-import { BaseIcon, Menu } from '@/shared/ui'
+import { BaseIcon } from '@/shared/ui'
 import { FALLBACK_REACTION_APPEARANCES, ReactionGlyph, reactionCount } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
 import { ReactionButton } from './ReactionButton.tsx'
+import { ReactionPicker } from './ReactionPicker.tsx'
 
 type ReactionRowProps = {
   counts: ReactionCounts
@@ -22,7 +23,7 @@ function appearanceOf(appearances: ReactionAppearances, kind: string): ReactionA
   return appearances.find((item) => item.kind === kind)
 }
 
-/** Ряд реакций: вид с ненулевым числом — пилюля, «добавить» открывает меню активных видов. */
+/** Ряд реакций: вид с ненулевым числом — пилюля, «добавить» открывает сетку активных видов. */
 export function ReactionRow({
   counts,
   my_reaction,
@@ -88,28 +89,11 @@ export function ReactionRow({
           <BaseIcon name="add" style="line" size={18} />
         </ReactionButton>
       ) : (
-        <Menu>
-          <ReactionButton
-            variant="secondary"
-            size="sm"
-            isIconOnly
-            className="text-muted"
-            aria-label={t('reaction.add')}
-            isDisabled={is_pending}
-          >
-            <BaseIcon name="add" style="line" size={18} />
-          </ReactionButton>
-          <Menu.Content aria-label={t('reaction.menu')} onAction={(key) => onSelect(String(key))}>
-            {active.map((appearance) => (
-              <Menu.Item key={appearance.kind} id={appearance.kind} textValue={appearance.label}>
-                <span className="inline-flex items-center gap-1">
-                  <ReactionGlyph appearance={appearance} label={appearance.label} hide_label_on_error />
-                  <span>{appearance.label}</span>
-                </span>
-              </Menu.Item>
-            ))}
-          </Menu.Content>
-        </Menu>
+        <ReactionPicker
+          appearances={active}
+          onSelect={onSelect}
+          is_pending={is_pending}
+        />
       )}
     </div>
   )

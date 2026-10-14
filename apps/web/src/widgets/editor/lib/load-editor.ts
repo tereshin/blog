@@ -1,6 +1,7 @@
 import type { EditorConfig } from '@editorjs/editorjs'
 import type EditorJS from '@editorjs/editorjs'
-import { uploadEditorFile } from './editor-uploader.ts'
+import { ButtonsTool } from './buttons-tool.ts'
+import { ATTACHMENT_ACCEPT, uploadEditorFile } from './editor-uploader.ts'
 import { PersonTool } from './person-tool.ts'
 
 type EditorTools = NonNullable<EditorConfig['tools']>
@@ -36,10 +37,17 @@ export async function loadEditor(): Promise<{ Editor: typeof EditorJS; tools: Ed
     marker: marker.default,
     underline: underline.default,
     image: { class: image.default, config: { uploader: { uploadByFile: (file: File) => uploadEditorFile(file, 'image') } } },
-    attaches: { class: attaches.default, config: { uploader: { uploadByFile: (file: File) => uploadEditorFile(file, 'attachment') } } },
+    attaches: {
+      class: attaches.default,
+      config: {
+        types: ATTACHMENT_ACCEPT,
+        uploader: { uploadByFile: (file: File) => uploadEditorFile(file, 'attachment') },
+      },
+    },
     embed: { class: embed.default, config: { services: { youtube: true, vimeo: true, twitter: true, github: true, codepen: true } } },
     table: table.default,
     personality: PersonTool,
+    buttons: ButtonsTool,
   }
 
   return { Editor: editor_module.default, tools }

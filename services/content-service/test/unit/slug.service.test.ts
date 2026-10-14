@@ -38,7 +38,7 @@ describe('slug: форма адреса', () => {
   })
 
   it('служебный список совпадает с контрактом', () => {
-    expect([...RESERVED_SLUGS].sort()).toEqual(['p', 't', 'u', 'admin', 'api', 'auth', 'bookmarks', 'feed', 'messages', 'popular', 'rating', 'search', 'write'].sort())
+    expect([...RESERVED_SLUGS].sort()).toEqual(['p', 't', 'u', 'admin', 'api', 'auth', 'bookmarks', 'discovery', 'feed', 'messages', 'popular', 'rating', 'search', 'write'].sort())
   })
 })
 

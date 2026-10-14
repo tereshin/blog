@@ -14,6 +14,13 @@ function textOf(data: OutputData['blocks'][number]['data']): string {
   return typeof text === 'string' ? text : ''
 }
 
+/** Инструмент вложений сохраняет название как `innerHTML`; в документ идёт текст. */
+function plainTitle(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  const parsed = new DOMParser().parseFromString(value, 'text/html')
+  return (parsed.body.textContent ?? '').replace(/\s+/g, ' ').trim()
+}
+
 /** Приводит сохранение Editor.js к документу контракта. Лишние поля инструментов отбрасывает схема. */
 export function parseEditorOutput(data: OutputData): BlocksDocument {
   const blocks = data.blocks.flatMap((block) => {
@@ -29,6 +36,8 @@ export function parseEditorOutput(data: OutputData): BlocksDocument {
       ]
     }
     if (block.type === 'delimiter') return [{ ...(block.id ? { id: block.id } : {}), type: 'delimiter' as const, data: {} }]
+    if (block.type === 'attaches')
+      return [{ ...(block.id ? { id: block.id } : {}), type: block.type, data: { ...block.data, title: plainTitle(block.data['title']) } }]
     return [{ ...(block.id ? { id: block.id } : {}), type: block.type, data: block.data }]
   })
   const parsed = blocksDocumentSchema.safeParse({ time: data.time, blocks, version: data.version })

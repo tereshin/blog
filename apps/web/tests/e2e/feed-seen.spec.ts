@@ -25,7 +25,7 @@ for (const all_pages of [false, true]) {
       } while (cursor)
     }, all_pages)
 
-    await page.getByRole('banner').locator('a[href="/"]').click()
+    await page.getByRole('banner').getByRole('link', { name: 'Блог' }).click()
     const main = page.getByRole('main')
     const cards = main.getByRole('article')
     await expect(cards).toHaveCount(20)
@@ -53,7 +53,7 @@ test('свежее показывает просмотренные статьи 
       if (!seen.ok) throw new Error('Не удалось отметить просмотр')
     }
   })
-  await page.getByRole('banner').locator('a[href="/"]').click()
+  await page.getByRole('banner').getByRole('link', { name: 'Блог' }).click()
   const main = page.getByRole('main')
   await expect(main.getByRole('article')).toHaveCount(20)
   await expect(main.getByRole('heading', { name: /^Статья 1:/ })).toBeVisible()

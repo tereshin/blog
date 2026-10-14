@@ -1,3 +1,4 @@
+import { runBadgeSweep } from '../../src/infra/workers/badge-worker.ts'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
@@ -50,6 +51,8 @@ describe('content: профиль', () => {
       { user_id: OTHER, display_name: 'Борис', slug: 'taken', reputation: 0 },
     ])
     await database.db.insert(slugs).values({ slug: 'taken', owner_type: 'profile', owner_id: OTHER })
+
+    await runBadgeSweep(database)
 
     app = Fastify()
     await app.register(requestContext, { logger: createLogger({ service: 'content-test', level: 'silent' }) })
@@ -189,6 +192,21 @@ describe('content: профиль', () => {
     expect(cleared.statusCode).toBe(200)
     expect(cleared.json()).toMatchObject({ status_icon_id: null, display_name: 'Анна', slug: 'anna' })
     expect((await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: {} })).statusCode).toBe(422)
+  })
+
+  it('рейтинг с равной репутацией продолжает курсор без повторов и пропусков', async () => {
+    const ids = ['10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002']
+    await database.db.insert(users_copy).values(ids.map((user_id, index) => ({ user_id, public_number: 100 + index, created_at: new Date('2026-01-01') })))
+    await database.db.insert(profiles).values(ids.map((user_id, index) => ({ user_id, display_name: `Блог ${index}`, slug: null, reputation: 12 })))
+    const first = (await app.inject('/v1/rating?limit=1')).json()
+    expect(first.items[0]).toMatchObject({ user_id: ids[0], slug: '100' })
+    const second = (await app.inject(`/v1/rating?limit=1&cursor=${encodeURIComponent(first.next_cursor)}`)).json()
+    expect(second.items[0].user_id).toBe(ids[1])
+    const third = (await app.inject(`/v1/rating?limit=1&cursor=${encodeURIComponent(second.next_cursor)}`)).json()
+    expect(third.items[0].user_id).toBe(OWNER)
+    const preview = (await app.inject('/v1/rating?limit=5')).json()
+    expect(preview.items.map((item: { user_id: string }) => item.user_id)).toEqual([...ids, OWNER, OTHER])
+    expect(preview.next_cursor).toBeNull()
   })
 
 })

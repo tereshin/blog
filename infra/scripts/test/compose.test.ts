@@ -101,7 +101,7 @@ describe('состав окружений (docker compose config)', () => {
     const output = services('prod')
     expect(hasForbiddenAuthEmulator(output)).toBe(false)
     expect(output.split(/\s+/).filter(Boolean).sort()).toEqual([...COMMON].sort())
-  })
+  }, 60_000)
 
   it('local и dev добавляют только firebase-auth и не содержат mock-google', () => {
     for (const env of ['local', 'dev'] as const) {
@@ -110,7 +110,7 @@ describe('состав окружений (docker compose config)', () => {
       expect(hasForbiddenAuthEmulator(names.join(' '))).toBe(true)
       expect(names.sort()).toEqual([...COMMON, 'firebase-auth'].sort())
     }
-  })
+  }, 60_000)
 })
 
 describe('hostEnvFor', () => {

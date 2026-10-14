@@ -19,7 +19,7 @@ type DialogProps = {
 function DialogRoot({ is_open, onOpenChange, size, className, children, ...rest }: DialogProps) {
   return (
     // Управляемое окно без кнопки-триггера внутри: корневой `Modal` не нужен (он ждал бы триггер).
-    <Modal.Backdrop isOpen={is_open} onOpenChange={onOpenChange}>
+    <Modal.Backdrop isOpen={is_open} onOpenChange={onOpenChange} className="backdrop-blur-sm">
       <Modal.Container {...(size ? { size } : {})}>
         <Modal.Dialog className={cn('rounded-card', className)} aria-label={rest['aria-label']}>
           {children}

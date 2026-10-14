@@ -53,4 +53,60 @@ describe('shared document renderer', () => {
     expect(screen.getByText('Редактор')).toBeTruthy()
     expect(container.querySelector('img,b,script')).toBeNull()
   })
+  it('renders buttons as external HeroUI links and drops unsafe urls and svg scripts', () => {
+    const { container } = render(
+      <BlockRenderer
+        blocks={[
+          {
+            type: 'buttons',
+            data: {
+              items: [
+                {
+                  text: 'Купить',
+                  url: 'https://shop.test/',
+                  size: 'lg',
+                  variant: 'outline',
+                  icon: '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle cx="1" cy="1" r="1"/></svg>',
+                },
+                { text: 'Скрипт', url: 'javascript:alert(1)', size: 'md', variant: 'primary' },
+              ],
+            },
+          },
+        ]}
+      />,
+    )
+    const links = container.querySelectorAll('a')
+    expect(links).toHaveLength(1)
+    const link = links[0]
+    expect(link?.getAttribute('href')).toBe('https://shop.test/')
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(link?.className).toContain('button--lg')
+    expect(link?.className).toContain('button--outline')
+    const icon = link?.querySelector('span')?.shadowRoot
+    expect(icon?.querySelector('circle')).toBeTruthy()
+    expect(icon?.querySelector('script')).toBeNull()
+  })
+  it('renders an attachment as a themed card and drops a non-http address', () => {
+    const { container } = render(
+      <BlockRenderer
+        blocks={[
+          { type: 'attaches', data: { title: 'Скрипт', file: { url: 'javascript:alert(1)', extension: 'pdf' } } },
+          {
+            type: 'attaches',
+            data: {
+              title: '<b>Отчёт</b>',
+              file: { url: 'https://media.test/report.pdf', size: 2048, extension: 'PDF' },
+            },
+          },
+        ]}
+      />,
+    )
+    const link = container.querySelector('a')
+    expect(container.querySelectorAll('a')).toHaveLength(1)
+    expect(link?.getAttribute('href')).toBe('https://media.test/report.pdf')
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(link?.textContent).toContain('<b>Отчёт</b>')
+    expect(link?.textContent).toContain('PDF')
+    expect(link?.querySelector('b,script')).toBeNull()
+  })
 })

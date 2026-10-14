@@ -1,3 +1,4 @@
+import { badgeDefinitionsSchema } from '@blog/contracts'
 import {
   faviconSettingsSchema,
   seoSettingsSchema,
@@ -32,6 +33,7 @@ export function useSettingsForm(
   const update = useUpdateSettings()
   const [draft, setDraft] = useState(() => ({
     ...initial,
+    profile_badges: initial.profile_badges ?? [],
     favicon: faviconSettingsSchema.parse(initial.favicon ?? {}),
     seo: seoSettingsSchema.parse(initial.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(initial.social_cover ?? {}),
@@ -102,6 +104,10 @@ export function useSettingsForm(
       setError(t('seo.validation_error'))
       return
     }
+    if (section === 'badges' && !badgeDefinitionsSchema.safeParse(draft.profile_badges).success) {
+      setError(t('admin.badges.invalid'))
+      return
+    }
     update.mutate(
       {
         section,
@@ -113,6 +119,7 @@ export function useSettingsForm(
           favicon: can_edit_media ? draft.favicon : initial.favicon,
           reaction_appearances,
           profile_status_icons,
+          profile_badges: can_edit_media ? draft.profile_badges : initial.profile_badges,
         },
       },
       {
@@ -121,6 +128,15 @@ export function useSettingsForm(
           setError(reason instanceof ApiError ? reason.message : t('admin.settings.error')),
       },
     )
+  }
+
+  const addStatusIcon = (image_url: string) => {
+    setDraft((current) => ({
+      ...current,
+      profile_status_icons: current.profile_status_icons.length < 100
+        ? [...current.profile_status_icons, { id: crypto.randomUUID(), label: t('profile.status'), image_url }]
+        : current.profile_status_icons,
+    }))
   }
 
   return {
@@ -134,6 +150,7 @@ export function useSettingsForm(
     retireAppearance,
     restoreAppearance,
     addAppearance,
+    addStatusIcon,
     save,
     is_pending: update.isPending,
   }

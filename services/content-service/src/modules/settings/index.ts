@@ -3,3 +3,5 @@ export { settingsRoutes } from './settings.routes.ts'
 export type { SettingsRoutesOptions } from './settings.routes.ts'
 export { BOOTSTRAP_SETTINGS, DEFAULT_SETTINGS, createSettingsService } from './settings.service.ts'
 export type { SettingsService } from './settings.service.ts'
+
+export type { SettingsRepository, SettingsRow, SettingsTransaction } from './settings.types.ts'

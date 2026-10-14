@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_BADGES } from '../../src/shared/profile-badges.ts'
 import { faviconSettingsSchema } from '@blog/contracts'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
@@ -92,6 +93,7 @@ describe('content: настройки площадки', () => {
       locale: 'ru',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
+      profile_badges: DEFAULT_PROFILE_BADGES,
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
@@ -131,6 +133,7 @@ describe('content: настройки площадки', () => {
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
       ...body,
+      profile_badges: DEFAULT_PROFILE_BADGES,
       welcome_content: null,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
@@ -147,6 +150,7 @@ describe('content: настройки площадки', () => {
       locale: 'en',
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
+      profile_badges: DEFAULT_PROFILE_BADGES,
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
@@ -195,7 +199,7 @@ describe('content: настройки площадки', () => {
         name: 'Чужая',
         reaction_appearances: [
           { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '🎉' },
-          DEFAULT_REACTION_APPEARANCES[1],
+          DEFAULT_REACTION_APPEARANCES[0],
           DEFAULT_REACTION_APPEARANCES[2],
           DEFAULT_REACTION_APPEARANCES[3],
         ],

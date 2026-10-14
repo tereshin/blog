@@ -51,7 +51,7 @@ export function Shell({
       <header
         role="banner"
         data-mount-id={mount_id}
-        className="sticky top-0 z-20 h-14 bg-[var(--surface)]"
+        className="sticky top-0 z-20 h-14 bg-[var(--surface)]/90 backdrop-blur-sm"
       >
         {header}
       </header>

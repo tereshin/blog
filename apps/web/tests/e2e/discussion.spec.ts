@@ -38,7 +38,7 @@ test.describe('обсуждение на фикстурном gateway', () => {
       const events = (window as Window & { mockEvents?: { emit: (frame: { type: string; article_id: string }) => void } }).mockEvents
       events?.emit({ type: 'article', article_id: '9b2e3f40-2222-4b22-8b22-000000000001' })
     })
-    await expect(reply).toHaveValue('Текст ответа, который нельзя потерять')
+    await expect(reply).toHaveText('Текст ответа, который нельзя потерять')
     await reply.locator('xpath=ancestor::form').getByRole('button', { name: 'Отправить' }).click()
     await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
 

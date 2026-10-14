@@ -1,4 +1,5 @@
 import { ADMIN_ROUTES } from '@/entities/admin'
+import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useProfile } from '@/entities/profile'
@@ -10,41 +11,69 @@ import { useT } from '@/shared/i18n'
 import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
 
 /** Меню аватара. Гость видит «Войти». */
-export function AccountMenu() {
+export function AccountMenu({ trigger }: { trigger?: ReactNode }) {
   const { t } = useT()
   const { viewer, is_admin } = useViewer()
   const openLogin = useLoginDialog((state) => state.open)
   const navigate = useNavigate()
   const [is_editing, setEditing] = useState(false)
-  const address = viewer.status === 'member' ? viewer.profile.slug || String(viewer.user.public_number) : undefined
+  const address =
+    viewer.status === 'member'
+      ? viewer.profile.slug || String(viewer.user.public_number)
+      : undefined
   const { data: profile } = useProfile(is_editing ? address : undefined)
 
   if (viewer.status !== 'member') {
     if (viewer.status === 'loading') return null
     return (
       <div className="flex items-center gap-2">
-        <Button variant="primary" size="lg" shape="pill" onPress={() => openLogin('required')}>
-          {t('header.sign_in')}
+        <Button
+          variant={trigger ? 'ghost' : 'primary'}
+          isIconOnly={!!trigger}
+          aria-label={t('header.sign_in')}
+          size="lg"
+          shape="pill"
+          onPress={() => openLogin('required')}
+        >
+          {trigger ?? t('header.sign_in')}
         </Button>
       </div>
     )
   }
 
-
   return (
     <>
       <Menu>
-        <Button variant="ghost" aria-label={t('header.account_menu')} className="gap-1 px-1">
-          <Avatar src={viewer.profile.avatar_url} name={viewer.profile.display_name} size="sm" />
-          <ChevronDownIcon width={16} height={16} className="max-[767px]:hidden" />
+        <Button
+          variant="ghost"
+          isIconOnly={!!trigger}
+          aria-label={t('header.account_menu')}
+          className={trigger ? undefined : 'gap-1 px-1'}
+        >
+          {trigger ?? (
+            <>
+              <Avatar
+                src={viewer.profile.avatar_url}
+                name={viewer.profile.display_name}
+                size="sm"
+              />
+              <ChevronDownIcon width={16} height={16} />
+            </>
+          )}
         </Button>
         <Menu.Content>
           <Menu.Item isDisabled>{viewer.profile.display_name}</Menu.Item>
           <Menu.Item onPress={() => navigate(`/u/${address}`)}>{t('account.my_profile')}</Menu.Item>
           <Menu.Item onPress={() => navigate('/bookmarks')}>{t('account.bookmarks')}</Menu.Item>
           <Menu.Item onPress={() => setEditing(true)}>{t('account.edit_profile')}</Menu.Item>
-          {viewer.user.email_verified ? null : <Menu.Item onPress={() => openLogin('required')}>{t('login.confirm_email')}</Menu.Item>}
-          {is_admin ? <Menu.Item onPress={() => navigate(ADMIN_ROUTES.home.path)}>{t('admin.title')}</Menu.Item> : null}
+          {viewer.user.email_verified ? null : (
+            <Menu.Item onPress={() => openLogin('required')}>{t('login.confirm_email')}</Menu.Item>
+          )}
+          {is_admin ? (
+            <Menu.Item onPress={() => navigate(ADMIN_ROUTES.home.path)}>
+              {t('admin.title')}
+            </Menu.Item>
+          ) : null}
           <LogoutMenuItem />
         </Menu.Content>
       </Menu>
@@ -52,7 +81,11 @@ export function AccountMenu() {
         <EditProfileDialog
           is_open={is_editing}
           onOpenChange={setEditing}
-          initial={{ display_name: profile.display_name, bio: profile.bio ?? '', slug: profile.slug ?? '' }}
+          initial={{
+            display_name: profile.display_name,
+            bio: profile.bio ?? '',
+            slug: profile.slug ?? '',
+          }}
         />
       ) : null}
     </>

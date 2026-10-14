@@ -11,6 +11,10 @@ function expectNear(actual: number, expected: number, tolerance = 1.5): void {
 }
 
 async function expectSearchBeforeNotifications(page: Page): Promise<void> {
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await expect(page.getByRole('navigation', { name: 'Мобильная навигация' }).getByRole('link', { name: 'Обзор' })).toBeVisible()
+    return
+  }
   const labels = await page
     .getByRole('banner')
     .getByRole('button')
@@ -43,7 +47,7 @@ test.describe('геометрия каркаса', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/')
     const banner = page.getByRole('banner')
-    const nav = page.getByRole('navigation', { name: NAV_NAME })
+    const nav = page.getByRole('navigation', { name: NAV_NAME, exact: true })
     const rail = page.getByRole('complementary', { name: RAIL_NAME })
     const main = page.getByRole('main')
     await expect(banner).toBeVisible()
@@ -99,36 +103,14 @@ test.describe('геометрия каркаса', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/p/statya-1')
     const banner = page.getByRole('banner')
-    const nav = page.getByRole('navigation', { name: NAV_NAME })
+    const nav = page.getByRole('navigation', { name: NAV_NAME, exact: true })
     const rail = page.getByRole('complementary', { name: RAIL_NAME })
     const paragraph = page.getByText(/^Абзац 1\./)
     await expect(paragraph).toBeVisible()
     await expect(page.getByText(/Абзац 40/)).toBeAttached()
     await expect(page.locator('[data-shell-scroll="center"]')).toHaveCount(0)
 
-    const title = banner.locator('span.truncate')
-    await expect(title).toContainText(/Статья 1:/)
-    const truncated = await title.evaluate((element) => {
-      const original = element.textContent
-      element.textContent =
-        'Очень длинное название раздела, которое не помещается в одну строку шапки и должно обрезаться многоточием на краю'
-      const style = getComputedStyle(element)
-      const header = element.closest('[role="banner"]')
-      const result = {
-        white_space: style.whiteSpace,
-        text_overflow: style.textOverflow,
-        lines: element.getClientRects().length,
-        clipped: element.scrollWidth > element.clientWidth + 1,
-        header_height: header?.getBoundingClientRect().height ?? 0,
-      }
-      element.textContent = original
-      return result
-    })
-    expect(truncated.white_space).toBe('nowrap')
-    expect(truncated.text_overflow).toBe('ellipsis')
-    expect(truncated.lines).toBe(1)
-    expect(truncated.clipped).toBe(true)
-    expectNear(truncated.header_height, 56)
+    await expect(banner.getByRole('link', { name: 'Назад', exact: true })).toBeVisible()
 
     const before = {
       banner: await banner.boundingBox(),
@@ -161,7 +143,7 @@ test.describe('геометрия каркаса', () => {
   test('ровно 1280px — три столбца', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/')
-    const nav = page.getByRole('navigation', { name: NAV_NAME })
+    const nav = page.getByRole('navigation', { name: NAV_NAME, exact: true })
     const rail = page.getByRole('complementary', { name: RAIL_NAME })
     const main = page.getByRole('main')
     await expect(nav).toBeVisible()
@@ -205,7 +187,7 @@ test.describe('геометрия каркаса', () => {
       2,
     )
     expect(after_title?.y ?? 0).toBeLessThan((before_title?.y ?? 0) - 50)
-    await expect(page.getByRole('navigation', { name: NAV_NAME })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toBeVisible()
   })
 
   test('на 1024px левый столбец остаётся, правого нет на главной, в профиле и в настройках', async ({
@@ -213,7 +195,7 @@ test.describe('геометрия каркаса', () => {
   }) => {
     await page.setViewportSize({ width: 1024, height: 800 })
     await page.goto('/')
-    const nav = page.getByRole('navigation', { name: NAV_NAME })
+    const nav = page.getByRole('navigation', { name: NAV_NAME, exact: true })
     const main = page.getByRole('main')
     await expect(nav).toBeVisible()
     await expect(main.getByRole('article').first()).toBeVisible()
@@ -235,7 +217,7 @@ test.describe('геометрия каркаса', () => {
 
     for (const path of ['/u/anna', '/admin/settings']) {
       await page.goto(path)
-      await expect(page.getByRole('navigation', { name: NAV_NAME })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toBeVisible()
       await expect(page.getByRole('complementary', { name: RAIL_NAME })).toHaveCount(0)
       const placed = await columnPlacement(page)
       expect(placed.display).toBe('none')
@@ -265,14 +247,14 @@ test.describe('геометрия каркаса', () => {
       await expect(open).toBeVisible()
       await expect(open).toHaveAttribute('aria-controls', 'shell-nav')
       await expect(page.getByRole('complementary', { name: RAIL_NAME })).toHaveCount(0)
-      await expect(page.getByRole('navigation', { name: NAV_NAME })).toHaveCount(0)
+      await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toHaveCount(0)
       await expectSearchBeforeNotifications(page)
       const main_box = await page.getByRole('main').boundingBox()
       expect(main_box?.width ?? 0).toBeGreaterThan(360)
       await open.click()
-      await expect(page.getByRole('navigation', { name: NAV_NAME })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toBeVisible()
       await page.keyboard.press('Escape')
-      await expect(page.getByRole('navigation', { name: NAV_NAME })).toHaveCount(0)
+      await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toHaveCount(0)
     }
     await expect(page.getByText('Подписка Plus')).toHaveCount(0)
   })
@@ -283,7 +265,7 @@ test.describe('геометрия каркаса', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
     const banner = page.getByRole('banner')
-    const search_box = await banner.getByRole('button', { name: 'Поиск' }).boundingBox()
+    const search_box = await page.getByRole('navigation', { name: 'Мобильная навигация' }).getByRole('link', { name: 'Обзор' }).boundingBox()
     expect(search_box?.y ?? 0).toBeGreaterThan(844 - 100)
     await expect(banner.getByRole('link', { name: 'Главная' })).toHaveAttribute(
       'aria-current',
@@ -303,7 +285,7 @@ test.describe('геометрия каркаса', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/p/statya-1')
     await expect(page.getByRole('banner')).toBeVisible()
-    await expect(page.getByRole('navigation', { name: NAV_NAME })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toBeVisible()
     await expect(page.getByRole('complementary', { name: RAIL_NAME })).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(0)
     await page.evaluate(() => window.localStorage.setItem('mock_article_delay', ''))

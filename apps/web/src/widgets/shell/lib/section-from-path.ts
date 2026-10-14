@@ -37,8 +37,8 @@ export function getSectionFromPath({ pathname, topics, article_topic_id }: Secti
       return third === 'followers' ? { kind: 'followers' } : third === 'following' ? { kind: 'following' } : { kind: 'profile' }
     case 'messages':
       return { kind: 'messages' }
-    case 'rating':
-      return { kind: 'rating' }
+    case 'discovery':
+      return { kind: 'discovery' }
     case 'bookmarks':
       return { kind: 'bookmarks' }
     case 'search':

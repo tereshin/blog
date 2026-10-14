@@ -7,7 +7,9 @@ const LABELS = {
   ru: {
     home: 'Свежее',
     popular: 'Популярное',
-    rating: 'Рейтинг',
+    rating: 'Обзор',
+    blogs: 'Блоги',
+    topics: 'Темы',
     feed: 'Моя лента',
     search: 'Поиск',
     bookmarks: 'Закладки',
@@ -22,7 +24,9 @@ const LABELS = {
   en: {
     home: 'Fresh',
     popular: 'Popular',
-    rating: 'Rating',
+    rating: 'Discovery',
+    blogs: 'Blogs',
+    topics: 'Topics',
     feed: 'My feed',
     search: 'Search',
     bookmarks: 'Bookmarks',
@@ -37,7 +41,9 @@ const LABELS = {
   sr: {
     home: 'Sveže',
     popular: 'Popularno',
-    rating: 'Rang lista',
+    rating: 'Otkrij',
+    blogs: 'Blogovi',
+    topics: 'Teme',
     feed: 'Moj feed',
     search: 'Pretraga',
     bookmarks: 'Sačuvano',
@@ -93,7 +99,14 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
     async page(input_path: string): Promise<PageSeo> {
       const site = await repository.site()
       const labels = LABELS[site.locale]
-      const path = localPath(input_path)
+      const requested_path = localPath(input_path)
+      const path =
+        requested_path === '/rating'
+          ? '/discovery/blogs'
+          : requested_path === '/search'
+            ? '/discovery'
+            : requested_path
+      const is_search = new URLSearchParams(input_path.split('?')[1]?.split('#')[0] ?? '').has('q')
       const canonical = `${origin}${path ?? '/'}`
       const site_covers = await repository.covers('site')
       const fallback =
@@ -148,9 +161,9 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
           ],
         },
       })
-      const static_key = (
-        { '/': 'home', '/popular': 'popular', '/rating': 'rating' } as const
-      )[path as '/' | '/popular' | '/rating']
+      const static_key = ({ '/': 'home', '/popular': 'popular', '/discovery': 'rating' } as const)[
+        path as '/' | '/popular' | '/discovery'
+      ]
       if (static_key) {
         const override = site.seo.pages[static_key]
         const name =
@@ -160,9 +173,30 @@ export function createSeoService(repository: SeoRepository, options: SeoOptions)
           name,
           override.description || site.seo.description || '',
           'CollectionPage',
+          !(static_key === 'rating' && (is_search || requested_path === '/search')),
         )
         if (static_key === 'home') page.title = name
         page.body_text = name
+        return page
+      }
+      if (path === '/discovery/blogs' || path === '/discovery/topics') {
+        const name = path.endsWith('/blogs') ? labels.blogs : labels.topics
+        const page = makePage(
+          name,
+          site.seo.description || '',
+          'CollectionPage',
+          requested_path !== '/rating' && !is_search,
+        )
+        page.body_text = name
+        page.structured_data['@graph'] = [
+          ...siteGraph(site, origin),
+          pageGraph('CollectionPage', name, page.description, canonical, origin, site),
+          breadcrumbGraph(canonical, [
+            { name: site.name, url: origin + '/' },
+            { name: labels.rating, url: origin + '/discovery' },
+            { name, url: canonical },
+          ]),
+        ]
         return page
       }
       const simple_match = /^\/pages\/([^/]+)$/.exec(path)

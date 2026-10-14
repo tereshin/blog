@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { Button } from '@/shared/ui'
 import type { ButtonProps } from '@/shared/ui'
@@ -6,6 +7,7 @@ import type { FollowTarget } from '../model/useFollow.ts'
 
 type FollowButtonProps = FollowTarget & {
   is_own: boolean
+  children?: (is_following: boolean) => ReactNode
   variant?: ButtonProps['variant']
   size?: ButtonProps['size']
 }
@@ -13,6 +15,7 @@ type FollowButtonProps = FollowTarget & {
 /** Пилюля «Подписаться» / «Вы подписаны». На своей карточке и своём профиле не показывается. */
 export function FollowButton({
   is_own,
+  children,
   variant = 'tertiary',
   size = 'sm',
   ...target
@@ -29,7 +32,9 @@ export function FollowButton({
       isDisabled={follow.is_pending}
       onPress={follow.toggle}
     >
-      {t(follow.is_following ? 'profile.following_now' : 'profile.follow')}
+      {children
+        ? children(follow.is_following)
+        : t(follow.is_following ? 'profile.following_now' : 'profile.follow')}
     </Button>
   )
 }

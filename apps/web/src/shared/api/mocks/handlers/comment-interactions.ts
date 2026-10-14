@@ -41,7 +41,7 @@ export const commentInteractionHandlers = [
     const bytes = await request.blob()
     return HttpResponse.json({
       id: crypto.randomUUID(),
-      url: URL.createObjectURL(bytes),
+      url: window.sessionStorage.getItem('mock_media_url') ?? URL.createObjectURL(bytes),
       kind: new URL(request.url).searchParams.get('kind') ?? 'image',
       mime: bytes.type,
       byte_size: bytes.size,

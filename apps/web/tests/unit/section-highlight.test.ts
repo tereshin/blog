@@ -15,7 +15,7 @@ const CASES: Array<[string, SectionView, ReturnType<typeof getHighlightedItem>]>
   ['Подписчики', { kind: 'followers' }, null],
   ['Подписки', { kind: 'following' }, null],
   ['Сообщения /messages', { kind: 'messages' }, { kind: 'messages' }],
-  ['Рейтинг /rating', { kind: 'rating' }, { kind: 'rating' }],
+  ['Рейтинг /rating', { kind: 'discovery' }, { kind: 'discovery' }],
   ['Закладки', { kind: 'bookmarks' }, null],
   ['Поиск', { kind: 'search' }, null],
   ['Другие страницы', { kind: 'other' }, null],

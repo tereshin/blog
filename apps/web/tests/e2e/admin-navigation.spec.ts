@@ -8,12 +8,13 @@ const SETTINGS = [
   ['/admin/settings/layout', 'Оболочка'],
   ['/admin/settings/reactions', 'Виды реакций'],
   ['/admin/settings/status-icons', 'Иконки статусов профиля'],
+  ['/admin/settings/badges', 'Бейджи'],
   ['/admin/settings/seo', 'SEO'],
   ['/admin/settings/publisher', 'Издатель'],
   ['/admin/settings/covers', 'Превью ссылок'],
 ] as const
 const MODERATION = [
-  ['/admin/moderation/articles', 'Жалобы на статьи'],
+  ['/admin/moderation/articles', 'Статьи'],
   ['/admin/moderation/comments', 'Жалобы на комментарии'],
   ['/admin/moderation/hidden', 'Скрытые статьи'],
   ['/admin/moderation/find', 'Поиск статьи'],
@@ -126,7 +127,7 @@ test('каталоги, переходы и прямое открытие сле
   const rows = page
     .getByRole('navigation', { name: 'Настройки площадки', exact: true })
     .getByRole('link')
-  await expect(rows).toHaveCount(7)
+  await expect(rows).toHaveCount(SETTINGS.length)
   for (const row of await rows.all()) {
     const box = await row.boundingBox()
     expect(box?.height).toBeGreaterThanOrEqual(80)
@@ -183,8 +184,8 @@ test('возврат из статьи сохраняет очередь мод�
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
   await page.goto('/admin/moderation/articles')
   await page
-    .getByRole('heading', { name: /^Статья 1:/ })
-    .getByRole('link')
+    .getByRole('main')
+    .getByRole('link', { name: /^Статья 1:/ })
     .click()
   await expect(page).toHaveURL('/p/statya-1?from=moderation')
   await page.reload()
@@ -197,7 +198,10 @@ test('возврат из статьи сохраняет очередь мод�
     .getByRole('main')
     .getByRole('link', { name: /^Скрытые статьи/ })
     .click()
-  await page.getByRole('link', { name: 'Открыть', exact: true }).click()
+  await page
+    .getByRole('main')
+    .getByRole('link', { name: /^Статья 1:/ })
+    .click()
   await expect(back(page)).toHaveAttribute('href', '/admin/moderation/hidden')
   await back(page).click()
   await expect(page).toHaveURL('/admin/moderation/hidden')
@@ -256,17 +260,25 @@ test('сохранение регистрации не изменяет друг
   await expect(registration).not.toBeChecked()
 })
 
-test('поиск статьи работает с клавиатуры и не открывает пустой адрес', async ({ page }) => {
+test('поиск статьи фильтрует таблицу, сохраняет запрос в адресе и открывает статью с клавиатуры', async ({
+  page,
+}) => {
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
   await page.goto('/admin/moderation/find')
-  await expect(page.getByRole('button', { name: 'Открыть', exact: true })).toBeDisabled()
-  await page.getByRole('textbox', { name: 'Адрес статьи' }).fill('statya-1')
-  await page.getByRole('textbox', { name: 'Адрес статьи' }).press('Enter')
+  const main = page.getByRole('main')
+  await main.getByRole('searchbox', { name: 'Поиск', exact: true }).fill('statya-1')
+  await expect(page).toHaveURL('/admin/moderation/find?q=statya-1')
+  const rows = main.getByRole('rowheader')
+  await expect(rows.first()).toHaveText(/^Статья 1:/)
+  const link = rows.first().getByRole('link')
+  await link.focus()
+  await link.press('Enter')
   await expect(page).toHaveURL('/p/statya-1?from=moderation')
   await expect(page.getByRole('button', { name: 'Скрыть', exact: true }).first()).toBeVisible()
-  await expect(back(page)).toHaveAttribute('href', '/admin/moderation/find')
+  await expect(back(page)).toHaveAttribute('href', '/admin/moderation/find?q=statya-1')
   await back(page).click()
-  await expect(page).toHaveURL('/admin/moderation/find')
+  await expect(page).toHaveURL('/admin/moderation/find?q=statya-1')
+  await expect(main.getByRole('searchbox', { name: 'Поиск', exact: true })).toHaveValue('statya-1')
 })
 
 test('реакции проверяют выбранный тип и сохраняются отдельно от общих настроек', async ({

@@ -116,7 +116,7 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     const states_ready = page.waitForResponse((response) => response.url().includes('/v1/me/article-states') && response.ok())
     await page.goto('/')
     await states_ready
-    await expect(page.getByRole('banner').getByRole('link', { name: 'Меню учётной записи' })).toBeVisible()
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
     const card = page.getByRole('main').getByRole('article').first()
     await card.getByRole('button', { name: 'Добавить реакцию' }).click()
     await page.getByRole('menuitem', { name: 'Смех' }).click()

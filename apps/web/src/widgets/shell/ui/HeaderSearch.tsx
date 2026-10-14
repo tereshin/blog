@@ -28,7 +28,7 @@ export function HeaderSearch() {
       onOpenChange={(is_open) => {
         if (!is_open) closeSearch()
       }}
-      className="bg-black/60"
+      className="bg-black/60 backdrop-blur-sm"
     >
       <Modal.Container placement="top" className="header-search-position">
         <Modal.Dialog

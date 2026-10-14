@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import type { FaviconSettings } from '@blog/contracts'
 import {
   boolean,
@@ -161,6 +162,7 @@ export const settings = pgTable('settings', {
     .$type<ReactionAppearances>()
     .notNull()
     .default(DEFAULT_REACTION_APPEARANCES),
+  profile_badges: jsonb('profile_badges').$type<import('@blog/contracts').BadgeDefinition[]>().notNull().default(DEFAULT_PROFILE_BADGES),
   profile_status_icons: jsonb('profile_status_icons')
     .$type<ProfileStatusIcon[]>()
     .notNull()
@@ -284,3 +286,9 @@ export const nav_section_mutations = pgTable(
   },
   (table) => [primaryKey({ columns: [table.actor_id, table.idempotency_key] })],
 )
+
+export const profile_badge_awards = pgTable('profile_badge_awards', {
+  user_id: uuid('user_id').notNull().references(() => profiles.user_id, { onDelete: 'cascade' }),
+  badge_id: text('badge_id').notNull(),
+  awarded_at: timestamp('awarded_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.user_id, table.badge_id] })])

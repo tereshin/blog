@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { shellRoute } from '@/app/routes/router'
 import { ShellLayout } from '@/app/routes/ShellLayout.tsx'
 
-/** 18 адресов таблицы `contracts/sections.md`. Панели в этот список не входят. */
+/** 19 адресов таблицы `contracts/sections.md`. Панели в этот список не входят. */
 const SECTIONS = [
   '/',
   '/popular',
@@ -15,9 +15,10 @@ const SECTIONS = [
   '/u/:slug/followers',
   '/u/:slug/following',
   '/messages',
-  '/rating',
+  '/discovery',
+  '/discovery/blogs',
+  '/discovery/topics',
   '/bookmarks',
-  '/search',
   '/pages/:slug',
   '/write',
   '/write/:id',
@@ -53,15 +54,15 @@ describe('router', () => {
     expect(shellRoute.children?.some((route) => 'children' in route && route.children)).toBe(false)
   })
 
-  it('все 18 адресов — ленивые дети каркаса', () => {
+  it('все 19 адресов — ленивые дети каркаса', () => {
     const children = shellRoute.children ?? []
     const paths = children.map((route) => pathOf(route))
-    expect(SECTIONS).toHaveLength(18)
+    expect(SECTIONS).toHaveLength(19)
     for (const path of SECTIONS) {
       const route = children.find((item) => pathOf(item) === path)
       expect(route, path).toBeDefined()
       expect(isLazy(route?.element), path).toBe(true)
     }
-    expect(new Set(paths.filter((path) => SECTIONS.includes(path))).size).toBe(18)
+    expect(new Set(paths.filter((path) => SECTIONS.includes(path))).size).toBe(19)
   })
 })

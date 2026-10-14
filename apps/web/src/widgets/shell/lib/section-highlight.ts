@@ -9,7 +9,7 @@ export type SectionView =
   | { kind: 'followers' }
   | { kind: 'following' }
   | { kind: 'messages' }
-  | { kind: 'rating' }
+  | { kind: 'discovery' }
   | { kind: 'bookmarks' }
   | { kind: 'search' }
   | { kind: 'other' }
@@ -20,7 +20,7 @@ export type SectionView =
   | { kind: 'admin_settings' }
 
 export type HighlightedItem =
-  | { kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'rating' }
+  | { kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'discovery' }
   | { kind: 'topic'; topic_id: string }
 
 /**
@@ -32,7 +32,7 @@ export function getHighlightedItem(section: SectionView, active_topic_ids: reado
     case 'fresh':
     case 'popular':
     case 'messages':
-    case 'rating':
+    case 'discovery':
       return { kind: section.kind }
     case 'my_feed':
       return { kind: 'mine' }

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode, UIEvent } from 'react'
 import { useLocation } from 'react-router'
-import { useMessagesUnreadCount, useMessagesUnreadLive } from '@/entities/conversation'
+import { useMessagesUnreadCount } from '@/entities/conversation'
 import { useSettings } from '@/entities/settings'
 import { useViewer } from '@/entities/session'
 import { useNavSections } from '@/entities/nav-section'
@@ -21,7 +21,7 @@ import { TopicsSection } from './TopicsSection.tsx'
 
 type Mode = {
   to: string
-  kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'rating'
+  kind: 'popular' | 'fresh' | 'mine' | 'messages' | 'discovery'
   label: MessageKey
   /** Генератор иконок видит только буквальные `name`/`style`, поэтому оба варианта заданы явно. */
   icon: { line: ReactNode; fill: ReactNode }
@@ -65,12 +65,12 @@ const MODES: ReadonlyArray<Mode> = [
     },
   },
   {
-    to: '/rating',
-    kind: 'rating',
+    to: '/discovery',
+    kind: 'discovery',
     label: 'shell.nav.rating',
     icon: {
-      line: <BaseIcon name="trophy" style="line" size={24} />,
-      fill: <BaseIcon name="trophy" style="fill" size={24} />,
+      line: <BaseIcon name="search_2" style="line" size={24} />,
+      fill: <BaseIcon name="search_2" style="fill" size={24} />,
     },
   },
 ]
@@ -92,7 +92,6 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const { viewer } = useViewer()
   const is_member = viewer.status === 'member'
   const unread_messages = useMessagesUnreadCount(is_member)
-  useMessagesUnreadLive(is_member)
   const show_unread_messages = has_unread_messages || (unread_messages.data ?? 0) > 0
   const { highlighted } = useCurrentSection()
   const freshness = useFeedFreshness()
@@ -122,7 +121,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
 
   return (
     <div onScroll={handleScroll} className="flex flex-col gap-1 p-2">
-      {MODES.filter((mode) => settings?.shell[mode.kind] !== false).map((mode) => {
+      {MODES.filter((mode) => settings?.shell[mode.kind === 'discovery' ? 'rating' : mode.kind] !== false).map((mode) => {
         const is_fresh =
           (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)
         const has_unread = (mode.kind === 'messages' && show_unread_messages) || is_fresh

@@ -10,6 +10,10 @@ This version contains the current changes on top of 1.0.0.
 
 ### Added
 
+- Configurable achievement badges with image uploads, automatic permanent awards,
+  retroactive evaluation, and archiving in superadmin settings. Badge rules belong
+  to content-service; the shared package contains their data contracts.
+
 - Superadmin management of informational pages: block content, drafts, preview,
   publication, unpublication, deletion, and public `/pages/{slug}` routes.
 - Custom sidebar sections with ordered links to published pages or external URLs,
@@ -18,15 +22,29 @@ This version contains the current changes on top of 1.0.0.
 - Configurable welcome content with a block editor.
 - Inline comment mentions with participant suggestions and profile links.
 - Published pages in SEO routes and sitemaps; page update and deletion events.
+- Buttons block in the editor: one to six external link buttons with HeroUI sizes
+  and variants, text, an `http(s)` address, and an optional SVG icon checked
+  against the navigation icon allowlist. Older clients skip the new block type.
 
 ### Changed
+
+- Replaced the Rating section with Discovery: inline search, ranked blog and topic
+  previews, full lists, and follow controls. Legacy Rating and Search links redirect
+  to Discovery; SEO routes and sitemaps use the new addresses.
+- Separated mobile navigation from desktop header actions, with Discovery search
+  and a consistent account icon. Existing layout and SEO settings remain compatible.
+- The header again shows the current page title next to Back. On a narrow screen
+  the title replaces the site name, and Enter in a comment inserts a line break.
 
 - Unified administration screens, navigation, forms, and settings sections.
 - Shared document rendering, sanitization, and editor components for articles,
   pages, and welcome content; updated person cards and embed URL validation.
+- Editor attachments accept txt, csv, md, rtf, pdf, docx, xlsx, jpg, png, and gif.
+  The attachment card follows the light and dark theme.
 - Updated article publishing controls, comment composition and attachments,
   profile comment rows, author status icons, and reaction presentation.
 - Adjusted content widths, shell geometry, and responsive styling.
+- Reaction selection now uses a compact, scrollable five-column icon grid.
 - Updated Russian, English, and Serbian interface translations for the new controls.
 - SVG favicon validation now accepts metadata and validated embedded PNG images.
 - Image upload and save failures are reported through toast notifications.
@@ -37,6 +55,13 @@ This version contains the current changes on top of 1.0.0.
   through pages and custom navigation.
 
 ### Deployment
+
+- Profile responses retain legacy `badges` values and add `badge_ids` for the full
+  catalog. Updated clients use `badge_ids` and fall back to `badges` with older servers.
+
+- Apply content-service migration `20261014_profile_badges.sql` to initialize the
+  badge catalog and preserve currently eligible legacy awards. The service runs
+  a badge reconciliation worker at startup and every five minutes.
 
 - Apply the new content-service migrations for pages, navigation sections, SVG
   navigation icons, shell visibility, welcome content, and removal of About settings.

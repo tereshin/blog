@@ -1,3 +1,4 @@
+import { decodeHTML } from 'entities'
 import sanitizeHtml from 'sanitize-html'
 import type { BlocksDocument, EditorBlock } from '@blog/contracts'
 import { blocksDocumentSchema } from '@blog/contracts'
@@ -102,9 +103,26 @@ async function cleanBlock(block: EditorBlock, options: SanitizeOptions): Promise
           ...(block.data.caption !== undefined ? { caption: clean(block.data.caption) } : {}),
         },
       }
-    case 'attaches':
+    case 'attaches': {
       await assertOwnedFile(block.data.file.url, options)
-      return block
+      const safeExtension = (value: string | undefined): string | undefined => {
+        const extension = value?.toLowerCase()
+        return extension && /^[a-z0-9]{1,8}$/.test(extension) ? extension : undefined
+      }
+      const { extension: file_extension, ...file } = block.data.file
+      const { extension: block_extension, ...data } = block.data
+      const safe_file = safeExtension(file_extension)
+      const safe_block = safeExtension(block_extension)
+      return {
+        ...block,
+        data: {
+          ...data,
+          file: { ...file, ...(safe_file ? { extension: safe_file } : {}) },
+          title: decodeHTML(plain(block.data.title)),
+          ...(safe_block ? { extension: safe_block } : {}),
+        },
+      }
+    }
     case 'embed':
     case 'delimiter':
       return block
@@ -120,6 +138,14 @@ async function cleanBlock(block: EditorBlock, options: SanitizeOptions): Promise
           ...(photo ? { photo } : {}),
         },
       }
+    }
+    case 'buttons': {
+      const items = block.data.items.map((item) => {
+        const text = decodeHTML(plain(item.text))
+        if (!text) throw new InvalidBlockError()
+        return { ...item, text, url: new URL(item.url).toString() }
+      })
+      return { ...block, data: { items } }
     }
   }
 }
@@ -164,6 +190,7 @@ export function hasContentBlock(blocks: readonly EditorBlock[]): boolean {
       case 'image':
       case 'embed':
       case 'attaches':
+      case 'buttons':
         return true
       case 'personality':
         return (

@@ -14,6 +14,7 @@ const RESERVED_SLUGS = new Set([
   'write',
   'me',
   'rating',
+  'discovery',
   'bookmarks',
   'search',
   'settings',
@@ -147,6 +148,7 @@ export function hasMockContent(blocks: BlocksDocument): boolean {
       case 'image':
       case 'embed':
       case 'attaches':
+      case 'buttons':
         return true
       case 'personality':
         return (

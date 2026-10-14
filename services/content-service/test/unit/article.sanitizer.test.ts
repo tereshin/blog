@@ -70,6 +70,27 @@ describe('санитайзер статьи', () => {
     expect(hasContentBlock([{ type: 'personality', data: { name: 'Анна' } }])).toBe(true)
   })
 
+  it('кнопки: текст без разметки, ссылка только http(s), иконка только из белого списка svg', async () => {
+    const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 12h16"/></svg>'
+    const button = { text: '<b>A &amp; B</b><script>x</script>', url: 'https://shop.test', size: 'lg', variant: 'danger-soft', icon }
+    const document = await sanitizeDocument({ blocks: [{ type: 'buttons', data: { items: [button] } }] }, options)
+    expect(document.blocks[0]).toEqual({
+      type: 'buttons',
+      data: { items: [{ text: 'A & B', url: 'https://shop.test/', size: 'lg', variant: 'danger-soft', icon }] },
+    })
+    const rejected = [
+      { ...button, url: 'javascript:alert(1)' },
+      { ...button, text: '<b></b>' },
+      { ...button, variant: 'link' },
+      { ...button, icon: '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>' },
+      { ...button, icon: '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://evil.test/a.png"/></svg>' },
+    ]
+    for (const item of rejected) {
+      await expect(sanitizeDocument({ blocks: [{ type: 'buttons', data: { items: [item] } }] }, options)).rejects.toBeInstanceOf(InvalidBlockError)
+    }
+    await expect(sanitizeDocument({ blocks: [{ type: 'buttons', data: { items: [] } }] }, options)).rejects.toBeInstanceOf(InvalidBlockError)
+  })
+
   it('один разделитель не считается содержанием, абзац и список считаются', () => {
     expect(hasContentBlock([{ type: 'delimiter', data: {} }])).toBe(false)
     expect(hasContentBlock([{ type: 'paragraph', data: { text: '  ' } }])).toBe(false)

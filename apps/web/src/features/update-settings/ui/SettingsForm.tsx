@@ -1,3 +1,4 @@
+import { SettingsBadgeFields } from './SettingsBadgeFields.tsx'
 import { ADMIN_ROUTES } from '@/entities/admin'
 import type { FaviconVariant } from '@blog/contracts'
 import type { ReactNode } from 'react'
@@ -48,6 +49,7 @@ export function SettingsForm({
     retireAppearance,
     restoreAppearance,
     addAppearance,
+    addStatusIcon,
     save,
     is_pending,
   } = useSettingsForm(initial, section, can_edit_media)
@@ -69,17 +71,7 @@ export function SettingsForm({
                   children: <BaseIcon name="add" style="line" />,
                   isIconOnly: true,
                   is_disabled: is_pending,
-                  onUploaded: (image_url) =>
-                    setDraft((current) => ({
-                      ...current,
-                      profile_status_icons:
-                        current.profile_status_icons.length < 100
-                          ? [
-                              ...current.profile_status_icons,
-                              { id: crypto.randomUUID(), label: t('profile.status'), image_url },
-                            ]
-                          : current.profile_status_icons,
-                    })),
+                  onUploaded: addStatusIcon,
                 })
               : null
           }
@@ -127,6 +119,14 @@ export function SettingsForm({
                 onRetire={retireAppearance}
                 onRestore={restoreAppearance}
                 onAdd={addAppearance}
+              />
+            ) : null}
+            {section === 'badges' ? (
+              <SettingsBadgeFields
+                badges={draft.profile_badges}
+                can_edit_media={can_edit_media}
+                upload={upload}
+                onChange={(transform) => setDraft((current) => ({ ...current, profile_badges: transform(current.profile_badges) }))}
               />
             ) : null}
             {section === 'status-icons' ? (

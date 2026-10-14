@@ -10,7 +10,7 @@ import {
 } from '@blog/errors'
 import type { MediaUploadResponse } from '@blog/contracts'
 import { UnsupportedMediaError, PayloadTooLargeError } from './media.errors.ts'
-import { MEDIA_LIMITS, readBounded, sniff } from './media.sniff.ts'
+import { MEDIA_LIMITS, TEXT_MIME, readBounded, sniff } from './media.sniff.ts'
 import type { MediaRepository, MediaService, ObjectStore } from './media.types.ts'
 
 function publicUrl(base: string, key: string): string {
@@ -52,7 +52,11 @@ export function createMediaService(
       const id = randomUUID()
       const key = `uploads/${id}`
       const url = publicUrl(public_base, key)
-      await store.put({ key, body: bytes, content_type: mime })
+      await store.put({
+        key,
+        body: bytes,
+        content_type: mime === TEXT_MIME ? `${TEXT_MIME}; charset=utf-8` : mime,
+      })
       const stored = await repository.insert({
         id,
         uploader_id: viewer.user_id,

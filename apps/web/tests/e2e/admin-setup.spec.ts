@@ -33,7 +33,7 @@ test.describe('Настройки площадки', () => {
   test('загруженный логотип виден гостю в шапке', async ({ page }) => {
     await page.addInitScript(() => { if (!window.localStorage.getItem('mock_viewer')) window.localStorage.setItem('mock_viewer', 'superadmin') })
     await page.goto('/admin/settings/general')
-    await page.getByRole('button', { name: 'Загрузить логотип', exact: true }).locator('..').locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG })
+    await page.getByRole('group', { name: 'Логотип светлой темы' }).locator('input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: PNG })
     await expect(page.getByRole('main').locator('img')).toHaveCount(1)
     const saved = page.waitForResponse((response) => response.url().endsWith('/v1/settings') && response.request().method() === 'PUT')
     await page.getByRole('button', { name: 'Сохранить' }).click()
@@ -81,7 +81,7 @@ test.describe('Настройки площадки', () => {
     })
     await page.goto('/admin/settings/status-icons')
     const field = page.getByRole('group', { name: 'Иконки статусов профиля' })
-    await field.locator('input[type="file"]').setInputFiles({ name: 'status.png', mimeType: 'image/png', buffer: PNG })
+    await page.getByRole('button', { name: 'Добавить иконку статуса', exact: true }).locator('..').locator('input[type="file"]').setInputFiles({ name: 'status.png', mimeType: 'image/png', buffer: PNG })
     await field.getByLabel('Название статуса', { exact: true }).fill('В отпуске')
     const saved = page.waitForResponse((response) => response.url().endsWith('/v1/settings') && response.request().method() === 'PUT')
     await page.getByRole('button', { name: 'Сохранить', exact: true }).click()

@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_BADGES } from '../shared/profile-badges.ts'
 import { sql } from 'drizzle-orm'
 import { insertInBatches } from '@blog/db-kit'
 import type { SeedContext } from '@blog/db-kit'
@@ -5,7 +6,7 @@ import type { Logger } from '@blog/logger'
 import { buildDataset } from '@blog/seed-data'
 import type { Dataset, SeedProfileName } from '@blog/seed-data'
 import type { SeedEnv } from '../config/env.ts'
-import { articles, follows, profiles, promotions, reports, settings, slugs, topics, users_copy } from '../infra/db/schema.ts'
+import { articles, follows, profile_badge_awards, profiles, promotions, reports, settings, slugs, topics, users_copy } from '../infra/db/schema.ts'
 
 export type ContentSeedInput = SeedContext & { profile: SeedProfileName; env: SeedEnv; logger: Logger }
 
@@ -139,5 +140,6 @@ export async function seedContent(input: ContentSeedInput): Promise<void> {
   await insertInBatches(db, follows, dataset.follows, { label: 'follows', logger })
   await insertInBatches(db, promotions, dataset.promotions.filter((item) => article_ids.has(item.article_id)), { label: 'promotions', logger })
   await insertInBatches(db, reports, dataset.reports.filter((item) => article_ids.has(item.article_id)), { label: 'reports', logger })
-  await insertInBatches(db, settings, [{ id: 1, ...dataset.settings }], { label: 'settings', logger })
+  await insertInBatches(db, profile_badge_awards, [...dataset.derived.badges].flatMap(([user_id, badges]) => Object.entries(badges).filter(([, earned]) => earned).map(([badge_id]) => ({ user_id, badge_id, awarded_at: dataset.anchor }))), { label: 'badge awards', logger })
+  await insertInBatches(db, settings, [{ id: 1, ...dataset.settings, profile_badges: DEFAULT_PROFILE_BADGES }], { label: 'settings', logger })
 }

@@ -136,5 +136,5 @@ for (const [path, role] of [
 test('the removed about route shows the standard not-found page', async ({ page }) => {
   await page.goto('/about')
   await expect(page.getByText('Ничего не найдено', { exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'О проекте', exact: true })).toHaveCount(0)
+  await expect(page.locator('a[href="/about"]')).toHaveCount(0)
 })

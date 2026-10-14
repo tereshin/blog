@@ -11,6 +11,7 @@ async function openSearch(page: Page) {
 }
 
 test.beforeEach(async ({ page }, test_info) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 768, 'Desktop search uses a modal; mobile opens Discovery')
   if (test_info.project.name === 'wide-light') {
     await page.addInitScript(() => localStorage.setItem('appearance', 'light'))
   }
@@ -68,11 +69,11 @@ test('статья открывается из подсказки, Escape воз
   await article.click()
   await expect(page).toHaveURL(new RegExp(`${href}$`))
   await expect(dialog).toHaveCount(0)
-  const title = page.getByRole('banner').locator('span.truncate')
-  await expect(title).toContainText('без компромиссов')
+  const back = page.getByRole('banner').getByRole('link', { name: 'Назад', exact: true })
+  await expect(back).toBeVisible()
   const reopened = await openSearch(page)
   await reopened.field.press('Escape')
-  await expect(title).toContainText('без компромиссов')
+  await expect(back).toBeVisible()
 })
 
 test('кнопка всех результатов, Enter и история запросов', async ({ page }) => {
@@ -87,7 +88,7 @@ test('кнопка всех результатов, Enter и история за
   await openSearch(page)
   await expect(dialog.getByRole('button', { name: 'компромиссов', exact: true })).toBeVisible()
   await dialog.getByRole('button', { name: 'компромиссов', exact: true }).click()
-  await expect(page).toHaveURL(/\/search\?q=/)
+  await expect(page).toHaveURL(/\/discovery\?q=/)
   await openSearch(page)
   await expect(field).toHaveValue('компромиссов')
   await field.fill('Анна')
@@ -97,7 +98,7 @@ test('кнопка всех результатов, Enter и история за
   await expect(page.getByRole('main').getByRole('link', { name: 'Анна Авторова', exact: true }).first()).toBeVisible()
   await page.getByRole('banner').getByRole('link').first().click()
   await expect(page).toHaveURL(/\/$/)
-  await expect(page.getByRole('main').getByRole('heading', { name: 'Люди', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('main').getByRole('heading', { name: 'Блоги', exact: true })).toHaveCount(0)
   await openSearch(page)
   await dialog.getByRole('button', { name: 'Очистить', exact: true }).click()
   await expect(dialog.getByText('Запросов пока нет')).toBeVisible()

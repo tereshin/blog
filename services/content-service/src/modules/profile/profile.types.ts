@@ -14,7 +14,7 @@ export type ProfileRecord = {
   created_at: Date
   followers_count: number
   following_count: number
-  has_published: boolean
+  badges: string[]
   is_following: boolean
 }
 

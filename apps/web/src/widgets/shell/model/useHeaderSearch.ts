@@ -19,7 +19,7 @@ export function useHeaderSearch() {
     if (q.length < 2 || q.length > 100) return
     rememberSearch(q)
     closeSearch()
-    navigate(`/search?q=${encodeURIComponent(q)}`)
+    navigate(`/discovery?q=${encodeURIComponent(q)}`)
   }
 
   const handleSelect = () => {

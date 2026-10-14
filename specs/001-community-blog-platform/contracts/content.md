@@ -48,8 +48,9 @@
 | image | file.url, caption | Адрес только что принятого файла площадки |
 | embed | service, source, embed, width, height | `service` из списка известных. В страницу подставляется шаблон сервиса |
 | table | content, withHeadings | Ячейки — текст с той же встроенной разметкой |
-| attaches | file.url, title, size, extension | Адрес принятого вложения |
+| attaches | file.url, title, size, extension | Адрес принятого вложения. Принимаются txt, csv, md, rtf, pdf, docx, xlsx, jpg, png и gif |
 | personality | name, description, photo | Карточка человека |
+| buttons | items: от 1 до 6 кнопок `{ text, url, size, variant, icon? }` | Кнопки-ссылки HeroUI. `text` — текст без разметки до 80 символов, `url` — внешний адрес `http`/`https`, `size` — `sm`, `md` или `lg`, `variant` — `primary`, `secondary`, `tertiary`, `outline`, `ghost`, `danger` или `danger-soft`, `icon` — SVG по тому же белому списку, что иконки разделов меню. Ссылка открывается в новой вкладке с `rel="noopener noreferrer"` |
 
 Встроенный текст абзаца, заголовка, цитаты, списка, таблицы и выноски может содержать только `b`, `i`, `u`, `code`, `mark`, `br` и `a` с `href` на `http`, `https` или `mailto`. Код внутри строки — `code`. Выделение — `mark`. Ссылка — `a`. Всё остальное, включая обработчики и стиль, снимается до записи.
 
@@ -67,3 +68,8 @@
 | attachment | PDF, DOC, DOCX, TXT | 20 МБ |
 
 Тип проверяется по содержимому. Имя файла на хранилище назначает сервер.
+
+Profile badge compatibility: `badges` retains the v1 enum (`first_post`,
+`ten_reactions`, `one_year`). The additive optional `badge_ids` field carries
+all permanent award IDs, including configurable UUIDs. New clients prefer
+`badge_ids` and fall back to `badges` when the field is absent.

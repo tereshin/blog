@@ -9,7 +9,6 @@ import { FreshFeedPage } from '@/pages/fresh-feed'
 import { RestrictedNotice } from '@/entities/session'
 import { NotificationBell } from '@/widgets/notification-bell'
 import {
-  AccountMenu,
   CenterSkeleton,
   HeaderCenter,
   LeftNav,
@@ -34,7 +33,7 @@ export function ShellLayout() {
   const { t } = useT()
   const { data: settings } = useSettings()
   const show_popular_comments = settings?.shell.popular_comments !== false
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const outlet = useOutlet()
   const is_page_editor = /^\/admin\/pages\/(?:new|[^/]+)\/?$/.test(pathname)
   const is_editor = /^\/write(?:\/|$)/.test(pathname) || is_page_editor
@@ -54,6 +53,12 @@ export function ShellLayout() {
   // Панель навигации закрывается переходом; центр нового адреса начинается сверху (в `Shell` по `scroll_key`).
   useEffect(() => {
     setNavOpen(false)
+    if (/^\/discovery(?:\/|$)/.test(pathname)) {
+      setHeaderCenter(pathname.replace(/\/+$/, '') === '/discovery' ? { kind: 'empty' } : {
+        kind: 'back', title: t(pathname === '/discovery/blogs' ? 'discovery.blogs' : 'discovery.topics'), to: '/discovery',
+      })
+      setArticleTopicId(null)
+    }
     const admin_route = getAdminRoute(pathname)
     if (admin_route) {
       setHeaderCenter({
@@ -67,7 +72,7 @@ export function ShellLayout() {
 
   return (
     <>
-      <PageSeo path={pathname} />
+      <PageSeo path={pathname + search} />
       <Shell
         content_width={content_width}
         header={
@@ -75,7 +80,6 @@ export function ShellLayout() {
             content_width={content_width}
             center={<HeaderCenter />}
             notifications={<NotificationBell />}
-            account={<AccountMenu />}
           />
         }
         left={<LeftNav />}

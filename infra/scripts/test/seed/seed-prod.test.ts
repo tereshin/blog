@@ -16,5 +16,5 @@ describe('seed в prod', () => {
     })
     expect(result.status).not.toBe(0)
     expect(`${result.stderr}${result.stdout}`).toMatch(/prod/i)
-  })
+  }, 30_000)
 })

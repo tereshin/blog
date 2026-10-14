@@ -31,11 +31,11 @@ test.describe('Профиль и рейтинг', () => {
     await expect(page.getByRole('heading', { name: 'Роман Читаев' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Редактировать' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Статистика' })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Настройки' })).toBeVisible()
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
     await expect(page.getByText('0', { exact: true }).first()).toBeVisible()
     await expect(page.getByText('с 2024')).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Посты' })).toHaveAttribute('aria-selected', 'true')
-    await expect(page.getByRole('button', { name: 'Свежее' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Свежее', exact: true })).toBeVisible()
     await expect(page.getByText('Купить показы')).toHaveCount(0)
     await expect(page.getByRole('heading', { name: 'Как устроена лента' })).toBeVisible()
     if (hasLeftColumn(page))
@@ -71,12 +71,12 @@ test.describe('Профиль и рейтинг', () => {
     await expect(page.locator('time')).toBeVisible()
   })
 
-  test('рейтинг подсвечивает пункт «Рейтинг»', async ({ page }) => {
+  test('рейтинг блогов подсвечивает Discovery', async ({ page }) => {
     test.skip(!hasLeftColumn(page), 'Левый столбец виден от 768px')
     await page.goto('/rating')
     await expect(
-      page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Рейтинг' }),
+      page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Обзор' }),
     ).toHaveAttribute('aria-current', 'page', { timeout: 20_000 })
-    await expect(page.getByRole('heading', { name: 'Рейтинг' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Блоги' })).toBeVisible()
   })
 })

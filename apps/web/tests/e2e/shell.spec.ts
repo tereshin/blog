@@ -13,9 +13,10 @@ const GUEST_SECTIONS = [
   '/u/reader/followers',
   '/u/reader/following',
   '/messages',
-  '/rating',
+  '/discovery',
+  '/discovery/blogs',
+  '/discovery/topics',
   '/bookmarks',
-  '/search',
   '/pages/welcome-page',
 ]
 
@@ -135,7 +136,7 @@ test.describe('Каркас на всех разделах', () => {
     await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
     await expect(page.getByRole('dialog')).toContainText('Войдите, чтобы продолжить')
     await expect.poll(() => new URL(page.url()).pathname).toBe('/')
-    await page.getByRole('dialog').getByRole('button', { name: 'Закрыть' }).click()
+    await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toBeHidden()
     await expectFrame(page)
     await expect.poll(() => new URL(page.url()).pathname).toBe('/')

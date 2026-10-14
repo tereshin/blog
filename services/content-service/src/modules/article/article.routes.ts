@@ -1,3 +1,5 @@
+import { createSettingsRepository, createSettingsService } from '../settings/index.ts'
+import { createBadgeRepository, createBadgeService } from '../badge/index.ts'
 import type { FastifyPluginAsync } from 'fastify'
 import type { DbHandle } from '../../infra/db/client.ts'
 import { createArticleController } from './article.controller.ts'
@@ -15,6 +17,14 @@ export type ArticleRoutesOptions = {
 export const articleRoutes: FastifyPluginAsync<ArticleRoutesOptions> = async (app, options) => {
   const controller = createArticleController(
     createArticleService(createArticleRepository(options.database.db), {
+      publishTransaction: (operation) =>
+        options.database.db.transaction((tx) => {
+          const settings = createSettingsService(createSettingsRepository(tx), {
+            media_url: options.media_urls[0] ?? '',
+          })
+          const badges = createBadgeService(createBadgeRepository(tx, settings.getBadgeDefinitions))
+          return operation(createArticleRepository(tx), badges)
+        }),
       media_urls: options.media_urls,
       lookupFile: options.lookupFile,
     }),

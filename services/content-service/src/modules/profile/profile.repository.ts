@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import { requestAuthorCovers } from '../social-cover/index.ts'
 import { eq, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
@@ -26,7 +27,15 @@ function selection(viewer_id: string | undefined) {
     created_at: users_copy.created_at,
     followers_count: sql<number>`(select count(*)::int from follows where target_type = 'user' and target_id = ${profiles.user_id})`,
     following_count: sql<number>`(select count(*)::int from follows where follower_id = ${profiles.user_id})`,
-    has_published: sql<boolean>`exists (select 1 from articles where author_id = ${profiles.user_id} and status = 'published')`,
+    badges: sql<string[]>`coalesce((
+      select array_agg(a.badge_id order by d.position)
+      from profile_badge_awards a
+      join jsonb_array_elements(coalesce(
+        (select profile_badges from settings where id = 1),
+        ${JSON.stringify(DEFAULT_PROFILE_BADGES)}::jsonb
+      )) with ordinality as d(badge, position) on d.badge->>'id' = a.badge_id
+      where a.user_id = ${profiles.user_id}
+    ), array[]::text[])`,
     is_following: following,
   }
 }
@@ -44,7 +53,7 @@ function toRecord(row: {
   created_at: Date
   followers_count: number
   following_count: number
-  has_published: boolean
+  badges: string[]
   is_following: boolean
 }): ProfileRecord {
   return row

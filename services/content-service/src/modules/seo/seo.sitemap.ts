@@ -104,7 +104,7 @@ export function createCrawlService(
         return {
           content_type: 'application/xml',
           body: urlset(
-            ['/', '/popular', '/rating'].map((path) => ({ url: `${origin}${path}` })),
+            ['/', '/popular', '/discovery', '/discovery/blogs', '/discovery/topics'].map((path) => ({ url: `${origin}${path}` })),
           ),
         }
       if (part) {

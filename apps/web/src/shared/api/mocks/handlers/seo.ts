@@ -15,7 +15,9 @@ export const seoHandlers = [
     const labels: Record<string, string> = {
       '/': settings.seo.title || settings.name,
       '/popular': 'Популярное',
-      '/rating': 'Рейтинг',
+      '/discovery': settings.seo.pages.rating.title || 'Обзор',
+      '/discovery/blogs': 'Блоги',
+      '/discovery/topics': 'Темы',
       '/search': 'Поиск',
       '/write': 'Редактор',
       '/bookmarks': 'Закладки',

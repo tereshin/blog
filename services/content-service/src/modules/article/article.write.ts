@@ -1,13 +1,24 @@
 import { blocksDocumentSchema, requireVerifiedEmail } from '@blog/contracts'
-import type { ArticleDraft, BlocksDocument, CreateArticle, ServiceContext, UpdateArticle } from '@blog/contracts'
+import type {
+  ArticleDraft,
+  BlocksDocument,
+  CreateArticle,
+  ServiceContext,
+  UpdateArticle,
+} from '@blog/contracts'
 import { EmailUnverifiedError, RestrictedError, UnauthorizedError } from '@blog/errors'
 import { ArticleUnavailableError, CannotPublishError, InvalidBlockError } from './article.errors.ts'
-import type { ArticleRepository, StoredArticle } from './article.types.ts'
+import type {
+  ArticleRepository,
+  StoredArticle,
+  ArticlePublishTransaction,
+} from './article.types.ts'
 import { deriveExcerpt, deriveFirstImage, searchText } from './lib/slugify.ts'
 import { hasContentBlock, sanitizeDocument } from './article.sanitizer.ts'
 import type { FileOwner } from './article.sanitizer.ts'
 
 export type ArticleWriteOptions = {
+  publishTransaction?: ArticlePublishTransaction
   media_urls: readonly string[]
   lookupFile: (url: string) => Promise<FileOwner | null>
 }
@@ -53,7 +64,11 @@ function toDraft(row: StoredArticle): ArticleDraft {
 
 export function createArticleWrite(repository: ArticleRepository, options: ArticleWriteOptions) {
   async function sanitize(author_id: string, blocks: BlocksDocument): Promise<BlocksDocument> {
-    return sanitizeDocument(blocks, { media_urls: options.media_urls, author_id, lookupFile: options.lookupFile })
+    return sanitizeDocument(blocks, {
+      media_urls: options.media_urls,
+      author_id,
+      lookupFile: options.lookupFile,
+    })
   }
 
   return {
@@ -76,15 +91,29 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
       return toDraft(row)
     },
 
-    async update(viewer: ServiceContext, id: string, input: UpdateArticle, correlation_id: string): Promise<ArticleDraft> {
+    async update(
+      viewer: ServiceContext,
+      id: string,
+      input: UpdateArticle,
+      correlation_id: string,
+    ): Promise<ArticleDraft> {
       const author_id = assertCanChange(viewer)
       const current = await repository.findForAuthor(id, author_id)
       if (!current || current.status === 'deleted') throw new ArticleUnavailableError()
-      const blocks = input.blocks === undefined ? parseBlocks(current.blocks) : await sanitize(author_id, input.blocks)
+      const blocks =
+        input.blocks === undefined
+          ? parseBlocks(current.blocks)
+          : await sanitize(author_id, input.blocks)
       const saved = await repository.save(id, author_id, {
         title: input.title ?? current.title,
-        seo_title: input.seo_title === undefined ? current.seo_title ?? null : input.seo_title?.trim() || null,
-        seo_description: input.seo_description === undefined ? current.seo_description ?? null : input.seo_description?.trim() || null,
+        seo_title:
+          input.seo_title === undefined
+            ? (current.seo_title ?? null)
+            : input.seo_title?.trim() || null,
+        seo_description:
+          input.seo_description === undefined
+            ? (current.seo_description ?? null)
+            : input.seo_description?.trim() || null,
         topic_id: input.topic_id ?? current.topic_id,
         blocks,
         visibility: input.visibility ?? current.visibility,
@@ -99,15 +128,24 @@ export function createArticleWrite(repository: ArticleRepository, options: Artic
       return toDraft(saved)
     },
 
-    async publish(viewer: ServiceContext, id: string, correlation_id: string): Promise<ArticleDraft> {
+    async publish(
+      viewer: ServiceContext,
+      id: string,
+      correlation_id: string,
+    ): Promise<ArticleDraft> {
       const author_id = assertCanPublish(viewer)
       const current = await repository.findForAuthor(id, author_id)
       if (!current || current.status === 'deleted') throw new ArticleUnavailableError()
       const blocks = parseBlocks(current.blocks)
-      const saved = await repository.publish(id, author_id, {
-        has_content: hasContentBlock(blocks.blocks),
-        search_text: searchText(current.title, blocks.blocks),
-        correlation_id,
+      if (!options.publishTransaction) throw new Error('Article publication requires a transaction')
+      const saved = await options.publishTransaction(async (transaction_repository, badges) => {
+        const published = await transaction_repository.publish(id, author_id, {
+          has_content: hasContentBlock(blocks.blocks),
+          search_text: searchText(current.title, blocks.blocks),
+          correlation_id,
+        })
+        if (published) await badges.evaluate(author_id)
+        return published
       })
       if (!saved) throw new ArticleUnavailableError()
       return toDraft(saved)

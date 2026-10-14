@@ -61,4 +61,10 @@ describe('saving settings categories', () => {
     expect(result.shell).toEqual(shell)
     expect(result.registration_open).toBe(server.registration_open)
   })
+  it('saving badges keeps fresh server values in all other categories', () => {
+    const server = { ...initial, name: 'Fresh name', profile_status_icons: [{ id: '11111111-1111-4111-8111-111111111111', label: 'Status', image_url: 'http://media.test/status.png' }] }
+    const draft = { ...initial, profile_badges: initial.profile_badges.map((badge) => ({ ...badge, label: 'Changed' })) }
+    expect(mergeSettingsSection(server, draft, 'badges')).toEqual({ ...server, profile_badges: draft.profile_badges })
+  })
+
 })

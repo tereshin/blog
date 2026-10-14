@@ -14,6 +14,18 @@ export const MEDIA_LIMITS: Record<MediaKind, number> = {
 const IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 const DOC_MIME = 'application/msword'
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+export const TEXT_MIME = 'text/plain'
+const ATTACHMENT_MIME = new Set([
+  'application/pdf',
+  'application/rtf',
+  DOC_MIME,
+  DOCX_MIME,
+  XLSX_MIME,
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+])
 
 /** Читает тело потоком и останавливается, как только размер превысил предел вида. */
 export async function readBounded(source: Readable, limit_bytes: number): Promise<Buffer> {
@@ -39,13 +51,16 @@ function looksLikeText(bytes: Buffer): boolean {
   return true
 }
 
-/** Первые байты решают тип: изображение — JPEG/PNG/WebP/GIF, вложение — PDF/DOC/DOCX/TXT. */
+/**
+ * Первые байты решают тип: изображение — JPEG/PNG/WebP/GIF; вложение — PDF, RTF, DOC, DOCX, XLSX,
+ * JPEG, PNG, GIF и текст без нулевых байтов (TXT, CSV, MD хранятся как `text/plain`).
+ */
 export async function sniff(bytes: Buffer, kind: MediaKind): Promise<string | null> {
   const found = await fileTypeFromBuffer(bytes)
   if (kind === 'image') return found && IMAGE_MIME.has(found.mime) ? found.mime : null
-  if (found?.mime === 'application/pdf' || found?.mime === DOC_MIME || found?.mime === DOCX_MIME)
-    return found.mime
+  if (found && ATTACHMENT_MIME.has(found.mime)) return found.mime
   if (found?.mime === 'application/zip' && bytes.includes(Buffer.from('word/'))) return DOCX_MIME
-  if (!found && looksLikeText(bytes)) return 'text/plain'
+  if (found?.mime === 'application/zip' && bytes.includes(Buffer.from('xl/'))) return XLSX_MIME
+  if (!found && looksLikeText(bytes)) return TEXT_MIME
   return null
 }

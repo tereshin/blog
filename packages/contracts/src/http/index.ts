@@ -81,13 +81,27 @@ export type {
   UpdateSettings,
 } from './settings.ts'
 export {
+  BLOCK_BUTTON_SIZES,
+  BLOCK_BUTTON_TEXT_MAX,
+  BLOCK_BUTTON_URL_MAX,
+  BLOCK_BUTTON_VARIANTS,
   EMBED_SERVICES,
+  MAX_BLOCK_BUTTONS,
+  blockButtonSchema,
   blocksDocumentSchema,
   editorBlockSchema,
   embedServiceSchema,
+  isHttpUrl,
   listItemSchema,
 } from './blocks.ts'
-export type { BlocksDocument, EditorBlock, ListItem } from './blocks.ts'
+export type {
+  BlockButton,
+  BlockButtonSize,
+  BlockButtonVariant,
+  BlocksDocument,
+  EditorBlock,
+  ListItem,
+} from './blocks.ts'
 export {
   articleCardsSchema,
   articleDraftListSchema,
@@ -253,3 +267,6 @@ export * from './nav-sections.ts'
 export { safeEmbedUrl } from './embed-url.ts'
 export { welcomeContentSchema } from './settings.ts'
 export type { WelcomeContent } from './settings.ts'
+
+export { badgeIdSchema, badgeMetricSchema, badgeDefinitionSchema, badgeDefinitionsSchema } from './badges.ts'
+export type { BadgeDefinition, BadgeMetric } from './badges.ts'

@@ -1,4 +1,4 @@
-import { use, useLayoutEffect } from 'react'
+import { use, useLayoutEffect, useRef } from 'react'
 import type { RefObject } from 'react'
 import { useContextProps } from 'react-aria-components'
 import { FieldInputContext } from 'react-aria-components/Autocomplete'
@@ -25,10 +25,13 @@ export function CommentEditor({
 }: CommentEditorProps) {
   const input = use(FieldInputContext)
   const [, editor_ref] = useContextProps({}, field_ref, FieldInputContext)
+  const pending_caret = useRef<{ start: number; end: number } | null>(null)
   useLayoutEffect(() => {
     const element = field_ref.current
     if (!element) return
-    const selection = editorSelection(element)
+    const pending = pending_caret.current
+    pending_caret.current = null
+    const selection = pending ?? editorSelection(element)
     const fragment = document.createDocumentFragment()
     let offset = 0
     for (const range of [...draft.mention_ranges].sort((a, b) => a.start - b.start)) {
@@ -77,8 +80,8 @@ export function CommentEditor({
           const selection = editorSelection(field_ref.current)
           const start = selection?.start ?? draft.text.length
           const end = selection?.end ?? start
+          pending_caret.current = { start: start + 1, end: start + 1 }
           draft.update(draft.text.slice(0, start) + '\n' + draft.text.slice(end))
-          requestAnimationFrame(() => setEditorSelection(field_ref.current, start + 1))
           return
         }
 
@@ -97,10 +100,9 @@ export function CommentEditor({
         const start = selection?.start ?? draft.text.length
         const end = selection?.end ?? start
         const inserted = event.clipboardData.getData('text/plain')
+        const caret = Math.min(start + inserted.length, 5000)
+        pending_caret.current = { start: caret, end: caret }
         draft.update(draft.text.slice(0, start) + inserted + draft.text.slice(end))
-        requestAnimationFrame(() =>
-          setEditorSelection(element, Math.min(start + inserted.length, 5000)),
-        )
       }}
       onCompositionStart={() => mention.setComposing(true)}
       onCompositionEnd={() => mention.setComposing(false)}

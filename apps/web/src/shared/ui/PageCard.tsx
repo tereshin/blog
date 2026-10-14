@@ -5,9 +5,18 @@ import { Card } from './Card.tsx'
 type PageCardHeaderProps = Omit<ComponentProps<typeof Card.Header>, 'title'> & {
   title: ReactNode
   actions?: ReactNode
+  heading_level?: 1 | 2
 }
 
-function PageCardHeader({ title, actions, className, children, ...rest }: PageCardHeaderProps) {
+function PageCardHeader({
+  title,
+  actions,
+  heading_level = 1,
+  className,
+  children,
+  ...rest
+}: PageCardHeaderProps) {
+  const Heading = heading_level === 1 ? 'h1' : 'h2'
   return (
     <Card.Header
       className={cn(
@@ -16,7 +25,7 @@ function PageCardHeader({ title, actions, className, children, ...rest }: PageCa
       )}
       {...rest}
     >
-      <h1 className="min-w-0 break-words text-lg font-semibold">{title}</h1>
+      <Heading className="min-w-0 break-words text-lg font-semibold">{title}</Heading>
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
       {children}
     </Card.Header>

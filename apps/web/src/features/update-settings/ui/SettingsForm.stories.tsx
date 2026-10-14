@@ -1,3 +1,4 @@
+import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badges'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SHELL_VISIBILITY } from '@blog/contracts'
@@ -13,6 +14,7 @@ const initial: AdminSettings = {
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
   profile_status_icons: [],
+  profile_badges: PROFILE_BADGES_FIXTURE,
   shell: DEFAULT_SHELL_VISIBILITY,
 }
 
@@ -70,3 +72,6 @@ export const StatusIcons: Story = { args: { section: 'status-icons' } }
 export const Seo: Story = { args: { section: 'seo' } }
 export const Publisher: Story = { args: { section: 'publisher' } }
 export const Covers: Story = { args: { section: 'covers' } }
+
+export const Badges: Story = { args: { section: 'badges' } }
+export const ArchivedBadge: Story = { args: { section: 'badges', initial: { ...initial, profile_badges: initial.profile_badges.map((badge) => ({ ...badge, status: 'archived' })) } } }

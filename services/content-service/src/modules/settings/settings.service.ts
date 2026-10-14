@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import {
   DEFAULT_SHELL_VISIBILITY,
   faviconSettingsSchema,
@@ -7,6 +8,7 @@ import {
   socialCoverSettingsSchema,
 } from '@blog/contracts'
 import type {
+  BadgeDefinition,
   AdminSettings,
   PublicSettings,
   ReactionAppearances,
@@ -21,7 +23,7 @@ import type { FileOwner } from '../../shared/editor-document/document.sanitizer.
 import { requireSuperadmin } from '../access/require-superadmin.ts'
 import { assertMediaUrl } from '../media-url.ts'
 import { DEFAULT_REACTION_APPEARANCES, assertSingleEmoji } from './reaction-appearance.ts'
-import type { SettingsRepository, SettingsRow } from './settings.repository.ts'
+import type { SettingsRepository, SettingsRow, SettingsTransaction } from './settings.types.ts'
 
 export const DEFAULT_SETTINGS: AdminSettings = {
   name: 'Блог',
@@ -31,6 +33,7 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
   profile_status_icons: [],
+  profile_badges: DEFAULT_PROFILE_BADGES,
   shell: DEFAULT_SHELL_VISIBILITY,
 }
 
@@ -48,6 +51,7 @@ function toPublic(row: SettingsRow): PublicSettings {
     locale: row.locale,
     reaction_appearances: appearancesOf(row.reaction_appearances),
     profile_status_icons: row.profile_status_icons,
+    profile_badges: row.profile_badges ?? DEFAULT_PROFILE_BADGES,
     seo: seoSettingsSchema.parse(row.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
     shell: shellVisibilitySchema.parse(row.shell ?? {}),
@@ -71,10 +75,12 @@ export const BOOTSTRAP_SETTINGS: SettingsRow = {
   new_members_can_publish: true,
   reaction_appearances: DEFAULT_REACTION_APPEARANCES,
   profile_status_icons: [],
+  profile_badges: DEFAULT_PROFILE_BADGES,
   shell: DEFAULT_SHELL_VISIBILITY,
 }
 
 export type SettingsService = {
+  getBadgeDefinitions: (is_exclusive?: boolean) => Promise<BadgeDefinition[]>
   getPublic: () => Promise<PublicSettings>
   getAdmin: (viewer: ServiceContext) => Promise<AdminSettings>
   update: (
@@ -100,11 +106,15 @@ export function createSettingsService(
   repository: SettingsRepository,
   options: {
     media_url: string
+    saveTransaction?: SettingsTransaction
     public_origin?: string
     lookupFile?: (url: string) => Promise<FileOwner | null>
   },
 ): SettingsService {
   return {
+    async getBadgeDefinitions(is_exclusive = false) {
+      return (await repository.badgeDefinitions(is_exclusive)) ?? DEFAULT_PROFILE_BADGES
+    },
     async getPublic() {
       const row = await repository.find()
       return row ? toPublic(row) : toPublic(DEFAULT_SETTINGS)
@@ -174,27 +184,39 @@ export function createSettingsService(
           `profile_status_icons.${icon.id}.image_url`,
         )
       }
-      const saved = await repository.save(
-        {
-          welcome_content,
-          name: input.name,
-          logo_url: input.logo_url,
-          logo_dark_url:
-            input.logo_dark_url === undefined
-              ? (current?.logo_dark_url ?? null)
-              : input.logo_dark_url,
-          favicon,
-          locale: input.locale,
-          registration_open: input.registration_open,
-          new_members_can_publish: input.new_members_can_publish,
-          reaction_appearances: input.reaction_appearances,
-          profile_status_icons: input.profile_status_icons,
-          seo,
-          social_cover,
-          shell: shellVisibilitySchema.parse(input.shell ?? current?.shell ?? {}),
-        },
-        correlation_id,
-      )
+      const profile_badges =
+        input.profile_badges ?? current?.profile_badges ?? DEFAULT_PROFILE_BADGES
+      for (const badge of profile_badges) {
+        if (!DEFAULT_PROFILE_BADGES.some((item) => item.image_url === badge.image_url)) {
+          assertMediaUrl(badge.image_url, options.media_url, `profile_badges.${badge.id}.image_url`)
+        }
+      }
+      if (!options.saveTransaction) throw new Error('Settings writes require a transaction')
+      const saved = await options.saveTransaction(async (transaction_repository, badges) => {
+        const catalog = await badges.validateReplacement(input.profile_badges)
+        return transaction_repository.save(
+          {
+            welcome_content,
+            name: input.name,
+            logo_url: input.logo_url,
+            logo_dark_url:
+              input.logo_dark_url === undefined
+                ? (current?.logo_dark_url ?? null)
+                : input.logo_dark_url,
+            favicon,
+            locale: input.locale,
+            registration_open: input.registration_open,
+            new_members_can_publish: input.new_members_can_publish,
+            reaction_appearances: input.reaction_appearances,
+            profile_status_icons: input.profile_status_icons,
+            profile_badges: catalog,
+            seo,
+            social_cover,
+            shell: shellVisibilitySchema.parse(input.shell ?? current?.shell ?? {}),
+          },
+          correlation_id,
+        )
+      })
       return {
         ...toAdmin(saved),
         ...(options.public_origin ? { public_origin: options.public_origin } : {}),

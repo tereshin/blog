@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { badgeDefinitionsSchema } from './badges.ts'
 import { blocksDocumentSchema } from './blocks.ts'
 import { faviconSettingsSchema } from './site-assets.ts'
 import { reactionKindSchema } from './feed.ts'
@@ -65,8 +66,8 @@ export const reactionAppearancesSchema = z
 export type ReactionAppearances = z.infer<typeof reactionAppearancesSchema>
 
 export const DEFAULT_REACTION_APPEARANCES = reactionAppearancesSchema.parse([
-  { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '😄' },
   { kind: 'heart', label: 'Сердце', status: 'active', presentation: 'emoji', emoji: '❤️' },
+  { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '😄' },
   { kind: 'thumb', label: 'Палец вверх', status: 'active', presentation: 'emoji', emoji: '👍' },
   { kind: 'fire', label: 'Огонь', status: 'active', presentation: 'emoji', emoji: '🔥' },
 ])
@@ -114,6 +115,7 @@ export const publicSettingsSchema = z.strictObject({
   locale: localeSchema,
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
+  profile_badges: badgeDefinitionsSchema.default([]),
   seo: seoSettingsSchema.optional(),
   social_cover: socialCoverSettingsSchema.optional(),
   shell: shellVisibilitySchema.default(DEFAULT_SHELL_VISIBILITY),
@@ -132,6 +134,7 @@ export const updateSettingsSchema = z.strictObject({
   new_members_can_publish: z.boolean(),
   reaction_appearances: reactionAppearancesSchema,
   profile_status_icons: profileStatusIconsSchema.default([]),
+  profile_badges: badgeDefinitionsSchema.optional(),
   seo: seoSettingsSchema.optional(),
   social_cover: socialCoverSettingsSchema.optional(),
   /** Нет поля — оставить сохранённую видимость. Пустой объект включает все разделы. */

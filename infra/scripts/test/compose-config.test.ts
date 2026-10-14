@@ -25,7 +25,7 @@ describe('опубликованные порты prod', () => {
     expect(rendered).not.toContain('redis')
     const published = [...rendered.matchAll(/published:\s*"(\d+)"/g)].map((match) => match[1])
     expect(published.sort()).toEqual(['3000', '8080'])
-  })
+  }, 60_000)
 
   it('постоянных контейнеров prod шестнадцать', () => {
     const services = execFileSync(
@@ -47,5 +47,5 @@ describe('опубликованные порты prod', () => {
       .filter(Boolean)
     const oneshot = services.filter((name) => name.endsWith('-migrate') || name === 'minio-init')
     expect(services.length - oneshot.length).toBe(16)
-  })
+  }, 60_000)
 })

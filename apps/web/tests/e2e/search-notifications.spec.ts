@@ -28,9 +28,9 @@ test.describe('Поиск и уведомления', () => {
     await banner.getByRole('button', { name: 'Поиск' }).click()
     await expect(field).toBeVisible({ timeout: 10_000 })
     await field.fill('компромиссов')
-    // Enter уводит на /search и снимает поле — ждать URL, а не завершения press на отмонтированном input.
-    await Promise.all([page.waitForURL((url) => url.pathname === '/search'), field.press('Enter')])
-    await expect.poll(() => new URL(page.url()).pathname).toBe('/search')
+    // Enter уводит на /discovery и снимает поле — ждать URL, а не завершения press на отмонтированном input.
+    await Promise.all([page.waitForURL((url) => url.pathname === '/discovery'), field.press('Enter')])
+    await expect.poll(() => new URL(page.url()).pathname).toBe('/discovery')
     await expect(page.getByRole('main').getByRole('heading', { name: /без компромиссов/ }).first()).toBeVisible({ timeout: 15_000 })
     await expect(page.getByText('Черновик про компромиссы')).toHaveCount(0)
     await expect(banner).toBeVisible()

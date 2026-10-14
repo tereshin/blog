@@ -9,6 +9,7 @@ const articleSchema = z.object({
   slug: z.string(),
   title: z.string(),
   excerpt: z.string(),
+  has_more_content: z.boolean().default(false),
   first_image_url: z.string().nullable(),
   published_at: z.string(),
   author: z.object({

@@ -10,13 +10,25 @@ function service(overrides: Partial<SeoRepository> = {}, app_env: 'prod' | 'loca
   return createSeoService(repository, { public_origin: 'https://blog.example', app_env })
 }
 describe('SEO: матрица доступа и связанный граф', () => {
-  it.each(['/', '/popular', '/rating', '/t/topic', '/u/author', '/p/public-post'])('индексирует %s и соблюдает общий контракт', async (path) => {
+  it.each(['/', '/popular', '/discovery', '/discovery/blogs', '/discovery/topics', '/t/topic', '/u/author', '/p/public-post'])('индексирует %s и соблюдает общий контракт', async (path) => {
     const result = pageSeoSchema.parse(await service().page(path + '?utm_source=test'))
     expect(result.robots).toBe('index, follow')
     expect(result.canonical_url).not.toContain('?')
     expect(result.structured_data['@graph'].map((node) => node['@type'])).toContain('BreadcrumbList')
   })
   it.each(['/feed', '/search', '/bookmarks', '/messages', '/messages/new', '/write', '/admin/settings', '/auth/action', '/u/author/followers', '/u/author/following'])('не индексирует %s', async (path) => expect((await service().page(path)).robots).toBe('noindex, follow'))
+  it.each(['/discovery?q=hello', '/discovery?q=', '/search?q=hello', '/rating'])('не индексирует поиск и старые адреса %s', async (path) => {
+    const result = await service().page(path)
+    expect(result.status).toBe(200)
+    expect(result.robots).toBe('noindex, follow')
+    expect(result.canonical_url).toBe(`https://blog.example${path.startsWith('/rating') ? '/discovery/blogs' : '/discovery'}`)
+  })
+  it('сохраняет прежние SEO-настройки для главной Discovery', async () => {
+    const result = await service({ site: async () => ({ ...site, seo: { ...site.seo, pages: { ...site.seo.pages, rating: { title: 'Найдите блог', description: 'Блоги и темы' } } } }) }).page('/discovery')
+    expect(result.title).toBe('Найдите блог — Площадка')
+    expect(result.description).toBe('Блоги и темы')
+    expect((await service().page('/discovery/topics')).title).toBe('Темы — Площадка')
+  })
   it.each(['draft', 'hidden', 'deleted'] as const)('не раскрывает %s', async (status) => {
     const result = await service({ article: async () => ({ ...article, status }) }).page('/p/public-post')
     expect(result.body_text).toBe('')

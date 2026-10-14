@@ -15,9 +15,9 @@ describe('черновик каталога реакций', () => {
   it('переносит активную реакцию и оставляет снятые в конце', () => {
     const retired = retireDraft(drafts, 'fire')
     const moved = moveActive(retired, 'thumb', 'laugh')
-    expect(moved.map((item) => item.kind)).toEqual(['thumb', 'laugh', 'heart', 'fire'])
+    expect(moved.map((item) => item.kind)).toEqual(['heart', 'thumb', 'laugh', 'fire'])
     expect(moved.find((item) => item.kind === 'fire')?.status).toBe('retired')
-    expect(appearancePayload(moved).map((item) => item.kind)).toEqual(['thumb', 'laugh', 'heart', 'fire'])
+    expect(appearancePayload(moved).map((item) => item.kind)).toEqual(['heart', 'thumb', 'laugh', 'fire'])
   })
 
   it('не снимает последнюю активную и возвращает снятую в конец активных', () => {

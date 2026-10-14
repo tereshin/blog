@@ -100,3 +100,5 @@ export type ArticleService = {
   getDraft: (viewer: ServiceContext, id: string) => Promise<ArticleDraft>
   listDrafts: (viewer: ServiceContext) => Promise<ArticleDraft[]>
 }
+
+export type ArticlePublishTransaction = (operation: (repository: ArticleRepository, badges: import('../badge/index.ts').BadgeService) => Promise<StoredArticle | null>) => Promise<StoredArticle | null>

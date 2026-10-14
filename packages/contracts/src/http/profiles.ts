@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { badgeIdSchema } from './badges.ts'
 import { feedCardSchema } from './feed.ts'
 import { pageSchema } from './pagination.ts'
 
@@ -23,6 +24,8 @@ export const profileSchema = z.strictObject({
   followers_count: z.number().int().nonnegative(),
   following_count: z.number().int().nonnegative(),
   badges: z.array(profileBadgeSchema),
+  /** Full catalog IDs; legacy badges above retain their v1 enum. */
+  badge_ids: z.array(badgeIdSchema).optional(),
   is_own: z.boolean(),
   is_following: z.boolean(),
 })

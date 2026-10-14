@@ -1,3 +1,4 @@
+import { badgeIdSchema } from '@blog/contracts'
 import { z } from 'zod'
 import type { Profile, ProfileUpdate } from '../model/profile-types.ts'
 
@@ -14,13 +15,15 @@ export const profileSchema = z.object({
   created_at: z.string(),
   followers_count: z.number().int(),
   following_count: z.number().int(),
-  badges: z.array(z.enum(['first_post', 'ten_reactions', 'one_year'])),
+  badges: z.array(badgeIdSchema),
+  badge_ids: z.array(badgeIdSchema).optional(),
   is_own: z.boolean(),
   is_following: z.boolean(),
 })
 
 export function toProfile(dto: z.infer<typeof profileSchema>): Profile {
-  return dto
+  const { badge_ids, ...profile } = dto
+  return { ...profile, badges: badge_ids ?? dto.badges }
 }
 
 export function toUpdateBody(input: ProfileUpdate): ProfileUpdate {

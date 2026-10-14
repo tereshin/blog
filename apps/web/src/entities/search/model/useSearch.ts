@@ -1,20 +1,11 @@
-import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { search } from '../api/search.ts'
 import { searchKeys } from './search-keys.ts'
+import { useSearchQuery } from './useSearchQuery.ts'
 
-const SEARCH_DELAY_MS = 250
-
-/** Пауза при вводе ограничивает запросы; смена query key отменяет устаревший запрос. */
+/** Пауза при вводе ограничивает запросы; устаревшая выдача скрыта. */
 export function useSearch(q: string) {
-  const normalized = q.trim()
-  const [deferred, setDeferred] = useState(normalized)
-  useEffect(() => {
-    const timeout = setTimeout(() => setDeferred(normalized), SEARCH_DELAY_MS)
-    return () => clearTimeout(timeout)
-  }, [normalized])
-  const is_current = normalized === deferred
-  const can_search = normalized.length >= 2 && normalized.length <= 100
+  const { deferred, can_search, is_current } = useSearchQuery(q)
   const query = useQuery({
     queryKey: searchKeys.query(deferred),
     queryFn: ({ signal }) => search(deferred, signal),

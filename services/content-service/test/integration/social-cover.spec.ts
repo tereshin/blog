@@ -76,6 +76,11 @@ describe('content: версии превью и индексация (PostgreSQL
     const repository = createSeoRepository(database.db)
     const crawl = createCrawlService(database.db, repository, { public_origin: 'https://blog.example', app_env: 'prod' })
     expect((await crawl.sitemap())?.body).toContain('/sitemaps/articles-start.xml')
+    const static_part = (await crawl.sitemap('static'))?.body
+    expect(static_part).toContain('https://blog.example/discovery')
+    expect(static_part).toContain('https://blog.example/discovery/blogs')
+    expect(static_part).toContain('https://blog.example/discovery/topics')
+    expect(static_part).not.toContain('/rating')
     const part = (await crawl.sitemap('articles-start'))?.body
     expect(part).toContain('https://blog.example/p/article'); expect(part).toContain('<lastmod>'); expect(part).not.toContain('legacy')
     expect(await crawl.sitemap('articles-INVALID')).toBeNull()

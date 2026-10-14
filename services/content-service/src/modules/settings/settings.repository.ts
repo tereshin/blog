@@ -1,5 +1,7 @@
+import { badgeDefinitionsSchema } from '@blog/contracts'
+import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import { requestSiteCover } from '../social-cover/index.ts'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import {
   faviconSettingsSchema,
@@ -9,33 +11,11 @@ import {
   shellVisibilitySchema,
   socialCoverSettingsSchema,
 } from '@blog/contracts'
-import type {
-  FaviconSettings,
-  ProfileStatusIcon,
-  ReactionAppearances,
-  SeoSettings,
-  ShellVisibility,
-  SocialCoverSettings,
-} from '@blog/contracts'
 import type { Database } from '@blog/broker'
 import { settings } from '../../infra/db/schema.ts'
 import { appendSettingsUpdated } from './settings.events.ts'
 
-export type SettingsRow = {
-  welcome_content?: import('@blog/contracts').WelcomeContent | null
-  name: string
-  logo_url: string | null
-  logo_dark_url?: string | null
-  favicon?: FaviconSettings
-  locale: 'ru' | 'en' | 'sr'
-  registration_open: boolean
-  new_members_can_publish: boolean
-  reaction_appearances: ReactionAppearances
-  profile_status_icons: ProfileStatusIcon[]
-  seo?: SeoSettings
-  social_cover?: SocialCoverSettings
-  shell?: ShellVisibility
-}
+import type { SettingsRepository, SettingsRow } from './settings.types.ts'
 
 const columns = {
   welcome_content: settings.welcome_content,
@@ -48,6 +28,7 @@ const columns = {
   new_members_can_publish: settings.new_members_can_publish,
   reaction_appearances: settings.reaction_appearances,
   profile_status_icons: settings.profile_status_icons,
+  profile_badges: settings.profile_badges,
   seo: settings.seo,
   social_cover: settings.social_cover,
   shell: settings.shell,
@@ -56,6 +37,7 @@ const columns = {
 function readRow(row: SettingsRow): SettingsRow {
   return {
     ...row,
+    profile_badges: badgeDefinitionsSchema.parse(row.profile_badges ?? DEFAULT_PROFILE_BADGES),
     favicon: faviconSettingsSchema.parse(row.favicon ?? {}),
     seo: seoSettingsSchema.parse(row.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
@@ -65,15 +47,17 @@ function readRow(row: SettingsRow): SettingsRow {
   }
 }
 
-export type SettingsRepository = {
-  find: () => Promise<SettingsRow | null>
-  save: (input: SettingsRow, correlation_id: string) => Promise<SettingsRow>
-  /** Вставляет строку `id = 1`, если её нет, и публикует событие. Повтор ничего не пишет. */
-  insertIfAbsent: (input: SettingsRow, correlation_id: string) => Promise<SettingsRow | null>
-}
 
 export function createSettingsRepository(db: NodePgDatabase): SettingsRepository {
   return {
+    async badgeDefinitions(is_exclusive = false) {
+      await db.execute(is_exclusive
+        ? sql`select pg_advisory_xact_lock(74192832)`
+        : sql`select pg_advisory_xact_lock_shared(74192832)`)
+      const [row] = await db.select({ badges: settings.profile_badges }).from(settings)
+        .where(eq(settings.id, 1)).for(is_exclusive ? 'update' : 'share')
+      return row?.badges ?? null
+    },
     async find() {
       const [row] = await db.select(columns).from(settings).where(eq(settings.id, 1)).limit(1)
       return row ? readRow(row) : null

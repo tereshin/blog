@@ -26,6 +26,7 @@ export type AdminSettingsRouteId =
   | 'layout'
   | 'reactions'
   | 'status-icons'
+  | 'badges'
   | 'seo'
   | 'publisher'
   | 'covers'
@@ -146,6 +147,14 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
     parent: 'settings',
     title: 'admin.settings.status_icons',
     description: 'admin.settings.status_icons_hint',
+    icon: 'status',
+    role: 'superadmin',
+  },
+  badges: {
+    path: '/admin/settings/badges',
+    parent: 'settings',
+    title: 'admin.settings.badges',
+    description: 'admin.settings.badges_hint',
     icon: 'status',
     role: 'superadmin',
   },

@@ -1,4 +1,4 @@
-export type ProfileBadge = 'first_post' | 'ten_reactions' | 'one_year'
+export type ProfileBadge = string
 export type ProfileArticleStatus = 'draft' | 'published' | 'hidden'
 
 export type Profile = {

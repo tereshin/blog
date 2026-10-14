@@ -14,7 +14,14 @@ import session_fixtures from '../fixtures/session.json'
 const mine = new Map<string, string>()
 const bookmarks = new Set<string>()
 const bookmark_order: string[] = []
-const follows = new Set<string>()
+const follows_by_actor = new Map<string, Set<string>>()
+function readFollows(actor_id: string): Set<string> {
+  return follows_by_actor.get(actor_id) ?? new Set()
+}
+
+function saveFollows(actor_id: string, follows: Set<string>): void {
+  follows_by_actor.set(actor_id, follows)
+}
 const seen_by_key = new Map<string, string[]>()
 
 function isKind(value: unknown): value is string {
@@ -382,7 +389,9 @@ export const actionHandlers = [
     if (target_type === 'user' && target_id === actor.id) {
       return HttpResponse.json({ code: 'self_follow', title: 'На себя подписаться нельзя', status: 422 }, { status: 422 })
     }
+    const follows = readFollows(actor.id)
     follows.add(`${target_type}:${target_id}`)
+    saveFollows(actor.id, follows)
     return HttpResponse.json({ target_type, target_id, is_following: true })
   }),
 
@@ -393,7 +402,9 @@ export const actionHandlers = [
     const body: unknown = await request.json()
     const target_type = typeof body === 'object' && body && 'target_type' in body ? String(body.target_type) : ''
     const target_id = typeof body === 'object' && body && 'target_id' in body ? String(body.target_id) : ''
+    const follows = readFollows(actor.id)
     follows.delete(`${target_type}:${target_id}`)
+    saveFollows(actor.id, follows)
     return HttpResponse.json({ target_type, target_id, is_following: false })
   }),
 
@@ -401,6 +412,7 @@ export const actionHandlers = [
     const actor = currentMockAuthor()
     if (!actor) return unauthorized()
     const url = new URL(request.url)
+    const follows = readFollows(actor.id)
     const target_type = url.searchParams.get('target_type') ?? 'user'
     const target_ids = url.searchParams.get('target_ids')?.split(',').filter(Boolean) ?? []
     return HttpResponse.json({

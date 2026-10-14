@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { MemoryRouter } from 'react-router'
+import { StoryProviders } from '@/shared/api/mocks'
 import type { Profile } from '@/entities/profile'
 import { Button, Tabs } from '@/shared/ui'
 import { ProfileCard } from './ProfileCard.tsx'
@@ -38,7 +38,7 @@ const foreign: Profile = {
 function Frame({ profile, action }: { profile: Profile; action?: boolean }) {
   const address = profile.slug ?? String(profile.public_number)
   return (
-    <MemoryRouter>
+    <StoryProviders>
       <div className="max-w-xl p-4">
         <Tabs variant="secondary" defaultSelectedKey="posts">
           <ProfileCard>
@@ -74,7 +74,7 @@ function Frame({ profile, action }: { profile: Profile; action?: boolean }) {
           <Tabs.Panel id="comments">Комментарии автора</Tabs.Panel>
         </Tabs>
       </div>
-    </MemoryRouter>
+    </StoryProviders>
   )
 }
 

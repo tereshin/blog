@@ -1,3 +1,4 @@
+import { AdminBadgesPage } from '@/pages/admin-badges'
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
 import { ADMIN_ROUTES } from '@/entities/admin'
@@ -36,8 +37,10 @@ import { MyFeedPage } from '@/pages/my-feed'
 import { NotFoundPage } from '@/pages/not-found'
 import { PopularFeedPage } from '@/pages/popular-feed'
 import { ProfilePage } from '@/pages/profile'
-import { RatingPage } from '@/pages/rating'
-import { SearchPage } from '@/pages/search'
+import { DiscoveryPage } from '@/pages/discovery'
+import { DiscoveryBlogsPage } from '@/pages/discovery-blogs'
+import { DiscoveryTopicsPage } from '@/pages/discovery-topics'
+import { DiscoveryRedirect } from './DiscoveryRedirect.tsx'
 import { TopicPage } from '@/pages/topic'
 import type { CenterSkeletonKind } from '@/widgets/shell'
 import { ShellLayout } from './ShellLayout.tsx'
@@ -65,6 +68,7 @@ const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
   layout: <AdminLayoutPage />,
   reactions: <AdminReactionsPage />,
   'status-icons': <AdminStatusIconsPage />,
+  badges: <AdminBadgesPage />,
   seo: <AdminSeoPage />,
   publisher: <AdminPublisherPage />,
   covers: <AdminCoversPage />,
@@ -93,9 +97,12 @@ export const shellRoute: RouteObject = {
     child('messages', <MessagesPage />, 'feed'),
     child('messages/new', <MessagesPage />, 'feed'),
     child('messages/:id', <MessagesPage />, 'feed'),
-    child('rating', <RatingPage />, 'feed'),
+    child('discovery', <DiscoveryPage />, 'feed'),
+    child('discovery/blogs', <DiscoveryBlogsPage />, 'profile'),
+    child('discovery/topics', <DiscoveryTopicsPage />, 'profile'),
+    child('rating', <DiscoveryRedirect to="/discovery/blogs" />, 'profile'),
     child('bookmarks', <BookmarksPage />, 'feed'),
-    child('search', <SearchPage />, 'feed'),
+    child('search', <DiscoveryRedirect to="/discovery" />, 'feed'),
     child('pages/:slug', <SimplePage />, 'article'),
     child('admin/pages/new', <AdminPageNewPage />, 'article'),
     child('admin/pages/:id', <AdminPageEditPage />, 'article'),

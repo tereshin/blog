@@ -1,3 +1,4 @@
+import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badges'
 import { HttpResponse, http } from 'msw'
 import {
   DEFAULT_REACTION_APPEARANCES,
@@ -21,6 +22,8 @@ import topics_fixture from '../fixtures/topics.json'
 import { readMockViewer } from './session.ts'
 
 const SITE_KEY = 'mock_site'
+// New badge catalog data lives only in memory, like the query cache.
+let profile_badges = structuredClone(PROFILE_BADGES_FIXTURE)
 
 type SiteSettings = {
   welcome_content?: import('@blog/contracts').WelcomeContent | null
@@ -33,6 +36,7 @@ type SiteSettings = {
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
   profile_status_icons: ProfileStatusIcon[]
+  profile_badges: import('@blog/contracts').BadgeDefinition[]
   seo: SeoSettings
   social_cover: SocialCoverSettings
   shell: ShellVisibility
@@ -60,6 +64,7 @@ function initialState(): SiteState {
       new_members_can_publish: true,
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
       profile_status_icons: [],
+      profile_badges,
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
@@ -75,7 +80,7 @@ export function readSite(): SiteState {
   const raw = window.sessionStorage.getItem(SITE_KEY)
   if (!raw) return initialState()
   const parsed = JSON.parse(raw) as SiteState
-  const settings = { ...initialState().settings, ...parsed.settings }
+  const settings = { ...initialState().settings, ...parsed.settings, profile_badges }
   const appearances = reactionAppearancesSchema.safeParse(settings.reaction_appearances)
   if (!appearances.success) settings.reaction_appearances = DEFAULT_REACTION_APPEARANCES
   settings.shell = shellVisibilitySchema.parse(settings.shell ?? {})
@@ -83,7 +88,10 @@ export function readSite(): SiteState {
 }
 
 function writeSite(state: SiteState): void {
-  window.sessionStorage.setItem(SITE_KEY, JSON.stringify(state))
+  profile_badges = state.settings.profile_badges
+  const settings: Partial<SiteSettings> = { ...state.settings }
+  delete settings.profile_badges
+  window.sessionStorage.setItem(SITE_KEY, JSON.stringify({ ...state, settings }))
 }
 
 function publicSettings(settings: SiteSettings) {
@@ -96,6 +104,7 @@ function publicSettings(settings: SiteSettings) {
     locale: settings.locale,
     reaction_appearances: settings.reaction_appearances,
     profile_status_icons: settings.profile_status_icons,
+    profile_badges: settings.profile_badges,
     seo: settings.seo,
     social_cover: settings.social_cover,
     shell: settings.shell,

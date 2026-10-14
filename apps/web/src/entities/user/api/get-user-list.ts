@@ -31,6 +31,6 @@ export function getFollowing(slug: string, cursor: string | null, signal?: Abort
   return http.get(`/v1/profiles/${encodeURIComponent(slug)}/following`, pageSchema, { query: { cursor: cursor ?? undefined }, signal }).then(toPage)
 }
 
-export function getRating(cursor: string | null, signal?: AbortSignal): Promise<UserListPage> {
-  return http.get('/v1/rating', pageSchema, { query: { cursor: cursor ?? undefined }, signal }).then(toPage)
+export function getRating(cursor: string | null, signal?: AbortSignal, limit = 20): Promise<UserListPage> {
+  return http.get('/v1/rating', pageSchema, { query: { cursor: cursor ?? undefined, limit }, signal }).then(toPage)
 }

@@ -32,6 +32,8 @@ export function mergeSettingsSection(
       return { ...current, shell: draft.shell }
     case 'reactions':
       return { ...current, reaction_appearances: draft.reaction_appearances }
+    case 'badges':
+      return { ...current, profile_badges: draft.profile_badges }
     case 'status-icons':
       return { ...current, profile_status_icons: draft.profile_status_icons }
     case 'seo':

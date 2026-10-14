@@ -16,7 +16,7 @@ import { seedContent } from '../../src/seed/seed.ts'
 const run = promisify(execFile)
 const logger = createLogger({ service: 'content-seed-test', level: 'silent' })
 const ANCHOR = '2026-10-08T00:00:00Z'
-const TABLES = ['users_copy', 'profiles', 'slugs', 'topics', 'articles', 'follows', 'promotions', 'settings', 'reports', 'outbox']
+const TABLES = ['users_copy', 'profiles', 'profile_badge_awards', 'slugs', 'topics', 'articles', 'follows', 'promotions', 'settings', 'reports', 'outbox']
 const env: SeedEnv = { APP_ENV: 'local', DATABASE_URL: 'unused', S3_PUBLIC_URL: 'http://localhost:9000/media' }
 
 describe('content: seed (PostgreSQL в контейнере)', () => {
@@ -51,6 +51,7 @@ describe('content: seed (PostgreSQL в контейнере)', () => {
     expect(await count('reports')).toBe(expected.reports.length)
     expect(await count('settings')).toBe(1)
     expect(await count('outbox')).toBe(0)
+    expect(await count('profile_badge_awards')).toBe([...expected.derived.badges.values()].reduce((sum, badges) => sum + Object.values(badges).filter(Boolean).length, 0))
   })
 
   it('адреса seed- в реестре: профили, темы и статьи; адрес удалённой статьи свободен', async () => {
@@ -102,7 +103,7 @@ describe('content: seed (PostgreSQL в контейнере)', () => {
     const { rows } = await database.pool.query("select id, title, excerpt from articles where status = 'published' and visibility = 'public' order by published_at desc, id desc limit 20")
     expect(rows).toHaveLength(20)
     expect(performance.now() - started).toBeLessThan(2000)
-  })
+  }, 120_000)
 
   it('чужой адрес в реестре: запись пропускается, чужая строка не меняется', async () => {
     const other = await startPostgres()

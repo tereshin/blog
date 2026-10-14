@@ -1,3 +1,4 @@
+import { startBadgeWorker } from './infra/workers/badge-worker.ts'
 import { OutboxRelay, connectBroker, sampleQueueDepth, setConsumerMetrics } from '@blog/broker'
 import { registerShutdown } from '@blog/http-kit'
 import { createLogger } from '@blog/logger'
@@ -30,10 +31,13 @@ async function main(): Promise<void> {
   const copies = await startCopiesConsumers({ db: database.db, broker, logger })
   const counters = await startCountersConsumers({ db: database.db, broker, logger })
 
+  const badges = startBadgeWorker(database, logger)
+
   registerShutdown({
     app,
     logger,
     stoppers: [
+      () => badges.stop(),
       () => queues.stop(),
       () => copies.stop(),
       () => social_covers.stop(),

@@ -6,10 +6,10 @@ const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 const zwj_family = '👨‍👩‍👧‍👦'
 
 describe('вид реакции', () => {
-  it('пока суперадминистратор не сохранял, значения 😄 ❤️ 👍 🔥', () => {
+  it('пока суперадминистратор не сохранял, значения ❤️ 😄 👍 🔥', () => {
     expect(DEFAULT_REACTION_APPEARANCES).toEqual([
-      { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '😄' },
       { kind: 'heart', label: 'Сердце', status: 'active', presentation: 'emoji', emoji: '❤️' },
+      { kind: 'laugh', label: 'Смех', status: 'active', presentation: 'emoji', emoji: '😄' },
       { kind: 'thumb', label: 'Палец вверх', status: 'active', presentation: 'emoji', emoji: '👍' },
       { kind: 'fire', label: 'Огонь', status: 'active', presentation: 'emoji', emoji: '🔥' },
     ])
