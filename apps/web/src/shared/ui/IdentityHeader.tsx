@@ -42,7 +42,7 @@ function AvatarBlock({ src, name, action }: { src?: string | null; name: string;
 
 function Identity({ avatar, actions }: IdentityProps) {
   return (
-    <div className="relative flex flex-wrap items-end gap-x-4 gap-y-3 px-5 pt-4 sm:px-6">
+    <div className="relative flex flex-wrap items-end gap-x-4 gap-y-3 px-5 pt-4">
       {avatar}
       {actions ? (
         <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
@@ -55,18 +55,18 @@ function Identity({ avatar, actions }: IdentityProps) {
 
 function Content({ children }: IdentityHeaderProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pb-2">{children}</div>
+    <div className="flex min-w-0 flex-col gap-3 px-5 pb-2 pt-4 sm:pb-2">{children}</div>
   )
 }
 
 function Navigation({ children }: IdentityHeaderProps) {
-  return <div className="px-5 sm:px-6">{children}</div>
+  return <div className="px-5">{children}</div>
 }
 
 function Loading() {
   return (
     <Root>
-      <div className="max-w-[var(--shell-content-width,640px)] mx-auto">
+      <div className="max-w-[var(--shell-content-width,640px)] w-full mx-auto">
         <Skeleton className="aspect-[3.2/1] min-h-28 w-full rounded-none" />
         <Identity
           avatar={

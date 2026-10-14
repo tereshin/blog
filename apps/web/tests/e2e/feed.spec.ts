@@ -53,7 +53,12 @@ test.describe('Лента «Свежее»: каркас и карточки', (
   test('в центре шапки нет ссылки на статью и поля поиска', async ({ page }) => {
     await page.goto('/')
     const banner = page.getByRole('banner')
-    await expect(banner.getByRole('button', { name: 'Поиск' })).toBeVisible()
+    if ((page.viewportSize()?.width ?? 0) >= 768) {
+      await expect(banner.getByRole('button', { name: 'Поиск', exact: true })).toBeVisible()
+    } else {
+      await expect(banner.getByRole('button', { name: 'Поиск', exact: true })).toHaveCount(0)
+      await expect(banner.getByRole('link', { name: 'Обзор', exact: true })).toBeVisible()
+    }
     await expect(banner.locator('a[href^="/p/"]')).toHaveCount(0)
     await expect(banner.getByRole('textbox')).toHaveCount(0)
     await expect(banner.getByRole('searchbox')).toHaveCount(0)

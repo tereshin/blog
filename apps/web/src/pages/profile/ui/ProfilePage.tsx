@@ -42,6 +42,7 @@ export default function ProfilePage() {
         <ProfileCard.Cover url={profile.cover_url} is_own={profile.is_own} action={
           <ImageUploadButton
             label={t(profile.cover_url ? 'profile.change_cover' : 'profile.add_cover')}
+            className="bg-white! text-neutral-950!"
             is_disabled={update.isPending}
             onUploaded={async (cover_url) => { await update.mutateAsync({ cover_url }) }}
           />

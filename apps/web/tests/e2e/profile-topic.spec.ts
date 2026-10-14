@@ -90,7 +90,7 @@ test.describe('Общий каркас профиля и темы', () => {
     const reacted = page.waitForResponse(
       (response) => response.url().endsWith('/reactions') && response.request().method() === 'POST',
     )
-    await page.getByRole('menuitem', { name: 'Сердце', exact: true }).click()
+    await page.getByRole('option', { name: 'Сердце', exact: true }).click()
     const reaction_data = (await (await reacted).json()) as { reaction_counts: { heart: number } }
     const reaction = article.getByRole('button', {
       name: `Сердце ${reaction_data.reaction_counts.heart}`,
@@ -145,7 +145,8 @@ test.describe('Общий каркас профиля и темы', () => {
       expect(response.ok()).toBe(true)
       expect(Object.keys(response.request().postDataJSON())).toEqual([field])
     }
-    await expect(header.locator('img')).toHaveCount(2)
+    await expect(header.getByRole('img', { name: 'Роман Читаев', exact: true })).toBeVisible()
+    await expect(header.locator('img[alt=""]').first()).toHaveAttribute('src', /.+/)
     await expect(page.getByRole('banner').getByRole('img', { name: 'Роман Читаев', exact: true })).toBeVisible()
     const accessibility = await new AxeBuilder({ page }).include('main').analyze()
     expect(accessibility.violations.filter((item) => item.impact === 'serious' || item.impact === 'critical')).toEqual([])

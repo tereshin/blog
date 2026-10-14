@@ -12,7 +12,7 @@ export default function DiscoveryPage() {
   const is_overview = q.trim().length === 0
   return (
     <Card className="mx-auto max-w-[var(--shell-content-width,640px)] gap-0">
-      <Card.Header className="border-b border-border px-5 py-3 sm:px-6">
+      <Card.Header className="border-b border-border px-5 py-3">
         <h1 className="sr-only">{t('discovery.title')}</h1>
         <form
           role="search"
@@ -54,7 +54,7 @@ export default function DiscoveryPage() {
           />
         </form>
       </Card.Header>
-      <Card.Content className="px-5 py-5 sm:px-6">
+      <Card.Content className="px-5 py-5">
         {is_overview ? (
           <DiscoveryOverview />
         ) : q.trim().length < 2 ? (

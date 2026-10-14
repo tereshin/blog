@@ -21,7 +21,7 @@ test.describe('Настройки площадки', () => {
     test.skip(!hasLeftColumn(page), 'Левый столбец виден от 768px')
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'superadmin'))
     await page.goto('/admin/topics')
-    await page.getByRole('button', { name: 'Новая тема', exact: true }).click()
+    await page.getByRole('main').getByRole('button', { name: 'Новая тема', exact: true }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel('Название').fill('Города')
     await dialog.getByLabel('Описание').fill('Городские истории')

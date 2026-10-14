@@ -136,6 +136,21 @@ body {
 }
 
 /*
+ * Размытие — у псевдоэлемента, не у самого header. backdrop-filter на предке
+ * привязал бы position:fixed нижней панели к шапке высотой 56px.
+ */
+.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: color-mix(in oklch, var(--surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/*
  * Ниже 768px действия шапки — плавающая панель внизу экрана.
  * У панели нет transform/filter/backdrop-filter: внутри лежит fixed-кнопка «Написать», и она должна отсчитываться от окна.
  */

@@ -31,8 +31,9 @@ This version contains the current changes on top of 1.0.0.
 - Replaced the Rating section with Discovery: inline search, ranked blog and topic
   previews, full lists, and follow controls. Legacy Rating and Search links redirect
   to Discovery; SEO routes and sitemaps use the new addresses.
-- Separated mobile navigation from desktop header actions, with Discovery search
-  and a consistent account icon. Existing layout and SEO settings remain compatible.
+- Separated mobile navigation from desktop header actions, with Discovery search.
+  The account button shows the member's avatar. The cover control stays readable
+  on touch screens. Existing layout and SEO settings remain compatible.
 - The header shows Back without the current page title. Enter in a comment
   inserts a line break.
 - Showing seen posts keeps the strip in place; dismissing it hides those posts again.
@@ -55,6 +56,10 @@ This version contains the current changes on top of 1.0.0.
 - Verb-style mutation routes now have resource aliases: `DELETE /v1/sessions/current` (logout), `PATCH /v1/notifications` and `PATCH /v1/notifications/{id}` (read state), `PATCH /v1/conversations/{id}` (read), `PUT`/`DELETE /v1/users/{id}/restriction`, and `POST /v1/media/social-cover-previews`. Previous paths remain.
 - Long feeds, bookmarks, comments, conversations, people lists, and notifications
   virtualize after a size threshold. Bookmarks and notifications load by cursor.
+- A Postgres connection closed by the server no longer crashes the process while
+  the pool is shutting down. The next query opens a fresh connection.
+- On narrow screens the header actions stay fixed to the bottom of the window.
+  The header blur no longer pulls that bar up over the menu and back buttons.
 
 ### Removed
 

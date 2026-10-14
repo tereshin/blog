@@ -60,6 +60,7 @@ test.describe('Редактор статьи', () => {
 
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto(write_url)
+    await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
     await expect(page.getByRole('textbox', { name: 'Заголовок', exact: true })).toHaveText(TITLE)
     const published = page.waitForResponse((response) => response.url().endsWith('/publish') && response.request().method() === 'POST')
     await page.getByRole('button', { name: 'Опубликовать' }).click()

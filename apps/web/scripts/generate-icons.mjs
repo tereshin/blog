@@ -90,20 +90,22 @@ function collectReferences() {
 
     for (const [tag] of source.matchAll(/<BaseIcon\b[^>]*?\/>/gs)) {
       const name = tag.match(/\bname="([^"]+)"/)?.[1]
-      const style = tag.match(/\bstyle="(fill|line)"/)?.[1] ?? defaultStyle
+      const literal_style = tag.match(/\bstyle="(fill|line)"/)?.[1]
+      const dynamic_style = Boolean(tag.match(/\bstyle=\{/))
 
       // A literal name must resolve; a dynamic one cannot be checked here.
       if (name) checked.push({ file, name })
-      if (style === defaultStyle) continue
+      const wants_line = literal_style === 'line' || (dynamic_style && literal_style === undefined)
+      if (!wants_line) continue
 
       if (name) {
-        nonDefault.add(`${name}:${style}`)
+        nonDefault.add(`${name}:line`)
         continue
       }
 
       // A dynamic name with a non-default style could be any referenced icon.
       throw new Error(
-        `BaseIcon in ${relative(projectRoot, file)} uses style="${style}" with a ` +
+        `BaseIcon in ${relative(projectRoot, file)} uses a line or dynamic style with a ` +
           'dynamic name, which cannot be resolved at build time.',
       )
     }
@@ -211,8 +213,8 @@ function build() {
   }
 
   // Every referenced name is inlined in the default style, because a dynamic
-  // `name` can resolve to any of them. Other styles are only inlined where the
-  // source asks for them by name.
+  // `name` can resolve to any of them. The line style is inlined when the source
+  // asks for it literally or passes the style as an expression (`style={icon_style}`).
   const keys = new Set()
   for (const name of names) {
     if (exists(iconPath(name, defaultStyle))) keys.add(`${name}:${defaultStyle}`)

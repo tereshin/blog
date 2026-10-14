@@ -20,7 +20,7 @@ function PageCardHeader({
   return (
     <Card.Header
       className={cn(
-        'flex flex-row items-center justify-between gap-3 border-b border-separator px-4 py-4 sm:px-6',
+        'flex flex-row items-center justify-between gap-3 border-b border-separator px-5 py-4',
         className,
       )}
       {...rest}
@@ -33,13 +33,13 @@ function PageCardHeader({
 }
 
 function PageCardContent({ className, ...rest }: ComponentProps<typeof Card.Content>) {
-  return <Card.Content className={cn('min-w-0 px-4 py-6 sm:px-6', className)} {...rest} />
+  return <Card.Content className={cn('min-w-0 px-4 py-6', className)} {...rest} />
 }
 
 function PageCardFooter({ className, ...rest }: ComponentProps<typeof Card.Footer>) {
   return (
     <Card.Footer
-      className={cn('flex flex-wrap gap-3 border-t border-separator px-4 py-4 sm:px-6', className)}
+      className={cn('flex flex-wrap gap-3 border-t border-separator px-4 py-4', className)}
       {...rest}
     />
   )

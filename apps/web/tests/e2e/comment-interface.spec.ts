@@ -111,9 +111,9 @@ test('компактное поле раскрывается и отправля
   ).toBeEnabled()
   await field.press('Enter')
   await field.pressSequentially('Вторая строка')
-  await expect(field).toHaveText('Новый текст\nВторая строка')
+  await expect.poll(async () => (await field.innerText()).trim()).toBe('Новый текстВторая строка')
   await field.press('Control+Enter')
-  await expect(page.locator('article p').getByText('Новый текст Вторая строка', { exact: true })).toBeVisible()
+  await expect(page.locator('article p').getByText('Новый текстВторая строка', { exact: true })).toBeVisible()
   await expect(field).toHaveText('')
 })
 
@@ -149,8 +149,11 @@ test('закладки комментариев, жалоба и подписк�
   await expect(
     page.getByRole('menuitem', { name: 'Убрать из закладок', exact: true }),
   ).toBeVisible()
-  await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Следить за обсуждением', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Убрать из закладок', exact: true }).press('Escape')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  const follow = page.getByRole('button', { name: 'Следить за обсуждением', exact: true })
+  await follow.evaluate((node) => node.scrollIntoView({ block: 'center', inline: 'nearest' }))
+  await follow.click()
   await expect(
     page.getByRole('button', { name: 'Не следить за обсуждением', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')

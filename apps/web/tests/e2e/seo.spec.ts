@@ -5,8 +5,14 @@ test('метаданные соответствуют маршруту, обно
   await expect(page).toHaveTitle(/Статья 1/)
   await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute('href', /\/p\/statya-1$/)
   expect(JSON.parse(await page.locator('head script[type="application/ld+json"]').textContent() ?? '{}')['@graph'][0]['@type']).toBe('BlogPosting')
-  if ((page.viewportSize()?.width ?? 1280) < 768) await page.getByRole('button', { name: 'Открыть навигацию' }).click()
-  await page.getByRole('link', { name: 'Популярное', exact: true }).first().click()
+  if ((page.viewportSize()?.width ?? 1280) < 768) {
+    // На статье бургер заменён «Назад». Колонка скрыта, но ссылка в ней переходит без перезагрузки.
+    await page.locator('[data-shell-scroll="left"] a[href="/popular"]').evaluate((link) => {
+      if (link instanceof HTMLAnchorElement) link.click()
+    })
+  } else {
+    await page.getByRole('link', { name: 'Популярное', exact: true }).first().click()
+  }
   await expect(page).toHaveTitle('Популярное')
   await expect(page.locator('head meta[property="og:type"]')).toHaveAttribute('content', 'website')
   await expect(page.locator('head meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow')

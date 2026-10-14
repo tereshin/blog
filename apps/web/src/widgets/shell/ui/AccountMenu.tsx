@@ -10,7 +10,7 @@ import { LogoutMenuItem } from '@/features/logout'
 import { useT } from '@/shared/i18n'
 import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
 
-/** Меню аватара. Гость видит «Войти». */
+/** Меню аватара. Гость видит «Войти». `trigger` — иконка гостя в нижней панели; у участника там его аватар. */
 export function AccountMenu({ trigger }: { trigger?: ReactNode }) {
   const { t } = useT()
   const { viewer, is_admin } = useViewer()
@@ -50,16 +50,13 @@ export function AccountMenu({ trigger }: { trigger?: ReactNode }) {
           aria-label={t('header.account_menu')}
           className={trigger ? undefined : 'gap-1 px-1'}
         >
-          {trigger ?? (
-            <>
-              <Avatar
-                src={viewer.profile.avatar_url}
-                name={viewer.profile.display_name}
-                size="sm"
-              />
-              <ChevronDownIcon width={16} height={16} />
-            </>
-          )}
+          <Avatar
+            src={viewer.profile.avatar_url}
+            name={viewer.profile.display_name}
+            size="sm"
+            className={trigger ? 'size-7' : undefined}
+          />
+          {trigger ? null : <ChevronDownIcon width={16} height={16} />}
         </Button>
         <Menu.Content>
           <Menu.Item isDisabled>{viewer.profile.display_name}</Menu.Item>

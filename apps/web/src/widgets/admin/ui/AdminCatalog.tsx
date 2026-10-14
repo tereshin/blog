@@ -17,7 +17,7 @@ export function AdminCatalog({ catalog }: AdminCatalogProps) {
     <RequireRole role={config.role}>
       <PageCard>
         <PageCard.Header title={t(config.title)} />
-        <PageCard.Content className="p-0">
+        <PageCard.Content className="p-0 px-2">
           <nav aria-label={t(config.title)}>
             <ul className="mb-2">
               {children.map((item) => (

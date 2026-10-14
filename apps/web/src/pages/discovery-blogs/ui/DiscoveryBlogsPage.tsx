@@ -9,13 +9,13 @@ export default function DiscoveryBlogsPage() {
   const { rating, people } = useDiscoveryBlogs()
   return (
     <Card className="mx-auto max-w-[var(--shell-content-width,640px)] gap-0">
-      <Card.Header className="px-5 pt-5 sm:px-6">
+      <Card.Header className="px-5 pt-5">
         <Link to="/discovery" className="text-sm text-accent hover:underline">
           {t('discovery.title')}
         </Link>
         <h1 className="text-xl font-semibold">{t('discovery.blogs')}</h1>
       </Card.Header>
-      <Card.Content className="px-5 sm:px-6">
+      <Card.Content className="px-5">
         <DiscoveryListState
           is_pending={rating.isPending}
           is_error={rating.isError}

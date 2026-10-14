@@ -40,13 +40,14 @@ test.describe('обсуждение на фикстурном gateway', () => {
     })
     await expect(reply).toHaveText('Текст ответа, который нельзя потерять')
     await reply.locator('xpath=ancestor::form').getByRole('button', { name: 'Отправить' }).click()
-    await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
+    const sent = page.locator('article p').getByText('Текст ответа, который нельзя потерять', { exact: true })
+    await expect(sent).toBeVisible()
 
     await root.getByRole('link', { name: 'Меню комментария' }).first().click()
     await page.getByRole('menuitem', { name: 'Удалить', exact: true }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Удалить' }).click()
     await expect(page.getByText('Комментарий удалён')).toBeVisible()
-    await expect(page.getByText('Текст ответа, который нельзя потерять')).toBeVisible()
+    await expect(sent).toBeVisible()
   })
 
   test('другая вкладка видит комментарий без перезагрузки', async ({ context, page }) => {

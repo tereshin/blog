@@ -12,7 +12,7 @@ export function WelcomeCard() {
           <Card.Title>{content.title}</Card.Title>
         </Card.Header>
       ) : null}
-      <Card.Content>
+      <Card.Content className="py-0">
         <BlockRenderer blocks={content.document.blocks} />
       </Card.Content>
     </Card>

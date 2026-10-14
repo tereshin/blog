@@ -45,6 +45,7 @@ export default function TopicPage() {
           is_superadmin ? (
             <ImageUploadButton
               label={t(topic.data.cover_url ? 'profile.change_cover' : 'profile.add_cover')}
+              className="bg-white! text-neutral-950!"
               is_disabled={update.isPending}
               onUploaded={async (cover_url) => {
                 await update.mutateAsync({ id: topic.data.id, body: { cover_url } })
@@ -87,7 +88,7 @@ export default function TopicPage() {
         }
       />
       <Tabs.Panel id="posts" className="m-0 flex flex-col gap-3 p-0">
-        <p className="px-5  text-sm text-muted sm:px-6">{t('profile.sort.fresh')}</p>
+        <p className="px-5  text-sm text-muted">{t('profile.sort.fresh')}</p>
         <ArticleFeed mode={`topic:${topic.data.slug}`} feed_key={`topic:${topic.data.id}`} />
       </Tabs.Panel>
     </Tabs>

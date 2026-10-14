@@ -154,7 +154,7 @@ function CommentPeek() {
 /** Заготовка карточки на время загрузки: те же отступы, высота близка к настоящей. */
 function ArticleCardSkeleton() {
   return (
-    <Card aria-hidden="true" className="gap-0">
+    <Card aria-hidden="true" className="gap-0 w-full">
       <Card.Header className="flex flex-row items-center gap-3">
         <Skeleton shape="circle" />
         <div className="flex flex-1 flex-col gap-2">

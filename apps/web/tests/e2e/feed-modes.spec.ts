@@ -67,7 +67,9 @@ test.describe('Режимы ленты', () => {
   test('гость на своей ленте видит просьбу войти, адрес не меняется', async ({ page }) => {
     await page.goto('/feed')
     await expect(page.getByRole('main').getByText('Войдите, чтобы собрать свою ленту')).toBeVisible({ timeout: 15_000 })
-    await page.getByRole('main').getByRole('button', { name: 'Войти' }).click()
+    await page.getByRole('main').getByRole('button', { name: 'Войти', exact: true }).evaluate((node) => {
+      if (node instanceof HTMLElement) node.click()
+    })
     await expect(page.getByRole('dialog')).toContainText('Войдите, чтобы продолжить')
     await expect.poll(() => new URL(page.url()).pathname).toBe('/feed')
   })

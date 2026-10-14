@@ -214,8 +214,15 @@ test('закрытие поиска в шапке сохраняет родит�
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
   await page.goto('/admin/settings/general')
   await expect(back(page)).toHaveAttribute('href', '/admin/settings')
-  await page.getByRole('button', { name: 'Поиск', exact: true }).click()
-  await page.keyboard.press('Escape')
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await page.getByRole('banner').getByRole('link', { name: 'Обзор', exact: true }).click()
+    await expect(page).toHaveURL(/\/discovery\/?$/)
+    await page.goBack()
+    await expect(page).toHaveURL(/\/admin\/settings\/general\/?$/)
+  } else {
+    await page.getByRole('banner').getByRole('button', { name: 'Поиск', exact: true }).click()
+    await page.keyboard.press('Escape')
+  }
   await expect(back(page)).toHaveAttribute('href', '/admin/settings')
 })
 
@@ -267,12 +274,18 @@ test('поиск статьи фильтрует таблицу, сохраня�
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
   await page.goto('/admin/moderation/find')
   const main = page.getByRole('main')
+  const results = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' &&
+      response.url().includes('/v1/moderation/articles') &&
+      response.url().includes('statya-1') &&
+      response.ok(),
+  )
   await main.getByRole('searchbox', { name: 'Поиск', exact: true }).fill('statya-1')
   await expect(page).toHaveURL('/admin/moderation/find?q=statya-1')
-  const rows = main.getByRole('rowheader')
-  await expect(rows.first()).toHaveText(/^Статья 1:/)
-  const link = rows.first().getByRole('link')
-  await link.focus()
+  await results
+  const link = main.getByRole('rowheader').first().getByRole('link')
+  await expect(link).toHaveText(/^Статья 1:/)
   await link.press('Enter')
   await expect(page).toHaveURL('/p/statya-1?from=moderation')
   await expect(page.getByRole('button', { name: 'Скрыть', exact: true }).first()).toBeVisible()

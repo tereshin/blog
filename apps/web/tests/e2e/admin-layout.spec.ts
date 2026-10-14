@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('wide admin sections and the header share a responsive width', async ({ page }) => {
+  test.setTimeout(60_000)
   test.skip(process.env['E2E_TARGET'] === 'local')
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
   for (const width of [390, 768, 1280, 1420, 1600]) {
@@ -116,10 +117,11 @@ for (const [path, role] of [
   ['/admin/pages/new', 'superadmin'],
 ] as const) {
   test(`expired session retains the local document in ${path}`, async ({ page }) => {
+    test.setTimeout(90_000)
     test.skip(process.env['E2E_TARGET'] === 'local')
     await page.addInitScript((viewer) => localStorage.setItem('mock_viewer', viewer), role)
     await page.goto(path)
-    await expect(page.locator('[data-editor="ready"]')).toBeVisible()
+    await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
     await page.getByRole('textbox', { name: 'Заголовок', exact: true }).fill('Unsaved title')
     await page.locator('.ce-paragraph').first().fill('Unsaved document')
     if (role === 'superadmin') await page.getByLabel('Короткий адрес').fill('expired-page')

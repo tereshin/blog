@@ -6,7 +6,7 @@ async function openNavigation(page: Page) {
   if ((page.viewportSize()?.width ?? 0) < 768) {
     await page.getByRole('button', { name: 'Открыть навигацию' }).click()
   }
-  return page.getByRole('navigation', { name: 'Навигация' })
+  return page.getByRole('navigation', { name: 'Навигация', exact: true })
 }
 
 test.describe('Вид и узкий экран', () => {
@@ -45,19 +45,19 @@ test.describe('Вид и узкий экран', () => {
     const open = page.getByRole('button', { name: 'Открыть навигацию' })
     await expect(open).toBeVisible()
     await open.click()
-    await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Навигация', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Написать' }).locator('span')).toHaveClass(/sr-only/)
   })
 
   test('бургер открывает одну панель на разных разделах, Escape её закрывает', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'narrow-dark', 'панель навигации только ниже 768px')
-    for (const path of ['/', '/pages/welcome-page', '/messages', '/rating', '/u/anna']) {
+    for (const path of ['/', '/messages', '/discovery', '/popular', '/u/anna']) {
       await page.goto(path)
       const open = page.getByRole('button', { name: 'Открыть навигацию' })
       await open.click()
-      await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Навигация', exact: true })).toBeVisible()
       await page.keyboard.press('Escape')
-      await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeHidden()
+      await expect(page.getByRole('navigation', { name: 'Навигация', exact: true })).toBeHidden()
     }
   })
 

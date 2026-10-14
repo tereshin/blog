@@ -1,6 +1,9 @@
+import { createLogger } from '@blog/logger'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
+
+const pool_logger = createLogger({ service: 'db-kit' })
 
 export type DbPool = pg.Pool
 
@@ -28,6 +31,12 @@ export function createDb(options: CreateDbOptions): DbHandle {
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 3_000,
     statement_timeout: options.statement_timeout_ms ?? DEFAULT_STATEMENT_TIMEOUT_MS,
+  })
+  // `pool.end()` резолвится до закрытия сокетов. Остановка сервера тогда присылает
+  // 57P01 на ещё живое соединение. Без слушателя EventEmitter роняет процесс.
+  pool.on('error', (error: Error & { code?: string }) => {
+    if (pool.ending) return
+    pool_logger.error({ err: error, code: error.code }, 'postgres: ошибка простаивающего соединения')
   })
   return {
     pool,
