@@ -39,6 +39,7 @@ export function CommentForm({
   const extras = useCommentExtras()
   const draft = useCommentDrafts(article_id, parent?.id ?? null)
   const [is_focused, setFocused] = useState(false)
+  const [is_open, setOpen] = useState(false)
   const field_ref = useRef<HTMLDivElement>(null)
   const block = memberMutationBlock(viewer)
   const mention = useCommentMentions({
@@ -48,9 +49,9 @@ export function CommentForm({
     is_focused,
     can_search: viewer.status === 'member' && block === null,
   })
-  const is_expanded =
-    is_focused || draft.text.length > 0 || Boolean(parent) || extras.media.length > 0
+  const is_expanded = is_open || draft.text.length > 0 || Boolean(parent) || extras.media.length > 0
   const send = useSendComment(article_id, (sent_parent) => {
+    setOpen(false)
     draft.clear()
     extras.clear()
     mention.dismiss()
@@ -78,7 +79,6 @@ export function CommentForm({
       }),
     )
   }
-
   return (
     <form
       className="comment-composer flex flex-col gap-2"
@@ -107,9 +107,13 @@ export function CommentForm({
               submit()
             }
           }}
-          onFocus={() => setFocused(true)}
+          onFocus={() => {
+            setFocused(true)
+            setOpen(true)
+          }}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) {
+              // Keep nearby actions under the pointer on blur; collapse after sending.
               setFocused(false)
               mention.dismiss()
             }

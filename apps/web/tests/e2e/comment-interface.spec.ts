@@ -122,7 +122,9 @@ test('ответ открывает ветку; обсуждение досту�
 }, testInfo) => {
   await seedDiscussion(page)
   await page.goto('/p/statya-1')
-  await root(page).getByRole('link', { name: 'Ответить', exact: true }).first().click()
+  // Blurring the empty composer must not move Reply between pointer down and up.
+  await page.getByLabel('Написать комментарий').focus()
+  await root(page).getByRole('link', { name: 'Ответить', exact: true }).first().click({ delay: 100 })
   const field = page.getByRole('textbox', { name: /Ответ для/ })
   await field.fill('Ответ из новой формы')
   await field

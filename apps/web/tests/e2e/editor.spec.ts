@@ -103,21 +103,30 @@ test.describe('Редактор статьи', () => {
     )
   })
 
-  test('гость и участник без права не попадают в редактор', async ({ page }) => {
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Написать' }).click()
-    await expect(page.getByRole('heading', { name: 'Войдите, чтобы продолжить' })).toBeVisible()
-    await page.goto('/write')
-    await expect(page.getByText('Чтобы написать статью, войдите')).toBeVisible()
+  for (const role of ['guest', 'no_publish'] as const) {
+    test(`нет доступа к редактору: ${role}`, async ({ page }) => {
+      test.setTimeout(60_000)
+      await page.addInitScript((viewer) => localStorage.setItem('mock_viewer', viewer), role)
+      await page.goto('/')
+      await page.getByRole('button', { name: 'Написать' }).click()
+      if (role === 'guest') {
+        await expect(page.getByRole('heading', { name: 'Войдите, чтобы продолжить' })).toBeVisible()
+      } else {
+        await expect(page.getByText('Публикация пока недоступна')).toBeVisible()
+      }
+      await expect(page).toHaveURL(/\/$/)
 
-    await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'no_publish'))
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Написать' }).click()
-    await expect(page.getByText('Публикация пока недоступна')).toBeVisible()
-    await expect(page).toHaveURL(/\/$/)
-    await page.goto('/write')
-    await expect(page.getByText('Публикация пока недоступна')).toBeVisible()
-  })
+      await page.goto('/write')
+      const editor = page.locator('.article-editor-window')
+      await expect(editor).toBeVisible({ timeout: 30_000 })
+      await expect(
+        editor.getByText(
+          role === 'guest' ? 'Чтобы написать статью, войдите' : 'Публикация пока недоступна',
+        ),
+      ).toBeVisible()
+      await expect(editor.locator('[data-editor]')).toHaveCount(0)
+    })
+  }
 })
 
 test('тема выбирается из списка с поиском, параметры доступны в меню', async ({

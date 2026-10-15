@@ -33,7 +33,10 @@ This version contains the current changes on top of 1.0.0.
   server errors instead of hiding the cause of an HTTP 500 response.
 
 - E2E checks isolate admin viewport and access cases, preserve mock guest sessions,
-  and wait for loaded content and conversation layout before asserting results.
+  and wait for loaded content, editor windows, and conversation layout before
+  asserting results.
+- Comment composers keep their expanded layout when focus moves away and collapse
+  after sending, so nearby Reply actions stay under the pointer during a click.
 
 - Replaced the Rating section with Discovery: inline search, ranked blog and topic
   previews, full lists, and follow controls. Legacy Rating and Search links redirect
