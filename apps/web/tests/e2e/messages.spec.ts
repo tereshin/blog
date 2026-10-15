@@ -15,7 +15,10 @@ async function openMessages(page: Page, path = '/messages') {
   if (test.info().project.name === 'wide-light') {
     const is_member = await page.evaluate(() => window.localStorage.getItem('mock_viewer') !== null)
     if (is_member) {
-      await page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Тёмная тема' }).click()
+      await page
+        .getByRole('navigation', { name: 'Навигация' })
+        .getByRole('link', { name: 'Тёмная тема' })
+        .click()
       await page.getByRole('menuitemradio', { name: 'Светлая' }).click()
     }
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
@@ -44,8 +47,10 @@ test.describe('Сообщения', () => {
     await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'author'))
     await openMessages(page)
     const list = page.getByRole('region', { name: 'Сообщения', exact: true })
-    const list_bounds = await list.boundingBox()
-    expect(list_bounds?.width).toBeLessThanOrEqual(640)
+    await expect(list).toBeVisible()
+    await expect
+      .poll(async () => (await list.boundingBox())?.width ?? Infinity)
+      .toBeLessThanOrEqual(640)
     const new_message = list.getByRole('button', { name: 'Новое сообщение' })
     await expect(new_message).toHaveText('')
     await new_message.click()
@@ -58,8 +63,11 @@ test.describe('Сообщения', () => {
       page.getByRole('region', { name: 'Роман Читаев' }).getByText('Привет, Роман'),
     ).toBeVisible()
     await expect(page).toHaveURL(/\/messages\/[\da-f-]+$/)
-    const thread_bounds = await page.getByRole('region', { name: 'Роман Читаев' }).boundingBox()
-    expect(thread_bounds?.width).toBeLessThanOrEqual(640)
+    const thread = page.getByRole('region', { name: 'Роман Читаев' })
+    await expect(thread.getByText('Привет, Роман')).toBeVisible()
+    await expect
+      .poll(async () => (await thread.boundingBox())?.width ?? Infinity)
+      .toBeLessThanOrEqual(640)
     await page.getByRole('button', { name: 'К перепискам' }).click()
     await expect(list).toBeVisible()
     await expect(list.getByRole('link', { name: /Роман Читаев/ })).toBeVisible()

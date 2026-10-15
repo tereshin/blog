@@ -20,7 +20,10 @@ async function openToolbox(page: Page, name: string) {
 test.describe('Редактор статьи', () => {
   test('автор пишет, прячет черновик и публикует, не меняя адрес', async ({ page }) => {
     test.setTimeout(120_000)
-    await page.addInitScript(() => window.localStorage.setItem('mock_viewer', 'member'))
+    await page.addInitScript(() => {
+      if (window.localStorage.getItem('mock_viewer') === null)
+        window.localStorage.setItem('mock_viewer', 'member')
+    })
     await page.goto('/')
     await page.getByRole('button', { name: 'Написать' }).click()
     await expect(page).toHaveURL(/\/write$/)
@@ -54,15 +57,23 @@ test.describe('Редактор статьи', () => {
 
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'guest'))
     await page.goto('/')
+    await expect(page.getByRole('button', { name: 'Войти', exact: true })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('article').first()).toBeVisible()
     await expect(page.getByRole('heading', { name: TITLE })).toHaveCount(0)
     await page.goto('/u/reader')
+    await expect(page.getByRole('heading', { name: 'Роман Читаев', exact: true })).toBeVisible()
+    await expect(
+      page.getByRole('tabpanel').getByRole('heading', { name: 'Как устроена лента' }),
+    ).toBeVisible()
     await expect(page.getByRole('heading', { name: TITLE })).toHaveCount(0)
 
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto(write_url)
     await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
     await expect(page.getByRole('textbox', { name: 'Заголовок', exact: true })).toHaveText(TITLE)
-    const published = page.waitForResponse((response) => response.url().endsWith('/publish') && response.request().method() === 'POST')
+    const published = page.waitForResponse(
+      (response) => response.url().endsWith('/publish') && response.request().method() === 'POST',
+    )
     await page.getByRole('button', { name: 'Опубликовать' }).click()
     expect((await published).ok()).toBe(true)
     await expect(page.getByRole('button', { name: 'Опубликовать' })).toBeEnabled()
@@ -87,7 +98,9 @@ test.describe('Редактор статьи', () => {
     await expect(page.locator('header')).toBeVisible()
     await page.getByRole('button', { name: 'Остаться' }).click()
     await expect(page).toHaveURL(write_url)
-    await expect(page.getByRole('textbox', { name: 'Заголовок', exact: true })).toHaveText('Ещё не сохранено')
+    await expect(page.getByRole('textbox', { name: 'Заголовок', exact: true })).toHaveText(
+      'Ещё не сохранено',
+    )
   })
 
   test('гость и участник без права не попадают в редактор', async ({ page }) => {
@@ -107,7 +120,9 @@ test.describe('Редактор статьи', () => {
   })
 })
 
-test('тема выбирается из списка с поиском, параметры доступны в меню', async ({ page }, testInfo) => {
+test('тема выбирается из списка с поиском, параметры доступны в меню', async ({
+  page,
+}, testInfo) => {
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'member'))
   await page.goto('/write')
   await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
@@ -125,7 +140,9 @@ test('тема выбирается из списка с поиском, пар�
   await page.keyboard.press('Escape')
   await expect(trigger).toBeFocused()
   await trigger.click()
-  await page.locator('.article-editor-window').screenshot({ path: testInfo.outputPath('editor-topics.png'), animations: 'disabled' })
+  await page
+    .locator('.article-editor-window')
+    .screenshot({ path: testInfo.outputPath('editor-topics.png'), animations: 'disabled' })
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: 'Сохранить черновик' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Параметры статьи' }).click()

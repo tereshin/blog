@@ -28,6 +28,13 @@ This version contains the current changes on top of 1.0.0.
 
 ### Changed
 
+- CI integration tests bound service and file concurrency to reduce container
+  contention. Page concurrency checks prepare both database connections and log
+  server errors instead of hiding the cause of an HTTP 500 response.
+
+- E2E checks isolate admin viewport and access cases, preserve mock guest sessions,
+  and wait for loaded content and conversation layout before asserting results.
+
 - Replaced the Rating section with Discovery: inline search, ranked blog and topic
   previews, full lists, and follow controls. Legacy Rating and Search links redirect
   to Discovery; SEO routes and sitemaps use the new addresses.

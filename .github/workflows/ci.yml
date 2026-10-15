@@ -44,7 +44,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:integration
+      # Each worker starts real containers; bound both service and test-file concurrency.
+      - run: pnpm -r --workspace-concurrency=1 --if-present test:integration --maxWorkers=2
 
   infra:
     runs-on: ubuntu-24.04

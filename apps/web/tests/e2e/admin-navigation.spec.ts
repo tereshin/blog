@@ -60,8 +60,7 @@ test('каталоги, переходы и прямое открытие сле
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
   await page.goto('/admin')
   await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText('Админка')
-  if (info.project.name === 'wide-light')
-    await chooseLightTheme(page)
+  if (info.project.name === 'wide-light') await chooseLightTheme(page)
   if (info.project.name === 'wide-light')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.screenshot({
@@ -164,19 +163,28 @@ test('администратор видит только модерацию, з�
   await expect(
     page.getByRole('navigation', { name: 'Модерация', exact: true }).getByRole('link'),
   ).toHaveCount(4)
-  for (const path of [
-    '/admin/settings',
-    ...SETTINGS.map(([path]) => path),
-    '/admin/members',
-    '/admin/topics',
-    '/admin/pages',
-    '/admin/sections',
-  ]) {
-    await page.goto(path)
-    await expect(page.getByText('Раздел доступен только администратору площадки')).toBeVisible()
-  }
   expect(requests).toEqual([])
 })
+
+for (const path of [
+  '/admin/settings',
+  ...SETTINGS.map(([path]) => path),
+  '/admin/members',
+  '/admin/topics',
+  '/admin/pages',
+  '/admin/sections',
+]) {
+  test(`закрытая категория не запрашивает настройки: ${path}`, async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
+    const requests: string[] = []
+    page.on('request', (request) => {
+      if (request.url().includes('/v1/settings/admin')) requests.push(request.url())
+    })
+    await page.goto(path)
+    await expect(page.getByText('Раздел доступен только администратору площадки')).toBeVisible()
+    expect(requests).toEqual([])
+  })
+}
 
 test('возврат из статьи сохраняет очередь модерации и переживает перезагрузку', async ({
   page,

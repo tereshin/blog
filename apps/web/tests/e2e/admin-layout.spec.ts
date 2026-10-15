@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test'
 
-test('wide admin sections and the header share a responsive width', async ({ page }) => {
-  test.setTimeout(60_000)
-  test.skip(process.env['E2E_TARGET'] === 'local')
-  await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
-  for (const width of [390, 768, 1280, 1420, 1600]) {
+for (const width of [390, 768, 1280, 1420, 1600]) {
+  test(`wide admin sections and the header share a responsive width: ${width}px`, async ({
+    page,
+  }) => {
+    test.skip(process.env['E2E_TARGET'] === 'local')
+    await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
     await page.setViewportSize({ width, height: 900 })
     for (const path of [
       '/admin/moderation',
@@ -42,8 +43,8 @@ test('wide admin sections and the header share a responsive width', async ({ pag
           expect((await page.locator('main').boundingBox())?.width).toBe(content_width)
       } else await expect(page.getByRole('complementary')).toHaveCount(0)
     }
-  }
-})
+  })
+}
 
 test('status creation is an accessible header action and saving uses the card footer', async ({
   page,

@@ -65,9 +65,17 @@ describe('simple pages real PostgreSQL', () => {
     postgres = await startPostgres()
     database = openDatabase(postgres.url)
     await migrate(database.pool)
+    // Concurrent replay and version checks need two established database connections.
+    const first_client = await database.pool.connect()
+    try {
+      const second_client = await database.pool.connect()
+      second_client.release()
+    } finally {
+      first_client.release()
+    }
     app = Fastify()
     await app.register(requestContext, {
-      logger: createLogger({ service: 'pages-test', level: 'silent' }),
+      logger: createLogger({ service: 'pages-test', level: 'error' }),
     })
     await app.register(idempotency)
     await app.register(errorHandler)
