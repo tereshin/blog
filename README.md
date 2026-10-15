@@ -3,7 +3,6 @@
 An open source blogging platform. People publish articles, read the feed, discuss posts, and keep profiles inside one shell: a header, navigation on the left, content in the center, and popular comments on the right.
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and maintenance rules.
-The pushed baseline is **1.0.0**; current unreleased changes belong to **1.0.1**.
 
 ![Home: the Design topic, the article feed, and popular comments](cover.png)
 

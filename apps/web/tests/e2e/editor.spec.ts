@@ -108,13 +108,19 @@ test.describe('Редактор статьи', () => {
       test.setTimeout(60_000)
       await page.addInitScript((viewer) => localStorage.setItem('mock_viewer', viewer), role)
       await page.goto('/')
-      await page.getByRole('button', { name: 'Написать' }).click()
-      if (role === 'guest') {
-        await expect(page.getByRole('heading', { name: 'Войдите, чтобы продолжить' })).toBeVisible()
+      const write = page.getByRole('button', { name: 'Написать' })
+      const guest_on_narrow = role === 'guest' && (page.viewportSize()?.width ?? 0) < 768
+      if (guest_on_narrow) {
+        await expect(write).toHaveCount(0)
       } else {
-        await expect(page.getByText('Публикация пока недоступна')).toBeVisible()
+        await write.click()
+        if (role === 'guest') {
+          await expect(page.getByRole('heading', { name: 'Войдите, чтобы продолжить' })).toBeVisible()
+        } else {
+          await expect(page.getByText('Публикация пока недоступна')).toBeVisible()
+        }
+        await expect(page).toHaveURL(/\/$/)
       }
-      await expect(page).toHaveURL(/\/$/)
 
       await page.goto('/write')
       const editor = page.locator('.article-editor-window')
