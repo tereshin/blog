@@ -39,7 +39,7 @@ export function MobileNavigation({
       <HeaderTab
         to="/messages"
         label={t('shell.nav.messages')}
-        icon="messages"
+        icon="chat_3"
         is_selected={section_kind === 'messages'}
         has_unread={has_unread_messages}
         unread_label={t('shell.nav.unread')}

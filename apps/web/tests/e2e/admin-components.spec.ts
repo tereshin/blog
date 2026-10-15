@@ -3,11 +3,10 @@ import { expect, test } from '@playwright/test'
 test('superadmin creates a topic from navigation and edits its address and status', async ({
   page,
 }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 768, 'новая тема в левой колонке от 768px')
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'superadmin'))
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Навигация', exact: true })
-  if ((page.viewportSize()?.width ?? 0) < 768)
-    await page.getByRole('button', { name: 'Открыть навигацию' }).click()
   await nav.getByRole('button', { name: 'Новая тема' }).click()
   const dialog = page.getByRole('dialog', { name: 'Новая тема' })
   await dialog.getByLabel('Название', { exact: true }).fill('Новая тема')
@@ -70,12 +69,21 @@ test('revealing seen posts removes the banner immediately', async ({ page }) => 
     })
     return data.items[0]?.title ?? ''
   })
-  if ((page.viewportSize()?.width ?? 0) < 768)
-    await page.getByRole('button', { name: 'Открыть навигацию' }).click()
-  await page
-    .getByRole('navigation', { name: 'Навигация', exact: true })
-    .getByRole('link', { name: 'Популярное', exact: true })
-    .click()
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await page.evaluate(() => {
+      const current = window.history.state as { idx?: number } | null
+      const idx = typeof current?.idx === 'number' ? current.idx + 1 : 1
+      const key = Math.random().toString(36).slice(2, 10)
+      window.history.pushState({ usr: null, key, idx }, '', '/popular')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    await expect(page).toHaveURL('/popular')
+  } else {
+    await page
+      .getByRole('navigation', { name: 'Навигация', exact: true })
+      .getByRole('link', { name: 'Популярное', exact: true })
+      .click()
+  }
   const banner = page.getByRole('button', { name: /Скрыт.*просмотренн/ })
   await expect(banner).toBeVisible()
   await banner.click()
@@ -150,24 +158,17 @@ test('two logos and favicon settings persist and update site metadata', async ({
     'href',
     '/favicon-96x96.png?v=icon.png',
   )
-  const is_mobile = (page.viewportSize()?.width ?? 0) < 768
-  if (is_mobile) {
-    await page.getByRole('banner').getByRole('link', { name: 'Главная', exact: true }).click()
-    await page.getByRole('button', { name: 'Открыть навигацию' }).click()
+  if ((page.viewportSize()?.width ?? 0) >= 768) {
+    await page
+      .getByRole('navigation', { name: 'Навигация', exact: true })
+      .getByRole('link', { name: 'Тёмная тема', exact: true })
+      .click()
+    await page.getByRole('menu').getByText('Светлая', { exact: true }).click()
+    await expect(page.getByRole('banner').locator('a[href="/"] img')).toHaveAttribute(
+      'src',
+      'data:image/png;base64,light',
+    )
   }
-  await page
-    .getByRole('navigation', { name: 'Навигация', exact: true })
-    .getByRole('link', { name: 'Тёмная тема', exact: true })
-    .click()
-  await page.getByRole('menu').getByText('Светлая', { exact: true }).click()
-  if (is_mobile) {
-    await page.keyboard.press('Escape')
-    await page.goBack()
-  }
-  await expect(page.getByRole('banner').locator('a[href="/"] img')).toHaveAttribute(
-    'src',
-    'data:image/png;base64,light',
-  )
   await page.getByRole('main').getByRole('button', { name: 'Удалить: PNG 96×96' }).click()
   await page.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await expect(page.locator('head link[rel="icon"][sizes="96x96"]')).toHaveCount(0)

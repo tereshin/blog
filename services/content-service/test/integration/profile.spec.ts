@@ -72,6 +72,26 @@ describe('content: профиль', () => {
     await postgres.stop()
   })
 
+  it('профиль и списки открываются по UUID с коротким адресом и без него', async () => {
+    for (const [id, slug] of [[OWNER, null], [OTHER, 'taken']]) {
+      const response = await app.inject({ method: 'GET', url: `/v1/profiles/${id}` })
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toMatchObject({ user_id: id, slug })
+      for (const list of ['articles', 'followers', 'following']) {
+        const result = await app.inject({ method: 'GET', url: `/v1/profiles/${id}/${list}` })
+        expect(result.statusCode).toBe(200)
+        expect(result.json().items).toEqual([])
+      }
+    }
+    const missing = await app.inject({ method: 'GET', url: '/v1/profiles/00000000-0000-4000-8000-000000000000' })
+    expect(missing.statusCode).toBe(404)
+    const malformed = await app.inject({ method: 'GET', url: '/v1/profiles/not-a-uuid' })
+    expect(malformed.statusCode).toBe(404)
+    const by_slug = await app.inject({ method: 'GET', url: '/v1/profiles/taken' })
+    expect(by_slug.statusCode).toBe(200)
+    expect(by_slug.json().user_id).toBe(OTHER)
+  })
+
   it('профиль открывается по номеру, если короткого адреса нет', async () => {
     const response = await app.inject({ method: 'GET', url: '/v1/profiles/7' })
     expect(response.statusCode).toBe(200)

@@ -51,7 +51,7 @@ export function AttachmentCard({ href, title, extension, size, className, ...res
       href={href}
       rel="noopener noreferrer"
       target="_blank"
-      className={cn('attachment-card my-4 flex max-w-xl items-center gap-3 rounded-xl border border-border bg-surface-secondary p-3 text-foreground no-underline transition-colors hover:bg-surface-tertiary focus-visible:bg-surface-tertiary', className)}
+      className={cn('attachment-card my-4 flex max-w-xl items-center gap-3 rounded-xl bg-surface-secondary p-3 text-foreground no-underline transition-colors hover:bg-surface-tertiary focus-visible:bg-surface-tertiary', className)}
     >
       <span
         aria-hidden
@@ -62,11 +62,11 @@ export function AttachmentCard({ href, title, extension, size, className, ...res
       >
         {extension && extension.length <= 4 ? extension : <BaseIcon name="document" style="line" size={22} />}
       </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate font-medium">{title || t('document.attachment')}</span>
-        {meta ? <span className="text-sm text-muted">{meta}</span> : null}
+      <span className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className="truncate font-medium inline-block leading-none">{title || t('document.attachment')}</span>
+        {meta ? <span className="text-sm text-muted inline-block leading-none">{meta}</span> : null}
       </span>
-      <BaseIcon name="download" style="line" size={20} className="shrink-0 text-muted" />
+      <BaseIcon name="right" style="line" size={22} className="shrink-0 text-muted" />
     </a>
   )
 }

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { useT } from '@/shared/i18n'
 import { useWindowList } from '@/shared/lib'
 import { Button, CommentIcon, EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import { useDiscussionAnchor } from '../model/useDiscussionAnchor.ts'
 import type { CommentsState } from '../model/useComments.ts'
 import type { CommentNode, CommentPlacement } from '../model/comment-types.ts'
 import { sortComments } from '../model/sort-comments.ts'
@@ -29,12 +30,6 @@ type CommentThreadProps = {
   renderReply?: (comment: CommentNode) => ReactNode
 }
 
-function scrollToHash(): void {
-  const id = window.location.hash.startsWith('#comment-') ? window.location.hash.slice(1) : ''
-  if (!id) return
-  document.getElementById(id)?.scrollIntoView({ block: 'center' })
-}
-
 function CommentThreadRoot({
   state,
   toolbar,
@@ -46,11 +41,12 @@ function CommentThreadRoot({
   renderReply,
 }: CommentThreadProps) {
   const { t } = useT()
-  const { hash } = useLocation()
+  const { hash, key } = useLocation()
+  const prepared_anchor_ref = useRef({ navigation: '', is_prepared: false })
+  useDiscussionAnchor(article_id)
   const anchor_id = hash.startsWith('#comment-') ? hash.slice('#comment-'.length) : ''
   const [local_sort, setSort] = useState<CommentSort>('best')
   const sort = server_sort ?? local_sort
-  const ready = state.status === 'ok'
   const comments =
     state.status === 'ok'
       ? article_id
@@ -71,10 +67,20 @@ function CommentThreadRoot({
   }, [state])
 
   useEffect(() => {
-    if (!ready) return
-    const frame = requestAnimationFrame(scrollToHash)
-    return () => cancelAnimationFrame(frame)
-  }, [ready, hash])
+    const navigation = key + hash
+    if (prepared_anchor_ref.current.navigation !== navigation) prepared_anchor_ref.current = { navigation, is_prepared: false }
+    if (!anchor_id || prepared_anchor_ref.current.is_prepared) return
+    if (document.getElementById(`comment-${anchor_id}`)) {
+      prepared_anchor_ref.current.is_prepared = true
+      return
+    }
+    if (comment_ids.length <= VIRTUALIZATION_THRESHOLD) return
+    const index = comments.findIndex((comment) => comment.id === anchor_id || comment.replies.some((reply) => reply.id === anchor_id))
+    if (index >= 0) {
+      prepared_anchor_ref.current.is_prepared = true
+      virtualizer.scrollToIndex(index, { align: 'center' })
+    }
+  }, [anchor_id, key, hash, comments, comment_ids.length, virtualizer])
 
   useEffect(() => {
     const last = virtual_items.at(-1)?.index ?? -1

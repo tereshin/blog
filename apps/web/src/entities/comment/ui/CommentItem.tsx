@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router'
 import { cva } from 'class-variance-authority'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
@@ -64,15 +65,17 @@ export function CommentItem({
       aria-label={comment.author.display_name}
     >
       <div className="flex items-center gap-3">
+        <RouterLink to={`/u/${encodeURIComponent(comment.author.user_id)}`} aria-label={comment.author.display_name} className="shrink-0 rounded-avatar outline-offset-2">
         <Avatar
           src={comment.author.avatar_url}
           name={comment.author.display_name}
           size="sm"
           className="shrink-0"
         />
+        </RouterLink>
         <div className="min-w-0">
           <p className="break-words text-[15px] font-semibold leading-5">
-            {comment.author.display_name}
+            <RouterLink to={`/u/${encodeURIComponent(comment.author.user_id)}`} className="text-foreground outline-offset-2 hover:underline">{comment.author.display_name}</RouterLink>
           </p>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted">
             <time dateTime={comment.created_at}>{comment.time_label}</time>

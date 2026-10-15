@@ -5,7 +5,6 @@ export type HeaderCenterMode =
   { kind: 'empty' } | { kind: 'search' } | { kind: 'back'; title: string; to?: string }
 
 type ShellState = {
-  is_nav_open: boolean
   center_scroll_top: number
   left_scroll_top: number
   header_center: HeaderCenterMode
@@ -19,7 +18,6 @@ type ShellState = {
   recent_searches: string[]
   /** Момент последнего открытия «Свежего» и «Моей ленты» (`lastSeenFeed:{mode}`). */
   feed_seen_at: { fresh: string | null; mine: string | null }
-  setNavOpen: (is_open: boolean) => void
   setCenterScrollTop: (value: number) => void
   setLeftScrollTop: (value: number) => void
   setHeaderCenter: (value: HeaderCenterMode) => void
@@ -40,9 +38,8 @@ function readFeedSeen(): ShellState['feed_seen_at'] {
   }
 }
 
-/** Потребители читают срезами: `useShellStore((state) => state.is_nav_open)`. */
+/** Потребители читают срезами: `useShellStore((state) => state.header_center)`. */
 export const useShellStore = create<ShellState>((set) => ({
-  is_nav_open: false,
   center_scroll_top: 0,
   left_scroll_top: 0,
   header_center: { kind: 'empty' },
@@ -51,7 +48,6 @@ export const useShellStore = create<ShellState>((set) => ({
   is_topics_expanded: false,
   recent_searches: [],
   feed_seen_at: readFeedSeen(),
-  setNavOpen: (is_nav_open) => set({ is_nav_open }),
   setCenterScrollTop: (center_scroll_top) => set({ center_scroll_top }),
   setLeftScrollTop: (left_scroll_top) => set({ left_scroll_top }),
   setHeaderCenter: (header_center) =>

@@ -28,6 +28,13 @@ This version contains the current changes on top of 1.0.0.
 
 ### Changed
 
+- Profile status selection uses the same accessible icon grid as reactions.
+- Navigation and reloads start at the top; returning from an article restores the
+  originating feed position without replaying stale offsets.
+- Discussion anchors scroll smoothly and highlight linked comments temporarily;
+  comment author names and avatars open profiles, also addressable by user UUID.
+- Guests no longer see the mobile Write button; desktop behavior is unchanged.
+
 - CI integration tests bound service and file concurrency to reduce container
   contention. Page concurrency checks prepare both database connections and log
   server errors instead of hiding the cause of an HTTP 500 response.
@@ -44,6 +51,11 @@ This version contains the current changes on top of 1.0.0.
 - Separated mobile navigation from desktop header actions, with Discovery search.
   The account button shows the member's avatar. The cover control stays readable
   on touch screens. Existing layout and SEO settings remain compatible.
+- The mobile messages tab uses the chat icon.
+- Narrow screens no longer open a side navigation drawer. The bottom bar is the
+  mobile navigation; the left column stays from 768px.
+- Full blog and topic lists no longer repeat a Discovery link above the title.
+  Back in the header returns to Discovery.
 - The header shows Back without the current page title. Enter in a comment
   inserts a line break.
 - Showing seen posts keeps the strip in place; dismissing it hides those posts again.

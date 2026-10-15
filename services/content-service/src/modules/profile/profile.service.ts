@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { requireVerifiedEmail } from '../../shared/require-verified-email.ts'
 import type { Profile, ServiceContext, UpdateProfile } from '@blog/contracts'
 import { EmailUnverifiedError, NotFoundError, RestrictedError, UnauthorizedError, ValidationError } from '@blog/errors'
@@ -50,7 +51,9 @@ export class ProfileService {
 
   async getBySlug(viewer: ServiceContext, slug: string): Promise<Profile> {
     const by_slug = await this.repository.findBySlug(slug, viewer.user_id)
-    const row = by_slug ?? (PUBLIC_NUMBER.test(slug) ? await this.repository.findByPublicNumber(Number(slug), viewer.user_id) : null)
+    const row = by_slug ?? (PUBLIC_NUMBER.test(slug)
+      ? await this.repository.findByPublicNumber(Number(slug), viewer.user_id)
+      : z.uuid().safeParse(slug).success ? await this.repository.findByUserId(slug, viewer.user_id) : null)
     if (!row) throw new NotFoundError({ message: 'Профиль не найден' })
     return toProfile(row, viewer)
   }

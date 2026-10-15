@@ -92,7 +92,7 @@ test.describe('геометрия каркаса', () => {
     expectNear(sticky.max_height, 900 - 56, 2)
     await expect(page.locator('[data-shell-scroll="center"]')).toHaveCount(0)
     await expectSearchBeforeNotifications(page)
-    await expect(page.getByRole('banner').locator('[aria-label="Открыть навигацию"]')).toBeHidden()
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' })).toHaveCount(0)
     await expect(page.getByText('Подписка Plus')).toHaveCount(0)
   })
 
@@ -157,7 +157,7 @@ test.describe('геометрия каркаса', () => {
     expectNear((main_box?.x ?? 0) - ((nav_box?.x ?? 0) + (nav_box?.width ?? 0)), 16)
     expectNear((rail_box?.x ?? 0) - ((main_box?.x ?? 0) + (main_box?.width ?? 0)), 16)
     expectNear(main_box?.width ?? 0, 640)
-    await expect(page.locator('[aria-label="Открыть навигацию"]')).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Открыть навигацию' })).toHaveCount(0)
     await expectSearchBeforeNotifications(page)
   })
 
@@ -200,7 +200,7 @@ test.describe('геометрия каркаса', () => {
     await expect(nav).toBeVisible()
     await expect(main.getByRole('article').first()).toBeVisible()
     await expect(page.getByRole('complementary', { name: RAIL_NAME })).toHaveCount(0)
-    await expect(page.locator('[aria-label="Открыть навигацию"]')).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Открыть навигацию' })).toHaveCount(0)
     const nav_box = await nav.boundingBox()
     const main_box = await main.boundingBox()
     expectNear(nav_box?.width ?? 0, 220)
@@ -239,27 +239,23 @@ test.describe('геометрия каркаса', () => {
     expect((main_box?.x ?? 0) + (main_box?.width ?? 0)).toBeLessThanOrEqual(1024)
   })
 
-  test('на 390px одна колонка, одна кнопка шапки открывает навигацию', async ({ page }) => {
+  test('на 390px одна колонка и нижняя навигация, боковой панели нет', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     for (const path of ['/', '/messages']) {
       await page.goto(path)
-      const open = page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' })
-      await expect(open).toBeVisible()
-      await expect(open).toHaveAttribute('aria-controls', 'shell-nav')
+      await expect(page.getByRole('banner').getByRole('button', { name: 'Открыть навигацию' })).toHaveCount(0)
+      await expect(page.locator('#shell-nav')).toHaveCount(0)
       await expect(page.getByRole('complementary', { name: RAIL_NAME })).toHaveCount(0)
       await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toHaveCount(0)
+      await expect(page.getByRole('navigation', { name: 'Мобильная навигация' })).toBeVisible()
       await expectSearchBeforeNotifications(page)
       const main_box = await page.getByRole('main').boundingBox()
       expect(main_box?.width ?? 0).toBeGreaterThan(360)
-      await open.click()
-      await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toBeVisible()
-      await page.keyboard.press('Escape')
-      await expect(page.getByRole('navigation', { name: NAV_NAME, exact: true })).toHaveCount(0)
     }
     await expect(page.getByText('Подписка Plus')).toHaveCount(0)
   })
 
-  test('на 390px действия шапки — панель внизу, на статье вместо бургера «Назад»', async ({
+  test('на 390px действия шапки — панель внизу, на статье в шапке «Назад»', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
@@ -272,7 +268,7 @@ test.describe('геометрия каркаса', () => {
       'page',
     )
     await expect(banner.getByRole('link', { name: 'Сообщения' })).toBeVisible()
-    await expect(banner.getByRole('button', { name: 'Написать' })).toBeVisible()
+    await expect(banner.getByRole('button', { name: 'Написать' })).toHaveCount(0)
 
     await page.goto('/p/statya-1')
     await expect(banner.getByRole('link', { name: 'Назад' })).toBeVisible()

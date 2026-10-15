@@ -1,5 +1,6 @@
 import preview from '#.storybook/preview'
-import { MemoryRouter } from 'react-router'
+import { useEffect, useRef } from 'react'
+import { StoryProviders } from '@/shared/lib'
 import type { CommentNode } from '../model/comment-types.ts'
 import { CommentItem } from './CommentItem.tsx'
 
@@ -21,15 +22,23 @@ const comment: CommentNode = {
   replies: [],
 }
 
-function Frame() {
+function Frame({ highlighted = false }: { highlighted?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const target = ref.current?.querySelector('article')
+    if (target && highlighted) target.dataset.commentHighlighted = 'true'
+    return () => { if (target) delete target.dataset.commentHighlighted }
+  }, [highlighted])
   return (
-    <MemoryRouter>
-      <div className="max-w-lg p-4">
+    <StoryProviders>
+      <div ref={ref} className="max-w-lg p-4">
         <CommentItem comment={comment} />
       </div>
-    </MemoryRouter>
+    </StoryProviders>
   )
 }
 
 const meta = preview.meta({ title: 'entities/comment/CommentItem', component: Frame })
 export const Default = meta.story({})
+
+export const Highlighted = meta.story({ args: { highlighted: true } })

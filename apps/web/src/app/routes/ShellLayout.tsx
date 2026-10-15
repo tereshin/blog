@@ -48,11 +48,9 @@ export function ShellLayout() {
   const skeleton = skeletonOf(useMatches())
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
-  const setNavOpen = useShellStore((state) => state.setNavOpen)
 
-  // Панель навигации закрывается переходом; центр нового адреса начинается сверху (в `Shell` по `scroll_key`).
+  // Центр нового адреса начинается сверху (в `Shell` по `scroll_key`).
   useEffect(() => {
-    setNavOpen(false)
     if (/^\/discovery(?:\/|$)/.test(pathname)) {
       setHeaderCenter(pathname.replace(/\/+$/, '') === '/discovery' ? { kind: 'empty' } : {
         kind: 'back', title: t(pathname === '/discovery/blogs' ? 'discovery.blogs' : 'discovery.topics'), to: '/discovery',
@@ -68,7 +66,7 @@ export function ShellLayout() {
       })
       setArticleTopicId(null)
     }
-  }, [pathname, t, setNavOpen, setHeaderCenter, setArticleTopicId])
+  }, [pathname, t, setHeaderCenter, setArticleTopicId])
 
   return (
     <>

@@ -1,5 +1,5 @@
 import preview from '#.storybook/preview'
-import { MemoryRouter } from 'react-router'
+import { StoryProviders } from '@/shared/lib'
 import type { CommentNode } from '../model/comment-types.ts'
 import type { CommentsState } from '../model/useComments.ts'
 import { CommentThread } from './CommentThread.tsx'
@@ -62,9 +62,9 @@ const meta = preview.meta({
   component: CommentThread,
   decorators: [
     (Story) => (
-      <MemoryRouter>
+      <StoryProviders>
         <Story />
-      </MemoryRouter>
+      </StoryProviders>
     ),
   ],
 })

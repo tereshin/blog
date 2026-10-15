@@ -76,6 +76,10 @@ export class ProfileRepository implements ProfileRepositoryPort {
     return this.load(eq(profiles.slug, slug) as SQL, viewer_id)
   }
 
+  findByUserId(user_id: string, viewer_id: string | undefined) {
+    return this.load(eq(profiles.user_id, user_id) as SQL, viewer_id)
+  }
+
   findByPublicNumber(public_number: number, viewer_id: string | undefined) {
     return this.load(eq(users_copy.public_number, public_number) as SQL, viewer_id)
   }

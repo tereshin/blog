@@ -3,7 +3,6 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { useShellLayout } from '../model/useShellLayout.ts'
 import { BackToTop } from './BackToTop.tsx'
-import { LeftNavDrawer } from './LeftNavDrawer.tsx'
 
 type ShellProps = {
   content_width?: 640 | 848
@@ -25,7 +24,7 @@ export function Shell({
   content_width = 640,
 }: ShellProps) {
   const { t } = useT()
-  const { is_nav_open, setNavOpen } = useShellLayout(scroll_key)
+  useShellLayout(scroll_key)
   const mount_id = useId()
 
   const show_rail = right != null && right !== false
@@ -60,9 +59,6 @@ export function Shell({
         ) : null}
       </div>
       <BackToTop />
-      <LeftNavDrawer is_open={is_nav_open} onOpenChange={setNavOpen}>
-        {left}
-      </LeftNavDrawer>
     </div>
   )
 }

@@ -93,7 +93,7 @@ test.describe('Настройки площадки', () => {
     await page.evaluate(() => window.localStorage.setItem('mock_viewer', 'member'))
     await page.goto('/u/reader')
     await page.getByRole('button', { name: 'Выбрать статус', exact: true }).click()
-    await expect(page.getByRole('menuitemradio', { name: 'В отпуске', exact: true })).toBeVisible()
+    await expect(page.getByRole('option', { name: 'В отпуске', exact: true })).toBeVisible()
   })
 
 })

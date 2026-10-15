@@ -28,13 +28,13 @@ export function ReactionPicker({ appearances, onSelect, is_pending }: ReactionPi
       >
         <BaseIcon name="add" style="line" size={18} />
       </ReactionButton>
-      <Popover.Content placement="top" offset={8} className="reaction-picker p-1">
+      <Popover.Content placement="top" offset={8} className="icon-picker p-1">
         <ListBox
           aria-label={t('reaction.menu')}
           layout="grid"
           selectionMode="none"
           disabledKeys={is_pending ? appearances.map((appearance) => appearance.kind) : []}
-          className="reaction-picker__grid"
+          className="icon-picker__grid"
           onAction={(key) => {
             onSelect(String(key))
             setOpen(false)
@@ -46,7 +46,7 @@ export function ReactionPicker({ appearances, onSelect, is_pending }: ReactionPi
               id={appearance.kind}
               textValue={appearance.label}
               aria-label={appearance.label}
-              className="reaction-picker__item"
+              className="icon-picker__item"
             >
               <span title={appearance.label} className="inline-flex items-center justify-center">
                 <ReactionGlyph appearance={appearance} label={appearance.label} size="lg" />

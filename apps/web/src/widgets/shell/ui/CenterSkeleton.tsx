@@ -73,7 +73,7 @@ function ProfileSkeleton() {
 export function CenterSkeleton({ kind = 'feed' }: CenterSkeletonProps) {
   const { t } = useT()
   return (
-    <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 px-4 py-4 min-[768px]:px-0 min-[768px]:pt-0 max-w-[var(--shell-content-width,640px)] mx-auto">
+    <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 py-4 min-[768px]:px-0 min-[768px]:pt-0 max-w-[var(--shell-content-width,640px)] mx-auto">
       {kind === 'article' ? <ArticleSkeleton /> : null}
       {kind === 'profile' ? <ProfileSkeleton /> : null}
       {kind === 'feed' ? <FeedSkeleton /> : null}

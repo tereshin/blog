@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useT } from '@/shared/i18n'
-import { cn } from '@/shared/lib'
+import { cn, readFeedReturn } from '@/shared/lib'
 import { BaseIcon } from '@/shared/ui'
 import { useShellStore } from '../model/useShellStore.ts'
 import { getReturnTarget } from '../lib/feed-return.ts'
@@ -21,6 +21,7 @@ export function HeaderBackLink({ className }: HeaderBackLinkProps) {
   return (
     <Link
       to={target}
+      state={explicit_target ? undefined : { feed_return_key: readFeedReturn()?.entry_key }}
       aria-label={t('header.back')}
       className={cn(
         'inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-foreground outline-offset-2 hover:bg-surface-secondary',

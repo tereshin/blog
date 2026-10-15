@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
-import { HomeIcon, MessageIcon } from '@/shared/ui'
+import { Chat3Icon, HomeIcon } from '@/shared/ui'
 
-const ICONS = { home: HomeIcon, messages: MessageIcon }
+const ICONS = { home: HomeIcon, chat_3: Chat3Icon }
 
 type HeaderTabProps = {
   to: string

@@ -299,3 +299,55 @@ test('модератор обрабатывает жалобу на коммен
     )
     .toBe('hidden')
 })
+
+test('якорь подсвечивает только цель на три секунды и повторный переход запускает подсветку', async ({ page }) => {
+  await seedDiscussion(page)
+  await page.goto(`/p/statya-1#comment-${REPLY_ID}`)
+  const target = page.locator(`#comment-${REPLY_ID}`)
+  await expect(target).toBeInViewport()
+  await expect(target).toHaveAttribute('data-comment-highlighted', 'true')
+  await expect(root(page)).not.toHaveAttribute('data-comment-highlighted')
+  await expect(target).not.toHaveAttribute('data-comment-highlighted', { timeout: 5_000 })
+  // A router link to the same hash produces a new navigation without reloading the document.
+  await page.evaluate((hash) => {
+    const state = history.state
+    history.pushState({ ...state, key: 'repeat-anchor', idx: state.idx + 1 }, '', hash)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }, `#comment-${REPLY_ID}`)
+  await expect(target).toHaveAttribute('data-comment-highlighted', 'true')
+})
+
+test('имя и аватар корня и ответа открывают профиль автора', async ({ page }) => {
+  await seedDiscussion(page)
+  await page.addInitScript(() => {
+    const comments = JSON.parse(localStorage.getItem('mock_discussion_comments') ?? '[]')
+    for (const comment of comments) comment.author = { user_id: '0b3a4c50-3333-4c33-8c33-000000000001', display_name: 'Анна Авторова', avatar_url: null }
+    localStorage.setItem('mock_discussion_comments', JSON.stringify(comments))
+  })
+  await page.goto(`/p/statya-1#comment-${REPLY_ID}`)
+  const href = '/u/0b3a4c50-3333-4c33-8c33-000000000001'
+  const target = page.locator(`#comment-${REPLY_ID}`)
+  await expect(target).toBeVisible()
+  const root_author = root(page).locator(':scope > div').first().getByRole('link', { name: 'Анна Авторова', exact: true })
+  await expect(root_author).toHaveCount(2)
+  const reply_author = target.locator(':scope > div').first().getByRole('link', { name: 'Анна Авторова', exact: true })
+  await expect(reply_author).toHaveCount(2)
+  for (const links of [root_author, reply_author]) {
+    await expect(links.nth(0)).toHaveAttribute('href', href)
+    await expect(links.nth(1)).toHaveAttribute('href', href)
+  }
+  await reply_author.first().click()
+  await expect(page).toHaveURL(href)
+  await expect(page.getByRole('heading', { name: 'Анна Авторова', exact: true })).toBeVisible()
+})
+
+test('#comments плавно открывается из ленты и повторным нажатием внутри статьи', async ({ page }) => {
+  await seedDiscussion(page)
+  await page.goto('/')
+  await page.getByRole('main').getByRole('article').first().locator('a[href$="#comments"]').first().click()
+  await expect(page).toHaveURL(/#comments$/)
+  await expect(page.locator('#comments')).toBeInViewport()
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.getByRole('main').locator('a[href$="#comments"]').first().click()
+  await expect(page.locator('#comments')).toBeInViewport()
+})

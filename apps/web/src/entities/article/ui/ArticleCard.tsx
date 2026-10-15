@@ -28,7 +28,7 @@ function ArticleCardRoot({ article, children, className }: ArticleCardRootProps)
 /** Полоса над автором, отделённая чертой (например, «Скрыто N просмотренных постов» у первой карточки ленты). */
 function Lead({ children }: { children?: ReactNode }) {
   if (!children) return null
-  return <div className="border-b border-separator px-5 py-3">{children}</div>
+  return <div className="border-b border-separator px-4 lg:px-5 py-3">{children}</div>
 }
 
 type HeaderProps = {
@@ -41,7 +41,7 @@ type HeaderProps = {
 function Header({ follow, menu }: HeaderProps) {
   const article = useArticleCard()
   return (
-    <Card.Header className="flex flex-row items-center overflow-visible px-5 pt-4">
+    <Card.Header className="flex flex-row items-center overflow-visible px-4 lg:px-5 pt-4">
       <ArticleByline
         author={article.author}
         topic={article.topic}
@@ -57,7 +57,7 @@ function Header({ follow, menu }: HeaderProps) {
 function Title({ children }: { children?: ReactNode }) {
   const article = useArticleCard()
   return (
-    <Card.Content className="px-5 pb-0 pt-3">
+    <Card.Content className="px-4 lg:px-5 pb-0 pt-3">
       <h2
         id={`article-title-${article.id}`}
         className="text-xl font-semibold leading-snug tracking-[-0.005em]"
@@ -76,7 +76,7 @@ function Excerpt() {
   const article = useArticleCard()
   if (!article.excerpt) return null
   return (
-    <Card.Content className="px-5 pb-0 pt-2">
+    <Card.Content className="px-4 lg:px-5 pb-0 pt-2">
       <p className="whitespace-pre-line break-words text-md leading-[1.6] text-foreground">
         {article.excerpt}
       </p>
@@ -89,7 +89,7 @@ function Image() {
   const article = useArticleCard()
   if (!article.first_image_url) return null
   return (
-    <Card.Content className="px-5 pb-0 pt-3">
+    <Card.Content className="px-4 lg:px-5 pb-0 pt-3">
       <img
         src={article.first_image_url}
         alt=""
@@ -106,13 +106,13 @@ function Image() {
 /** Слот «Показать полностью» / «Свернуть» и области раскрытого текста. */
 function Expand({ children }: { children?: ReactNode }) {
   if (!children) return null
-  return <Card.Content className="px-5 pb-0 pt-2">{children}</Card.Content>
+  return <Card.Content className="px-4 lg:px-5 pb-0 pt-2">{children}</Card.Content>
 }
 
 /** Слот ряда реакций. */
 function Reactions({ children }: { children?: ReactNode }) {
   if (!children) return null
-  return <Card.Content className="px-5 pb-0 pt-3">{children}</Card.Content>
+  return <Card.Content className="px-4 lg:px-5 pb-0 pt-3">{children}</Card.Content>
 }
 
 type ActionsProps = {
@@ -133,7 +133,7 @@ function CommentPeek() {
   const comment = article.top_comment
   if (!comment) return null
   return (
-    <Card.Footer className="border-t border-separator px-5 pt-3">
+    <Card.Footer className="border-t border-separator px-4 lg:px-5 pt-3">
       <Link
         to={`${article.href}#comments`}
         aria-label={t('article.top_comment')}

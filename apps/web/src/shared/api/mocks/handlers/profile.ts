@@ -20,9 +20,9 @@ const awards_by_profile = new Map<number, Set<string>>()
 
 function profileOf(slug: string) {
   const viewer = readMockViewer()
-  const found = slug === anna.slug || slug === String(anna.public_number)
+  const found = slug === anna.user_id || slug === anna.slug || slug === String(anna.public_number)
     ? { ...anna, ...(viewer === 'author' ? { user_id: 'a1000000-0000-4000-8000-000000000001' } : {}), is_own: viewer === 'author' }
-    : slug === profile.slug || slug === String(profile.public_number) ? { ...profile, is_own: viewer === 'member' } : null
+    : slug === profile.user_id || slug === profile.slug || slug === String(profile.public_number) ? { ...profile, is_own: viewer === 'member' } : null
   if (!found) return null
   const stored = awards_by_profile.get(found.public_number) ?? []
   const earned = new Set([...found.badges, ...stored])

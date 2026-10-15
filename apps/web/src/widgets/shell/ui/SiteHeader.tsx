@@ -5,7 +5,7 @@ import { useSettings } from '@/entities/settings'
 import { useViewer, useAppearance } from '@/entities/session'
 import { useT } from '@/shared/i18n'
 import { cn, useMediaQuery } from '@/shared/lib'
-import { Button, MenuIcon, PenIcon, SearchIcon } from '@/shared/ui'
+import { Button, PenIcon, SearchIcon } from '@/shared/ui'
 import { useCurrentSection } from '../model/useCurrentSection.ts'
 import { useShellStore } from '../model/useShellStore.ts'
 import { useWriteAction } from '../model/useWriteAction.ts'
@@ -30,7 +30,7 @@ type SiteHeaderProps = {
 /**
  * Шапка на всю ширину вне прокрутки. От 768px: слева название площадки,
  * справа слева направо — поиск, колокольчик, «Написать», учётная запись или «Войти».
- * Ниже 768px: сверху кнопка панели (на статье — «Назад») и название площадки;
+ * Ниже 768px: сверху название площадки (на статье — «Назад»);
  * действия становятся плавающей панелью внизу экрана (главная, поиск, колокольчик, сообщения, учётная запись),
  * «Написать» — круглой кнопкой над ней (кроме статьи и сообщений, где внизу поле ввода).
  * Раскладку переключает CSS (`site-header-*` в globals.css).
@@ -54,8 +54,6 @@ export function SiteHeader({
   const unread_messages = useMessagesUnreadCount(viewer.status === 'member')
   useMessagesUnreadLive(viewer.status === 'member')
   const { section } = useCurrentSection()
-  const is_nav_open = useShellStore((state) => state.is_nav_open)
-  const setNavOpen = useShellStore((state) => state.setNavOpen)
   const openSearch = useShellStore((state) => state.openSearch)
   const is_search_open = useShellStore((state) => state.header_center.kind === 'search')
   const has_back = useShellStore(
@@ -76,21 +74,7 @@ export function SiteHeader({
           : undefined
       }
     >
-      {has_back ? (
-        <HeaderBackLink className="size-10 min-[768px]:hidden" />
-      ) : (
-        <Button
-          variant="ghost"
-          isIconOnly
-          aria-label={t('shell.nav.open')}
-          aria-controls="shell-nav"
-          aria-expanded={is_nav_open}
-          className="size-10 min-w-10 min-[768px]:hidden"
-          onPress={() => setNavOpen(true)}
-        >
-          <MenuIcon className="size-6" />
-        </Button>
-      )}
+      {has_back ? <HeaderBackLink className="size-10 min-[768px]:hidden" /> : null}
       <div className="site-header-brand min-w-0">
         <Link
           to="/"
@@ -138,7 +122,7 @@ export function SiteHeader({
           {account ?? <AccountMenu />}
         </div>
       )}
-      {is_mobile ? (
+      {is_mobile && viewer.status === 'member' ? (
         <Button
           variant="tertiary"
           shape="pill"

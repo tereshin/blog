@@ -37,7 +37,7 @@ export function ArticleCardExpand({
   return (
     <>
       {is_open && article ? (
-        <div className="px-5 pt-2 text-md leading-[1.6] [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
+        <div className="px-4 lg:px-5 pt-2 text-md leading-[1.6] [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
           <BlockRenderer blocks={article.blocks} />
         </div>
       ) : children}

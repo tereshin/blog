@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { ReactNode, UIEvent } from 'react'
+import type { MouseEvent, ReactNode, UIEvent } from 'react'
 import { useLocation } from 'react-router'
 import { useMessagesUnreadCount } from '@/entities/conversation'
 import { useSettings } from '@/entities/settings'
@@ -8,6 +8,7 @@ import { useNavSections } from '@/entities/nav-section'
 import { AppearanceToggle } from '@/features/toggle-appearance'
 import { useT } from '@/shared/i18n'
 import type { MessageKey } from '@/shared/i18n'
+import { cancelFeedReturn } from '@/shared/lib'
 import { BaseIcon, ErrorState } from '@/shared/ui'
 import { TOPICS_SECTION_ID, themeHostSectionId } from '../lib/nav-sections.ts'
 import { useCurrentSection } from '../model/useCurrentSection.ts'
@@ -103,6 +104,15 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   const custom = sections.data?.items ?? []
   const host_id = sections.isPending ? null : themeHostSectionId(custom.map((section) => section.id))
 
+  const handleNavigation = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    const link = event.target instanceof Element ? event.target.closest('a') : null
+    const href = link?.getAttribute('href')
+    if (!href?.startsWith('/') || link?.target === '_blank') return
+    cancelFeedReturn()
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+
   const handleScroll = (event: UIEvent<HTMLElement>) => {
     latest_top_ref.current = event.currentTarget.scrollTop
     if (frame_ref.current !== null) return
@@ -120,7 +130,7 @@ export function LeftNav({ has_unread_messages = false }: LeftNavProps) {
   )
 
   return (
-    <div onScroll={handleScroll} className="flex flex-col gap-1 p-2">
+    <div onClickCapture={handleNavigation} onScroll={handleScroll} className="flex flex-col gap-1 p-2">
       {MODES.filter((mode) => settings?.shell[mode.kind === 'discovery' ? 'rating' : mode.kind] !== false).map((mode) => {
         const is_fresh =
           (mode.kind === 'fresh' && freshness.fresh) || (mode.kind === 'mine' && freshness.mine)

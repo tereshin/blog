@@ -38,7 +38,7 @@ test('обзор показывает по пять записей, номера
     'Личный опыт',
     'Сервисы',
   ])
-  await page.getByRole('main').getByRole('link', { name: 'Обзор', exact: true }).click()
+  await page.getByRole('banner').getByRole('link', { name: 'Назад', exact: true }).click()
   await blogs(page).getByRole('link', { name: 'Показать все' }).click()
   await expect(page).toHaveURL(/\/discovery\/blogs$/)
   await expect(page.getByRole('main').locator('.tabular-nums')).toHaveText([

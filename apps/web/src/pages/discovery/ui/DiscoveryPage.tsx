@@ -54,7 +54,7 @@ export default function DiscoveryPage() {
           />
         </form>
       </Card.Header>
-      <Card.Content className="px-5 py-5">
+      <Card.Content className="px-4 lg:px-5 py-3 lg:py-5">
         {is_overview ? (
           <DiscoveryOverview />
         ) : q.trim().length < 2 ? (

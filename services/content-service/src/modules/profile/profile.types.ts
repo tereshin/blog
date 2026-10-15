@@ -19,6 +19,7 @@ export type ProfileRecord = {
 
 export type ProfileRepositoryPort = {
   findBySlug: (slug: string, viewer_id: string | undefined) => Promise<ProfileRecord | null>
+  findByUserId: (user_id: string, viewer_id: string | undefined) => Promise<ProfileRecord | null>
   findByPublicNumber: (public_number: number, viewer_id: string | undefined) => Promise<ProfileRecord | null>
   update: (user_id: string, input: UpdateProfile, correlation_id: string) => Promise<ProfileRecord | null>
 }

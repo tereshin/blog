@@ -6,7 +6,7 @@ export function WelcomeCard() {
   const content = data?.welcome_content
   if (!content || (!content.title && content.document.blocks.length === 0)) return null
   return (
-    <Card className="mb-6">
+    <Card className="mb-4 lg:mb-6">
       {content.title ? (
         <Card.Header>
           <Card.Title>{content.title}</Card.Title>

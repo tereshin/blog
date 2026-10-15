@@ -27,7 +27,7 @@ const meta = preview.meta({
     ),
   ],
 })
-/** Широкая шапка: поиск стоит сразу перед уведомлениями, меню спрятано от 768px. */
+/** Широкая шапка: поиск стоит сразу перед уведомлениями, боковой панели нет. */
 export const Wide = meta.story({
   args: { notifications: <Notifications /> },
   play: async ({ canvasElement }) => {
@@ -35,9 +35,7 @@ export const Wide = meta.story({
     const search = await canvas.findByRole('button', { name: 'Поиск' })
     const notes = await canvas.findByRole('button', { name: 'Уведомления' })
     expect(search.nextElementSibling).toBe(notes)
-    const menu = canvasElement.querySelector('[aria-label="Открыть навигацию"]')
-    expect(menu?.className ?? '').toContain('min-[768px]:hidden')
-    expect(menu?.className ?? '').not.toContain('1200')
+    expect(canvasElement.querySelector('[aria-label="Открыть навигацию"]')).toBeNull()
   },
 })
 
