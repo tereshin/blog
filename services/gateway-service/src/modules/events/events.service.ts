@@ -104,6 +104,15 @@ export class EventsService {
     let delivered = 0
     for (const connection of targets) {
       if (connection.write(frame)) delivered += 1
+      if (
+        type === 'settings' &&
+        event.maintenance_enabled === true &&
+        connection.viewer.role !== 'admin' &&
+        connection.viewer.role !== 'superadmin'
+      ) {
+        connection.close()
+        this.unregister(connection.id)
+      }
     }
     if (type === 'article' && event.article_id && (event.visibility !== undefined || event.status !== undefined)) {
       this.track(this.revokeLostAccess(event.article_id, targets))

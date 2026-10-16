@@ -11,6 +11,11 @@ export const welcomeContentSchema = z.object({
 })
 export type WelcomeContent = z.infer<typeof welcomeContentSchema>
 
+export const maintenanceStatusSchema = z.strictObject({
+  maintenance_enabled: z.boolean(),
+  locale: z.enum(['ru', 'en', 'sr']),
+})
+
 export const localeSchema = z.enum(['ru', 'en', 'sr'])
 
 export const MAX_ACTIVE_REACTIONS = 20
@@ -107,6 +112,7 @@ export type ShellVisibility = z.infer<typeof shellVisibilitySchema>
 
 /** Публичные настройки площадки: `GET /v1/settings`. Закрытые поля (регистрация) сюда не попадают. */
 export const publicSettingsSchema = z.strictObject({
+  maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string(),
   logo_url: z.string().nullable(),
@@ -122,8 +128,9 @@ export const publicSettingsSchema = z.strictObject({
 })
 export type PublicSettings = z.infer<typeof publicSettingsSchema>
 
-/** То, что сохраняет суперадминистратор. Публичный ответ эти флаги не отдаёт. */
+/** То, что сохраняет суперадминистратор. Флаги регистрации и публикации остаются закрытыми. */
 export const updateSettingsSchema = z.strictObject({
+  maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string().max(100),
   logo_url: z.string().nullable(),

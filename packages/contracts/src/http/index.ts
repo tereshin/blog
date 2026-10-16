@@ -63,6 +63,7 @@ export {
   MAX_REACTION_APPEARANCES,
   adminSettingsSchema,
   localeSchema,
+  maintenanceStatusSchema,
   publicSettingsSchema,
   reactionAppearanceSchema,
   reactionAppearancesSchema,

@@ -87,6 +87,7 @@ describe('content: настройки площадки', () => {
     const response = await app.inject({ method: 'GET', url: '/v1/settings' })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
+      maintenance_enabled: false,
       welcome_content: null,
       name: 'Блог',
       logo_url: null,
@@ -136,6 +137,7 @@ describe('content: настройки площадки', () => {
     expect(response.json()).toEqual({
       ...body,
       profile_badges: DEFAULT_PROFILE_BADGES,
+      maintenance_enabled: false,
       welcome_content: null,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
@@ -145,6 +147,7 @@ describe('content: настройки площадки', () => {
       public_origin: 'http://localhost',
     })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      maintenance_enabled: false,
       welcome_content: null,
       name: 'Площадка',
       logo_url: `${MEDIA}/logo.png`,
@@ -496,5 +499,50 @@ describe('content: настройки площадки', () => {
       payload: { ...body, welcome_content: null },
     })
     expect(removed.json().welcome_content).toBeNull()
+  })
+  it('maintenance is persisted, preserved by legacy updates, and can only be changed by superadmin', async () => {
+    const headers = { 'x-test-viewer': 'superadmin' }
+    const saved = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers,
+      payload: { ...body, maintenance_enabled: true, welcome_content: { title: 'Closed home page', document: { blocks: [{ type: 'paragraph', data: { text: 'Suspended content' } }] } } },
+    })
+    expect(saved.statusCode).toBe(200)
+    expect(saved.json().maintenance_enabled).toBe(true)
+    expect(saved.json().welcome_content.title).toBe('Closed home page')
+    expect((await app.inject({ url: '/v1/settings' })).json().welcome_content).toBeNull()
+    expect((await app.inject({ url: '/v1/settings', headers })).json().welcome_content.title).toBe('Closed home page')
+    expect((await app.inject({ url: '/v1/settings' })).json().maintenance_enabled).toBe(true)
+    expect((await app.inject({ url: '/internal/settings/maintenance' })).json()).toEqual({
+      maintenance_enabled: true,
+      locale: 'en',
+    })
+    expect((await database.db.select().from(settings))[0]?.maintenance_enabled).toBe(true)
+    const events = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'content.settings.updated'))
+    expect(
+      events.some((event) => SettingsUpdatedV1.parse(event.payload).maintenance_enabled === true),
+    ).toBe(true)
+    const legacy = await app.inject({ method: 'PUT', url: '/v1/settings', headers, payload: body })
+    expect(legacy.json().maintenance_enabled).toBe(true)
+    for (const role of ['guest', 'admin']) {
+      const denied = await app.inject({
+        method: 'PUT',
+        url: '/v1/settings',
+        headers: { 'x-test-viewer': role },
+        payload: { ...body, maintenance_enabled: false },
+      })
+      expect(denied.statusCode).toBe(403)
+    }
+    const restored = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers,
+      payload: { ...body, maintenance_enabled: false },
+    })
+    expect(restored.json().maintenance_enabled).toBe(false)
   })
 })

@@ -15,6 +15,7 @@ export type SubscriptionsInput = z.infer<typeof SubscriptionsInputSchema>
 
 /** Минимум полей события, нужный gateway. Остальное он не читает. */
 export const EventFieldsSchema = z.looseObject({
+  maintenance_enabled: z.boolean().optional(),
   name: z.string(),
   occurred_at: z.string(),
   article_id: z.uuid().optional(),

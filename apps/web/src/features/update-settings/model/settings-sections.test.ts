@@ -12,6 +12,7 @@ const initial = adminSettingsSchema.parse({
   name: 'Blog',
   logo_url: null,
   locale: 'ru',
+  maintenance_enabled: false,
   registration_open: true,
   new_members_can_publish: true,
   profile_status_icons: [],
@@ -67,5 +68,18 @@ describe('saving settings categories', () => {
     const draft = { ...initial, profile_badges: initial.profile_badges.map((badge) => ({ ...badge, label: 'Changed' })) }
     expect(mergeSettingsSection(server, draft, 'badges')).toEqual({ ...server, profile_badges: draft.profile_badges })
   })
-
+  it('only the access category changes maintenance and legacy drafts preserve it', () => {
+    const server = { ...initial, maintenance_enabled: true }
+    expect(
+      mergeSettingsSection(server, { ...initial, maintenance_enabled: false }, 'general')
+        .maintenance_enabled,
+    ).toBe(true)
+    expect(
+      mergeSettingsSection(server, { ...initial, maintenance_enabled: false }, 'access')
+        .maintenance_enabled,
+    ).toBe(false)
+    const legacy = { ...initial }
+    delete legacy.maintenance_enabled
+    expect(mergeSettingsSection(server, legacy, 'access').maintenance_enabled).toBe(true)
+  })
 })

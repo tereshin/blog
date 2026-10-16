@@ -1,3 +1,4 @@
+import { MaintenanceGate } from '@/widgets/maintenance'
 import { getAdminRoute, getAdminParentPath } from '@/entities/admin'
 import { useSettings } from '@/entities/settings'
 import { useT } from '@/shared/i18n'
@@ -76,8 +77,10 @@ export function ShellLayout() {
     }
   }, [pathname, t, setHeaderCenter, setArticleTopicId])
 
+  if (pathname === '/auth/action' && settings?.maintenance_enabled) return outlet
+
   return (
-    <>
+    <MaintenanceGate>
       <PageSeo path={pathname + search} />
       <Shell
         content_width={content_width}
@@ -113,6 +116,6 @@ export function ShellLayout() {
           </CenterErrorBoundary>
         }
       />
-    </>
+    </MaintenanceGate>
   )
 }

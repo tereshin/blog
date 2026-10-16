@@ -131,6 +131,7 @@ export async function request<TResponse>(
   if (response.status === 401) sessionEvents.emit('expired')
   if (!response.ok) {
     const error = await toApiError(response)
+    if (error.code === 'maintenance') sessionEvents.emit('maintenance')
     if (error.code === 'restricted') sessionEvents.emit('restricted')
     throw error
   }
@@ -166,6 +167,7 @@ export async function postBinary<TResponse>(path: string, body: Blob, schema: z.
   if (response.status === 401) sessionEvents.emit('expired')
   if (!response.ok) {
     const error = await toApiError(response)
+    if (error.code === 'maintenance') sessionEvents.emit('maintenance')
     if (error.code === 'restricted') sessionEvents.emit('restricted')
     throw error
   }

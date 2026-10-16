@@ -34,6 +34,7 @@ import type {
 } from './settings.types.ts'
 
 export const DEFAULT_SETTINGS: AdminSettings = {
+  maintenance_enabled: false,
   name: 'Блог',
   logo_url: null,
   locale: 'ru',
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: AdminSettings = {
 
 /** Настройки пустой площадки: регистрация закрыта, публиковать новым участникам можно. */
 export const BOOTSTRAP_SETTINGS: SettingsRow = {
+  maintenance_enabled: false,
   name: 'Блог',
   logo_url: null,
   locale: 'ru',
@@ -64,6 +66,7 @@ function appearancesOf(value: ReactionAppearances): ReactionAppearances {
 
 function toPublic(row: SettingsRow): PublicSettings {
   return {
+    maintenance_enabled: row.maintenance_enabled ?? false,
     welcome_content: row.welcome_content ?? null,
     name: row.name,
     logo_url: row.logo_url,
@@ -108,9 +111,18 @@ export class SettingsService<TTx> {
     private readonly options: SettingsOptions,
   ) {}
 
-  async getPublic(): Promise<PublicSettings> {
+  async getMaintenance() {
+    const row = await this.repository.findMaintenance()
+    return { maintenance_enabled: row?.maintenance_enabled ?? false, locale: row?.locale ?? 'ru' }
+  }
+
+  async getPublic(viewer?: ServiceContext): Promise<PublicSettings> {
     const row = await this.repository.find()
-    return row ? toPublic(row) : toPublic(DEFAULT_SETTINGS)
+    const settings = row ? toPublic(row) : toPublic(DEFAULT_SETTINGS)
+    // Bootstrap settings remain available for sign-in, but home-page content is suspended too.
+    if (settings.maintenance_enabled && viewer?.role !== 'admin' && viewer?.role !== 'superadmin')
+      return { ...settings, welcome_content: null }
+    return settings
   }
 
   async getAdmin(viewer: ServiceContext): Promise<AdminSettings> {
@@ -127,6 +139,7 @@ export class SettingsService<TTx> {
     const saved = await this.repository.transaction(async (tx) => {
       const catalog = await this.badges.validateReplacement(tx, input.profile_badges)
       const row: SettingsRow = {
+        maintenance_enabled: input.maintenance_enabled ?? current?.maintenance_enabled ?? false,
         welcome_content,
         name: input.name,
         logo_url: input.logo_url,

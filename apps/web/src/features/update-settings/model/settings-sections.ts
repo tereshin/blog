@@ -25,6 +25,7 @@ export function mergeSettingsSection(
     case 'access':
       return {
         ...current,
+        maintenance_enabled: draft.maintenance_enabled ?? current.maintenance_enabled ?? false,
         registration_open: draft.registration_open,
         new_members_can_publish: draft.new_members_can_publish,
       }

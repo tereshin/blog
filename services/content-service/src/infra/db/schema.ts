@@ -157,6 +157,7 @@ export const settings = pgTable('settings', {
     .notNull()
     .default({ png: null, svg: null, ico: null, apple: null, manifest: null }),
   locale: locale('locale').notNull().default('ru'),
+  maintenance_enabled: boolean('maintenance_enabled').notNull().default(false),
   registration_open: boolean('registration_open').notNull().default(true),
   new_members_can_publish: boolean('new_members_can_publish').notNull().default(true),
   reaction_appearances: jsonb('reaction_appearances')

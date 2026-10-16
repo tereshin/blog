@@ -1,4 +1,9 @@
 {
+  "admin.settings.maintenance_enabled": "Režim održavanja",
+  "admin.settings.maintenance_hint": "Sajt će biti nedostupan svima osim administratorima. Prijava administratora ostaje dostupna.",
+  "maintenance.title": "Održavanje",
+  "maintenance.description": "Sajt je privremeno nedostupan. Pokušajte ponovo kasnije.",
+  "maintenance.sign_in": "Prijava administratora",
   "comment.discussion": "Diskusija",
   "comment.sort": "Sortiranje komentara",
   "comment.sort_best": "Najbolji",

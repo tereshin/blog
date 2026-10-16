@@ -17,6 +17,7 @@ export type SettingsRow = {
   logo_dark_url?: string | null
   favicon?: FaviconSettings
   locale: 'ru' | 'en' | 'sr'
+  maintenance_enabled?: boolean
   registration_open: boolean
   new_members_can_publish: boolean
   reaction_appearances: ReactionAppearances
@@ -31,6 +32,7 @@ export type SettingsRow = {
 export type SettingsRepositoryPort<TTx> = {
   transaction: <T>(work: (tx: TTx) => Promise<T>) => Promise<T>
   find: () => Promise<SettingsRow | null>
+  findMaintenance: () => Promise<{ maintenance_enabled: boolean; locale: SettingsRow['locale'] } | null>
   save: (tx: TTx, input: SettingsRow) => Promise<SettingsRow>
   /** Вставляет строку `id = 1`, если её нет. `null` — строка уже была, ничего не записано. */
   insertIfAbsent: (tx: TTx, input: SettingsRow) => Promise<SettingsRow | null>

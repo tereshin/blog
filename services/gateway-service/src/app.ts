@@ -15,6 +15,8 @@ import type { ServiceClient } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
+import { MaintenanceClient } from './infra/http/maintenance-client.ts'
+import { MaintenanceService, maintenanceModule } from './modules/maintenance/index.ts'
 import { ContentAccessClient } from './infra/http/content-access-client.ts'
 import { IdentitySessionClient } from './infra/http/identity-session-client.ts'
 import { EventsController, EventsService, eventsRoutes } from './modules/events/index.ts'
@@ -169,6 +171,13 @@ export async function buildApp(deps: AppDeps, services: AppServices): Promise<Fa
     sessions: services.sessions,
     signer: services.signer,
     logger,
+  })
+
+  await app.register(maintenanceModule, {
+    service: new MaintenanceService(
+      new MaintenanceClient(services.content, services.web),
+      env.PUBLIC_ORIGIN,
+    ),
   })
 
   // Каждый модуль маршрутов — отдельный контекст: у proxy тело идёт потоком, у events — разбирается как JSON.

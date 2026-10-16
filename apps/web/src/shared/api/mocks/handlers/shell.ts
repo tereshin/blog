@@ -26,6 +26,7 @@ const SITE_KEY = 'mock_site'
 let profile_badges = structuredClone(PROFILE_BADGES_FIXTURE)
 
 type SiteSettings = {
+  maintenance_enabled?: boolean
   welcome_content?: import('@blog/contracts').WelcomeContent | null
   name: string
   logo_url: string | null
@@ -60,6 +61,7 @@ function initialState(): SiteState {
     settings: {
       ...settings_fixture,
       locale: settings_fixture.locale as SiteSettings['locale'],
+      maintenance_enabled: false,
       registration_open: true,
       new_members_can_publish: true,
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
@@ -96,6 +98,7 @@ export function writeSite(state: SiteState): void {
 
 function publicSettings(settings: SiteSettings) {
   return {
+    maintenance_enabled: settings.maintenance_enabled ?? false,
     welcome_content: settings.welcome_content ?? null,
     name: settings.name,
     logo_url: settings.logo_url,

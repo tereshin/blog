@@ -3,10 +3,11 @@ import { ADMIN_ROUTES } from '@/entities/admin'
 import type { FaviconVariant } from '@blog/contracts'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { BaseIcon, Button, PageCard, ToggleField } from '@/shared/ui'
+import { BaseIcon, Button, PageCard } from '@/shared/ui'
 import type { AdminSettings } from '../api/update-settings.ts'
 import type { SettingsSection } from '../model/settings-sections.ts'
 import { useSettingsForm } from '../model/useSettingsForm.ts'
+import { SettingsAccessFields } from './SettingsAccessFields.tsx'
 import { SettingsGeneralFields } from './SettingsGeneralFields.tsx'
 import { SettingsSeoFields } from './SettingsSeoFields.tsx'
 import { SettingsPublisherFields } from './SettingsPublisherFields.tsx'
@@ -87,20 +88,10 @@ export function SettingsForm({
               />
             ) : null}
             {section === 'access' ? (
-              <>
-                <ToggleField
-                  label={t('admin.settings.registration_open')}
-                  is_selected={draft.registration_open}
-                  onChange={(registration_open) => setDraft({ ...draft, registration_open })}
-                />
-                <ToggleField
-                  label={t('admin.settings.new_members_can_publish')}
-                  is_selected={draft.new_members_can_publish}
-                  onChange={(new_members_can_publish) =>
-                    setDraft({ ...draft, new_members_can_publish })
-                  }
-                />
-              </>
+              <SettingsAccessFields
+                value={draft}
+                onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+              />
             ) : null}
             {section === 'layout' ? (
               <SettingsShellFields

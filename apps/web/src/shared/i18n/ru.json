@@ -1,4 +1,9 @@
 {
+  "admin.settings.maintenance_enabled": "Режим Maintenance",
+  "admin.settings.maintenance_hint": "Сайт будет недоступен всем, кроме администраторов. Вход для администраторов останется доступен.",
+  "maintenance.title": "Технические работы",
+  "maintenance.description": "Сайт временно недоступен. Пожалуйста, зайдите позже.",
+  "maintenance.sign_in": "Вход для администратора",
   "comment.discussion": "Обсуждение",
   "comment.sort": "Сортировка комментариев",
   "comment.sort_best": "Лучшие",

@@ -8,5 +8,7 @@ export function useSettings() {
     queryKey: settingsKeys.public(),
     queryFn: ({ signal }) => getSettings(signal),
     staleTime: 5 * 60_000,
+    // The event stream is unavailable during maintenance; polling restores access.
+    refetchInterval: (query) => (query.state.data?.maintenance_enabled ? 15_000 : 60_000),
   })
 }

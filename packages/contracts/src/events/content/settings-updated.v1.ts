@@ -8,6 +8,7 @@ export const SettingsUpdatedV1 = defineEvent('content.settings.updated', 1, {
   site_name: z.string().max(100),
   logo_url: z.string().nullable(),
   locale: z.enum(['ru', 'en', 'sr']),
+  maintenance_enabled: z.boolean().optional(),
   registration_open: z.boolean(),
   new_members_can_publish: z.boolean(),
   /** Необязательно: старый потребитель флагов регистрации не отвергает конверт v1. */

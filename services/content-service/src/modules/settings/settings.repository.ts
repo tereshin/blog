@@ -21,6 +21,7 @@ const COLUMNS = {
   logo_dark_url: settings.logo_dark_url,
   favicon: settings.favicon,
   locale: settings.locale,
+  maintenance_enabled: settings.maintenance_enabled,
   registration_open: settings.registration_open,
   new_members_can_publish: settings.new_members_can_publish,
   reaction_appearances: settings.reaction_appearances,
@@ -49,6 +50,15 @@ export class SettingsRepository implements SettingsRepositoryPort<Database> {
 
   transaction<T>(work: (tx: Database) => Promise<T>): Promise<T> {
     return this.db.transaction((tx) => work(tx))
+  }
+
+  async findMaintenance() {
+    const [row] = await this.db
+      .select({ maintenance_enabled: settings.maintenance_enabled, locale: settings.locale })
+      .from(settings)
+      .where(eq(settings.id, 1))
+      .limit(1)
+    return row ?? null
   }
 
   async find(): Promise<SettingsRow | null> {

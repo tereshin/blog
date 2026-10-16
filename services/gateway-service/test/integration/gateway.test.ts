@@ -50,14 +50,30 @@ describe('gateway: сессия, прокси, поток событий', () =>
   let events: EventsService
   let base_url: string
   let public_key: KeyObject
+  let maintenance_enabled = false
 
   beforeAll(async () => {
     const pair = generateKeyPairSync('ed25519')
     public_key = pair.publicKey
 
     const identity = await listen((req, res) => {
-      if (req.url === `/internal/sessions/${SESSION_ID}`) {
-        json(res, 200, { user_id: USER_ID, role: 'member', is_restricted: false, can_publish: true })
+      if (
+        req.url === '/internal/sessions/admin_session_0123456789' ||
+        req.url === '/internal/sessions/superadmin_session_0123456789'
+      ) {
+        json(res, 200, {
+          user_id: USER_ID,
+          role: req.url.includes('superadmin') ? 'superadmin' : 'admin',
+          is_restricted: false,
+          can_publish: true,
+        })
+      } else if (req.url === `/internal/sessions/${SESSION_ID}`) {
+        json(res, 200, {
+          user_id: USER_ID,
+          role: 'member',
+          is_restricted: false,
+          can_publish: true,
+        })
       } else if (req.url?.startsWith('/internal/sessions/')) {
         json(res, 404, { code: 'not_found' })
       } else if (req.url === '/v1/auth/callback') {
@@ -67,6 +83,14 @@ describe('gateway: сессия, прокси, поток событий', () =>
       }
     }, identity_seen)
     const content = await listen((req, res) => {
+      if (req.url === '/internal/settings/maintenance') {
+        json(res, 200, { maintenance_enabled, locale: 'ru' })
+        return
+      }
+      if (req.url === '/v1/settings') {
+        json(res, 200, { maintenance_enabled })
+        return
+      }
       if (req.url?.startsWith('/internal/seo/page?')) {
         json(res, 200, {
           status: new URL(req.url, 'http://content').searchParams.get('path')?.startsWith('/internal/') ? 404 : 200, title: 'Блог', description: 'Публичная страница',
@@ -126,6 +150,7 @@ describe('gateway: сессия, прокси, поток событий', () =>
 
   afterAll(async () => {
     for (const connection of events.registry.all()) connection.close()
+    app.server.closeAllConnections()
     await app.close()
     for (const server of servers) server.close()
   })
@@ -233,7 +258,7 @@ describe('gateway: сессия, прокси, поток событий', () =>
     const response = await fetch(`${base_url}/v1/comments?article_id=${ARTICLE_ID}`)
     expect(response.status).toBe(503)
     expect(response.headers.get('content-type')).toMatch(/application\/problem\+json/)
-    expect((await response.json() as { code: string }).code).toBe('service_unavailable')
+    expect(((await response.json()) as { code: string }).code).toBe('service_unavailable')
   })
 
   it('health не требует контекста и не создаёт cookie', async () => {
@@ -292,5 +317,97 @@ describe('gateway: сессия, прокси, поток событий', () =>
       occurred_at: '2026-10-08T12:00:00.000Z',
     })
     await reader.cancel()
+  })
+  it('maintenance blocks reads, writes, streams and HTML while preserving administrator access', async () => {
+    maintenance_enabled = true
+    try {
+      for (const cookie of [
+        '',
+        `blog_session=${SESSION_ID}`,
+        'blog_session=revoked_session_0123456789',
+      ]) {
+        for (const path of [
+          '/v1/feed',
+          '/v1/articles',
+          '/v1/comments',
+          '/v1/conversations',
+          '/v1/notifications',
+          '/v1/media',
+          '/v1/events',
+        ]) {
+          content_seen.length = 0
+          const response = await app.inject({
+            url: path,
+            headers: { cookie, 'x-service-context': 'forged-admin' },
+          })
+          expect(response.statusCode, path).toBe(503)
+          expect(response.json()).toMatchObject({ code: 'maintenance', status: 503 })
+          expect(response.headers['cache-control']).toBe('no-store')
+          expect(response.headers['retry-after']).toBe('60')
+          expect(
+            content_seen.every((request) => request.url === '/internal/settings/maintenance'),
+          ).toBe(true)
+        }
+      }
+      const write = await app.inject({
+        method: 'POST',
+        url: '/v1/articles',
+        headers: {
+          cookie: 'blog_csrf=token',
+          'x-csrf-token': 'token',
+          'content-type': 'application/json',
+        },
+        payload: { title: 'Blocked' },
+      })
+      expect(write.statusCode).toBe(503)
+      for (const path of ['/', '/p/public-post', '/admin', '/sitemap.xml']) {
+        content_seen.length = 0
+        const response = await app.inject({ url: path })
+        expect(response.statusCode).toBe(503)
+        expect(response.body).toContain('Технические работы')
+        expect(response.body).not.toContain('Публичный текст')
+        expect(response.headers['x-robots-tag']).toContain('noindex')
+        expect(content_seen.some((request) => request.url.startsWith('/internal/seo/'))).toBe(false)
+      }
+      expect((await app.inject({ url: '/v1/settings' })).json()).toMatchObject({
+        maintenance_enabled: true,
+      })
+      for (const path of ['/health/ready', '/v1/auth/config', '/v1/auth/session']) {
+        expect((await app.inject({ url: path })).statusCode).toBe(200)
+      }
+      const sign_in = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/sessions',
+        headers: {
+          cookie: 'blog_csrf=token',
+          'x-csrf-token': 'token',
+          'content-type': 'application/json',
+        },
+        payload: {},
+      })
+      expect(sign_in.statusCode).toBe(200)
+      for (const role of ['admin', 'superadmin']) {
+        const cookie = `blog_session=${role}_session_0123456789`
+        expect((await app.inject({ url: '/v1/feed', headers: { cookie } })).statusCode).toBe(200)
+        expect((await app.inject({ url: '/', headers: { cookie } })).statusCode).toBe(200)
+        expect(
+          (
+            await app.inject({
+              method: 'PUT',
+              url: '/v1/settings',
+              headers: {
+                cookie: `${cookie}; blog_csrf=token`,
+                'x-csrf-token': 'token',
+                'content-type': 'application/json',
+              },
+              payload: {},
+            })
+          ).statusCode,
+        ).toBe(200)
+      }
+    } finally {
+      maintenance_enabled = false
+    }
+    expect((await app.inject({ url: '/v1/feed' })).statusCode).toBe(200)
   })
 })

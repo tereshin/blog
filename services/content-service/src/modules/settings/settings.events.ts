@@ -7,6 +7,7 @@ type SettingsEventInput = {
   name: string
   logo_url: string | null
   locale: 'ru' | 'en' | 'sr'
+  maintenance_enabled?: boolean
   registration_open: boolean
   new_members_can_publish: boolean
   reaction_appearances?: ReactionAppearances
@@ -24,6 +25,7 @@ export function settingsUpdatedEvent(input: SettingsEventInput): SettingsUpdated
     site_name: input.name,
     logo_url: input.logo_url,
     locale: input.locale,
+    maintenance_enabled: input.maintenance_enabled ?? false,
     registration_open: input.registration_open,
     new_members_can_publish: input.new_members_can_publish,
     ...(input.reaction_appearances ? { reaction_appearances: input.reaction_appearances } : {}),

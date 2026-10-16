@@ -115,4 +115,21 @@ describe('http-client', () => {
     expect(shouldRetryQuery(2, server)).toBe(false)
     expect(shouldRetryQuery(0, client)).toBe(false)
   })
+  it('maintenance responses notify the application and are not retried, including uploads', async () => {
+    const handleMaintenance = vi.fn()
+    const off = sessionEvents.on('maintenance', handleMaintenance)
+    try {
+      for (const send of [
+        () => http.get('/v1/feed', okSchema),
+        () => http.postBinary('/v1/media', new Blob(['image']), okSchema),
+      ]) {
+        mockFetch(Response.json({ code: 'maintenance', title: 'Maintenance' }, { status: 503 }))
+        const error = await send().catch((caught: unknown) => caught)
+        expect(error).toMatchObject({ code: 'maintenance', status: 503 })
+        expect(shouldRetryQuery(0, error)).toBe(false)
+      }
+      expect(handleMaintenance).toHaveBeenCalledTimes(2)
+    } finally { off() }
+  })
+
 })

@@ -51,4 +51,40 @@ describe('кадр настроек', () => {
     expect(guest.frames).toEqual([{ type: 'settings', occurred_at: OCCURRED_AT }])
     expect(reader.frames).toEqual([{ type: 'settings', occurred_at: OCCURRED_AT }])
   })
+  it('maintenance sends the settings signal before closing non-admin connections', () => {
+    const events = new EventsService(
+      { check: async () => null },
+      createLogger({ service: 'gateway-test', level: 'silent' }),
+    )
+    for (const role of ['guest', 'member', 'admin', 'superadmin'] as const) {
+      const stream = open({
+        role,
+        is_restricted: false,
+        can_publish: false,
+        viewer_key: `${role}:1`,
+      })
+      stream.connection.close = () => {
+        expect(stream.frames).toEqual([{ type: 'settings', occurred_at: OCCURRED_AT }])
+      }
+      events.register(stream.connection)
+    }
+    expect(
+      events.dispatch({
+        name: 'content.settings.updated',
+        occurred_at: OCCURRED_AT,
+        maintenance_enabled: true,
+      }),
+    ).toBe(4)
+    expect(events.registry.all().map((connection) => connection.viewer.role)).toEqual([
+      'admin',
+      'superadmin',
+    ])
+    // Duplicate event delivery is safe and cannot restore access.
+    events.dispatch({
+      name: 'content.settings.updated',
+      occurred_at: OCCURRED_AT,
+      maintenance_enabled: true,
+    })
+    expect(events.registry.size).toBe(2)
+  })
 })

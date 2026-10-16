@@ -1,4 +1,9 @@
 {
+  "admin.settings.maintenance_enabled": "Maintenance mode",
+  "admin.settings.maintenance_hint": "The site will be unavailable to everyone except administrators. Administrator sign-in will remain available.",
+  "maintenance.title": "Maintenance",
+  "maintenance.description": "The site is temporarily unavailable. Please check back later.",
+  "maintenance.sign_in": "Administrator sign-in",
   "comment.discussion": "Discussion",
   "comment.sort": "Sort comments",
   "comment.sort_best": "Best",

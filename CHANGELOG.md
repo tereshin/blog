@@ -10,6 +10,11 @@ This version contains the current changes on top of 1.0.0.
 
 ### Added
 
+- Maintenance mode in superadmin access settings: persisted in content-service,
+  blocks pages and API requests with HTTP 503 for guests and members while
+  preserving administrator access and sign-in. Requires the
+  `20261016_settings_maintenance.sql` content-service migration.
+
 - Configurable achievement badges with image uploads, automatic permanent awards,
   retroactive evaluation, and archiving in superadmin settings. Badge rules belong
   to content-service; the shared package contains their data contracts.
