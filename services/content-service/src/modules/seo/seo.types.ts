@@ -48,6 +48,7 @@ export type SeoTopic = {
   slug: string
 }
 export type SeoRepositoryPort = {
+  topicArticles?: (slug: string) => Promise<{ slug: string; title: string; excerpt: string }[]>
   simplePage?: (slug: string) => Promise<import('@blog/contracts').PublicPage | null>
   site: () => Promise<SeoSite>
   article: (slug: string) => Promise<SeoArticle | null>

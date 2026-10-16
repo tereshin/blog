@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { UserRestrictedV1 } from '@blog/contracts'
 import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
@@ -346,6 +348,8 @@ describe('identity: управление участниками', () => {
     ).toBe(204)
     const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
     expect(stored?.deleted_at).toBeInstanceOf(Date)
+    const deletion_events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.restricted'))
+    expect(deletion_events.some((event) => (event.payload as { is_deleted?: boolean }).is_deleted === true)).toBe(true)
     const account_sessions = await database.db
       .select()
       .from(sessions)
@@ -371,4 +375,12 @@ describe('identity: управление участниками', () => {
     })
     expect(restore.statusCode).toBe(404)
   })
+  it('миграция повторно рассылает ранее удалённые аккаунты валидным событием', async () => {
+    const sql = readFileSync(new URL('../../src/infra/db/migrations/20261016_republish_deleted_users.sql', import.meta.url), 'utf8')
+    await database.pool.query(sql)
+    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.restricted'))
+    const replay = events.find((event) => (event.payload as { correlation_id: string }).correlation_id === 'deleted-users-backfill')
+    expect(UserRestrictedV1.parse(replay?.payload)).toMatchObject({ user_id: MEMBER, is_deleted: true, is_restricted: true })
+  })
+
 })

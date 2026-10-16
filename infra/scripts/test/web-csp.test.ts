@@ -14,4 +14,12 @@ describe('web nginx CSP', () => {
       expect(scripts?.trim()).toBe("script-src 'self' https://apis.google.com")
     }
   })
+  it('отдаёт файлы напрямую, а страницы и sitemap направляет в gateway', () => {
+    const config = readFileSync(resolve(import.meta.dirname, '../../docker/web.nginx.conf'), 'utf8')
+    expect(config).toContain('location = /index.html { try_files /index.html =404; }')
+    expect(config).toContain('try_files $uri @application;')
+    expect(config).toContain('location @application')
+    expect(config).toContain('proxy_pass http://gateway:3000;')
+    expect(config).not.toContain('try_files $uri $uri/ /index.html')
+  })
 })

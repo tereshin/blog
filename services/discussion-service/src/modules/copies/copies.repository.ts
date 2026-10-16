@@ -25,10 +25,20 @@ export class CopiesRepository implements CopiesRepositoryPort<Database> {
   /** Меняет только переданные поля, остальные поля копии остаются как были. */
   async upsertUser(tx: Database, patch: UserCopyPatch): Promise<void> {
     const { user_id, ...fields } = patch
-    const defined = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined))
+    const defined = Object.fromEntries(
+      Object.entries(fields).filter(([, value]) => value !== undefined),
+    )
     await tx
       .insert(users_copy)
       .values({ user_id, ...defined })
-      .onConflictDoUpdate({ target: users_copy.user_id, set: Object.keys(defined).length > 0 ? defined : { user_id: sql`${users_copy.user_id}` } })
+      .onConflictDoUpdate({
+        target: users_copy.user_id,
+        set: {
+          ...(Object.keys(defined).length > 0 ? defined : { user_id: sql`${users_copy.user_id}` }),
+          ...(patch.is_deleted !== undefined
+            ? { is_deleted: sql`${users_copy.is_deleted} or ${patch.is_deleted}` }
+            : {}),
+        },
+      })
   }
 }

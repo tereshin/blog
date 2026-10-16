@@ -10,5 +10,6 @@ export const userSnapshotShape = {
   role: z.enum(['member', 'admin', 'superadmin']),
   can_publish: z.boolean(),
   is_restricted: z.boolean(),
+  is_deleted: z.boolean().default(false),
   created_at: z.iso.datetime(),
 }

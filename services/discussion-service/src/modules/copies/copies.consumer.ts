@@ -37,17 +37,17 @@ export class CopiesConsumer {
       }
       case 'identity.user.created': {
         const parsed = UserCreatedV1.parse(event)
-        await this.service.applyUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name, is_restricted: parsed.is_restricted })
+        await this.service.applyUser(tx, { user_id: parsed.user_id, display_name: parsed.display_name, is_restricted: parsed.is_restricted, is_deleted: parsed.is_deleted })
         return
       }
       case 'identity.user.updated': {
         const parsed = UserUpdatedV1.parse(event)
-        await this.service.applyUser(tx, { user_id: parsed.user_id, is_restricted: parsed.is_restricted })
+        await this.service.applyUser(tx, { user_id: parsed.user_id, is_restricted: parsed.is_restricted, is_deleted: parsed.is_deleted })
         return
       }
       case 'identity.user.restricted': {
         const parsed = UserRestrictedV1.parse(event)
-        await this.service.applyUser(tx, { user_id: parsed.user_id, is_restricted: parsed.is_restricted })
+        await this.service.applyUser(tx, { user_id: parsed.user_id, is_restricted: parsed.is_restricted, is_deleted: parsed.is_deleted })
         return
       }
       case 'content.profile.updated': {

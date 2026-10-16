@@ -203,6 +203,7 @@ services:
       NATS_URL: "nats://nats:4222"
       PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:?}"
       WEB_ORIGIN: "${WEB_ORIGIN:?}"
+      WEB_ASSETS_URL: "http://web:8080"
       SESSION_COOKIE_NAME: "blog_session"
       GUEST_COOKIE_NAME: "blog_guest"
       CSRF_COOKIE_NAME: "blog_csrf"

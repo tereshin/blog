@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import type { Database } from '@blog/broker'
 import { profiles, users_copy } from '../../infra/db/schema.ts'
 
@@ -11,12 +12,20 @@ export const copiesRepository = {
       .values(copy)
       .onConflictDoUpdate({
         target: users_copy.user_id,
-        set: { role: copy.role, can_publish: copy.can_publish, is_restricted: copy.is_restricted },
+        set: {
+          role: copy.role,
+          can_publish: copy.can_publish,
+          is_restricted: copy.is_restricted,
+          is_deleted: sql`${users_copy.is_deleted} or ${copy.is_deleted ?? false}`,
+        },
       })
   },
 
   /** Профиль создаётся один раз; если человек уже задал имя сам, событие его не затирает. */
   async createProfileIfMissing(tx: Database, user_id: string, display_name: string): Promise<void> {
-    await tx.insert(profiles).values({ user_id, display_name }).onConflictDoNothing({ target: profiles.user_id })
+    await tx
+      .insert(profiles)
+      .values({ user_id, display_name })
+      .onConflictDoNothing({ target: profiles.user_id })
   },
 }

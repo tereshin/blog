@@ -28,6 +28,15 @@ This version contains the current changes on top of 1.0.0.
 
 ### Changed
 
+- Deleted accounts are excluded from Discovery, search, profile directories,
+  follow lists, mention suggestions, profile URLs, and profile sitemaps. Deletion
+  propagates as a persistent tombstone; published materials remain available.
+- Public HTML includes metadata, canonical URLs, JSON-LD, and readable content
+  for browsers and crawlers. Topic pages include public article previews and links.
+  nginx routes application pages and crawl documents through the gateway while
+  continuing to serve static assets directly.
+- Selected values in large select fields are vertically centered.
+
 - Firebase Google sign-in allows the Google API loader in the page CSP.
 - Member administration uses a wide table with cursor pagination, access-level
   filters, case-insensitive name/email search, profile-name and access editing,
@@ -97,6 +106,13 @@ This version contains the current changes on top of 1.0.0.
   through pages and custom navigation.
 
 ### Deployment
+
+- Apply content-service and discussion-service `20261016_deleted_user_copies.sql`,
+  deploy their updated consumers, then apply identity-service
+  `20261016_republish_deleted_users.sql` to propagate previously deleted accounts.
+- Deploy web and gateway together for server-rendered HTML. Gateway reads the web
+  template from `WEB_ASSETS_URL` (`http://web:8080` in Compose); external routing
+  must send application HTML to web or gateway, and `/assets/*` to web.
 
 - Apply identity-service migration `20261016_deleted_users.sql` before deploying
   account deletion and the updated authentication and member queries.

@@ -6,7 +6,10 @@ import { copiesRepository } from './copies.repository.ts'
 import type { UserCopy } from './copies.repository.ts'
 
 type CopiesRepository = typeof copiesRepository
-type UserSnapshot = Pick<UserCreatedV1, 'user_id' | 'public_number' | 'role' | 'can_publish' | 'is_restricted' | 'created_at'>
+type UserSnapshot = Pick<
+  UserCreatedV1,
+  'user_id' | 'public_number' | 'role' | 'can_publish' | 'is_restricted' | 'created_at'
+> & { is_deleted?: boolean }
 
 function toUserCopy(event: UserSnapshot): UserCopy {
   return {
@@ -15,6 +18,7 @@ function toUserCopy(event: UserSnapshot): UserCopy {
     role: event.role,
     can_publish: event.can_publish,
     is_restricted: event.is_restricted,
+    is_deleted: event.is_deleted ?? false,
     created_at: new Date(event.created_at),
   }
 }
@@ -46,5 +50,10 @@ export type CopiesConsumerDeps = { db: Database; broker: BrokerClient; logger: L
 
 /** Запускает потребителя копий участника (durable, своя запись в `processed_events`). */
 export async function startCopiesConsumers(deps: CopiesConsumerDeps): Promise<RunningConsumer> {
-  return createIdempotentConsumer({ ...deps, durable: 'content-copies-users', subject: 'identity.user.>', handler: new CopiesHandler().handle })
+  return createIdempotentConsumer({
+    ...deps,
+    durable: 'content-copies-users',
+    subject: 'identity.user.>',
+    handler: new CopiesHandler().handle,
+  })
 }

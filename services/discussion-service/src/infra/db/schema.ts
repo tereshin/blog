@@ -40,6 +40,7 @@ export const users_copy = pgTable('users_copy', {
   slug: text('slug'),
   avatar_url: text('avatar_url'),
   is_restricted: boolean('is_restricted').notNull().default(false),
+  is_deleted: boolean('is_deleted').notNull().default(false),
 })
 
 export const comments = pgTable(

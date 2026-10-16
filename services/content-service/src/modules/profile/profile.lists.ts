@@ -139,7 +139,7 @@ export class ProfileListsRepository {
         .from(follows)
         .innerJoin(profiles, eq(profiles.user_id, follows.follower_id))
         .innerJoin(users_copy, eq(users_copy.user_id, follows.follower_id))
-        .where(and(eq(follows.target_type, 'user'), eq(follows.target_id, user_id), after))
+        .where(and(eq(follows.target_type, 'user'), eq(follows.target_id, user_id), eq(users_copy.is_deleted, false), after))
         .orderBy(desc(follows.created_at), desc(follows.follower_id))
         .limit(limit)
   }
@@ -159,7 +159,7 @@ export class ProfileListsRepository {
         .from(follows)
         .innerJoin(profiles, eq(profiles.user_id, follows.target_id))
         .innerJoin(users_copy, eq(users_copy.user_id, follows.target_id))
-        .where(and(eq(follows.follower_id, user_id), eq(follows.target_type, 'user'), after))
+        .where(and(eq(follows.follower_id, user_id), eq(follows.target_type, 'user'), eq(users_copy.is_deleted, false), after))
         .orderBy(desc(follows.created_at), desc(follows.target_id))
         .limit(limit)
   }
@@ -200,7 +200,7 @@ export class ProfileListsRepository {
         })
         .from(profiles)
         .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-        .where(after)
+        .where(and(eq(users_copy.is_deleted, false), after))
         .orderBy(desc(profiles.reputation), asc(profiles.user_id))
         .limit(limit)
   }

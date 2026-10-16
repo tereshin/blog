@@ -17,6 +17,7 @@ function toRow(row: typeof users.$inferSelect): AccountRow {
     role: row.role,
     can_publish: row.can_publish,
     restricted_at: row.restricted_at,
+    deleted_at: row.deleted_at,
     created_at: row.created_at,
   }
 }
@@ -39,6 +40,7 @@ function snapshot(user: AccountRow) {
     role: user.role,
     can_publish: user.can_publish,
     is_restricted: user.restricted_at !== null,
+    is_deleted: user.deleted_at !== null,
     created_at: user.created_at.toISOString(),
   }
 }

@@ -8,6 +8,7 @@ export type AccountRow = {
   role: 'member' | 'admin' | 'superadmin'
   can_publish: boolean
   restricted_at: Date | null
+  deleted_at: Date | null
   created_at: Date
 }
 

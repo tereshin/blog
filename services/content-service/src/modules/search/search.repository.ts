@@ -110,7 +110,7 @@ export class SearchRepository implements SearchRepositoryPort {
       })
       .from(profiles)
       .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-      .where(condition)
+      .where(and(eq(users_copy.is_deleted, false), condition))
       .orderBy(desc(sql`(${matches})`), asc(profiles.display_name), asc(profiles.user_id))
       .limit(PEOPLE_LIMIT)
     return rows

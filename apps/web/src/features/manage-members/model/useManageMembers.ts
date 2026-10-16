@@ -33,7 +33,14 @@ export function useManageMembers() {
         void query_client.invalidateQueries({ queryKey: ['profile-summaries'] })
       },
     }),
-    remove: useMutation({ mutationFn: deleteMember, onSuccess: refresh }),
+    remove: useMutation({
+      mutationFn: deleteMember,
+      onSuccess: () => {
+        refresh()
+        for (const key of ['users', 'search', 'profile', 'follows'])
+          void query_client.invalidateQueries({ queryKey: [key] })
+      },
+    }),
     setRole: useMutation({
       mutationFn: (input: { id: string; role: 'member' | 'admin' }) =>
         setMemberRole(input.id, input.role),

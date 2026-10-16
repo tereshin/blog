@@ -67,6 +67,7 @@ export type AppDeps = {
 export type AppServices = {
   identity: ServiceClient
   content: ServiceClient
+  web?: ServiceClient
   proxy: ProxyService
   sessions: SessionService
   events: EventsService
@@ -88,6 +89,7 @@ export function composeServices(deps: Pick<AppDeps, 'env' | 'logger'>): AppServi
   return {
     identity,
     content,
+    web: createServiceClient({ name: 'web', base_url: env.WEB_ASSETS_URL ?? 'http://web:8080' }),
     proxy,
     sessions: new SessionService(new IdentitySessionClient(identity), proxy),
     events: new EventsService(new ContentAccessClient(content), logger),
@@ -173,7 +175,7 @@ export async function buildApp(deps: AppDeps, services: AppServices): Promise<Fa
     controller: new SiteAssetsController(new SiteAssetsService(services.content, services.proxy)),
   })
   await app.register(prerenderRoutes, {
-    controller: new PrerenderController(new PrerenderService(services.content)),
+    controller: new PrerenderController(new PrerenderService(services.content, services.web)),
   })
   await app.register(memberDirectoryRoutes, {
     identity: services.identity,

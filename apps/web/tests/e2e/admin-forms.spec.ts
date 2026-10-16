@@ -43,6 +43,18 @@ test('формы внутри одной карточки: поля, состо�
   await page.mouse.move(0, 0)
   const idle = await field_style()
   expect(idle.height).toBe(48)
+  const large_selects = main.locator('.select__trigger.form-control--lg')
+  await expect(large_selects.first()).toBeVisible()
+  for (const trigger of await large_selects.all()) {
+    const offset = await trigger.evaluate((element) => {
+      const value = element.querySelector('.select__value')
+      if (!value) throw new Error('Missing selected value')
+      const box = element.getBoundingClientRect(),
+        text = value.getBoundingClientRect()
+      return Math.abs((box.top + box.bottom) / 2 - (text.top + text.bottom) / 2)
+    })
+    expect(offset).toBeLessThanOrEqual(1)
+  }
   const width = (await name.boundingBox())?.width ?? 0
   expect(width).toBeLessThanOrEqual(512)
   await name.focus()

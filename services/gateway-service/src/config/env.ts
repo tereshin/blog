@@ -5,6 +5,7 @@ const EnvSchema = baseEnvSchema.extend({
   HTTP_PORT: z.coerce.number().int().positive().default(3000),
   PUBLIC_ORIGIN: z.url(),
   WEB_ORIGIN: z.url(),
+  WEB_ASSETS_URL: z.url().optional(),
   SESSION_COOKIE_NAME: z.string().min(1),
   GUEST_COOKIE_NAME: z.string().min(1),
   CSRF_COOKIE_NAME: z.string().min(1),

@@ -193,7 +193,7 @@ export class CommentInteractionRepository implements CommentInteractionRepositor
       })
       .from(users_copy)
       .where(
-        and(eq(users_copy.is_restricted, false), or(ilike(users_copy.display_name, `%${escaped}%`), ilike(users_copy.slug, `%${escaped}%`))),
+        and(eq(users_copy.is_deleted, false), eq(users_copy.is_restricted, false), or(ilike(users_copy.display_name, `%${escaped}%`), ilike(users_copy.slug, `%${escaped}%`))),
       )
       .orderBy(users_copy.display_name, users_copy.user_id)
       .limit(10)

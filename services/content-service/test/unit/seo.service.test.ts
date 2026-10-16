@@ -16,7 +16,7 @@ describe('SEO: матрица доступа и связанный граф', ()
     expect(result.canonical_url).not.toContain('?')
     expect(result.structured_data['@graph'].map((node) => node['@type'])).toContain('BreadcrumbList')
   })
-  it.each(['/feed', '/search', '/bookmarks', '/messages', '/messages/new', '/write', '/admin/settings', '/auth/action', '/u/author/followers', '/u/author/following'])('не индексирует %s', async (path) => expect((await service().page(path)).robots).toBe('noindex, follow'))
+  it.each(['/feed', '/search', '/bookmarks', '/messages', '/messages/new', '/write', '/admin', '/admin/members', '/admin/pages/new', '/admin/settings', '/admin/settings/general', '/admin/moderation/articles', '/auth/action', '/u/author/followers', '/u/author/following'])('не индексирует %s', async (path) => { const page = await service().page(path); expect(page.status).toBe(200); expect(page.robots).toBe('noindex, follow') })
   it.each(['/discovery?q=hello', '/discovery?q=', '/search?q=hello', '/rating'])('не индексирует поиск и старые адреса %s', async (path) => {
     const result = await service().page(path)
     expect(result.status).toBe(200)

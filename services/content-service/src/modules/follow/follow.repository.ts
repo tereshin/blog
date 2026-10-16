@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { FollowTargetType } from '@blog/contracts'
 import { follows, topics, users_copy } from '../../infra/db/schema.ts'
@@ -10,7 +10,7 @@ export class FollowRepository implements FollowRepositoryPort {
   constructor(private readonly db: NodePgDatabase) {}
 
   async userExists(user_id: string): Promise<boolean> {
-    const [row] = await this.db.select({ user_id: users_copy.user_id }).from(users_copy).where(eq(users_copy.user_id, user_id)).limit(1)
+    const [row] = await this.db.select({ user_id: users_copy.user_id }).from(users_copy).where(and(eq(users_copy.user_id, user_id), eq(users_copy.is_deleted, false))).limit(1)
     return row !== undefined
   }
 
@@ -46,6 +46,7 @@ export class FollowRepository implements FollowRepositoryPort {
       .where(
         and(
           eq(follows.follower_id, follower_id),
+          sql`(${follows.target_type} <> 'user' or exists (select 1 from ${users_copy} where ${users_copy.user_id} = ${follows.target_id} and not ${users_copy.is_deleted}))`,
           filter.target_type ? eq(follows.target_type, filter.target_type) : undefined,
           target_ids && target_ids.length > 0 ? inArray(follows.target_id, [...target_ids]) : undefined,
         ),

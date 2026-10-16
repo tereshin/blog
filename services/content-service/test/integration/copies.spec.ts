@@ -72,4 +72,13 @@ describe('content: копии участников из событий (PostgreS
     await expect(apply(event('identity.user.updated', { user_id: USER }))).rejects.toThrow()
     expect(await readUser()).toEqual(before)
   })
+  it('удаление сохраняется при доставке старого created, updated или restricted', async () => {
+    await apply(event('identity.user.restricted', { ...snapshot, is_restricted: true, is_deleted: true }))
+    expect((await readUser())?.is_deleted).toBe(true)
+    await apply(event('identity.user.created', { ...snapshot, display_name: 'Старое имя' }))
+    await apply(event('identity.user.updated', snapshot))
+    await apply(event('identity.user.restricted', snapshot))
+    expect((await readUser())?.is_deleted).toBe(true)
+  })
+
 })

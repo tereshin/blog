@@ -20,6 +20,7 @@ export type UserCopyPatch = {
   display_name?: string | undefined
   avatar_url?: string | null | undefined
   is_restricted?: boolean | undefined
+  is_deleted?: boolean | undefined
 }
 
 /** Копии пишут только потребители событий; остальные модули сервиса копии читают. */

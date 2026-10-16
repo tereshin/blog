@@ -3,8 +3,7 @@ import type { PageSeo } from '@blog/contracts'
 import { ServiceUnavailableError } from '@blog/http-kit'
 import type { ServiceClient } from '@blog/http-kit'
 import { NotFoundError } from '@blog/errors'
-import { isBot } from './bot-detector.ts'
-import { renderPrerenderHtml } from './html-template.ts'
+import { renderApplicationHtml, renderPrerenderHtml } from './html-template.ts'
 import { SeoDocumentSchema } from './prerender.schema.ts'
 import type { SeoDocument } from './prerender.schema.ts'
 
@@ -16,30 +15,47 @@ export type PrerenderedPage = {
 }
 
 export class PrerenderService {
-  constructor(private readonly content: ServiceClient) {}
+  constructor(
+    private readonly content: ServiceClient,
+    private readonly web?: ServiceClient,
+  ) {}
 
   async load(path: string): Promise<PageSeo> {
-    const response = await this.content.request({ path: `/internal/seo/page?path=${encodeURIComponent(path)}` })
+    const response = await this.content.request({
+      path: `/internal/seo/page?path=${encodeURIComponent(path)}`,
+    })
     const parsed = pageSeoSchema.safeParse(response.body)
     if (response.status !== 200 || !parsed.success) throw new ServiceUnavailableError('content')
     return parsed.data
   }
 
   async document(kind: 'robots' | 'sitemap', part?: string): Promise<SeoDocument> {
-    const response = await this.content.request({ path: `/internal/seo/${kind}${part ? `?part=${encodeURIComponent(part)}` : ''}` })
+    const response = await this.content.request({
+      path: `/internal/seo/${kind}${part ? `?part=${encodeURIComponent(part)}` : ''}`,
+    })
     if (response.status === 404) throw new NotFoundError()
     const parsed = SeoDocumentSchema.safeParse(response.body)
     if (response.status !== 200 || !parsed.success) throw new ServiceUnavailableError('content')
     return parsed.data
   }
 
-  /** HTML отдаётся только роботам и клиентам превью; обычный браузер получает 404. */
-  async renderPage(user_agent: string | undefined, url: string, nonce: string): Promise<PrerenderedPage> {
-    if (!isBot(user_agent)) throw new NotFoundError()
+  /** Public HTML is identical for crawlers and browsers; React replaces the initial root. */
+  async renderPage(
+    _user_agent: string | undefined,
+    url: string,
+    nonce: string,
+  ): Promise<PrerenderedPage> {
     const page = await this.load(url)
+    let html = renderPrerenderHtml(page, nonce)
+    if (this.web) {
+      const response = await this.web.request({ path: '/index.html' })
+      if (response.status !== 200 || typeof response.body !== 'string')
+        throw new ServiceUnavailableError('web')
+      html = renderApplicationHtml(page, response.body, nonce)
+    }
     return {
       status: page.status,
-      html: renderPrerenderHtml(page, nonce),
+      html,
       robots_tag: page.robots.startsWith('noindex') ? page.robots : null,
     }
   }

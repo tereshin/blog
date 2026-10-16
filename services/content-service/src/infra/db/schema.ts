@@ -57,6 +57,7 @@ export const users_copy = pgTable('users_copy', {
   role: user_role('role').notNull().default('member'),
   can_publish: boolean('can_publish').notNull().default(true),
   is_restricted: boolean('is_restricted').notNull().default(false),
+  is_deleted: boolean('is_deleted').notNull().default(false),
   created_at: timestamp('created_at', { withTimezone: true }).notNull(),
 })
 

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { seoSettingsSchema, socialCoverSettingsSchema, socialImagesSchema } from '@blog/contracts'
 import {
@@ -72,7 +72,7 @@ export class SeoRepository implements SeoRepositoryPort {
         .innerJoin(topics, eq(topics.id, articles.topic_id))
         .leftJoin(profiles, eq(profiles.user_id, articles.author_id))
         .leftJoin(users_copy, eq(users_copy.user_id, articles.author_id))
-        .where(eq(articles.slug, slug))
+        .where(and(eq(articles.slug, slug), sql`${articles.status} <> 'deleted'`))
         .limit(1)
       return row ?? null
     }
@@ -92,13 +92,20 @@ export class SeoRepository implements SeoRepositoryPort {
           })
           .from(profiles)
           .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-      const [by_slug] = await select().where(eq(profiles.slug, slug)).limit(1)
+      const [by_slug] = await select().where(and(eq(profiles.slug, slug), eq(users_copy.is_deleted, false))).limit(1)
       if (by_slug) return by_slug
       if (!numeric) return null
       const [by_number] = await select()
-        .where(eq(users_copy.public_number, Number(slug)))
+        .where(and(eq(users_copy.public_number, Number(slug)), eq(users_copy.is_deleted, false)))
         .limit(1)
       return by_number ?? null
+    }
+
+    async topicArticles(slug: string) {
+      return this.db.select({ slug: articles.slug, title: articles.title, excerpt: articles.excerpt })
+        .from(articles).innerJoin(topics, eq(topics.id, articles.topic_id))
+        .where(and(eq(topics.slug, slug), eq(articles.status, 'published'), eq(articles.visibility, 'public')))
+        .orderBy(desc(articles.published_at), desc(articles.id)).limit(20)
     }
 
     async topic(slug: string) {

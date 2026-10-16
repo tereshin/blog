@@ -26,6 +26,6 @@ export class PrerenderController {
   async page(request: FastifyRequest, reply: FastifyReply) {
     const page = await this.service.renderPage(request.headers['user-agent'], request.url, reply.csp_nonce)
     if (page.robots_tag) reply.header('X-Robots-Tag', page.robots_tag)
-    return reply.code(page.status).header('Cache-Control', 'no-store').header('Vary', 'User-Agent').type('text/html; charset=utf-8').send(page.html)
+    return reply.code(page.status).header('Cache-Control', 'no-store').type('text/html; charset=utf-8').send(page.html)
   }
 }

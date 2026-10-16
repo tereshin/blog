@@ -49,7 +49,11 @@ export function Select({
     >
       {label ? <FieldLabel size={size}>{label}</FieldLabel> : null}
       <HeroSelect.Trigger
-        className={cn(fieldVariants({ size, variant }), size === 'lg' ? 'h-12' : 'h-10')}
+        className={cn(
+          fieldVariants({ size, variant }),
+          'items-center py-0',
+          size === 'lg' ? 'h-12' : 'h-10',
+        )}
       >
         <HeroSelect.Value />
         <HeroSelect.Indicator />

@@ -82,7 +82,7 @@ export class CrawlService {
         })
         .from(profiles)
         .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-        .where(cursor ? gt(profiles.user_id, cursor) : undefined)
+        .where(and(eq(users_copy.is_deleted, false), cursor ? gt(profiles.user_id, cursor) : undefined))
         .orderBy(profiles.user_id)
         .limit(PAGE_SIZE)
       return rows.map((row) => ({

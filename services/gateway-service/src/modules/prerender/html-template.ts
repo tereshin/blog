@@ -22,7 +22,7 @@ export function safeJsonLd(value: PageSeo['structured_data']): string {
 /** HTML uses the same page DTO as React; the nonce matches the gateway CSP header. */
 export function renderPrerenderHtml(page: PageSeo, nonce?: string): string {
   const meta = (key: string, value: string, property = false) =>
-    `<meta ${property ? 'property' : 'name'}="${key}" content="${escapeHtml(value)}">`
+    `<meta data-page-seo ${property ? 'property' : 'name'}="${key}" content="${escapeHtml(value)}">`
   const asset_tags = SITE_ASSETS.filter((asset) => page.favicon?.[asset.variant])
     .map((asset) => {
       const url = page.favicon?.[asset.variant] ?? ''
@@ -61,11 +61,42 @@ export function renderPrerenderHtml(page: PageSeo, nonce?: string): string {
   if (page.section) tags.push(meta('article:section', page.section, true))
   const article = page.structured_data['@graph'].find((node) => node['@type'] === 'BlogPosting')
   const heading = typeof article?.headline === 'string' ? article.headline : page.title
+  const list = page.structured_data['@graph'].find((node) => node['@type'] === 'ItemList')
+  const entries = Array.isArray(list?.itemListElement) ? list.itemListElement : []
+  const links = entries
+    .flatMap((entry) => {
+      if (
+        !entry ||
+        typeof entry !== 'object' ||
+        Array.isArray(entry) ||
+        typeof entry.url !== 'string' ||
+        typeof entry.name !== 'string'
+      )
+        return []
+      if (!entry.url.startsWith(new URL(page.canonical_url).origin + '/')) return []
+      return [`<li><a href="${escapeHtml(entry.url)}">${escapeHtml(entry.name)}</a></li>`]
+    })
+    .join('')
   const body = page.body_text
     ? `<main><h1>${escapeHtml(heading)}</h1>${page.author_url ? `<a href="${escapeHtml(page.author_url)}">${escapeHtml(typeof article?.author === 'object' && article.author && !Array.isArray(article.author) && typeof article.author.name === 'string' ? article.author.name : page.author_url)}</a>` : ''}<article>${page.body_text
         .split('\n')
         .map((line) => `<p>${escapeHtml(line)}</p>`)
-        .join('')}</article></main>`
+        .join('')}</article>${links ? `<ul>${links}</ul>` : ''}</main>`
     : ''
-  return `<!doctype html><html lang="${page.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(page.title)}</title><link rel="canonical" href="${escapeHtml(page.canonical_url)}">${tags.join('')}${asset_tags}<script type="application/ld+json"${nonce ? ` nonce="${escapeHtml(nonce)}"` : ''}>${safeJsonLd(page.structured_data)}</script></head><body>${body}</body></html>`
+  return `<!doctype html><html lang="${page.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(page.title)}</title><link data-page-seo rel="canonical" href="${escapeHtml(page.canonical_url)}">${tags.join('')}${asset_tags}<script data-page-seo type="application/ld+json"${nonce ? ` nonce="${escapeHtml(nonce)}"` : ''}>${safeJsonLd(page.structured_data)}</script></head><body>${body}</body></html>`
+}
+
+/** Keep Vite's hashed scripts/styles while including public metadata and content in source. */
+export function renderApplicationHtml(page: PageSeo, template: string, nonce: string): string {
+  if (!template.includes('<div id="root"></div>') || !template.includes('</head>'))
+    throw new Error('Invalid web HTML template')
+  const rendered = renderPrerenderHtml(page, nonce)
+  const head = rendered.match(/<head>([\s\S]*?)<\/head>/)?.[1] ?? ''
+  const body = rendered.match(/<body>([\s\S]*?)<\/body>/)?.[1] ?? ''
+  return template
+    .replace(/<html[^>]*>/, `<html lang="${page.locale}">`)
+    .replace(/<title>[\s\S]*?<\/title>/, '')
+    .replace(/<meta (?:charset="[^"]*"|name="viewport"[^>]*)\s*\/?>/gi, '')
+    .replace('</head>', () => `${head}</head>`)
+    .replace('<div id="root"></div>', () => `<div id="root">${body}</div>`)
 }

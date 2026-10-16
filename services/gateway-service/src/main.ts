@@ -40,6 +40,7 @@ async function main(): Promise<void> {
       () => services.proxy.close(),
       () => services.identity.close(),
       () => services.content.close(),
+      async () => { await services.web?.close() },
       () => broker.close(),
       () => telemetry.shutdown(),
       async () => metrics.stop(),

@@ -4,11 +4,11 @@ import { breadcrumbGraph, pageGraph, siteGraph } from './seo.graph.ts'
 import { documentText, plainText, shortDescription } from './seo.text.ts'
 import { SEO_LABELS } from './seo.labels.ts'
 import { localPath } from './seo.path.ts'
+import { addTopicArticles } from './seo.collection.ts'
 
 function templateTitle(site: SeoSite, title: string): string {
   return site.seo.title_template
-    .replaceAll('{title}', plainText(title))
-    .replaceAll('{site_name}', site.name)
+    .replaceAll('{title}', plainText(title)).replaceAll('{site_name}', site.name)
 }
 
 function simpleImages(url: string | null, alt: string): SocialImages | null {
@@ -150,7 +150,7 @@ export class SeoService {
       const article_match = /^\/p\/([^/]+)$/.exec(path)
       if (article_match?.[1]) {
         const article = await repository.article(decodeURIComponent(article_match[1]))
-        if (!article) return missing()
+        if (!article || article.status === 'deleted') return missing()
         if (article.status !== 'published' || article.visibility !== 'public') return neutral
         const description =
           article.seo_description ||
@@ -283,15 +283,15 @@ export class SeoService {
         )
         page.images = simpleImages(topic.cover_url, topic.title) ?? fallback
         page.body_text = `${topic.title}\n${plainText(topic.description ?? '')}`
+        addTopicArticles(page, await repository.topicArticles?.(topic.slug) ?? [], origin)
         return page
       }
       const private_key = /^\/(feed|search|bookmarks|messages|write|admin|auth)(?:\/|$)/.exec(
         path,
       )?.[1] as
         'feed' | 'search' | 'bookmarks' | 'messages' | 'write' | 'admin' | 'auth' | undefined
-      // Exact application route list: arbitrary descendants are 404, even under a private prefix.
       const known_private =
-        /^\/(?:feed|search|bookmarks|messages(?:\/(?:new|[0-9a-f-]{36}))?|write(?:\/[0-9a-f-]{36})?|admin\/(?:settings|topics|moderation)|auth\/action)$/.test(
+        /^\/(?:feed|search|bookmarks|messages(?:\/(?:new|[0-9a-f-]{36}))?|write(?:\/[0-9a-f-]{36})?|admin(?:\/(?:members|topics|sections|settings(?:\/(?:general|access|layout|reactions|status-icons|badges|seo|publisher|covers))?|moderation(?:\/(?:articles|comments|hidden|find))?|pages(?:\/(?:new|[0-9a-f-]{36}))?))?|auth\/action)$/.test(
           path,
         )
       if (private_key && known_private) return makePage(labels[private_key], '', 'WebPage', false)

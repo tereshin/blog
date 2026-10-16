@@ -337,4 +337,9 @@ describe('comment interface API', () => {
       (await get('/v1/moderation/comments/reports?q=Queue&from=2026-10-13', 'admin')).json().items,
     ).toHaveLength(0)
   })
+  it('deleted participants stay out of mention suggestions even after a stale unrestricted event', async () => {
+    await database.pool.query('update users_copy set is_deleted=true, is_restricted=false where user_id=$1', [MEMBER])
+    expect((await get('/v1/comments/mentions?q=Mem')).json()).toEqual([])
+  })
+
 })

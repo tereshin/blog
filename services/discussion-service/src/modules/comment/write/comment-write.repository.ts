@@ -81,7 +81,7 @@ export class CommentWriteRepository implements CommentWriteRepositoryPort<Databa
     return tx
       .select({ user_id: users_copy.user_id, display_name: users_copy.display_name })
       .from(users_copy)
-      .where(and(inArray(users_copy.user_id, [...user_ids]), eq(users_copy.is_restricted, false)))
+      .where(and(inArray(users_copy.user_id, [...user_ids]), eq(users_copy.is_restricted, false), eq(users_copy.is_deleted, false)))
   }
 
   async listSubscriberIds(tx: Database, article_id: string, only_user_id: string | null): Promise<string[]> {
@@ -92,7 +92,7 @@ export class CommentWriteRepository implements CommentWriteRepositoryPort<Databa
       .where(
         and(
           eq(discussion_subscriptions.article_id, article_id),
-          eq(users_copy.is_restricted, false),
+          eq(users_copy.is_restricted, false), eq(users_copy.is_deleted, false),
           only_user_id === null ? undefined : eq(discussion_subscriptions.user_id, only_user_id),
         ),
       )

@@ -69,7 +69,7 @@ export class ProfileRepository implements ProfileRepositoryPort {
       .select(selection(viewer_id))
       .from(profiles)
       .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-      .where(where)
+      .where(and(where, eq(users_copy.is_deleted, false)))
       .limit(1)
     return row ? toRecord(row) : null
   }
@@ -105,6 +105,7 @@ export class ProfileRepository implements ProfileRepositoryPort {
             ? ilike(profiles.display_name, `%${query.q.replace(/[\\%_]/g, '\\$&')}%`)
             : undefined,
           query.role ? eq(users_copy.role, query.role) : undefined,
+          query.ids === undefined ? eq(users_copy.is_deleted, false) : undefined,
         ),
       )
       .orderBy(asc(users_copy.public_number))
