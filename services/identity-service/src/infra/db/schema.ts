@@ -1,4 +1,15 @@
-import { boolean, jsonb, pgEnum, pgTable, primaryKey, serial, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  serial,
+  smallint,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
 export { outbox, processed_events } from '@blog/broker'
@@ -15,6 +26,7 @@ export const users = pgTable('users', {
   role: user_role('role').notNull().default('member'),
   can_publish: boolean('can_publish').notNull().default(true),
   restricted_at: timestamp('restricted_at', { withTimezone: true }),
+  deleted_at: timestamp('deleted_at', { withTimezone: true }),
   appearance: appearance('appearance'),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })

@@ -8,7 +8,7 @@ import type { DbHandle } from './infra/db/client.ts'
 import { FirebaseClient } from './infra/http/firebase-client.ts'
 import { AuthController, AuthRepository, AuthService, authRoutes } from './modules/auth/index.ts'
 import { SessionController, SessionRepository, SessionService, sessionRoutes } from './modules/session/index.ts'
-import { UserController, UserRepository, UserService, userRoutes } from './modules/user/index.ts'
+import { UserController, UserEmailRepository, UserEmailVerificationService, UserRepository, UserService, userRoutes } from './modules/user/index.ts'
 
 export type AppDeps = {
   env: Env
@@ -59,7 +59,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   await app.register(sessionRoutes, { controller: new SessionController(new SessionService(new SessionRepository(deps.database.db))) })
   await app.register(authRoutes, { controller: new AuthController(auth_service) })
-  await app.register(userRoutes, { controller: new UserController(new UserService(new UserRepository(deps.database.db))) })
+  await app.register(userRoutes, { controller: new UserController(new UserService(new UserRepository(deps.database.db)), new UserEmailVerificationService(new UserEmailRepository(deps.database.db), firebase)) })
 
   return app
 }

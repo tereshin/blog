@@ -11,7 +11,16 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { articles, follows, outbox, profiles, settings, slugs, topics, users_copy } from '../../src/infra/db/schema.ts'
+import {
+  articles,
+  follows,
+  outbox,
+  profiles,
+  settings,
+  slugs,
+  topics,
+  users_copy,
+} from '../../src/infra/db/schema.ts'
 import { composeContent } from '../../src/app.modules.ts'
 import { profileRoutes } from '../../src/modules/profile/index.ts'
 
@@ -21,8 +30,28 @@ const MEDIA = 'http://media.test'
 const S3 = 'http://storage.test/media'
 
 const viewers: Record<string, ServiceContext> = {
+  superadmin: {
+    user_id: OWNER,
+    role: 'superadmin',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${OWNER}`,
+  },
+  admin: {
+    user_id: OWNER,
+    role: 'admin',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${OWNER}`,
+  },
   guest: { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' },
-  owner: { user_id: OWNER, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${OWNER}` },
+  owner: {
+    user_id: OWNER,
+    role: 'member',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${OWNER}`,
+  },
 }
 
 const body = {
@@ -44,25 +73,49 @@ describe('content: профиль', () => {
     await migrate(database.pool)
     const created = new Date('2020-01-01T00:00:00.000Z')
     await database.db.insert(users_copy).values([
-      { user_id: OWNER, public_number: 7, role: 'member', can_publish: true, is_restricted: false, created_at: created },
-      { user_id: OTHER, public_number: 8, role: 'member', can_publish: true, is_restricted: false, created_at: created },
+      {
+        user_id: OWNER,
+        public_number: 7,
+        role: 'member',
+        can_publish: true,
+        is_restricted: false,
+        created_at: created,
+      },
+      {
+        user_id: OTHER,
+        public_number: 8,
+        role: 'member',
+        can_publish: true,
+        is_restricted: false,
+        created_at: created,
+      },
     ])
     await database.db.insert(profiles).values([
       { user_id: OWNER, display_name: 'Анна', slug: null, reputation: 12 },
       { user_id: OTHER, display_name: 'Борис', slug: 'taken', reputation: 0 },
     ])
-    await database.db.insert(slugs).values({ slug: 'taken', owner_type: 'profile', owner_id: OTHER })
+    await database.db
+      .insert(slugs)
+      .values({ slug: 'taken', owner_type: 'profile', owner_id: OTHER })
 
     await runBadgeSweep(database)
 
     app = Fastify()
-    await app.register(requestContext, { logger: createLogger({ service: 'content-test', level: 'silent' }) })
+    await app.register(requestContext, {
+      logger: createLogger({ service: 'content-test', level: 'silent' }),
+    })
     await app.register(errorHandler)
     app.decorateRequest('viewer', undefined as unknown as ServiceContext)
     app.addHook('onRequest', async (request) => {
-      request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
+      request.viewer =
+        viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    const modules = composeContent({ database, media_url: MEDIA, media_public_url: S3, public_origin: 'http://blog.test' })
+    const modules = composeContent({
+      database,
+      media_url: MEDIA,
+      media_public_url: S3,
+      public_origin: 'http://blog.test',
+    })
     await app.register(profileRoutes, { controller: modules.profile })
   }, 120_000)
 
@@ -73,7 +126,10 @@ describe('content: профиль', () => {
   })
 
   it('профиль и списки открываются по UUID с коротким адресом и без него', async () => {
-    for (const [id, slug] of [[OWNER, null], [OTHER, 'taken']]) {
+    for (const [id, slug] of [
+      [OWNER, null],
+      [OTHER, 'taken'],
+    ]) {
       const response = await app.inject({ method: 'GET', url: `/v1/profiles/${id}` })
       expect(response.statusCode).toBe(200)
       expect(response.json()).toMatchObject({ user_id: id, slug })
@@ -83,7 +139,10 @@ describe('content: профиль', () => {
         expect(result.json().items).toEqual([])
       }
     }
-    const missing = await app.inject({ method: 'GET', url: '/v1/profiles/00000000-0000-4000-8000-000000000000' })
+    const missing = await app.inject({
+      method: 'GET',
+      url: '/v1/profiles/00000000-0000-4000-8000-000000000000',
+    })
     expect(missing.statusCode).toBe(404)
     const malformed = await app.inject({ method: 'GET', url: '/v1/profiles/not-a-uuid' })
     expect(malformed.statusCode).toBe(404)
@@ -141,7 +200,10 @@ describe('content: профиль', () => {
     })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({ slug: 'anna', is_own: true, avatar_url: `${S3}/a.png` })
-    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'content.profile.updated'))
+    const events = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'content.profile.updated'))
     expect(events).toHaveLength(1)
   })
 
@@ -150,7 +212,15 @@ describe('content: профиль', () => {
     const published_id = '22222222-2222-4222-8222-222222222222'
     const draft_id = '33333333-3333-4333-8333-333333333333'
     const topic_avatar_url = `${S3}/topic.png`
-    await database.db.insert(topics).values({ id: topic_id, title: 'Технологии', slug: 'tech-profile', position: 1, avatar_url: topic_avatar_url })
+    await database.db
+      .insert(topics)
+      .values({
+        id: topic_id,
+        title: 'Технологии',
+        slug: 'tech-profile',
+        position: 1,
+        avatar_url: topic_avatar_url,
+      })
     await database.db.insert(articles).values([
       {
         id: published_id,
@@ -163,72 +233,225 @@ describe('content: профиль', () => {
         view_count: 4,
         reaction_count: 3,
       },
-      { id: draft_id, author_id: OWNER, topic_id, title: 'Черновик', slug: 'draft-post', status: 'draft' },
+      {
+        id: draft_id,
+        author_id: OWNER,
+        topic_id,
+        title: 'Черновик',
+        slug: 'draft-post',
+        status: 'draft',
+      },
     ])
-    await database.db.insert(follows).values({ follower_id: OTHER, target_type: 'user', target_id: OWNER })
+    await database.db
+      .insert(follows)
+      .values({ follower_id: OTHER, target_type: 'user', target_id: OWNER })
 
     const guest = await app.inject({ method: 'GET', url: '/v1/profiles/7/articles?sort=fresh' })
     expect(guest.statusCode).toBe(200)
     expect(guest.json().items.map((item: { title: string }) => item.title)).toEqual(['Публичная'])
     expect(guest.json().items[0].topic.avatar_url).toBe(topic_avatar_url)
 
-    const owner = await app.inject({ method: 'GET', url: '/v1/profiles/7/articles', headers: { 'x-test-viewer': 'owner' } })
-    expect(owner.json().items.map((item: { status: string }) => item.status).sort()).toEqual(['draft', 'published'])
-    expect(owner.json().items.every((item: { topic: { avatar_url: string } }) => item.topic.avatar_url === topic_avatar_url)).toBe(true)
+    const owner = await app.inject({
+      method: 'GET',
+      url: '/v1/profiles/7/articles',
+      headers: { 'x-test-viewer': 'owner' },
+    })
+    expect(
+      owner
+        .json()
+        .items.map((item: { status: string }) => item.status)
+        .sort(),
+    ).toEqual(['draft', 'published'])
+    expect(
+      owner
+        .json()
+        .items.every(
+          (item: { topic: { avatar_url: string } }) => item.topic.avatar_url === topic_avatar_url,
+        ),
+    ).toBe(true)
 
     const followers = await app.inject({ method: 'GET', url: '/v1/profiles/7/followers' })
-    expect(followers.json().items).toEqual([expect.objectContaining({ user_id: OTHER, slug: 'taken', reputation: 0 })])
+    expect(followers.json().items).toEqual([
+      expect.objectContaining({ user_id: OTHER, slug: 'taken', reputation: 0 }),
+    ])
 
-    const stats = await app.inject({ method: 'GET', url: '/v1/profiles/me/stats', headers: { 'x-test-viewer': 'owner' } })
+    const stats = await app.inject({
+      method: 'GET',
+      url: '/v1/profiles/me/stats',
+      headers: { 'x-test-viewer': 'owner' },
+    })
     expect(stats.json()).toEqual({ view_count: 4, reaction_count: 3, followers_count: 1 })
 
     const rating = await app.inject({ method: 'GET', url: '/v1/rating?limit=1' })
-    expect(rating.json().items).toEqual([expect.objectContaining({ user_id: OWNER, reputation: 12 })])
+    expect(rating.json().items).toEqual([
+      expect.objectContaining({ user_id: OWNER, reputation: 12 }),
+    ])
     expect(rating.json().next_cursor).toEqual(expect.any(String))
   })
   it('аватар и обложка с S3 сохраняются частично, имя и адрес остаются прежними', async () => {
     const avatar_url = `${S3}/uploads/avatar`
     const cover_url = `${S3}/uploads/cover`
     for (const payload of [{ avatar_url }, { cover_url }]) {
-      const response = await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload })
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/v1/profiles/me',
+        headers: { 'x-test-viewer': 'owner' },
+        payload,
+      })
       expect(response.statusCode).toBe(200)
     }
     const saved = await app.inject({ method: 'GET', url: '/v1/profiles/anna' })
-    expect(saved.json()).toMatchObject({ avatar_url, cover_url, display_name: 'Анна', slug: 'anna', bio: 'Пишет' })
-    const denied = await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: { cover_url: 'https://other.test/cover' } })
+    expect(saved.json()).toMatchObject({
+      avatar_url,
+      cover_url,
+      display_name: 'Анна',
+      slug: 'anna',
+      bio: 'Пишет',
+    })
+    const denied = await app.inject({
+      method: 'PUT',
+      url: '/v1/profiles/me',
+      headers: { 'x-test-viewer': 'owner' },
+      payload: { cover_url: 'https://other.test/cover' },
+    })
     expect(denied.statusCode).toBe(422)
-    expect((await app.inject({ method: 'GET', url: '/v1/profiles/anna' })).json().cover_url).toBe(cover_url)
+    expect((await app.inject({ method: 'GET', url: '/v1/profiles/anna' })).json().cover_url).toBe(
+      cover_url,
+    )
   })
 
   it('статус выбирается только из каталога админки, сохраняется и сбрасывается', async () => {
     const id = '44444444-4444-4444-8444-444444444444'
     const payload = { status_icon_id: id }
-    const send = () => app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload })
+    const send = () =>
+      app.inject({
+        method: 'PUT',
+        url: '/v1/profiles/me',
+        headers: { 'x-test-viewer': 'owner' },
+        payload,
+      })
     expect((await send()).statusCode).toBe(422)
-    await database.db.insert(settings).values({ id: 1, name: 'Блог', profile_status_icons: [{ id, label: 'В отпуске', image_url: `${S3}/holiday.png` }] })
+    await database.db
+      .insert(settings)
+      .values({
+        id: 1,
+        name: 'Блог',
+        profile_status_icons: [{ id, label: 'В отпуске', image_url: `${S3}/holiday.png` }],
+      })
     expect((await send()).statusCode).toBe(200)
-    expect((await app.inject({ method: 'GET', url: '/v1/profiles/7' })).json().status_icon_id).toBe(id)
+    expect((await app.inject({ method: 'GET', url: '/v1/profiles/7' })).json().status_icon_id).toBe(
+      id,
+    )
     await database.db.update(settings).set({ profile_status_icons: [] }).where(eq(settings.id, 1))
     expect((await send()).statusCode).toBe(422)
-    const cleared = await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: { status_icon_id: null } })
+    const cleared = await app.inject({
+      method: 'PUT',
+      url: '/v1/profiles/me',
+      headers: { 'x-test-viewer': 'owner' },
+      payload: { status_icon_id: null },
+    })
     expect(cleared.statusCode).toBe(200)
-    expect(cleared.json()).toMatchObject({ status_icon_id: null, display_name: 'Анна', slug: 'anna' })
-    expect((await app.inject({ method: 'PUT', url: '/v1/profiles/me', headers: { 'x-test-viewer': 'owner' }, payload: {} })).statusCode).toBe(422)
+    expect(cleared.json()).toMatchObject({
+      status_icon_id: null,
+      display_name: 'Анна',
+      slug: 'anna',
+    })
+    expect(
+      (
+        await app.inject({
+          method: 'PUT',
+          url: '/v1/profiles/me',
+          headers: { 'x-test-viewer': 'owner' },
+          payload: {},
+        })
+      ).statusCode,
+    ).toBe(422)
   })
 
   it('рейтинг с равной репутацией продолжает курсор без повторов и пропусков', async () => {
     const ids = ['10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002']
-    await database.db.insert(users_copy).values(ids.map((user_id, index) => ({ user_id, public_number: 100 + index, created_at: new Date('2026-01-01') })))
-    await database.db.insert(profiles).values(ids.map((user_id, index) => ({ user_id, display_name: `Блог ${index}`, slug: null, reputation: 12 })))
+    await database.db
+      .insert(users_copy)
+      .values(
+        ids.map((user_id, index) => ({
+          user_id,
+          public_number: 100 + index,
+          created_at: new Date('2026-01-01'),
+        })),
+      )
+    await database.db
+      .insert(profiles)
+      .values(
+        ids.map((user_id, index) => ({
+          user_id,
+          display_name: `Блог ${index}`,
+          slug: null,
+          reputation: 12,
+        })),
+      )
     const first = (await app.inject('/v1/rating?limit=1')).json()
     expect(first.items[0]).toMatchObject({ user_id: ids[0], slug: '100' })
-    const second = (await app.inject(`/v1/rating?limit=1&cursor=${encodeURIComponent(first.next_cursor)}`)).json()
+    const second = (
+      await app.inject(`/v1/rating?limit=1&cursor=${encodeURIComponent(first.next_cursor)}`)
+    ).json()
     expect(second.items[0].user_id).toBe(ids[1])
-    const third = (await app.inject(`/v1/rating?limit=1&cursor=${encodeURIComponent(second.next_cursor)}`)).json()
+    const third = (
+      await app.inject(`/v1/rating?limit=1&cursor=${encodeURIComponent(second.next_cursor)}`)
+    ).json()
     expect(third.items[0].user_id).toBe(OWNER)
     const preview = (await app.inject('/v1/rating?limit=5')).json()
-    expect(preview.items.map((item: { user_id: string }) => item.user_id)).toEqual([...ids, OWNER, OTHER])
+    expect(preview.items.map((item: { user_id: string }) => item.user_id)).toEqual([
+      ...ids,
+      OWNER,
+      OTHER,
+    ])
     expect(preview.next_cursor).toBeNull()
   })
 
+  it('суперадминистратор редактирует имя; поиск находит часть имени без учёта регистра', async () => {
+    const url = `/v1/admin/profiles/${OTHER}`
+    const denied = await app.inject({
+      method: 'PATCH',
+      url,
+      headers: { 'x-test-viewer': 'owner' },
+      payload: { display_name: 'Софья' },
+    })
+    expect(denied.statusCode).toBe(403)
+    const saved = await app.inject({
+      method: 'PATCH',
+      url,
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: { display_name: 'Софья' },
+    })
+    expect(saved.statusCode, saved.body).toBe(200)
+    const found = await app.inject({
+      url: '/internal/admin/profiles?q=сОф',
+      headers: { 'x-test-viewer': 'superadmin' },
+    })
+    expect(found.statusCode).toBe(200)
+    expect(found.json()).toEqual([
+      expect.objectContaining({ user_id: OTHER, display_name: 'Софья' }),
+    ])
+    const past = await app.inject({
+      url: '/internal/admin/profiles?q=Соф&cursor=8',
+      headers: { 'x-test-viewer': 'superadmin' },
+    })
+    expect(past.json()).toEqual([])
+  })
+
+  it('модератор получает имена для жалоб только по списку id', async () => {
+    const denied = await app.inject({
+      url: '/v1/admin/profiles?q=Ан',
+      headers: { 'x-test-viewer': 'admin' },
+    })
+    expect(denied.statusCode).toBe(403)
+    const allowed = await app.inject({
+      url: `/v1/admin/profiles?ids=${OTHER}`,
+      headers: { 'x-test-viewer': 'admin' },
+    })
+    expect(allowed.statusCode).toBe(200)
+    expect(allowed.json()).toEqual([
+      expect.objectContaining({ user_id: OTHER, display_name: 'Софья' }),
+    ])
+  })
 })

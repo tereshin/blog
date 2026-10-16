@@ -1,4 +1,4 @@
-import type { ProfileBadge, UpdateProfile } from '@blog/contracts'
+import type { AdminDirectoryQuery, ProfileBadge, UpdateProfile } from '@blog/contracts'
 
 export type ProfileRecord = {
   user_id: string
@@ -18,10 +18,22 @@ export type ProfileRecord = {
 }
 
 export type ProfileRepositoryPort = {
+  directory: (
+    query: AdminDirectoryQuery,
+  ) => Promise<
+    { user_id: string; public_number: number; display_name: string; slug: string | null }[]
+  >
   findBySlug: (slug: string, viewer_id: string | undefined) => Promise<ProfileRecord | null>
   findByUserId: (user_id: string, viewer_id: string | undefined) => Promise<ProfileRecord | null>
-  findByPublicNumber: (public_number: number, viewer_id: string | undefined) => Promise<ProfileRecord | null>
-  update: (user_id: string, input: UpdateProfile, correlation_id: string) => Promise<ProfileRecord | null>
+  findByPublicNumber: (
+    public_number: number,
+    viewer_id: string | undefined,
+  ) => Promise<ProfileRecord | null>
+  update: (
+    user_id: string,
+    input: UpdateProfile,
+    correlation_id: string,
+  ) => Promise<ProfileRecord | null>
 }
 
 export type { ProfileBadge }

@@ -7,3 +7,5 @@ export { filterRequestHeaders, filterResponseHeaders } from './proxy.headers.ts'
 export type { ForwardInput, ForwardResult } from './proxy.types.ts'
 export { ROUTE_TABLE, resolveRoute } from '../../shared/route-table.ts'
 export type { RouteEntry, UpstreamName } from '../../shared/route-table.ts'
+
+export { memberDirectoryRoutes } from './member-directory.ts'

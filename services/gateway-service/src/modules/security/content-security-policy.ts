@@ -58,14 +58,24 @@ export function contentSecurityPolicy(input: {
   auth_domain?: string | null
   emulator_host?: string | null
 }): string {
-  const images = ["'self'", 'data:', 'https://img.heroui.chat', ...(input.image_origin ? [input.image_origin] : [])]
+  const images = [
+    "'self'",
+    'data:',
+    'https://img.heroui.chat',
+    ...(input.image_origin ? [input.image_origin] : []),
+  ]
   const emulator = emulatorOrigin(input.emulator_host)
   const auth_origin = authDomainOrigin(input.auth_domain)
   const connect = ["'self'", ...FIREBASE_CONNECT_ORIGINS, ...(emulator ? [emulator] : [])]
-  const frames = [...EMBED_FRAME_ORIGINS, GOOGLE_ACCOUNTS_ORIGIN, ...(auth_origin ? [auth_origin] : []), ...(emulator ? [emulator] : [])]
+  const frames = [
+    ...EMBED_FRAME_ORIGINS,
+    GOOGLE_ACCOUNTS_ORIGIN,
+    ...(auth_origin ? [auth_origin] : []),
+    ...(emulator ? [emulator] : []),
+  ]
   const directives = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${input.nonce}'`,
+    `script-src 'self' 'nonce-${input.nonce}' https://apis.google.com`,
     "style-src 'self'",
     `img-src ${images.join(' ')}`,
     `connect-src ${connect.join(' ')}`,

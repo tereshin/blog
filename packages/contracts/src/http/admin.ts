@@ -21,6 +21,7 @@ export const adminUserSchema = z.strictObject({
   id: z.uuid(),
   public_number: z.number().int().positive(),
   email: z.string(),
+  email_verified: z.boolean(),
   role: z.enum(['member', 'admin', 'superadmin']),
   can_publish: z.boolean(),
   is_restricted: z.boolean(),

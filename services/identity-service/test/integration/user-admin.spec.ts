@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -10,8 +10,16 @@ import { createLogger } from '@blog/logger'
 import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
-import { outbox, sessions, users } from '../../src/infra/db/schema.ts'
-import { UserController, UserRepository, UserService, userRoutes } from '../../src/modules/user/index.ts'
+import { auth_identities, outbox, sessions, users } from '../../src/infra/db/schema.ts'
+import { AuthRepository } from '../../src/modules/auth/auth.repository.ts'
+import {
+  UserController,
+  UserEmailRepository,
+  UserEmailVerificationService,
+  UserRepository,
+  UserService,
+  userRoutes,
+} from '../../src/modules/user/index.ts'
 
 const SUPER = '11111111-1111-4111-8111-111111111111'
 const ADMIN = '22222222-2222-4222-8222-222222222222'
@@ -19,15 +27,34 @@ const MEMBER = '33333333-3333-4333-8333-333333333333'
 
 const viewers: Record<string, ServiceContext> = {
   guest: { role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' },
-  member: { user_id: MEMBER, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${MEMBER}` },
-  admin: { user_id: ADMIN, role: 'admin', is_restricted: false, can_publish: true, viewer_key: `user:${ADMIN}` },
-  superadmin: { user_id: SUPER, role: 'superadmin', is_restricted: false, can_publish: true, viewer_key: `user:${SUPER}` },
+  member: {
+    user_id: MEMBER,
+    role: 'member',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${MEMBER}`,
+  },
+  admin: {
+    user_id: ADMIN,
+    role: 'admin',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${ADMIN}`,
+  },
+  superadmin: {
+    user_id: SUPER,
+    role: 'superadmin',
+    is_restricted: false,
+    can_publish: true,
+    viewer_key: `user:${SUPER}`,
+  },
 }
 
 describe('identity: управление участниками', () => {
   let postgres: TestPostgres
   let database: DbHandle
   let app: FastifyInstance
+  const firebase = { verifyUserEmail: vi.fn(async () => true) }
 
   beforeAll(async () => {
     postgres = await startPostgres()
@@ -38,19 +65,35 @@ describe('identity: управление участниками', () => {
       { id: ADMIN, email: 'admin@example.test', role: 'admin' },
       { id: MEMBER, email: 'member@example.test', role: 'member' },
     ])
+    await database.db
+      .insert(auth_identities)
+      .values({
+        id: '44444444-4444-4444-8444-444444444444',
+        user_id: MEMBER,
+        firebase_uid: 'member-uid',
+        provider_id: 'password',
+      })
     await database.db.insert(sessions).values([
       { id: 'session-a', user_id: MEMBER, expires_at: new Date(Date.now() + 86_400_000) },
       { id: 'session-b', user_id: MEMBER, expires_at: new Date(Date.now() + 86_400_000) },
     ])
 
     app = Fastify()
-    await app.register(requestContext, { logger: createLogger({ service: 'identity-test', level: 'silent' }) })
+    await app.register(requestContext, {
+      logger: createLogger({ service: 'identity-test', level: 'silent' }),
+    })
     await app.register(errorHandler)
     app.decorateRequest('viewer', undefined as unknown as ServiceContext)
     app.addHook('onRequest', async (request) => {
-      request.viewer = viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
+      request.viewer =
+        viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
-    await app.register(userRoutes, { controller: new UserController(new UserService(new UserRepository(database.db))) })
+    await app.register(userRoutes, {
+      controller: new UserController(
+        new UserService(new UserRepository(database.db)),
+        new UserEmailVerificationService(new UserEmailRepository(database.db), firebase),
+      ),
+    })
   }, 120_000)
 
   afterAll(async () => {
@@ -98,7 +141,10 @@ describe('identity: управление участниками', () => {
     expect(publishing.statusCode).toBe(200)
     expect(publishing.json()).toMatchObject({ can_publish: false })
 
-    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.updated'))
+    const events = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.updated'))
     expect(events.length).toBeGreaterThanOrEqual(2)
   })
 
@@ -116,9 +162,15 @@ describe('identity: управление участниками', () => {
     const stored = await database.db.select().from(sessions).where(eq(sessions.user_id, MEMBER))
     expect(stored.every((row) => row.revoked_at !== null)).toBe(true)
 
-    const revoked = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.session.revoked'))
+    const revoked = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.session.revoked'))
     expect(revoked).toHaveLength(1)
-    const restricted = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.restricted'))
+    const restricted = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.restricted'))
     expect(restricted).toHaveLength(1)
 
     const again = await app.inject({
@@ -133,12 +185,22 @@ describe('identity: управление участниками', () => {
   })
 
   it('поиск по почте доступен только суперадминистратору', async () => {
-    const denied = await app.inject({ method: 'GET', url: '/v1/users?q=member', headers: { 'x-test-viewer': 'admin' } })
+    const denied = await app.inject({
+      method: 'GET',
+      url: '/v1/users?q=member',
+      headers: { 'x-test-viewer': 'admin' },
+    })
     expect(denied.statusCode).toBe(403)
 
-    const found = await app.inject({ method: 'GET', url: '/v1/users?q=member@example', headers: { 'x-test-viewer': 'superadmin' } })
+    const found = await app.inject({
+      method: 'GET',
+      url: '/v1/users?q=member@example',
+      headers: { 'x-test-viewer': 'superadmin' },
+    })
     expect(found.statusCode).toBe(200)
-    expect(found.json().items).toEqual([expect.objectContaining({ id: MEMBER, email: 'member@example.test' })])
+    expect(found.json().items).toEqual([
+      expect.objectContaining({ id: MEMBER, email: 'member@example.test' }),
+    ])
   })
 
   it('участник сохраняет вид, повтор не плодит события, гость получает отказ', async () => {
@@ -150,7 +212,10 @@ describe('identity: управление участниками', () => {
     })
     expect(denied.statusCode).toBe(401)
 
-    const before = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.updated'))
+    const before = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.updated'))
     const response = await app.inject({
       method: 'PATCH',
       url: '/v1/users/me/appearance',
@@ -161,7 +226,10 @@ describe('identity: управление участниками', () => {
     expect(response.json()).toEqual({ appearance: 'light' })
     const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
     expect(stored?.appearance).toBe('light')
-    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.updated'))
+    const events = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.updated'))
     expect(events).toHaveLength(before.length + 1)
 
     const again = await app.inject({
@@ -171,7 +239,10 @@ describe('identity: управление участниками', () => {
       payload: { appearance: 'light' },
     })
     expect(again.statusCode).toBe(200)
-    const after = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.updated'))
+    const after = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.updated'))
     expect(after).toHaveLength(events.length)
   })
 
@@ -186,5 +257,118 @@ describe('identity: управление участниками', () => {
     expect(response.json()).toEqual({ appearance: null })
     const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
     expect(stored?.appearance).toBeNull()
+  })
+  it('фильтрует роли и объединяет имя с почтой до пагинации', async () => {
+    const headers = { 'x-test-viewer': 'superadmin' }
+    const found = await app.inject({
+      url: `/v1/users?q=Соф&name_ids=${MEMBER}&role=admin&limit=1`,
+      headers,
+    })
+    expect(found.statusCode).toBe(200)
+    expect(found.json().items).toEqual([expect.objectContaining({ id: MEMBER })])
+    const members = await app.inject({
+      url: `/v1/users?q=Соф&name_ids=${MEMBER}&role=member`,
+      headers,
+    })
+    expect(members.json().items).toEqual([])
+    const first = await app.inject({ url: '/v1/users?limit=1', headers })
+    expect(first.json().items[0].id).toBe(SUPER)
+    const second = await app.inject({
+      url: `/v1/users?limit=1&cursor=${first.json().next_cursor}`,
+      headers,
+    })
+    expect(second.json().items[0].id).toBe(ADMIN)
+  })
+
+  it('только суперадминистратор подтверждает почту, повтор идемпотентен', async () => {
+    const url = `/v1/users/${MEMBER}/email-verification`
+    for (const viewer of ['guest', 'member', 'admin']) {
+      const denied = await app.inject({
+        method: 'PUT',
+        url,
+        headers: { 'x-test-viewer': viewer },
+        payload: {},
+      })
+      expect(denied.statusCode).toBe(viewer === 'guest' ? 401 : 403)
+    }
+    expect(firebase.verifyUserEmail).not.toHaveBeenCalled()
+    const confirmed = await app.inject({
+      method: 'PUT',
+      url,
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: {},
+    })
+    expect(confirmed.statusCode, confirmed.body).toBe(204)
+    expect(firebase.verifyUserEmail).toHaveBeenCalledWith('member-uid', 'member@example.test')
+    const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
+    expect(stored?.email_verified).toBe(true)
+    const found = await app.inject({
+      url: '/v1/users?q=member@example',
+      headers: { 'x-test-viewer': 'superadmin' },
+    })
+    expect(found.json().items[0].email_verified).toBe(true)
+    const repeated = await app.inject({
+      method: 'PUT',
+      url,
+      headers: { 'x-test-viewer': 'superadmin' },
+      payload: {},
+    })
+    expect(repeated.statusCode).toBe(204)
+    expect(firebase.verifyUserEmail).toHaveBeenCalledTimes(1)
+    expect(await new UserEmailRepository(database.db).confirm(MEMBER, 'changed@example.test')).toBe(
+      false,
+    )
+  })
+
+  it('удаление защищено правами, отзывает сессии и запрещает новый вход', async () => {
+    const url = `/v1/users/${MEMBER}`
+    expect(
+      (await app.inject({ method: 'DELETE', url, headers: { 'x-test-viewer': 'admin' } }))
+        .statusCode,
+    ).toBe(403)
+    expect(
+      (
+        await app.inject({
+          method: 'DELETE',
+          url: `/v1/users/${SUPER}`,
+          headers: { 'x-test-viewer': 'superadmin' },
+        })
+      ).statusCode,
+    ).toBe(403)
+    await database.db.insert(sessions).values({
+      id: 'delete-session',
+      user_id: MEMBER,
+      expires_at: new Date(Date.now() + 86_400_000),
+    })
+    expect(
+      (await app.inject({ method: 'DELETE', url, headers: { 'x-test-viewer': 'superadmin' } }))
+        .statusCode,
+    ).toBe(204)
+    const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
+    expect(stored?.deleted_at).toBeInstanceOf(Date)
+    const account_sessions = await database.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.user_id, MEMBER))
+    expect(account_sessions.every((session) => session.revoked_at !== null)).toBe(true)
+    const found = await app.inject({ url: '/v1/users', headers: { 'x-test-viewer': 'superadmin' } })
+    expect(found.json().items.map((item: { id: string }) => item.id)).not.toContain(MEMBER)
+    const auth = new AuthRepository(database.db)
+    await expect(auth.findByEmail('member@example.test')).rejects.toMatchObject({
+      http_status: 403,
+    })
+    await expect(
+      auth.openSession({
+        user_id: MEMBER,
+        session_id: 'new-session',
+        expires_at: new Date(Date.now() + 86_400_000),
+      }),
+    ).rejects.toMatchObject({ http_status: 403 })
+    const restore = await app.inject({
+      method: 'DELETE',
+      url: `${url}/restriction`,
+      headers: { 'x-test-viewer': 'superadmin' },
+    })
+    expect(restore.statusCode).toBe(404)
   })
 })

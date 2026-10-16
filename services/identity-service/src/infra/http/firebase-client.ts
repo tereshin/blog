@@ -137,6 +137,13 @@ export class FirebaseClient implements FirebaseGateway {
     return { firebase_uid }
   }
 
+  async verifyUserEmail(firebase_uid: string, email: string): Promise<boolean> {
+    const user = await this.auth.getUser(firebase_uid)
+    if (user.email?.trim().toLowerCase() !== email.trim().toLowerCase()) return false
+    if (!user.emailVerified) await this.auth.updateUser(firebase_uid, { emailVerified: true })
+    return true
+  }
+
   async deleteUser(firebase_uid: string): Promise<void> {
     await this.auth.deleteUser(firebase_uid)
   }

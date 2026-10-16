@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
+import { useProfileSummaries } from '@/entities/profile'
 import { createModerationReturnState } from '@/entities/admin'
 import { useT } from '@/shared/i18n'
 import { EmptyState } from '@/shared/ui'
@@ -33,6 +34,10 @@ export function ModerationTable({
 }) {
   const { t, locale } = useT()
   const { pathname, search } = useLocation()
+  const reporters = useProfileSummaries(rows.flatMap((row) => (row.reporter ? [row.reporter] : [])))
+  const reporter_by_id = new Map(
+    (reporters.data ?? []).map((profile) => [profile.user_id, profile]),
+  )
   const columns: DataColumn<ModerationTableRow>[] = [
     {
       id: 'content',
@@ -48,11 +53,28 @@ export function ModerationTable({
       ),
     },
     { id: 'author', label: t('admin.table.author'), render: (row) => row.author },
-    { id: 'reporter', label: t('admin.table.reporter'), render: (row) => row.reporter ?? '—' },
+    {
+      id: 'reporter',
+      label: t('admin.table.reporter'),
+      render: (row) => {
+        if (!row.reporter) return '—'
+        const profile = reporter_by_id.get(row.reporter)
+        return (
+          <Link
+            className="text-accent"
+            to={`/u/${encodeURIComponent(profile?.slug || row.reporter)}`}
+          >
+            {profile?.display_name || t('admin.members.access_member')}
+          </Link>
+        )
+      },
+    },
     {
       id: 'date',
       label: t('admin.table.date'),
-      render: (row) => <time dateTime={row.date}>{new Date(row.date).toLocaleDateString(locale)}</time>,
+      render: (row) => (
+        <time dateTime={row.date}>{new Date(row.date).toLocaleDateString(locale)}</time>
+      ),
     },
     { id: 'status', label: t('admin.table.status'), render: (row) => row.status },
     {

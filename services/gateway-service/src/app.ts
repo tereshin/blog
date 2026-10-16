@@ -4,7 +4,13 @@ import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import Fastify from 'fastify'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
-import { createServiceClient, errorHandler, health, idempotency, requestContext } from '@blog/http-kit'
+import {
+  createServiceClient,
+  errorHandler,
+  health,
+  idempotency,
+  requestContext,
+} from '@blog/http-kit'
 import type { ServiceClient } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
@@ -12,11 +18,36 @@ import type { Env } from './config/env.ts'
 import { ContentAccessClient } from './infra/http/content-access-client.ts'
 import { IdentitySessionClient } from './infra/http/identity-session-client.ts'
 import { EventsController, EventsService, eventsRoutes } from './modules/events/index.ts'
-import { SiteAssetsController, SiteAssetsService, siteAssetsRoutes } from './modules/site-assets/index.ts'
-import { PrerenderController, PrerenderService, prerenderRoutes } from './modules/prerender/index.ts'
-import { ProxyController, ProxyService, proxyRoutes } from './modules/proxy/index.ts'
-import { contentSecurityPolicy, imageOrigin, newCspNonce, rateLimitForPath, rateLimitGroup } from './modules/security/index.ts'
-import { ContextSigner, SessionController, SessionService, sessionModule, sessionRoutes } from './modules/session/index.ts'
+import {
+  SiteAssetsController,
+  SiteAssetsService,
+  siteAssetsRoutes,
+} from './modules/site-assets/index.ts'
+import {
+  PrerenderController,
+  PrerenderService,
+  prerenderRoutes,
+} from './modules/prerender/index.ts'
+import {
+  memberDirectoryRoutes,
+  ProxyController,
+  ProxyService,
+  proxyRoutes,
+} from './modules/proxy/index.ts'
+import {
+  contentSecurityPolicy,
+  imageOrigin,
+  newCspNonce,
+  rateLimitForPath,
+  rateLimitGroup,
+} from './modules/security/index.ts'
+import {
+  ContextSigner,
+  SessionController,
+  SessionService,
+  sessionModule,
+  sessionRoutes,
+} from './modules/session/index.ts'
 import type { CookieNames } from './modules/session/index.ts'
 
 declare module 'fastify' {
@@ -71,7 +102,6 @@ export function cookieNames(env: Env): CookieNames {
     csrf: env.CSRF_COOKIE_NAME,
   }
 }
-
 
 /** Явный потолок JSON-тела; файлы идут в media-service со своим лимитом. */
 const BODY_LIMIT_BYTES = 1_048_576
@@ -136,11 +166,19 @@ export async function buildApp(deps: AppDeps, services: AppServices): Promise<Fa
 
   // Каждый модуль маршрутов — отдельный контекст: у proxy тело идёт потоком, у events — разбирается как JSON.
   await app.register(eventsRoutes, { controller: new EventsController(services.events) })
-  await app.register(sessionRoutes, { controller: new SessionController(services.sessions, cookies) })
+  await app.register(sessionRoutes, {
+    controller: new SessionController(services.sessions, cookies),
+  })
   await app.register(siteAssetsRoutes, {
     controller: new SiteAssetsController(new SiteAssetsService(services.content, services.proxy)),
   })
-  await app.register(prerenderRoutes, { controller: new PrerenderController(new PrerenderService(services.content)) })
+  await app.register(prerenderRoutes, {
+    controller: new PrerenderController(new PrerenderService(services.content)),
+  })
+  await app.register(memberDirectoryRoutes, {
+    identity: services.identity,
+    content: services.content,
+  })
   await app.register(proxyRoutes, { controller: new ProxyController(services.proxy, cookies) })
 
   return app

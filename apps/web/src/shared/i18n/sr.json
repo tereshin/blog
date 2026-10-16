@@ -744,5 +744,22 @@
   "admin.badges.down": "Pomeri dole",
   "admin.badges.add": "Dodaj značku",
   "admin.badges.new": "Nova značka",
-  "admin.badges.invalid": "Proverite naziv, sliku i celobrojni prag od 1 do 120000."
+  "admin.badges.invalid": "Proverite naziv, sliku i celobrojni prag od 1 do 120000.",
+  "admin.members.email": "Email",
+  "admin.members.access": "Nivo pristupa",
+  "admin.members.access_member": "Član",
+  "admin.members.access_admin": "Administrator",
+  "admin.members.access_superadmin": "Superadministrator",
+  "admin.members.blocked": "Blokiran",
+  "admin.members.active": "Aktivan",
+  "admin.members.previous": "Prethodna",
+  "admin.members.next": "Sledeća",
+  "admin.members.page": "Stranica",
+  "admin.members.edit": "Uredi",
+  "admin.members.confirm_delete": "Obrisati nalog? Prijava će biti onemogućena i sve sesije završene. Objavljeni sadržaj će biti sačuvan.",
+  "admin.members.email_verified": "Email je potvrđen",
+  "admin.members.email_unverified": "Email nije potvrđen",
+  "admin.members.confirm_email": "Potvrdi email",
+  "admin.members.no_email": "Email nije naveden",
+  "admin.members.confirm_email_failed": "Potvrda email adrese nije uspela. Proverite adresu u Firebase-u i pokušajte ponovo."
 }

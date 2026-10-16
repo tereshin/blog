@@ -268,5 +268,13 @@ export { safeEmbedUrl } from './embed-url.ts'
 export { welcomeContentSchema } from './settings.ts'
 export type { WelcomeContent } from './settings.ts'
 
-export { badgeIdSchema, badgeMetricSchema, badgeDefinitionSchema, badgeDefinitionsSchema } from './badges.ts'
+export {
+  badgeIdSchema,
+  badgeMetricSchema,
+  badgeDefinitionSchema,
+  badgeDefinitionsSchema,
+} from './badges.ts'
 export type { BadgeDefinition, BadgeMetric } from './badges.ts'
+
+export { adminDirectoryQuerySchema, adminDirectorySchema } from './admin-directory.ts'
+export type { AdminDirectoryQuery } from './admin-directory.ts'

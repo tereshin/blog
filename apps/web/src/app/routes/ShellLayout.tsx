@@ -44,7 +44,9 @@ export function ShellLayout() {
   const shell_path = is_editor ? background_path : pathname
   const is_direct_editor =
     /^\/write(?:\/|$)/.test(background_path) || /^\/admin\/pages\/[^/]+\/?$/.test(background_path)
-  const content_width = /^\/admin\/(?:moderation|pages)(?:\/|$)/.test(shell_path) ? 848 : 640
+  const content_width = /^\/admin\/(?:moderation|pages|members)(?:\/|$)/.test(shell_path)
+    ? 848
+    : 640
   const skeleton = skeletonOf(useMatches())
   const setHeaderCenter = useShellStore((state) => state.setHeaderCenter)
   const setArticleTopicId = useShellStore((state) => state.setArticleTopicId)
@@ -52,9 +54,15 @@ export function ShellLayout() {
   // Центр нового адреса начинается сверху (в `Shell` по `scroll_key`).
   useEffect(() => {
     if (/^\/discovery(?:\/|$)/.test(pathname)) {
-      setHeaderCenter(pathname.replace(/\/+$/, '') === '/discovery' ? { kind: 'empty' } : {
-        kind: 'back', title: t(pathname === '/discovery/blogs' ? 'discovery.blogs' : 'discovery.topics'), to: '/discovery',
-      })
+      setHeaderCenter(
+        pathname.replace(/\/+$/, '') === '/discovery'
+          ? { kind: 'empty' }
+          : {
+              kind: 'back',
+              title: t(pathname === '/discovery/blogs' ? 'discovery.blogs' : 'discovery.topics'),
+              to: '/discovery',
+            },
+      )
       setArticleTopicId(null)
     }
     const admin_route = getAdminRoute(pathname)

@@ -28,6 +28,14 @@ This version contains the current changes on top of 1.0.0.
 
 ### Changed
 
+- Firebase Google sign-in allows the Google API loader in the page CSP.
+- Member administration uses a wide table with cursor pagination, access-level
+  filters, case-insensitive name/email search, profile-name and access editing,
+  blocking, and account deletion. Deletion revokes sessions and prevents sign-in
+  while preserving published content. Superadmins can confirm an account email
+  in Firebase and the platform; the member table shows email verification status.
+- Moderation reporters display linked profile names instead of user UUIDs.
+
 - Profile status selection uses the same accessible icon grid as reactions.
 - Navigation and reloads start at the top; returning from an article restores the
   originating feed position without replaying stale offsets.
@@ -89,6 +97,9 @@ This version contains the current changes on top of 1.0.0.
   through pages and custom navigation.
 
 ### Deployment
+
+- Apply identity-service migration `20261016_deleted_users.sql` before deploying
+  account deletion and the updated authentication and member queries.
 
 - Profile responses expose all built-in and configurable award IDs in `badges`.
   Pre-production contracts use one format without older-client compatibility paths.

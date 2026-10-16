@@ -738,5 +738,22 @@
   "admin.badges.down": "Move down",
   "admin.badges.add": "Add badge",
   "admin.badges.new": "New badge",
-  "admin.badges.invalid": "Check the name, image and integer threshold between 1 and 120000."
+  "admin.badges.invalid": "Check the name, image and integer threshold between 1 and 120000.",
+  "admin.members.email": "Email",
+  "admin.members.access": "Access level",
+  "admin.members.access_member": "Member",
+  "admin.members.access_admin": "Administrator",
+  "admin.members.access_superadmin": "Superadministrator",
+  "admin.members.blocked": "Blocked",
+  "admin.members.active": "Active",
+  "admin.members.previous": "Previous",
+  "admin.members.next": "Next",
+  "admin.members.page": "Page",
+  "admin.members.edit": "Edit",
+  "admin.members.confirm_delete": "Delete this account? Sign-in will be disabled and all sessions revoked. Published content will be preserved.",
+  "admin.members.email_verified": "Email verified",
+  "admin.members.email_unverified": "Email not verified",
+  "admin.members.confirm_email": "Verify email",
+  "admin.members.no_email": "No email address",
+  "admin.members.confirm_email_failed": "Could not verify the email. Check the address in Firebase and try again."
 }

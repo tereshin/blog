@@ -1,9 +1,16 @@
+import { ForbiddenError } from '@blog/errors'
 import { randomUUID } from 'node:crypto'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { appendToOutbox } from '@blog/broker'
 import type { Database } from '@blog/broker'
-import { auth_identities, auth_idempotency, sessions, settings_copy, users } from '../../infra/db/schema.ts'
+import {
+  auth_identities,
+  auth_idempotency,
+  sessions,
+  settings_copy,
+  users,
+} from '../../infra/db/schema.ts'
 import { sessionRevokedEvent } from '../../shared/session-events.ts'
 import { AccountConflictError } from './auth.errors.ts'
 import { userCreatedEvent } from './auth.events.ts'
@@ -13,8 +20,8 @@ import type { AccountSettings, AccountUser, AuthRepositoryPort } from './auth.ty
 type CreateMemberInput = Parameters<AuthRepositoryPort['createMember']>[0]
 type AttachUidInput = Parameters<AuthRepositoryPort['attachUid']>[0]
 type OpenSessionInput = Parameters<AuthRepositoryPort['openSession']>[0]
-
 function toUser(row: typeof users.$inferSelect): AccountUser {
+  if (row.deleted_at) throw new ForbiddenError({ message: 'Аккаунт удалён' })
   return {
     id: row.id,
     email: row.email,
@@ -57,7 +64,10 @@ export class AuthRepository implements AuthRepositoryPort {
   async readSettings(): Promise<AccountSettings> {
     const [row] = await this.db.select().from(settings_copy).where(eq(settings_copy.id, 1)).limit(1)
     return row
-      ? { registration_open: row.registration_open, new_members_can_publish: row.new_members_can_publish }
+      ? {
+          registration_open: row.registration_open,
+          new_members_can_publish: row.new_members_can_publish,
+        }
       : { registration_open: true, new_members_can_publish: true }
   }
 
@@ -74,17 +84,26 @@ export class AuthRepository implements AuthRepositoryPort {
   async findByEmail(email: string): Promise<AccountUser | null> {
     const normalized = normalizeEmail(email)
     if (!normalized) return null
-    const [row] = await this.db.select().from(users).where(sql`lower(${users.email}) = ${normalized} and ${users.email} <> ''`).limit(1)
+    const [row] = await this.db
+      .select()
+      .from(users)
+      .where(sql`lower(${users.email}) = ${normalized} and ${users.email} <> ''`)
+      .limit(1)
     return row ? toUser(row) : null
   }
 
   async findIdentityUserId(firebase_uid: string): Promise<string | null> {
-    const [row] = await this.db.select({ user_id: auth_identities.user_id }).from(auth_identities).where(eq(auth_identities.firebase_uid, firebase_uid)).limit(1)
+    const [row] = await this.db
+      .select({ user_id: auth_identities.user_id })
+      .from(auth_identities)
+      .where(eq(auth_identities.firebase_uid, firebase_uid))
+      .limit(1)
     return row?.user_id ?? null
   }
 
   async findUidForUser(user_id: string): Promise<string | null> {
-    const [row] = await this.db.select({ firebase_uid: auth_identities.firebase_uid }).from(auth_identities).where(eq(auth_identities.user_id, user_id)).limit(1)
+    const [row] = await this.db.select({ firebase_uid: auth_identities.firebase_uid })
+      .from(auth_identities).where(eq(auth_identities.user_id, user_id)).limit(1)
     return row?.firebase_uid ?? null
   }
 
@@ -93,13 +112,32 @@ export class AuthRepository implements AuthRepositoryPort {
       .select({ user: users })
       .from(sessions)
       .innerJoin(users, eq(users.id, sessions.user_id))
-      .where(and(eq(sessions.id, session_id), isNull(sessions.revoked_at), gt(sessions.expires_at, now)))
+      .where(
+        and(
+          eq(sessions.id, session_id),
+          isNull(sessions.revoked_at),
+          isNull(users.deleted_at),
+          gt(sessions.expires_at, now),
+        ),
+      )
       .limit(1)
     return row ? toUser(row.user) : null
   }
 
   async openSession(input: OpenSessionInput): Promise<void> {
-    await translateConflict(() => this.database.insert(sessions).values({ id: input.session_id, user_id: input.user_id, expires_at: input.expires_at }))
+    await translateConflict(() =>
+      this.database.transaction(async (tx) => {
+        const [user] = await tx
+          .select({ deleted_at: users.deleted_at })
+          .from(users)
+          .where(eq(users.id, input.user_id))
+          .for('update')
+        if (!user || user.deleted_at) throw new ForbiddenError()
+        await tx
+          .insert(sessions)
+          .values({ id: input.session_id, user_id: input.user_id, expires_at: input.expires_at })
+      }),
+    )
   }
 
   async attachUid(input: AttachUidInput): Promise<void> {
@@ -140,7 +178,9 @@ export class AuthRepository implements AuthRepositoryPort {
           provider_id: input.provider_id,
         })
         if (input.session_id && input.expires_at) {
-          await tx.insert(sessions).values({ id: input.session_id, user_id: user.id, expires_at: input.expires_at })
+          await tx
+            .insert(sessions)
+            .values({ id: input.session_id, user_id: user.id, expires_at: input.expires_at })
         }
         await appendToOutbox(
           tx,
@@ -161,7 +201,10 @@ export class AuthRepository implements AuthRepositoryPort {
   }
 
   async setEmail(input: { user_id: string; email: string }): Promise<void> {
-    await this.database.update(users).set({ email: normalizeEmail(input.email), email_verified: false }).where(eq(users.id, input.user_id))
+    await this.database
+      .update(users)
+      .set({ email: normalizeEmail(input.email), email_verified: false })
+      .where(eq(users.id, input.user_id))
   }
 
   async markEmailVerified(firebase_uid: string): Promise<boolean> {
@@ -171,7 +214,10 @@ export class AuthRepository implements AuthRepositoryPort {
       .where(eq(auth_identities.firebase_uid, firebase_uid))
       .limit(1)
     if (!identity) return false
-    await this.database.update(users).set({ email_verified: true }).where(eq(users.id, identity.user_id))
+    await this.database
+      .update(users)
+      .set({ email_verified: true })
+      .where(eq(users.id, identity.user_id))
     return true
   }
 
@@ -192,20 +238,36 @@ export class AuthRepository implements AuthRepositoryPort {
         .where(and(eq(sessions.id, session_id), isNull(sessions.revoked_at)))
         .returning({ user_id: sessions.user_id })
       if (!row) return
-      await appendToOutbox(tx, sessionRevokedEvent({ correlation_id, session_ids: [session_id], user_id: row.user_id }))
+      await appendToOutbox(
+        tx,
+        sessionRevokedEvent({ correlation_id, session_ids: [session_id], user_id: row.user_id }),
+      )
     })
   }
 
-  async provisionSuperadmin(input: { email: string; correlation_id: string }): Promise<{ created: boolean; user_id: string }> {
+  async provisionSuperadmin(input: {
+    email: string
+    correlation_id: string
+  }): Promise<{ created: boolean; user_id: string }> {
     const email = normalizeEmail(input.email)
     if (!email) throw new Error('SUPERADMIN_EMAIL не задан')
-    const existing = await this.db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
+    const existing = await this.db
+      .select()
+      .from(users)
+      .where(sql`lower(${users.email}) = ${email}`)
+      .limit(1)
     if (existing[0]) return { created: false, user_id: existing[0].id }
     try {
       return await this.database.transaction(async (tx) => {
         const [row] = await tx
           .insert(users)
-          .values({ id: randomUUID(), email, email_verified: false, role: 'superadmin', can_publish: true })
+          .values({
+            id: randomUUID(),
+            email,
+            email_verified: false,
+            role: 'superadmin',
+            can_publish: true,
+          })
           .returning()
         if (!row) throw new Error('учётная запись суперадминистратора не создана')
         const user = toUser(row)
@@ -226,7 +288,11 @@ export class AuthRepository implements AuthRepositoryPort {
       })
     } catch (error) {
       if (!isUniqueViolation(error)) throw error
-      const [row] = await this.db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
+      const [row] = await this.db
+        .select()
+        .from(users)
+        .where(sql`lower(${users.email}) = ${email}`)
+        .limit(1)
       if (!row) throw error
       return { created: false, user_id: row.id }
     }

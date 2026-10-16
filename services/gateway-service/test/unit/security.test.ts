@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { contentSecurityPolicy, imageOrigin } from '../../src/modules/security/content-security-policy.ts'
+import {
+  contentSecurityPolicy,
+  imageOrigin,
+} from '../../src/modules/security/content-security-policy.ts'
 import { rateLimitForPath, rateLimitGroup } from '../../src/modules/security/rate-limit.ts'
 
 describe('лимиты gateway', () => {
@@ -23,9 +26,14 @@ describe('лимиты gateway', () => {
 
 describe('CSP', () => {
   it('разрешает только свой origin, nonce и картинки хранилища, без unsafe-inline и unsafe-eval', () => {
-    const policy = contentSecurityPolicy({ nonce: 'abc', image_origin: imageOrigin('http://localhost:9000/media') })
+    const policy = contentSecurityPolicy({
+      nonce: 'abc',
+      image_origin: imageOrigin('http://localhost:9000/media'),
+    })
     expect(policy).toContain("default-src 'self'")
-    expect(policy).toContain("script-src 'self' 'nonce-abc'")
+    expect(policy.split('; ').find((directive) => directive.startsWith('script-src'))).toBe(
+      "script-src 'self' 'nonce-abc' https://apis.google.com",
+    )
     expect(policy).toContain('http://localhost:9000')
     expect(policy).toContain('https://img.heroui.chat')
     expect(policy).toContain('data:')
@@ -46,7 +54,9 @@ describe('CSP', () => {
       auth_domain: 'demo-blog.firebaseapp.com',
       emulator_host: 'firebase-auth.localhost:9099',
     })
-    expect(policy).toContain('connect-src \'self\' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com http://firebase-auth.localhost:9099')
+    expect(policy).toContain(
+      "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com http://firebase-auth.localhost:9099",
+    )
     expect(policy).toContain('https://demo-blog.firebaseapp.com')
     expect(policy).toContain('http://firebase-auth.localhost:9099')
     expect(policy.split(' ').includes('https:')).toBe(false)

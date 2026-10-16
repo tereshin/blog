@@ -1,3 +1,5 @@
+import { and, asc, gt, ilike, inArray } from 'drizzle-orm'
+import type { AdminDirectoryQuery } from '@blog/contracts'
 import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import { requestAuthorCovers } from '../social-cover/index.ts'
 import { eq, sql } from 'drizzle-orm'
@@ -84,34 +86,61 @@ export class ProfileRepository implements ProfileRepositoryPort {
     return this.load(eq(users_copy.public_number, public_number) as SQL, viewer_id)
   }
 
+  async directory(query: AdminDirectoryQuery) {
+    return this.db
+      .select({
+        user_id: profiles.user_id,
+        public_number: users_copy.public_number,
+        display_name: profiles.display_name,
+        slug: profiles.slug,
+      })
+      .from(profiles)
+      .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
+      .where(
+        and(
+          query.ids !== undefined
+            ? inArray(profiles.user_id, query.ids)
+            : gt(users_copy.public_number, query.cursor),
+          query.ids === undefined && query.q
+            ? ilike(profiles.display_name, `%${query.q.replace(/[\\%_]/g, '\\$&')}%`)
+            : undefined,
+          query.role ? eq(users_copy.role, query.role) : undefined,
+        ),
+      )
+      .orderBy(asc(users_copy.public_number))
+      .limit(query.limit)
+  }
+
   async update(user_id: string, input: UpdateProfile, correlation_id: string) {
     return (this.db as Database).transaction(async (tx) => {
-        const database = tx as Database
-        const slugs = new SlugService(new SlugRepository())
-        if (input.slug === null) await slugs.releaseSlug(database, 'profile', user_id)
-        else if (input.slug !== undefined) await slugs.replaceSlug(database, input.slug, 'profile', user_id)
-        const [row] = await database
-          .update(profiles)
-          .set(input)
-          .where(eq(profiles.user_id, user_id))
-          .returning({ user_id: profiles.user_id })
-        if (!row) return null
-        const [fresh] = await database
-          .select(selection(user_id))
-          .from(profiles)
-          .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
-          .where(eq(profiles.user_id, user_id))
-          .limit(1)
-        if (!fresh) return null
-        await appendProfileUpdated(database, {
-          user_id,
-          display_name: fresh.display_name,
-          avatar_url: fresh.avatar_url,
-          slug: fresh.slug,
-          correlation_id,
-        })
-        if (input.display_name !== undefined) await requestAuthorCovers(database, user_id, correlation_id)
-        return toRecord(fresh)
+      const database = tx as Database
+      const slugs = new SlugService(new SlugRepository())
+      if (input.slug === null) await slugs.releaseSlug(database, 'profile', user_id)
+      else if (input.slug !== undefined)
+        await slugs.replaceSlug(database, input.slug, 'profile', user_id)
+      const [row] = await database
+        .update(profiles)
+        .set(input)
+        .where(eq(profiles.user_id, user_id))
+        .returning({ user_id: profiles.user_id })
+      if (!row) return null
+      const [fresh] = await database
+        .select(selection(user_id))
+        .from(profiles)
+        .innerJoin(users_copy, eq(users_copy.user_id, profiles.user_id))
+        .where(eq(profiles.user_id, user_id))
+        .limit(1)
+      if (!fresh) return null
+      await appendProfileUpdated(database, {
+        user_id,
+        display_name: fresh.display_name,
+        avatar_url: fresh.avatar_url,
+        slug: fresh.slug,
+        correlation_id,
       })
+      if (input.display_name !== undefined)
+        await requestAuthorCovers(database, user_id, correlation_id)
+      return toRecord(fresh)
+    })
   }
 }

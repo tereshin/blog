@@ -7,4 +7,11 @@ export { updateProfile } from './api/update-profile.ts'
 export { formatReputation } from './lib/format-reputation.ts'
 export { profileKeys } from './model/profile-keys.ts'
 export { useProfile } from './model/useProfile.ts'
-export type { Profile, ProfileArticleStatus, ProfileBadge, ProfileUpdate } from './model/profile-types.ts'
+export type {
+  Profile,
+  ProfileArticleStatus,
+  ProfileBadge,
+  ProfileUpdate,
+} from './model/profile-types.ts'
+
+export { useProfileSummaries } from './api/get-profile-summaries.ts'

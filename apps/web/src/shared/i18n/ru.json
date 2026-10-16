@@ -747,5 +747,22 @@
   "admin.badges.down": "Ниже",
   "admin.badges.add": "Добавить бейдж",
   "admin.badges.new": "Новый бейдж",
-  "admin.badges.invalid": "Проверьте название, изображение и целочисленный порог от 1 до 120000."
+  "admin.badges.invalid": "Проверьте название, изображение и целочисленный порог от 1 до 120000.",
+  "admin.members.email": "Email",
+  "admin.members.access": "Уровень доступа",
+  "admin.members.access_member": "Участник",
+  "admin.members.access_admin": "Администратор",
+  "admin.members.access_superadmin": "Суперадминистратор",
+  "admin.members.blocked": "Заблокирован",
+  "admin.members.active": "Активен",
+  "admin.members.previous": "Назад",
+  "admin.members.next": "Далее",
+  "admin.members.page": "Страница",
+  "admin.members.edit": "Редактировать",
+  "admin.members.confirm_delete": "Удалить аккаунт? Вход будет закрыт, все сессии завершатся. Опубликованные материалы сохранятся.",
+  "admin.members.email_verified": "Почта подтверждена",
+  "admin.members.email_unverified": "Почта не подтверждена",
+  "admin.members.confirm_email": "Подтвердить почту",
+  "admin.members.no_email": "Почта не указана",
+  "admin.members.confirm_email_failed": "Не удалось подтвердить почту. Проверьте адрес в Firebase и повторите попытку."
 }
