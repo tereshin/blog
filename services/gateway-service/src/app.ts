@@ -121,7 +121,12 @@ export async function buildApp(deps: AppDeps, services: AppServices): Promise<Fa
   await app.register(requestContext, { logger })
   await app.register(idempotency)
   await app.register(errorHandler)
-  await app.register(helmet, { global: true, contentSecurityPolicy: false })
+  await app.register(helmet, {
+    global: true,
+    contentSecurityPolicy: false,
+    // Firebase popup sign-in must keep its opener across the provider redirect.
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  })
   app.decorateReply('csp_nonce', '')
   const image_origin = imageOrigin(env.S3_PUBLIC_URL)
   app.addHook('onRequest', async (_request, reply) => {

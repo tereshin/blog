@@ -8,6 +8,7 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { profiles, users_copy } from '../../src/infra/db/schema.ts'
+import { applyDeletedUser } from '../../src/modules/copies/deleted-users.consumer.ts'
 import { CopiesHandler } from '../../src/modules/copies/index.ts'
 
 const USER = '3f1d3c9e-1b0a-4a55-8f2b-6f6d5d3f7a22'
@@ -79,6 +80,14 @@ describe('content: копии участников из событий (PostgreS
     await apply(event('identity.user.updated', snapshot))
     await apply(event('identity.user.restricted', snapshot))
     expect((await readUser())?.is_deleted).toBe(true)
+  })
+
+  it('повторный обработчик удаления не скрывает обычный заблокированный аккаунт', async () => {
+    const blocked = '44444444-4444-4444-8444-444444444444'
+    await database.db.insert(users_copy).values({ user_id: blocked, public_number: 100, created_at: new Date(), is_restricted: true })
+    await processEvent(database.db, 'content-copies-deleted-users-v1', event('identity.user.restricted', { ...snapshot, user_id: blocked, public_number: 100, is_restricted: true }), applyDeletedUser)
+    const [stored] = await database.db.select().from(users_copy).where(eq(users_copy.user_id, blocked))
+    expect(stored?.is_deleted).toBe(false)
   })
 
 })

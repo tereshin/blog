@@ -7,6 +7,10 @@ import { openDatabase } from '../../src/infra/db/client.ts'
 import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 import { articles, follows, profiles, topics, users_copy } from '../../src/infra/db/schema.ts'
+import {
+  applyDeletedUser,
+  DELETED_USERS_CONSUMER,
+} from '../../src/modules/copies/deleted-users.consumer.ts'
 import { CopiesHandler } from '../../src/modules/copies/index.ts'
 import { ProfileRepository } from '../../src/modules/profile/profile.repository.ts'
 import { ProfileListsRepository } from '../../src/modules/profile/profile.lists.ts'
@@ -60,18 +64,16 @@ describe('deleted entities stay out of public discovery and SEO', () => {
         published_at: new Date(),
       })),
     )
-    await database.db
-      .insert(articles)
-      .values({
-        id: '55555555-5555-4555-8555-555555555555',
-        author_id: LIVE,
-        topic_id: TOPIC,
-        slug: 'members',
-        title: 'Секретная статья',
-        status: 'published',
-        visibility: 'members',
-        published_at: new Date(),
-      })
+    await database.db.insert(articles).values({
+      id: '55555555-5555-4555-8555-555555555555',
+      author_id: LIVE,
+      topic_id: TOPIC,
+      slug: 'members',
+      title: 'Секретная статья',
+      status: 'published',
+      visibility: 'members',
+      published_at: new Date(),
+    })
     const event = {
       event_id: newEventId(),
       name: 'identity.user.restricted',
@@ -87,7 +89,21 @@ describe('deleted entities stay out of public discovery and SEO', () => {
       is_deleted: true,
       created_at: new Date().toISOString(),
     }
-    await processEvent(database.db, 'test-deletion', event, new CopiesHandler().handle)
+    // Simulate the old deployed consumer acknowledging the event without the new field.
+    await processEvent(database.db, 'content-copies-users', event, async (tx, delivered) => {
+      await new CopiesHandler().handle(tx, { ...delivered, is_deleted: false })
+    })
+    const stale = await new ProfileRepository(database.db).findBySlug('removed', undefined)
+    expect(stale).not.toBeNull()
+    expect(
+      await processEvent(database.db, 'content-copies-users', event, new CopiesHandler().handle),
+    ).toBe('duplicate')
+    expect(await processEvent(database.db, DELETED_USERS_CONSUMER, event, applyDeletedUser)).toBe(
+      'ok',
+    )
+    expect(await processEvent(database.db, DELETED_USERS_CONSUMER, event, applyDeletedUser)).toBe(
+      'duplicate',
+    )
   }, 120_000)
   afterAll(async () => {
     await database?.close()

@@ -2,6 +2,7 @@ import { createIdempotentConsumer } from '@blog/broker'
 import type { BrokerClient, Database, EventHandler, RunningConsumer } from '@blog/broker'
 import { UserCreatedV1, UserRestrictedV1, UserUpdatedV1 } from '@blog/contracts'
 import type { Logger } from '@blog/logger'
+import { startDeletedUsersConsumer } from './deleted-users.consumer.ts'
 import { copiesRepository } from './copies.repository.ts'
 import type { UserCopy } from './copies.repository.ts'
 
@@ -50,10 +51,22 @@ export type CopiesConsumerDeps = { db: Database; broker: BrokerClient; logger: L
 
 /** Запускает потребителя копий участника (durable, своя запись в `processed_events`). */
 export async function startCopiesConsumers(deps: CopiesConsumerDeps): Promise<RunningConsumer> {
-  return createIdempotentConsumer({
+  const copies = await createIdempotentConsumer({
     ...deps,
     durable: 'content-copies-users',
     subject: 'identity.user.>',
     handler: new CopiesHandler().handle,
   })
+  try {
+    const deleted = await startDeletedUsersConsumer(deps)
+    return {
+      stop: async () => {
+        await deleted.stop()
+        await copies.stop()
+      },
+    }
+  } catch (error) {
+    await copies.stop()
+    throw error
+  }
 }

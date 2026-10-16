@@ -15,6 +15,7 @@ import { migrate } from '../../src/infra/db/migrate.ts'
 import { auth_identities, outbox, sessions, users } from '../../src/infra/db/schema.ts'
 import { AuthRepository } from '../../src/modules/auth/auth.repository.ts'
 import {
+  reconcileDeletedUsers,
   UserController,
   UserEmailRepository,
   UserEmailVerificationService,
@@ -67,14 +68,12 @@ describe('identity: управление участниками', () => {
       { id: ADMIN, email: 'admin@example.test', role: 'admin' },
       { id: MEMBER, email: 'member@example.test', role: 'member' },
     ])
-    await database.db
-      .insert(auth_identities)
-      .values({
-        id: '44444444-4444-4444-8444-444444444444',
-        user_id: MEMBER,
-        firebase_uid: 'member-uid',
-        provider_id: 'password',
-      })
+    await database.db.insert(auth_identities).values({
+      id: '44444444-4444-4444-8444-444444444444',
+      user_id: MEMBER,
+      firebase_uid: 'member-uid',
+      provider_id: 'password',
+    })
     await database.db.insert(sessions).values([
       { id: 'session-a', user_id: MEMBER, expires_at: new Date(Date.now() + 86_400_000) },
       { id: 'session-b', user_id: MEMBER, expires_at: new Date(Date.now() + 86_400_000) },
@@ -348,8 +347,15 @@ describe('identity: управление участниками', () => {
     ).toBe(204)
     const [stored] = await database.db.select().from(users).where(eq(users.id, MEMBER))
     expect(stored?.deleted_at).toBeInstanceOf(Date)
-    const deletion_events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.restricted'))
-    expect(deletion_events.some((event) => (event.payload as { is_deleted?: boolean }).is_deleted === true)).toBe(true)
+    const deletion_events = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.restricted'))
+    expect(
+      deletion_events.some(
+        (event) => (event.payload as { is_deleted?: boolean }).is_deleted === true,
+      ),
+    ).toBe(true)
     const account_sessions = await database.db
       .select()
       .from(sessions)
@@ -376,11 +382,65 @@ describe('identity: управление участниками', () => {
     expect(restore.statusCode).toBe(404)
   })
   it('миграция повторно рассылает ранее удалённые аккаунты валидным событием', async () => {
-    const sql = readFileSync(new URL('../../src/infra/db/migrations/20261016_republish_deleted_users.sql', import.meta.url), 'utf8')
+    const sql = readFileSync(
+      new URL(
+        '../../src/infra/db/migrations/20261016_republish_deleted_users.sql',
+        import.meta.url,
+      ),
+      'utf8',
+    )
     await database.pool.query(sql)
-    const events = await database.db.select().from(outbox).where(eq(outbox.name, 'identity.user.restricted'))
-    const replay = events.find((event) => (event.payload as { correlation_id: string }).correlation_id === 'deleted-users-backfill')
-    expect(UserRestrictedV1.parse(replay?.payload)).toMatchObject({ user_id: MEMBER, is_deleted: true, is_restricted: true })
+    const events = await database.db
+      .select()
+      .from(outbox)
+      .where(eq(outbox.name, 'identity.user.restricted'))
+    const replay = events.find(
+      (event) =>
+        (event.payload as { correlation_id: string }).correlation_id === 'deleted-users-backfill',
+    )
+    expect(UserRestrictedV1.parse(replay?.payload)).toMatchObject({
+      user_id: MEMBER,
+      is_deleted: true,
+      is_restricted: true,
+    })
   })
 
+  it('при запуске восстанавливает события для ранее удалённых аккаунтов с новыми id', async () => {
+    const read = async () =>
+      (await database.db.select().from(outbox)).filter(
+        (event) => event.payload.correlation_id === 'startup:deleted-users',
+      )
+    expect(await reconcileDeletedUsers(database.db)).toBe(1)
+    const first = await read()
+    expect(first).toHaveLength(1)
+    expect(UserRestrictedV1.parse(first[0]?.payload)).toMatchObject({
+      user_id: MEMBER,
+      is_deleted: true,
+    })
+    expect(await reconcileDeletedUsers(database.db)).toBe(1)
+    const second = await read()
+    expect(second).toHaveLength(2)
+    expect(new Set(second.map((event) => event.id)).size).toBe(2)
+  })
+  it('сверка обходит несколько пакетов удалённых аккаунтов и не затрагивает активные', async () => {
+    const removed = await database.db
+      .insert(users)
+      .values(
+        Array.from({ length: 101 }, (_, index) => ({
+          id: `55555555-5555-4555-8555-${String(index + 1).padStart(12, '0')}`,
+          email: `deleted-${index}@example.test`,
+          deleted_at: new Date(),
+          restricted_at: new Date(),
+        })),
+      )
+      .returning({ id: users.id })
+    expect(await reconcileDeletedUsers(database.db)).toBe(102)
+    const events = (await database.db.select().from(outbox)).filter(
+      (event) => event.payload.correlation_id === 'startup:deleted-users',
+    )
+    const deleted_ids = new Set(events.map((event) => event.payload.user_id))
+    expect(removed.every((user) => deleted_ids.has(user.id))).toBe(true)
+    expect(deleted_ids.has(SUPER)).toBe(false)
+    expect(deleted_ids.has(ADMIN)).toBe(false)
+  })
 })

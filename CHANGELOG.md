@@ -31,6 +31,10 @@ This version contains the current changes on top of 1.0.0.
 - Deleted accounts are excluded from Discovery, search, profile directories,
   follow lists, mention suggestions, profile URLs, and profile sitemaps. Deletion
   propagates as a persistent tombstone; published materials remain available.
+  A separate durable consumer replays deletion events acknowledged by older
+  content-service versions so those profiles disappear after an upgrade. Identity
+  also queues fresh deletion snapshots at startup, repairing stale copies without
+  relying on a one-time migration or retained broker history.
 - Public HTML includes metadata, canonical URLs, JSON-LD, and readable content
   for browsers and crawlers. Topic pages include public article previews and links.
   nginx routes application pages and crawl documents through the gateway while
@@ -38,6 +42,8 @@ This version contains the current changes on top of 1.0.0.
 - Selected values in large select fields are vertically centered.
 
 - Firebase Google sign-in allows the Google API loader in the page CSP.
+  Gateway uses `Cross-Origin-Opener-Policy: same-origin-allow-popups` so Google
+  and GitHub popup sign-in can return its result to the application.
 - Member administration uses a wide table with cursor pagination, access-level
   filters, case-insensitive name/email search, profile-name and access editing,
   blocking, and account deletion. Deletion revokes sessions and prevents sign-in

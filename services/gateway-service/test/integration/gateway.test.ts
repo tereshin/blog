@@ -66,7 +66,18 @@ describe('gateway: сессия, прокси, поток событий', () =>
         json(res, 200, { ok: true })
       }
     }, identity_seen)
-    const content = await listen((_req, res) => json(res, 200, { items: [] }), content_seen)
+    const content = await listen((req, res) => {
+      if (req.url?.startsWith('/internal/seo/page?')) {
+        json(res, 200, {
+          status: new URL(req.url, 'http://content').searchParams.get('path')?.startsWith('/internal/') ? 404 : 200, title: 'Блог', description: 'Публичная страница',
+          canonical_url: 'http://localhost:8080/', site_name: 'Блог', locale: 'ru',
+          og_type: 'website', robots: 'index, follow', body_text: 'Публичный текст',
+          images: null, structured_data: { '@context': 'https://schema.org', '@graph': [] },
+        })
+        return
+      }
+      json(res, 200, { items: [] })
+    }, content_seen)
     servers.push(identity.server, content.server)
 
     const logger = createLogger({ service: 'gateway-test', level: 'silent' })
@@ -117,6 +128,15 @@ describe('gateway: сессия, прокси, поток событий', () =>
     for (const connection of events.registry.all()) connection.close()
     await app.close()
     for (const server of servers) server.close()
+  })
+
+  it.each(['/', '/t/travels', '/p/public-post'])('HTML %s сохраняет связь с OAuth popup', async (path) => {
+    const response = await fetch(`${base_url}${path}`, { headers: { 'user-agent': 'Mozilla/5.0' } })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/html')
+    expect(response.headers.get('cross-origin-opener-policy')).toBe('same-origin-allow-popups')
+    expect(response.headers.get('content-security-policy')).toContain("script-src 'self' 'nonce-")
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff')
   })
 
   it('гость: сервис получает подписанный контекст гостя и не видит cookie', async () => {
