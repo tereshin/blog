@@ -69,7 +69,8 @@ This version contains the current changes on top of 1.0.0.
 
 - E2E checks isolate admin viewport and access cases, preserve mock guest sessions,
   and wait for loaded content, editor windows, and conversation layout before
-  asserting results.
+  asserting results. Shell width checks wait for the actual center column after
+  session loading, so the Maintenance loading screen cannot satisfy readiness.
 - Comment composers keep their expanded layout when focus moves away and collapse
   after sending, so nearby Reply actions stay under the pointer during a click.
 
