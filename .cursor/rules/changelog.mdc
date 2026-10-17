@@ -6,13 +6,16 @@ alwaysApply: true
 # Changelog
 
 - Read `CHANGELOG.md` before changing platform behavior.
-- Update the active unreleased version in `CHANGELOG.md` in the same task as any
-  user-visible or operational change. Group related changes and avoid duplicate
-  entries, commit dumps, and empty categories.
+- Update the active unreleased version in the same task as a user-visible
+  feature or bug fix. Follow **How to write an entry** in `CHANGELOG.md`.
+- Record only what a reader, member, or administrator can newly do (**Added**)
+  or what stopped going wrong for them (**Fixed**). Group related changes.
+  Skip empty sections, commit dumps, and duplicate bullets.
+- Leave out services, migrations, configuration, deployment, tests, refactors,
+  and API paths.
 - The already-pushed baseline is 1.0.0 at commit
   `d9f05890c8d99e910b70880aeb9ad7df526b728d`. Current work belongs to 1.0.1 until
-  it is released. Follow the Maintenance section for subsequent versions.
-- Record database migrations, configuration requirements, removals, and
-  compatibility impacts when relevant. Never invent release dates, tags, or
-  successful test results. Preserve released entries.
+  it is released. Follow **How to write an entry** for subsequent versions.
+- Never invent release dates, tags, or successful test results. Preserve
+  released entries.
 - Changelog-only edits do not need their own changelog entry.

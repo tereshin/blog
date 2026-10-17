@@ -241,6 +241,7 @@ describe('content: лента, темы и настройки на PostgreSQL', 
 
   it('настройки: значения по умолчанию, затем заданные', async () => {
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      maintenance_enabled: false,
       name: 'Блог',
       logo_url: null,
       locale: 'ru',
@@ -256,6 +257,7 @@ describe('content: лента, темы и настройки на PostgreSQL', 
     })
     await database.db.insert(settings).values({ id: 1, name: 'Мой блог', locale: 'sr', reaction_appearances: DEFAULT_REACTION_APPEARANCES })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      maintenance_enabled: false,
       name: 'Мой блог',
       logo_url: null,
       locale: 'sr',
