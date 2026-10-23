@@ -53,6 +53,7 @@ export class EventsService {
   constructor(
     private readonly access: ArticleAccessPort,
     private readonly logger: Logger,
+    private readonly signer: { sign: (context: ServiceContext) => Promise<string> },
   ) {}
 
   newConnectionId(): string {
@@ -72,6 +73,7 @@ export class EventsService {
     const connection = this.registry.get(input.connection_id)
     if (!connection) throw new NotFoundError({ message: 'Соединение не найдено: переподключитесь' })
     if (connection.viewer.viewer_key !== viewer.viewer_key) throw new ForbiddenError()
+    connection.viewer = viewer
     return this.subscribe(connection, viewer_jwt, input)
   }
 
@@ -80,7 +82,6 @@ export class EventsService {
    * (чужой черновик, закрытая статья) — клиент узнаёт об этом по списку принятых.
    */
   async subscribe(connection: Connection, viewer_jwt: string, input: SubscriptionsInput): Promise<{ article_ids: string[] }> {
-    connection.viewer_jwt = viewer_jwt
     const accepted = await this.filterReadable(connection.viewer, viewer_jwt, input.article_ids)
     this.registry.replace(connection, {
       article_ids: accepted,
@@ -176,7 +177,9 @@ export class EventsService {
   }
 
   private track(work: Promise<void>): void {
-    const tracked = work.finally(() => {
+    const tracked = work.catch((error: unknown) => {
+      this.logger.error({ err: error }, 'events: фоновая проверка доступа завершилась ошибкой')
+    }).finally(() => {
       this.pending_access = this.pending_access.filter((item) => item !== tracked)
     })
     this.pending_access.push(tracked)
@@ -192,11 +195,19 @@ export class EventsService {
       await Promise.all(batch.map(async (connection) => {
         const key = `${connection.viewer.viewer_key}:${article_id}`
         this.access_cache.delete(key)
-        if (!connection.viewer_jwt) return
-        const access = await this.access.check(connection.viewer_jwt, article_id)
-        if (!access) return
-        this.access_cache.set(key, access.can_read)
-        if (!access.can_read) this.registry.dropArticle(connection.id, article_id)
+        try {
+          // SSE живёт дольше служебного JWT: подписываем контекст перед каждым запросом.
+          const viewer_jwt = await this.signer.sign(connection.viewer)
+          const access = await this.access.check(viewer_jwt, article_id)
+          const can_read = access?.can_read === true
+          this.access_cache.set(key, can_read)
+          if (!can_read) this.registry.dropArticle(connection.id, article_id)
+        } catch (error) {
+          // Если доступ не подтверждён, прекращаем сигналы этой статьи, не весь gateway.
+          this.access_cache.set(key, false)
+          this.registry.dropArticle(connection.id, article_id)
+          this.logger.warn({ err: error, article_id }, 'events: доступ не подтверждён, подписка снята')
+        }
       }))
     }
   }

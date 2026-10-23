@@ -14,12 +14,11 @@ function member(user_id: string): ServiceContext {
   return { user_id, role: 'member', is_restricted: false, can_publish: true, viewer_key: `user:${user_id}` }
 }
 
-function open(viewer: ServiceContext, jwt: string): { connection: Connection; frames: EventFrame[] } {
+function open(viewer: ServiceContext): { connection: Connection; frames: EventFrame[] } {
   const frames: EventFrame[] = []
   const connection: Connection = {
     id: crypto.randomUUID(),
     viewer,
-    viewer_jwt: jwt,
     article_ids: new Set(),
     conversation_ids: new Set(),
     feed_key: null,
@@ -43,10 +42,10 @@ describe('поток: смена видимости снимает статью 
       check: async (jwt): Promise<ArticleAccess> => {
         return { can_read: readable.get(jwt) === true, visibility: 'members', status: 'published', author_id: AUTHOR }
       },
-    }, createLogger({ service: 'gateway-test', level: 'silent' }))
+    }, createLogger({ service: 'gateway-test', level: 'silent' }), { sign: async (viewer) => viewer.role === 'guest' ? 'guest-jwt' : 'member-jwt' })
 
-    const guest = open({ role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' }, 'guest-jwt')
-    const reader = open(member(OTHER), 'member-jwt')
+    const guest = open({ role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:1' })
+    const reader = open(member(OTHER))
     for (const item of [guest, reader]) {
       events.registry.add(item.connection)
       events.registry.replace(item.connection, { article_ids: [ARTICLE], conversation_ids: [], feed_key: null, notifications: false })

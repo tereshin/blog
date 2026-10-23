@@ -39,6 +39,9 @@ Current changes since 1.0.0.
 
 ### Fixed
 
+- Updating an article after leaving a page open no longer interrupts the site
+  with a 502 error.
+
 - Article cards show the first two blocks in their original order and formatting.
   Cards and article pages keep their original font sizes. The editor matches
   the published article's text, headings, and lists.

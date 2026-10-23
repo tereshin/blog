@@ -88,14 +88,15 @@ export function composeServices(deps: Pick<AppDeps, 'env' | 'logger'>): AppServi
     notification: env.NOTIFICATION_URL,
     media: env.MEDIA_URL,
   })
+  const signer = new ContextSigner(env.SERVICE_JWT_PRIVATE_KEY)
   return {
     identity,
     content,
     web: createServiceClient({ name: 'web', base_url: env.WEB_ASSETS_URL ?? 'http://web:8080' }),
     proxy,
     sessions: new SessionService(new IdentitySessionClient(identity), proxy),
-    events: new EventsService(new ContentAccessClient(content), logger),
-    signer: new ContextSigner(env.SERVICE_JWT_PRIVATE_KEY),
+    events: new EventsService(new ContentAccessClient(content), logger, signer),
+    signer,
   }
 }
 

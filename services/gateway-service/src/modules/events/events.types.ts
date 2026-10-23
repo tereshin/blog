@@ -25,8 +25,6 @@ export type AccessFields = {
 export type Connection = {
   id: string
   viewer: ServiceContext
-  /** Служебный JWT последнего `PUT /subscriptions`: им перепроверяется доступ после смены видимости. */
-  viewer_jwt: string | null
   article_ids: Set<string>
   conversation_ids: Set<string>
   feed_key: string | null

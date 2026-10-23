@@ -125,6 +125,7 @@ describe('gateway: сессия, прокси, поток событий', () =>
     events = new EventsService(
       { check: async (_jwt, article_id) => ({ can_read: article_id === ARTICLE_ID, visibility: 'public', status: 'published', author_id: USER_ID }) },
       logger,
+      new ContextSigner(pair.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()),
     )
     const proxy = new ProxyService({
       identity: identity.url,
