@@ -617,6 +617,8 @@
   "admin.moderation.comments_hint": "Review reports, hide and delete comments.",
   "admin.moderation.hidden_articles": "Hidden articles",
   "form.characters_remaining": "Characters remaining: {count}",
+  "admin.settings.meta_pixel_id": "Meta Pixel ID",
+  "admin.settings.meta_pixel_hint": "Enter the pixel ID only. Leave empty to disable page view tracking.",
   "admin.settings.name_hint": "This name appears in the site header.",
   "admin.settings.upload_logo": "Upload logo",
   "admin.settings.replace_logo": "Replace logo",

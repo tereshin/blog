@@ -93,6 +93,7 @@ export const socialCoverPreviewResponseSchema = z.strictObject({
 })
 
 export const pageSeoSchema = z.strictObject({
+  meta_pixel_id: z.string().regex(/^[0-9]{5,25}$/).nullable().optional(),
   status: z.union([z.literal(200), z.literal(404)]),
   title: z.string(),
   description: z.string(),

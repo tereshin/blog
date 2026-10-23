@@ -148,6 +148,7 @@ export const promotions = pgTable('promotions', {
 
 export const settings = pgTable('settings', {
   id: smallint('id').primaryKey().default(1),
+  meta_pixel_id: text('meta_pixel_id'),
   welcome_content: jsonb('welcome_content').$type<import('@blog/contracts').WelcomeContent>(),
   name: text('name').notNull(),
   logo_url: text('logo_url'),

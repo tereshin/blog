@@ -1,3 +1,4 @@
+import { MetaPixel } from '@/widgets/meta-pixel'
 import { MaintenanceGate } from '@/widgets/maintenance'
 import { getAdminRoute, getAdminParentPath } from '@/entities/admin'
 import { useSettings } from '@/entities/settings'
@@ -81,6 +82,7 @@ export function ShellLayout() {
 
   return (
     <MaintenanceGate>
+      <MetaPixel />
       <PageSeo path={pathname + search} />
       <Shell
         content_width={content_width}

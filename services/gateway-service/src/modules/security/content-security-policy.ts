@@ -62,11 +62,12 @@ export function contentSecurityPolicy(input: {
     "'self'",
     'data:',
     'https://img.heroui.chat',
+    'https://www.facebook.com',
     ...(input.image_origin ? [input.image_origin] : []),
   ]
   const emulator = emulatorOrigin(input.emulator_host)
   const auth_origin = authDomainOrigin(input.auth_domain)
-  const connect = ["'self'", ...FIREBASE_CONNECT_ORIGINS, ...(emulator ? [emulator] : [])]
+  const connect = ["'self'", ...FIREBASE_CONNECT_ORIGINS, 'https://www.facebook.com', 'https://connect.facebook.net', ...(emulator ? [emulator] : [])]
   const frames = [
     ...EMBED_FRAME_ORIGINS,
     GOOGLE_ACCOUNTS_ORIGIN,
@@ -75,7 +76,7 @@ export function contentSecurityPolicy(input: {
   ]
   const directives = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${input.nonce}' https://apis.google.com`,
+    `script-src 'self' 'nonce-${input.nonce}' https://apis.google.com https://connect.facebook.net`,
     "style-src 'self'",
     `img-src ${images.join(' ')}`,
     `connect-src ${connect.join(' ')}`,

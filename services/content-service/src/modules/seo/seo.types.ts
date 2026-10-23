@@ -7,6 +7,7 @@ import type {
 } from '@blog/contracts'
 
 export type SeoSite = {
+  meta_pixel_id?: string | null
   favicon?: FaviconSettings
   name: string
   logo_url: string | null

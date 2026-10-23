@@ -83,3 +83,11 @@ describe('saving settings categories', () => {
     expect(mergeSettingsSection(server, legacy, 'access').maintenance_enabled).toBe(true)
   })
 })
+
+it('saves and clears the Meta Pixel ID only from general settings', () => {
+  const configured = { ...initial, meta_pixel_id: '1661355165525767' }
+  expect(mergeSettingsSection(initial, configured, 'general').meta_pixel_id).toBe('1661355165525767')
+  expect(mergeSettingsSection(configured, { ...configured, meta_pixel_id: null }, 'general').meta_pixel_id).toBeNull()
+  expect(mergeSettingsSection(configured, initial, 'access').meta_pixel_id).toBe('1661355165525767')
+  expect(adminSettingsSchema.safeParse({ ...initial, meta_pixel_id: '<script>' }).success).toBe(false)
+})

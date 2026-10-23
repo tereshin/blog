@@ -112,6 +112,7 @@ export type ShellVisibility = z.infer<typeof shellVisibilitySchema>
 
 /** Публичные настройки площадки: `GET /v1/settings`. Закрытые поля (регистрация) сюда не попадают. */
 export const publicSettingsSchema = z.strictObject({
+  meta_pixel_id: z.string().regex(/^[0-9]{5,25}$/).nullable().optional(),
   maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string(),
@@ -130,6 +131,7 @@ export type PublicSettings = z.infer<typeof publicSettingsSchema>
 
 /** То, что сохраняет суперадминистратор. Флаги регистрации и публикации остаются закрытыми. */
 export const updateSettingsSchema = z.strictObject({
+  meta_pixel_id: z.string().regex(/^[0-9]{5,25}$/).nullable().optional(),
   maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string().max(100),

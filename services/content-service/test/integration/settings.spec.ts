@@ -87,6 +87,7 @@ describe('content: настройки площадки', () => {
     const response = await app.inject({ method: 'GET', url: '/v1/settings' })
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
+      meta_pixel_id: null,
       maintenance_enabled: false,
       welcome_content: null,
       name: 'Блог',
@@ -137,6 +138,7 @@ describe('content: настройки площадки', () => {
     expect(response.json()).toEqual({
       ...body,
       profile_badges: DEFAULT_PROFILE_BADGES,
+      meta_pixel_id: null,
       maintenance_enabled: false,
       welcome_content: null,
       logo_dark_url: null,
@@ -147,6 +149,7 @@ describe('content: настройки площадки', () => {
       public_origin: 'http://localhost',
     })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
+      meta_pixel_id: null,
       maintenance_enabled: false,
       welcome_content: null,
       name: 'Площадка',
@@ -545,4 +548,21 @@ describe('content: настройки площадки', () => {
     })
     expect(restored.json().maintenance_enabled).toBe(false)
   })
+  it('saves, preserves, validates and clears the Meta Pixel ID', async () => {
+    const headers = { 'x-test-viewer': 'superadmin' }
+    const saved = await app.inject({ method: 'PUT', url: '/v1/settings', headers,
+      payload: { ...body, meta_pixel_id: '1661355165525767' } })
+    expect(saved.statusCode).toBe(200)
+    expect((await app.inject({ url: '/v1/settings' })).json().meta_pixel_id).toBe('1661355165525767')
+    expect((await database.db.select().from(settings))[0]?.meta_pixel_id).toBe('1661355165525767')
+    const legacy = await app.inject({ method: 'PUT', url: '/v1/settings', headers, payload: body })
+    expect(legacy.json().meta_pixel_id).toBe('1661355165525767')
+    const invalid = await app.inject({ method: 'PUT', url: '/v1/settings', headers,
+      payload: { ...body, meta_pixel_id: '<script>alert(1)</script>' } })
+    expect(invalid.statusCode).toBe(422)
+    const cleared = await app.inject({ method: 'PUT', url: '/v1/settings', headers,
+      payload: { ...body, meta_pixel_id: null } })
+    expect(cleared.json().meta_pixel_id).toBeNull()
+  })
+
 })

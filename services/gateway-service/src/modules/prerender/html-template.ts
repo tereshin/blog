@@ -83,7 +83,10 @@ export function renderPrerenderHtml(page: PageSeo, nonce?: string): string {
         .map((line) => `<p>${escapeHtml(line)}</p>`)
         .join('')}</article>${links ? `<ul>${links}</ul>` : ''}</main>`
     : ''
-  return `<!doctype html><html lang="${page.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(page.title)}</title><link data-page-seo rel="canonical" href="${escapeHtml(page.canonical_url)}">${tags.join('')}${asset_tags}<script data-page-seo type="application/ld+json"${nonce ? ` nonce="${escapeHtml(nonce)}"` : ''}>${safeJsonLd(page.structured_data)}</script></head><body>${body}</body></html>`
+  const pixel = page.meta_pixel_id && /^[0-9]{5,25}$/.test(page.meta_pixel_id)
+    ? `<noscript><img height="1" width="1" hidden alt="" src="https://www.facebook.com/tr?id=${page.meta_pixel_id}&amp;ev=PageView&amp;noscript=1"></noscript>`
+    : ''
+  return `<!doctype html><html lang="${page.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(page.title)}</title><link data-page-seo rel="canonical" href="${escapeHtml(page.canonical_url)}">${tags.join('')}${asset_tags}<script data-page-seo type="application/ld+json"${nonce ? ` nonce="${escapeHtml(nonce)}"` : ''}>${safeJsonLd(page.structured_data)}</script></head><body>${pixel}${body}</body></html>`
 }
 
 /** Keep Vite's hashed scripts/styles while including public metadata and content in source. */

@@ -11,6 +11,7 @@ import type {
 import type { FileOwner } from '../../shared/editor-document/document.sanitizer.ts'
 
 export type SettingsRow = {
+  meta_pixel_id?: string | null
   welcome_content?: WelcomeContent | null
   name: string
   logo_url: string | null

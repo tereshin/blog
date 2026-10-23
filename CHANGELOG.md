@@ -9,6 +9,9 @@ Current changes since 1.0.0.
 
 ### Added
 
+- Administrators can set a Meta Pixel ID to track page views, or clear it to
+  disable tracking.
+
 - Selecting a reaction sends it floating upward with a soft fade. Reaction,
   comment, bookmark, and view counts roll smoothly when their values change.
 - Administrators can turn on maintenance mode. Guests and members see a closed

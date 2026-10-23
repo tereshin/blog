@@ -66,6 +66,7 @@ function appearancesOf(value: ReactionAppearances): ReactionAppearances {
 
 function toPublic(row: SettingsRow): PublicSettings {
   return {
+    meta_pixel_id: row.meta_pixel_id ?? null,
     maintenance_enabled: row.maintenance_enabled ?? false,
     welcome_content: row.welcome_content ?? null,
     name: row.name,
@@ -139,6 +140,7 @@ export class SettingsService<TTx> {
     const saved = await this.repository.transaction(async (tx) => {
       const catalog = await this.badges.validateReplacement(tx, input.profile_badges)
       const row: SettingsRow = {
+        meta_pixel_id: input.meta_pixel_id === undefined ? (current?.meta_pixel_id ?? null) : input.meta_pixel_id,
         maintenance_enabled: input.maintenance_enabled ?? current?.maintenance_enabled ?? false,
         welcome_content,
         name: input.name,

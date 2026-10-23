@@ -27,6 +27,7 @@ export class SeoRepository implements SeoRepositoryPort {
     async site() {
       const [row] = await this.db
         .select({
+          meta_pixel_id: settings.meta_pixel_id,
           favicon: settings.favicon,
           name: settings.name,
           logo_url: settings.logo_url,
@@ -38,6 +39,7 @@ export class SeoRepository implements SeoRepositoryPort {
         .where(eq(settings.id, 1))
         .limit(1)
       return {
+        meta_pixel_id: row?.meta_pixel_id ?? null,
         favicon: row?.favicon,
         name: row?.name || 'Блог',
         logo_url: row?.logo_url ?? null,

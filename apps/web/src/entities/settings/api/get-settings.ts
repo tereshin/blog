@@ -18,6 +18,7 @@ import { http } from '@/shared/api'
 
 /** Ответ `GET /v1/settings`. Неизвестный язык не ломает приложение: берём русский. */
 export const publicSettingsSchema = z.object({
+  meta_pixel_id: z.string().nullable().optional(),
   maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string(),
@@ -34,6 +35,7 @@ type PublicSettingsDto = z.infer<typeof publicSettingsSchema>
 
 /** Модель для интерфейса: поля всегда заданы, компоненты не знают о формате ответа. */
 export type PublicSettings = {
+  meta_pixel_id?: string | null
   maintenance_enabled?: boolean
   welcome_content?: import('@blog/contracts').WelcomeContent | null
   name: string
@@ -49,6 +51,7 @@ export type PublicSettings = {
 
 export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
   return {
+    meta_pixel_id: dto.meta_pixel_id ?? null,
     maintenance_enabled: dto.maintenance_enabled ?? false,
     welcome_content: dto.welcome_content ?? null,
     name: dto.name.trim(),

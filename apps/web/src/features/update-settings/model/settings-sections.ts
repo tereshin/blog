@@ -16,6 +16,7 @@ export function mergeSettingsSection(
     case 'general':
       return {
         ...current,
+        meta_pixel_id: draft.meta_pixel_id ?? null,
         name: draft.name,
         logo_url: draft.logo_url,
         logo_dark_url: draft.logo_dark_url,

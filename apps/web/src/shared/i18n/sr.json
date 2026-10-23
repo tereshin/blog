@@ -623,6 +623,8 @@
   "admin.moderation.comments_hint": "Pregled prijava, skrivanje i brisanje komentara.",
   "admin.moderation.hidden_articles": "Skriveni članci",
   "form.characters_remaining": "Preostalo znakova: {count}",
+  "admin.settings.meta_pixel_id": "Meta Pixel ID",
+  "admin.settings.meta_pixel_hint": "Unesite samo ID piksela. Ostavite prazno da isključite praćenje pregleda stranica.",
   "admin.settings.name_hint": "Naziv se prikazuje u zaglavlju sajta.",
   "admin.settings.upload_logo": "Otpremi logo",
   "admin.settings.replace_logo": "Zameni logo",

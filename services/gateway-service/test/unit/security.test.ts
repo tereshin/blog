@@ -32,7 +32,7 @@ describe('CSP', () => {
     })
     expect(policy).toContain("default-src 'self'")
     expect(policy.split('; ').find((directive) => directive.startsWith('script-src'))).toBe(
-      "script-src 'self' 'nonce-abc' https://apis.google.com",
+      "script-src 'self' 'nonce-abc' https://apis.google.com https://connect.facebook.net",
     )
     expect(policy).toContain('http://localhost:9000')
     expect(policy).toContain('https://img.heroui.chat')
@@ -55,7 +55,7 @@ describe('CSP', () => {
       emulator_host: 'firebase-auth.localhost:9099',
     })
     expect(policy).toContain(
-      "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com http://firebase-auth.localhost:9099",
+      "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.facebook.com https://connect.facebook.net http://firebase-auth.localhost:9099",
     )
     expect(policy).toContain('https://demo-blog.firebaseapp.com')
     expect(policy).toContain('http://firebase-auth.localhost:9099')

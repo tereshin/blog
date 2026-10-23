@@ -193,3 +193,10 @@ describe('gateway: SEO для роботов', () => {
     async (url) => expect((await app.inject({ url })).statusCode).toBe(200),
   )
 })
+
+
+it('includes the configured no-script pixel and omits it when disabled', () => {
+  const html = renderApplicationHtml({ ...PUBLIC, meta_pixel_id: '1661355165525767' }, TEMPLATE, 'nonce')
+  expect(html).toContain('<noscript><img height="1" width="1" hidden alt="" src="https://www.facebook.com/tr?id=1661355165525767&amp;ev=PageView&amp;noscript=1"></noscript>')
+  expect(renderApplicationHtml(PUBLIC, TEMPLATE, 'nonce')).not.toContain('facebook.com/tr')
+})

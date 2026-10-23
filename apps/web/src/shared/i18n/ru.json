@@ -626,6 +626,8 @@
   "admin.moderation.comments_hint": "Проверка жалоб, скрытие и удаление комментариев.",
   "admin.moderation.hidden_articles": "Скрытые статьи",
   "form.characters_remaining": "Осталось символов: {count}",
+  "admin.settings.meta_pixel_id": "ID Meta Pixel",
+  "admin.settings.meta_pixel_hint": "Введите только ID пикселя. Пустое поле отключает отслеживание просмотров страниц.",
   "admin.settings.name_hint": "Название отображается в шапке сайта.",
   "admin.settings.upload_logo": "Загрузить логотип",
   "admin.settings.replace_logo": "Заменить логотип",

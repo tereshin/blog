@@ -15,6 +15,7 @@ import { appendSettingsUpdated } from './settings.events.ts'
 import type { SettingsRepositoryPort, SettingsRow } from './settings.types.ts'
 
 const COLUMNS = {
+  meta_pixel_id: settings.meta_pixel_id,
   welcome_content: settings.welcome_content,
   name: settings.name,
   logo_url: settings.logo_url,

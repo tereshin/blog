@@ -52,6 +52,7 @@ export class SeoService {
         simpleImages(site.logo_url, site.name)
       const indexable = options.app_env === 'prod' && site.seo.indexing_enabled
       const neutral: PageSeo = {
+        meta_pixel_id: site.meta_pixel_id ?? null,
         favicon: site.favicon,
         status: 200,
         title: site.seo.title || site.name,

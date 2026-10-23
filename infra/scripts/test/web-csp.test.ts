@@ -11,7 +11,7 @@ describe('web nginx CSP', () => {
       const scripts = policy[1]
         ?.split(';')
         .find((directive) => directive.trim().startsWith('script-src'))
-      expect(scripts?.trim()).toBe("script-src 'self' https://apis.google.com")
+      expect(scripts?.trim()).toBe("script-src 'self' https://apis.google.com https://connect.facebook.net")
     }
   })
   it('отдаёт файлы напрямую, а страницы и sitemap направляет в gateway', () => {

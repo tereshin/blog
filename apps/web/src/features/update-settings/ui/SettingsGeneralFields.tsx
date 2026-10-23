@@ -8,7 +8,7 @@ import { FormTextField, SelectField } from '@/shared/ui'
 
 type GeneralSettings = Pick<
   AdminSettings,
-  'name' | 'logo_url' | 'logo_dark_url' | 'favicon' | 'locale'
+  'meta_pixel_id' | 'name' | 'logo_url' | 'logo_dark_url' | 'favicon' | 'locale'
 >
 type SettingsGeneralFieldsProps = {
   value: GeneralSettings
@@ -36,6 +36,16 @@ export function SettingsGeneralFields({
         value={value.name}
         hint={t('admin.settings.name_hint')}
         onChange={(event) => onChange({ ...value, name: event.target.value })}
+      />
+      <FormTextField
+        label={t('admin.settings.meta_pixel_id')}
+        value={value.meta_pixel_id ?? ''}
+        inputMode="numeric"
+        pattern="[0-9]{5,25}"
+        maxLength={25}
+        placeholder="1661355165525767"
+        hint={t('admin.settings.meta_pixel_hint')}
+        onChange={(event) => onChange({ ...value, meta_pixel_id: event.target.value.trim() || null })}
       />
       <SettingsLogoFields
         value={value}
