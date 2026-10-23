@@ -5,7 +5,6 @@ import { documentText, plainText, shortDescription } from './seo.text.ts'
 import { SEO_LABELS } from './seo.labels.ts'
 import { localPath } from './seo.path.ts'
 import { addTopicArticles } from './seo.collection.ts'
-
 function templateTitle(site: SeoSite, title: string): string {
   return site.seo.title_template
     .replaceAll('{title}', plainText(title)).replaceAll('{site_name}', site.name)
