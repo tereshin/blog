@@ -63,7 +63,7 @@ function Title({ children }: { children?: ReactNode }) {
         className="text-xl font-semibold leading-snug tracking-[-0.005em]"
       >
         {children ?? (
-          <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
+          <Link to={article.href} className="text-foreground outline-offset-2">
             {article.title}
           </Link>
         )}

@@ -40,7 +40,7 @@ export function ArticleByline({ author, topic, published_at, time_label, follow,
         <div className="flex min-w-0 items-center gap-1">
           <Link
             to={author.href}
-            className="min-w-0 truncate text-[15px] font-semibold text-foreground outline-offset-2 hover:underline"
+            className="min-w-0 truncate text-[15px] font-semibold text-foreground outline-offset-2"
           >
             {author.display_name}
           </Link>

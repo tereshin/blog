@@ -127,7 +127,7 @@ export function DocumentBlockView({ block }: DocumentBlockViewProps) {
       const position = textOf(data, 'position')
       if (!photo && !name && !position) return null
       return (
-        <div className="my-6 flex flex-col items-start">
+        <div className="my-4 flex flex-col items-start">
           {photo ? (
             <img
               src={photo}
