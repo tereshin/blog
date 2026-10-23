@@ -82,7 +82,7 @@ function Preview() {
   ]
   if (blocks.length === 0) return null
   return (
-    <Card.Content className="px-4 lg:px-5 pb-0 pt-2">
+    <Card.Content className="px-4 lg:px-5 pb-0 pt-2 text-md leading-[1.6]">
       <BlockRenderer blocks={blocks.slice(0, 2)} />
     </Card.Content>
   )

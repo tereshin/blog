@@ -40,12 +40,13 @@ Current changes since 1.0.0.
 ### Fixed
 
 - Article cards show the first two blocks in their original order and formatting.
-  Article text, headings, and lists use the same sizes as the editor; card
-  titles keep their compact size.
+  Cards and article pages keep their original font sizes. The editor matches
+  the published article's text, headings, and lists.
 - Google and GitHub sign-in returns to the site.
 - A page opens at the top. Leaving an article returns to the same place in the
   feed. A link to a comment scrolls to it and highlights it. The author's name
-  and avatar open the profile.
+  and avatar open the profile. Discussion links stay aligned when article images
+  load after the initial scroll.
 - On a phone, guests have no Write button. Header actions stay at the bottom
   of the screen and remain tappable. The messages tab shows the chat icon, and
   the cover control stays readable. Blog and topic lists start with the title.

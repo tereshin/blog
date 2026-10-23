@@ -38,7 +38,12 @@ test('размеры текста, заголовков и списков сов
     h4: await typography(page.locator('h4.ce-header')),
     list: await typography(page.locator('.cdx-list__item-content').first()),
   }
-  expect(editor.paragraph.size).toBe((page.viewportSize()?.width ?? 0) <= 640 ? '16px' : '18px')
+  expect(editor.title).toEqual({ size: '20px', height: '27.5px', weight: '600' })
+  expect(editor.paragraph).toEqual({ size: '16px', height: '28px', weight: '400' })
+  for (const key of ['h2', 'h3', 'h4'] as const) {
+    expect(editor[key]).toEqual({ size: '16px', height: '28px', weight: '600' })
+  }
+  expect(editor.list).toEqual(editor.paragraph)
 
   await page.getByRole('button', { name: 'Параметры статьи' }).click()
   await page.getByRole('button', { name: 'Предпросмотр', exact: true }).click()
@@ -61,9 +66,13 @@ test('размеры текста, заголовков и списков сов
   const card = page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Единая типографика', exact: true }) })
   await expect(card.locator('.document-content > *')).toHaveCount(2)
   await expect(card.locator('.document-content p b')).toHaveText('статьи')
-  expect(await typography(card.locator('.document-content p'))).toEqual(editor.paragraph)
-  expect(await typography(card.locator('.document-content h2'))).toEqual(editor.h2)
+  expect(await typography(card.locator('.document-content p'))).toEqual({ ...editor.paragraph, height: '25.6px' })
+  expect(await typography(card.locator('.document-content h2'))).toEqual({ ...editor.h2, height: '25.6px' })
   expect(await typography(card.locator('h2[id^="article-title-"]'))).toEqual({ size: '20px', height: '27.5px', weight: '600' })
+  await card.getByRole('button', { name: 'Показать полностью' }).click()
+  await expect(card.locator('.document-content li')).toBeVisible()
+  expect(await typography(card.locator('.document-content p'))).toEqual({ ...editor.paragraph, height: '25.6px' })
+  expect(await typography(card.locator('.document-content li'))).toEqual({ ...editor.list, height: '25.6px' })
 })
 
 test('выбор реакции запускает разлёт и перелистывание цифры, затем частицы исчезают', async ({ page }) => {

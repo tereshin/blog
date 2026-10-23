@@ -40,7 +40,7 @@ function Title() {
 function Body() {
   const article = useArticleView()
   return (
-    <div className="min-w-0">
+    <div className="document-body min-w-0">
       <BlockRenderer blocks={article.blocks} />
     </div>
   )

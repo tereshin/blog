@@ -49,7 +49,7 @@ export function EditorPanel({
         ) : null}
         <div hidden={Boolean(preview)}>{children}</div>
         {preview ? (
-          <article className="pl-11 sm:pl-16">
+          <article className="document-body pl-11 sm:pl-16">
             <h1 className="article-editor-title">{preview.title}</h1>
             <BlockRenderer blocks={preview.blocks} />
           </article>

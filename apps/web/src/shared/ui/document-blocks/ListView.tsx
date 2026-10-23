@@ -14,7 +14,7 @@ type ListViewProps = { items: ListItem[]; style: string }
 export function ListView({ items, style }: ListViewProps) {
   const Tag = style === 'ordered' ? 'ol' : 'ul'
   return (
-    <Tag className={`document-list my-2 pl-5 ${LIST_CLASSES[style] ?? 'list-disc'}`}>
+    <Tag className={`my-2 space-y-3 pl-5 ${LIST_CLASSES[style] ?? 'list-disc'}`}>
       {items.map((item, offset) => {
         if (typeof item === 'string') {
           return (

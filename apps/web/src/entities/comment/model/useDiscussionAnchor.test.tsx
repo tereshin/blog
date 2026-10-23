@@ -74,4 +74,46 @@ describe('discussion anchors', () => {
     await flush()
     expect(scroll).not.toHaveBeenCalled()
   })
+
+  it.each(['load', 'error'])('realigns after an earlier image settles with %s', async (event_type) => {
+    const image = document.createElement('img')
+    image.src = 'https://example.com/late.png'
+    document.body.append(image)
+    appendTarget('comments')
+    setup('#comments')
+    await flush()
+    expect(scroll).toHaveBeenCalledTimes(1)
+    image.dispatchEvent(new Event(event_type))
+    await flush()
+    expect(scroll).toHaveBeenCalledTimes(2)
+    image.dispatchEvent(new Event('load'))
+    await flush()
+    expect(scroll).toHaveBeenCalledTimes(2)
+  })
+
+  it('stops image corrections when the reader scrolls manually', async () => {
+    const image = document.createElement('img')
+    image.src = 'https://example.com/late.png'
+    document.body.append(image)
+    appendTarget('comments')
+    setup('#comments')
+    await flush()
+    window.dispatchEvent(new Event('wheel'))
+    image.dispatchEvent(new Event('load'))
+    await flush()
+    expect(scroll).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops watching an image that never finishes before the deadline', async () => {
+    const image = document.createElement('img')
+    image.src = 'https://example.com/stalled.png'
+    document.body.append(image)
+    appendTarget('comments')
+    setup('#comments')
+    await flush()
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_100) })
+    image.dispatchEvent(new Event('load'))
+    await flush()
+    expect(scroll).toHaveBeenCalledTimes(1)
+  })
 })
