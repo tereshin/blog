@@ -9,6 +9,8 @@ Current changes since 1.0.0.
 
 ### Added
 
+- Selecting a reaction sends it floating upward with a soft fade. Reaction,
+  comment, bookmark, and view counts roll smoothly when their values change.
 - Administrators can turn on maintenance mode. Guests and members see a closed
   site; administrators can still sign in.
 - Administrators can set up achievement badges: upload an image, award them
@@ -37,6 +39,8 @@ Current changes since 1.0.0.
 
 ### Fixed
 
+- Article cards show the first two blocks in their original order and formatting.
+  Article text, headings, and lists use the same sizes as the editor.
 - Google and GitHub sign-in returns to the site.
 - A page opens at the top. Leaving an article returns to the same place in the
   feed. A link to a comment scrolls to it and highlights it. The author's name

@@ -42,8 +42,7 @@ export function ProfileActivityFeed({ activity, profile }: ProfileActivityFeedPr
                       }
                     />
                     <ArticleCard.Title />
-                    <ArticleCard.Excerpt />
-                    <ArticleCard.Image />
+                    <ArticleCard.Preview />
                   </ArticleCard>
                 )}
               </li>

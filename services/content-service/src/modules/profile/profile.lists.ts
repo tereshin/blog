@@ -1,9 +1,9 @@
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { ServiceContext } from '@blog/contracts'
+import type { EditorBlock, ServiceContext } from '@blog/contracts'
 import { articles, follows, profiles, topics, users_copy } from '../../infra/db/schema.ts'
-import { has_more_content } from '../../infra/db/article-preview.ts'
+import { has_more_content, preview_blocks } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../../infra/db/visible-articles.ts'
 import type { ProfileCursor } from './profile.cursor.ts'
 
@@ -16,6 +16,7 @@ const card_columns = {
   title: articles.title,
   excerpt: articles.excerpt,
   has_more_content,
+  preview_blocks,
   first_image_url: articles.first_image_url,
   published_at: articles.published_at,
   created_at: articles.created_at,
@@ -49,6 +50,7 @@ export type ProfileArticleRow = {
   title: string
   excerpt: string
   has_more_content: boolean
+  preview_blocks: EditorBlock[]
   first_image_url: string | null
   published_at: Date | null
   created_at: Date

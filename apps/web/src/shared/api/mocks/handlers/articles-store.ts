@@ -5,7 +5,6 @@ import topics_fixture from '../fixtures/topics.json'
 import { readMockViewer } from './session.ts'
 
 const STORAGE_KEY = 'mock_articles'
-
 const RESERVED_SLUGS = new Set([
   'new',
   'edit',
@@ -40,7 +39,6 @@ export type MockArticle = {
   status: 'draft' | 'published' | 'hidden' | 'deleted'
   published_at: string | null
 }
-
 export type MockAuthor = {
   id: string
   can_publish: boolean
@@ -182,6 +180,8 @@ export function publishedFeedCards(): FeedCardFixture[] {
         slug: article.slug,
         title: article.title,
         excerpt: excerptOf(article.blocks),
+        preview_blocks: article.blocks.blocks.slice(0, 2),
+        has_more_content: article.blocks.blocks.length > 2,
         first_image_url: imageOf(article.blocks),
         published_at: article.published_at ?? new Date(0).toISOString(),
         author: { user_id: author.id, display_name: author.display_name, avatar_url: null, slug: author.slug, status_icon_id: null },

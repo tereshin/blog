@@ -2,7 +2,7 @@ import { and, desc, eq, gt, gte, inArray, or, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { articles, follows, profiles, promotions, topics, users_copy } from '../../infra/db/schema.ts'
 import type { ServiceContext } from '@blog/contracts'
-import { has_more_content } from '../../infra/db/article-preview.ts'
+import { has_more_content, preview_blocks } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../../infra/db/visible-articles.ts'
 import { POPULAR_WINDOW_MS } from './feed.rules.ts'
 import type { FeedFollows, FeedRepositoryPort, FeedRow, FeedSelection, ProfileLite } from './feed.types.ts'
@@ -14,6 +14,7 @@ const CARD_COLUMNS = {
   title: articles.title,
   excerpt: articles.excerpt,
   has_more_content,
+  preview_blocks,
   first_image_url: articles.first_image_url,
   published_at: articles.published_at,
   author_id: articles.author_id,

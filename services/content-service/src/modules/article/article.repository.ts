@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import type { Database } from '@blog/broker'
 import { articles, profiles, topics, users_copy } from '../../infra/db/schema.ts'
-import { has_more_content } from '../../infra/db/article-preview.ts'
+import { has_more_content, preview_blocks } from '../../infra/db/article-preview.ts'
 import { visibleArticlesWhere } from '../../infra/db/visible-articles.ts'
 import { appendArticleEvent } from './article.events.ts'
 import type { ServiceContext } from '@blog/contracts'
@@ -22,6 +22,7 @@ const COLUMNS = {
   title: articles.title,
   excerpt: articles.excerpt,
   has_more_content,
+  preview_blocks,
   first_image_url: articles.first_image_url,
   blocks: articles.blocks,
   published_at: articles.published_at,

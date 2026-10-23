@@ -24,5 +24,6 @@ describe('карточки статей профиля', () => {
     if (!parsed) throw new Error('Missing published article')
     expect(parsed.topic.avatar_url).toBe('https://example.com/topic.png')
     expect(parsed.has_more_content).toBe(false)
+    expect(parsed.preview_blocks).toEqual(dto.preview_blocks)
   })
 })

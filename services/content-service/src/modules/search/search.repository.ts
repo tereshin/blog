@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { articles, profiles, topics, users_copy } from '../../infra/db/schema.ts'
 import type { ServiceContext, Topic, UserListItem } from '@blog/contracts'
 import type { FeedRow } from '../../shared/feed-card.ts'
-import { has_more_content } from '../../infra/db/article-preview.ts'
+import { has_more_content, preview_blocks } from '../../infra/db/article-preview.ts'
 import type { SearchCursor } from './search.cursor.ts'
 import type { SearchRepositoryPort } from './search.types.ts'
 import { visibleArticlesWhere } from '../../infra/db/visible-articles.ts'
@@ -17,6 +17,7 @@ const CARD_COLUMNS = {
   title: articles.title,
   excerpt: articles.excerpt,
   has_more_content,
+  preview_blocks,
   first_image_url: articles.first_image_url,
   published_at: articles.published_at,
   author_id: articles.author_id,

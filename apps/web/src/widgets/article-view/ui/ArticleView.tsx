@@ -34,13 +34,13 @@ function Byline({ follow, menu }: BylineProps) {
 
 function Title() {
   const article = useArticleView()
-  return <h1 className="text-xl font-semibold leading-snug tracking-[-0.005em]">{article.title}</h1>
+  return <h1 className="document-title">{article.title}</h1>
 }
 
 function Body() {
   const article = useArticleView()
   return (
-    <div className="text-md leading-7 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0">
+    <div className="min-w-0">
       <BlockRenderer blocks={article.blocks} />
     </div>
   )

@@ -1,4 +1,4 @@
-import { reactionCountsSchema } from '@blog/contracts'
+import { editorBlockSchema, reactionCountsSchema } from '@blog/contracts'
 import { z } from 'zod'
 import { formatTime } from '@/shared/lib'
 import type { ArticleCardModel, FeedPageModel } from '../model/article-types.ts'
@@ -10,6 +10,7 @@ export const feedCardDtoSchema = z.object({
   slug: z.string(),
   title: z.string(),
   excerpt: z.string(),
+  preview_blocks: z.array(editorBlockSchema).max(2).optional(),
   has_more_content: z.boolean().optional(),
   first_image_url: z.string().nullable(),
   published_at: z.string(),

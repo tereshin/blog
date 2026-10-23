@@ -28,8 +28,7 @@ function FullCard({ article, is_own = false }: Props) {
           }
         />
         <ArticleCard.Title />
-        <ArticleCard.Excerpt />
-        <ArticleCard.Image />
+        <ArticleCard.Preview />
         <ArticleCard.Expand>
           <Button variant="ghost" size="sm">
             Показать полностью
@@ -73,6 +72,12 @@ export const WithoutReactions = meta.story({
   },
 })
 export const Own = meta.story({ args: { is_own: true } })
+export const OriginalBlocks = meta.story({
+  args: { article: makeArticle({ preview_blocks: [
+    { type: 'quote', data: { text: 'Сначала <b>цитата</b>, а не текстовый фрагмент.', caption: 'Автор' } },
+    { type: 'list', data: { style: 'ordered', items: ['Первый пункт', 'Второй <i>пункт</i>'] } },
+  ] }) },
+})
 export const Loading = meta.story({
   render: () => (
     <div className="mx-auto max-w-2xl p-4">
@@ -93,7 +98,7 @@ export const CustomTitleLink = meta.story({
           {article.title}
         </Link>
       </ArticleCard.Title>
-      <ArticleCard.Excerpt />
+      <ArticleCard.Preview />
     </ArticleCard>
   ),
 })

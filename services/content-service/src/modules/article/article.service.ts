@@ -63,6 +63,7 @@ function toCard(row: ArticleRow, profiles_by_id: Map<string, ProfileLite>): Feed
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
+    preview_blocks: row.preview_blocks,
     has_more_content: row.has_more_content ?? true,
     first_image_url: row.first_image_url,
     published_at: row.published_at.toISOString(),

@@ -39,7 +39,7 @@ function Frame({ has_more_content }: { has_more_content: boolean }) {
             article={load.article}
             onToggle={() => setOpen((open) => !open)}
           >
-            <ArticleCard.Excerpt />
+            <ArticleCard.Preview />
           </ArticleCardExpand>
           <ArticleCard.Actions />
         </ArticleCard>

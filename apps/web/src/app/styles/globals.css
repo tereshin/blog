@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
 @import '../../shared/ui/icon-picker.css';
+@import '../../shared/ui/document-typography.css';
 
 /*
  * Токены вида. Тему HeroUI v3 задают CSS-переменные; `data-theme` стоит на <html>.

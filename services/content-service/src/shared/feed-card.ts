@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { reactionCountsSchema } from '@blog/contracts'
-import type { FeedCard, ReactionCounts } from '@blog/contracts'
+import type { EditorBlock, FeedCard, ReactionCounts } from '@blog/contracts'
 
 const EMPTY_COUNTS: ReactionCounts = { laugh: 0, heart: 0, thumb: 0, fire: 0 }
 const TOP_COMMENT_EXCERPT_LENGTH = 140
@@ -14,6 +14,7 @@ export type FeedRow = {
   title: string
   excerpt: string
   has_more_content?: boolean
+  preview_blocks?: EditorBlock[]
   first_image_url: string | null
   published_at: Date
   author_id: string
@@ -53,6 +54,7 @@ export function toFeedCard(row: FeedRow, profiles_by_id: Map<string, ProfileLite
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
+    preview_blocks: row.preview_blocks,
     has_more_content: row.has_more_content ?? true,
     first_image_url: row.first_image_url,
     published_at: row.published_at.toISOString(),

@@ -12,14 +12,16 @@ afterEach(() => { cleanup(); vi.resetAllMocks() })
 
 const fixture = buildFeedFixture(1)[0]
 if (!fixture) throw new Error('Missing article fixture')
-const card = toArticleCard({ ...fixture, excerpt: 'Начало статьи.', first_image_url: 'https://example.com/one.png' })
+const card = toArticleCard({ ...fixture, excerpt: 'Начало статьи.', first_image_url: 'https://example.com/one.png', preview_blocks: [
+  { id: 'intro', type: 'paragraph', data: { text: 'Начало статьи.' } },
+  { id: 'photo', type: 'image', data: { file: { url: 'https://example.com/one.png' }, caption: 'Подпись изображения' } },
+] })
 const loaded: ArticleLoad = {
   status: 'ok',
   article: {
     ...card,
     blocks: [
-      { type: 'paragraph', data: { text: card.excerpt } },
-      { type: 'image', data: { file: { url: card.first_image_url } } },
+      ...(card.preview_blocks ?? []),
       { type: 'paragraph', data: { text: 'Продолжение статьи.' } },
     ],
     status: 'published',
@@ -34,8 +36,7 @@ function showCard(has_more_content = true) {
       <MemoryRouter>
         <ArticleCard article={card}>
           <FeedArticleExpand slug={card.slug} has_more_content={has_more_content}>
-            <ArticleCard.Excerpt />
-            <ArticleCard.Image />
+            <ArticleCard.Preview />
           </FeedArticleExpand>
         </ArticleCard>
       </MemoryRouter>
@@ -47,6 +48,7 @@ describe('раскрытие карточки статьи', () => {
   it('не предлагает раскрытие, если фрагмент содержит всю статью', () => {
     showCard(false)
     expect(screen.getByText(card.excerpt)).toBeVisible()
+    expect(screen.getByText('Подпись изображения')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Показать полностью' })).toBeNull()
     expect(getArticle).not.toHaveBeenCalled()
   })

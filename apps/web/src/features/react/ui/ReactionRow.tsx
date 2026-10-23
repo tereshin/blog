@@ -2,11 +2,13 @@ import type { ReactionAppearance, ReactionAppearances } from '@blog/contracts'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { formatCount } from '@/shared/lib'
-import { BaseIcon } from '@/shared/ui'
+import { AnimatedCount, BaseIcon } from '@/shared/ui'
 import { FALLBACK_REACTION_APPEARANCES, ReactionGlyph, reactionCount } from '@/entities/reaction'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
 import { ReactionButton } from './ReactionButton.tsx'
 import { ReactionPicker } from './ReactionPicker.tsx'
+import { ReactionBurst } from './ReactionBurst.tsx'
+import { useReactionBurst } from '../model/useReactionBurst.ts'
 
 type ReactionRowProps = {
   counts: ReactionCounts
@@ -34,6 +36,7 @@ export function ReactionRow({
   children,
 }: ReactionRowProps) {
   const { t, locale } = useT()
+  const { burst_kind, burst_key, handleSelect, handleComplete } = useReactionBurst(my_reaction, onSelect)
   const active = appearances.filter((item) => item.status === 'active')
   const known = new Set(appearances.map((item) => item.kind))
   const visible = [
@@ -60,19 +63,23 @@ export function ReactionRow({
         const count = reactionCount(counts, appearance.kind)
         const label = appearance.label
         return (
-          <ReactionButton
-            key={appearance.kind}
-            variant={my_reaction === appearance.kind ? 'primary' : 'secondary'}
-            size="sm"
-            className="gap-1 text-base tabular-nums"
-            aria-pressed={my_reaction === appearance.kind}
-            aria-label={count > 0 ? `${label} ${formatCount(count, locale)}` : label}
-            isDisabled={is_pending}
-            onPress={() => onSelect(appearance.kind)}
-          >
-            <ReactionGlyph appearance={appearance} label={label} />
-            {count > 0 ? formatCount(count, locale) : null}
-          </ReactionButton>
+          <span className="reaction-pill" key={appearance.kind} data-burst={burst_kind === appearance.kind}>
+            <ReactionButton
+              variant={my_reaction === appearance.kind ? 'primary' : 'secondary'}
+              size="sm"
+              className="gap-1 text-base tabular-nums"
+              aria-pressed={my_reaction === appearance.kind}
+              aria-label={count > 0 ? `${label} ${formatCount(count, locale)}` : label}
+              isDisabled={is_pending}
+              onPress={() => handleSelect(appearance.kind)}
+            >
+              <span className="reaction-glyph"><ReactionGlyph appearance={appearance} label={label} /></span>
+              {count > 0 ? <AnimatedCount value={count} locale={locale} /> : null}
+            </ReactionButton>
+            {burst_kind === appearance.kind ? (
+              <ReactionBurst key={burst_key} appearance={appearance} onComplete={handleComplete} />
+            ) : null}
+          </span>
         )
       })}
       {children}
@@ -91,7 +98,7 @@ export function ReactionRow({
       ) : (
         <ReactionPicker
           appearances={active}
-          onSelect={onSelect}
+          onSelect={handleSelect}
           is_pending={is_pending}
         />
       )}

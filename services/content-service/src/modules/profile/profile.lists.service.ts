@@ -36,6 +36,7 @@ function toArticle(
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
+    preview_blocks: row.preview_blocks,
     has_more_content: row.has_more_content,
     first_image_url: row.first_image_url,
     published_at: row.published_at ? row.published_at.toISOString() : null,

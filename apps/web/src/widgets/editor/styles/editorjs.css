@@ -66,9 +66,15 @@
 .article-editor-panel .editor-holder { min-height: 280px; }
 .article-editor-panel .codex-editor { padding-left: 4rem; padding-right: 2rem; }
 .article-editor-panel .ce-block { margin-bottom: 18px; }
-.article-editor-title { margin: 0 0 24px; font-size: clamp(26px, 3vw, 34px); line-height: 1.3; font-weight: 650; outline: none; overflow-wrap: anywhere; }
+.article-editor-title { margin: 0 0 24px; font-size: var(--document-title-size); line-height: var(--document-heading-line-height); font-weight: var(--document-heading-weight); outline: none; overflow-wrap: anywhere; }
 .article-editor-title:empty::before { content: attr(data-placeholder); color: var(--muted); }
-.article-editor-panel .ce-paragraph { font-size: 18px; line-height: 1.75; }
+.article-editor-panel .codex-editor { font-size: var(--document-font-size); line-height: var(--document-line-height); }
+.article-editor-panel .ce-paragraph { font-size: inherit; line-height: inherit; }
+.article-editor-panel .ce-header { line-height: var(--document-heading-line-height); font-weight: var(--document-heading-weight); }
+.article-editor-panel h2.ce-header { font-size: var(--document-h2-size); }
+.article-editor-panel h3.ce-header { font-size: var(--document-h3-size); }
+.article-editor-panel h4.ce-header { font-size: var(--document-h4-size); }
+.article-editor-panel .cdx-list { --line-height: calc(var(--document-list-line-height) * 1em); }
 .article-editor-panel .ce-toolbar__actions { right: auto; left: -60px; }
 .article-editor-panel .ce-toolbar__plus,
 .article-editor-panel .ce-toolbar__settings-btn { color: var(--foreground); border-radius: 50%; }
@@ -92,7 +98,6 @@
   .article-editor-window { width: 100vw; max-width: none; height: 100dvh; border-radius: 0; }
   .article-editor-panel .codex-editor { padding-left: 2.75rem; padding-right: 0; }
   .article-editor-panel .ce-toolbar__actions { left: -44px; }
-  .article-editor-panel .ce-paragraph { font-size: 16px; }
 }
 .article-editor-window { min-height: 0; max-height: calc(100dvh - 80px); }
 .article-editor-window--full { max-height: 100dvh; }

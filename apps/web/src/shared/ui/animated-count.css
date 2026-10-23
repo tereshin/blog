@@ -1,0 +1,33 @@
+.animated-count {
+  display: inline-flex;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  --count-enter-y: 95%;
+  --count-exit-y: -95%;
+}
+.animated-count[data-direction='down'] {
+  --count-enter-y: -95%;
+  --count-exit-y: 95%;
+}
+.animated-count__digits { display: inline-flex; overflow: hidden; }
+.animated-count__place { display: inline-grid; position: relative; }
+.animated-count [data-digit]::before { content: attr(data-digit); }
+.animated-count__in { animation: count-in 420ms cubic-bezier(.22, 1, .36, 1) both; }
+.animated-count__out {
+  position: absolute;
+  inset: 0;
+  animation: count-out 300ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes count-in {
+  from { opacity: 0; transform: translateY(var(--count-enter-y)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes count-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(var(--count-exit-y)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animated-count__in { animation: none; }
+  .animated-count__out { display: none; }
+}

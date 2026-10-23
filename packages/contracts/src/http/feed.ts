@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { editorBlockSchema } from './blocks.ts'
 import { pageSchema } from './pagination.ts'
 
 /** Четыре исходных вида. Новые реакции получают UUID, эти slug остаются у уже поставленных. */
@@ -36,7 +37,9 @@ export const feedCardSchema = z.strictObject({
   slug: z.string(),
   title: z.string(),
   excerpt: z.string(),
-  /** Есть содержимое, которое не помещается во фрагмент и первое изображение. */
+  /** Первые два блока документа в исходном порядке. */
+  preview_blocks: z.array(editorBlockSchema).max(2).optional(),
+  /** После первых двух блоков в документе есть продолжение. */
   has_more_content: z.boolean().optional(),
   first_image_url: z.string().nullable(),
   published_at: z.iso.datetime(),

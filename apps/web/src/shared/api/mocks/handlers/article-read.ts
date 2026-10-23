@@ -78,7 +78,7 @@ export const articleReadHandlers = [
           data: { text: `Абзац ${index + 1}. Длинный текст статьи, чтобы центр можно было прокрутить до кнопки возврата наверх.` },
         }))
       : [
-          { type: 'paragraph', data: { text: article.excerpt } },
+          ...(article.preview_blocks ?? [{ type: 'paragraph', data: { text: article.excerpt } }]),
           { type: 'paragraph', data: { text: 'Полный текст статьи для проверки раскрытия.' } },
           { type: 'image', data: { file: { url: 'https://example.com/cover-1.png' }, caption: 'Первое изображение' } },
           { type: 'image', data: { file: { url: 'https://example.com/cover-2.png' }, caption: 'Второе изображение' } },

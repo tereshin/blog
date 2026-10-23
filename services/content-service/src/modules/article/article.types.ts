@@ -1,4 +1,4 @@
-import type { BlocksDocument, ServiceContext } from '@blog/contracts'
+import type { BlocksDocument, EditorBlock, ServiceContext } from '@blog/contracts'
 
 export type ArticleRow = {
   id: string
@@ -6,6 +6,7 @@ export type ArticleRow = {
   title: string
   excerpt: string
   has_more_content?: boolean
+  preview_blocks?: EditorBlock[]
   first_image_url: string | null
   blocks: unknown
   published_at: Date | null

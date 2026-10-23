@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useT } from '@/shared/i18n'
 import { cn, formatCount } from '@/shared/lib'
-import { BookmarkIcon, Card, CommentIcon, EyeIcon, ShareIcon } from '@/shared/ui'
+import { AnimatedCount, BookmarkIcon, Card, CommentIcon, EyeIcon, ShareIcon } from '@/shared/ui'
 import type { ArticleCardModel } from '../model/article-types.ts'
 
 type ArticleActionsProps = {
@@ -23,12 +23,12 @@ export function ArticleActions({ article, bookmark, share, className }: ArticleA
         className="action-control outline-offset-2"
       >
         <span className="action-control__icon"><CommentIcon className="size-5" /></span>
-        <span>{formatCount(article.comment_count, locale)}</span>
+        <AnimatedCount value={article.comment_count} locale={locale} />
       </Link>
       {bookmark ?? (
         <span className="action-control">
           <span className="action-control__icon"><BookmarkIcon className="size-5" /></span>
-          <span>{formatCount(article.bookmark_count, locale)}</span>
+          <AnimatedCount value={article.bookmark_count} locale={locale} />
         </span>
       )}
       {share ?? <ShareIcon className="size-5" />}
@@ -37,7 +37,7 @@ export function ArticleActions({ article, bookmark, share, className }: ArticleA
         aria-label={t('article.views', { count: article.view_count, value: formatCount(article.view_count, locale) })}
       >
         <EyeIcon className="size-5" />
-        <span>{formatCount(article.view_count, locale)}</span>
+        <AnimatedCount value={article.view_count} locale={locale} />
       </span>
     </Card.Content>
   )

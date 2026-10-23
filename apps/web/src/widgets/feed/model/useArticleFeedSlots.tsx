@@ -39,8 +39,7 @@ export function useArticleFeedSlots(): FeedSlots {
     ),
     renderExpand: (article, onExpanded) => (
       <FeedArticleExpand slug={article.slug} has_more_content={article.has_more_content ?? true} onExpanded={onExpanded}>
-        <ArticleCard.Excerpt />
-        <ArticleCard.Image />
+        <ArticleCard.Preview />
       </FeedArticleExpand>
     ),
     renderMenu: (article) => (

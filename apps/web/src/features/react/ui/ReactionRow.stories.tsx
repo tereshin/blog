@@ -4,6 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { DEFAULT_REACTION_APPEARANCES } from '@blog/contracts'
 import type { ReactionAppearances } from '@blog/contracts'
 import type { ReactionCounts, ReactionKind } from '@/entities/reaction'
+import { applyReactionChange } from '@/entities/reaction'
 import { ReactionRow } from './ReactionRow.tsx'
 
 const empty: ReactionCounts = { laugh: 0, heart: 0, thumb: 0, fire: 0 }
@@ -73,6 +74,19 @@ function Row({
 }
 
 const meta = preview.meta({ title: 'features/react/ReactionRow', component: Row })
+function AnimatedRow() {
+  const [state, setState] = useState<{ counts: ReactionCounts; my_reaction: ReactionKind | null }>({ counts: { heart: 99, fire: 3, laugh: 2, thumb: 0 }, my_reaction: null })
+  return (
+    <div className="px-24 pb-8 pt-56">
+      <ReactionRow
+        counts={state.counts}
+        my_reaction={state.my_reaction}
+        onSelect={(kind) => setState((current) => applyReactionChange(current.counts, current.my_reaction, kind))}
+      />
+    </div>
+  )
+}
+export const Animation = meta.story({ render: () => <AnimatedRow /> })
 export const None = meta.story({ args: { counts: empty, my_reaction: null } })
 export const Some = meta.story({ args: { counts: some, my_reaction: null } })
 export const Mine = meta.story({ args: { counts: some, my_reaction: 'heart' } })

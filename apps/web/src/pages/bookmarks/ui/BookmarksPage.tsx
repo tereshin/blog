@@ -57,8 +57,7 @@ function SavedArticles() {
           }
         />
         <ArticleCard.Title />
-        <ArticleCard.Excerpt />
-        <ArticleCard.Image />
+        <ArticleCard.Preview />
         <ArticleCard.Actions
           bookmark={
             <BookmarkControl

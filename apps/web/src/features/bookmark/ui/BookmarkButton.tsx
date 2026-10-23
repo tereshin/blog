@@ -1,6 +1,5 @@
 import { useT } from '@/shared/i18n'
-import { formatCount } from '@/shared/lib'
-import { ActionButton, BookmarkIcon } from '@/shared/ui'
+import { ActionButton, AnimatedCount, BookmarkIcon } from '@/shared/ui'
 
 type BookmarkButtonProps = {
   count: number
@@ -20,7 +19,7 @@ export function BookmarkButton({ count, is_bookmarked, onToggle, is_pending = fa
       onPress={onToggle}
     >
       <span className="action-control__icon"><BookmarkIcon className="size-5" icon_style={is_bookmarked ? 'fill' : 'line'} /></span>
-      <span className="text-base">{formatCount(count, locale)}</span>
+      <AnimatedCount value={count} locale={locale} className="text-base" />
     </ActionButton>
   )
 }

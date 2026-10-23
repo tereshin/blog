@@ -1,3 +1,5 @@
+import type { EditorBlock } from '@blog/contracts'
+
 /** Фикстура ленты для режима мока, историй и Playwright: 45 статей, самые свежие — сегодняшние. */
 const TOPICS = [
   { id: '5f0f6a52-0d8b-4f6e-a8b1-000000000001', slug: 'tehnologii', title: 'Технологии' },
@@ -17,6 +19,8 @@ export type FeedCardFixture = {
   slug: string
   title: string
   excerpt: string
+  preview_blocks?: EditorBlock[]
+  has_more_content?: boolean
   first_image_url: string | null
   published_at: string
   author: { user_id: string; display_name: string; avatar_url: string | null; slug: string; status_icon_id: string | null }
@@ -31,8 +35,7 @@ export type FeedCardFixture = {
   comments_enabled: boolean
 }
 
-const IMAGE =
-  'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22720%22 height=%22405%22%3E%3Crect width=%22720%22 height=%22405%22 fill=%22%23445%22/%3E%3C/svg%3E'
+const IMAGE = new URL('/fixtures/article-cover.svg', typeof window === 'undefined' ? 'http://localhost:5173' : window.location.origin).href
 
 function pad(value: number, size = 12): string {
   return String(value).padStart(size, '0')
@@ -49,6 +52,13 @@ export function buildFeedFixture(count = 45, now: Date = new Date()): FeedCardFi
       slug: `statya-${index + 1}`,
       title: `Статья ${index + 1}: ${topic.title.toLowerCase()} без компромиссов`,
       excerpt: 'Короткий фрагмент статьи, чтобы карточка выглядела как настоящая. Здесь несколько предложений текста.',
+      preview_blocks: [
+        { type: 'paragraph', data: { text: 'Короткий фрагмент статьи, чтобы карточка выглядела как настоящая. Здесь несколько предложений текста.' } },
+        ...(index % 2 === 0
+          ? [{ type: 'image' as const, data: { file: { url: IMAGE } } }]
+          : [{ type: 'paragraph' as const, data: { text: 'Второй блок статьи, который виден без раскрытия.' } }]),
+      ],
+      has_more_content: true,
       first_image_url: index % 2 === 0 ? IMAGE : null,
       // Каждая следующая статья старше предыдущей на 97 минут: первые попадают на сегодня, остальные — на прошлые дни.
       published_at: new Date(now.getTime() - (index + 1) * 97 * 60_000).toISOString(),

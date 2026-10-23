@@ -12,6 +12,7 @@ export type ArticleCardModel = {
   slug: string
   title: string
   excerpt: string
+  preview_blocks?: ArticleBlock[]
   has_more_content?: boolean
   first_image_url: string | null
   published_at: string

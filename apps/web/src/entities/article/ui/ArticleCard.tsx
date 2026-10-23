@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
 import { cn } from '@/shared/lib'
-import { Avatar, Card, Skeleton } from '@/shared/ui'
+import { Avatar, BlockRenderer, Card, Skeleton } from '@/shared/ui'
 import type { ArticleCardModel } from '../model/article-types.ts'
 import { ArticleByline } from './ArticleByline.tsx'
 import { ArticleActions } from './ArticleActions.tsx'
@@ -60,7 +60,7 @@ function Title({ children }: { children?: ReactNode }) {
     <Card.Content className="px-4 lg:px-5 pb-0 pt-3">
       <h2
         id={`article-title-${article.id}`}
-        className="text-xl font-semibold leading-snug tracking-[-0.005em]"
+        className="document-title"
       >
         {children ?? (
           <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
@@ -72,33 +72,18 @@ function Title({ children }: { children?: ReactNode }) {
   )
 }
 
-function Excerpt() {
+/** Первые два блока документа с исходной разметкой и порядком. */
+function Preview() {
   const article = useArticleCard()
-  if (!article.excerpt) return null
+  // Совместимость с карточками, загруженными до обновления сервера.
+  const blocks = article.preview_blocks ?? [
+    ...(article.excerpt ? [{ type: 'paragraph', data: { text: article.excerpt } }] : []),
+    ...(article.first_image_url ? [{ type: 'image', data: { file: { url: article.first_image_url } } }] : []),
+  ]
+  if (blocks.length === 0) return null
   return (
     <Card.Content className="px-4 lg:px-5 pb-0 pt-2">
-      <p className="whitespace-pre-line break-words text-md leading-[1.6] text-foreground">
-        {article.excerpt}
-      </p>
-    </Card.Content>
-  )
-}
-
-/** Первое изображение статьи; без него часть не рендерится. Размеры заданы, чтобы лента не «прыгала». */
-function Image() {
-  const article = useArticleCard()
-  if (!article.first_image_url) return null
-  return (
-    <Card.Content className="px-4 lg:px-5 pb-0 pt-3">
-      <img
-        src={article.first_image_url}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        width={720}
-        height={405}
-        className="aspect-video w-full rounded-2xl bg-surface-secondary object-cover"
-      />
+      <BlockRenderer blocks={blocks.slice(0, 2)} />
     </Card.Content>
   )
 }
@@ -175,8 +160,7 @@ export const ArticleCard = Object.assign(ArticleCardRoot, {
   Lead,
   Header,
   Title,
-  Excerpt,
-  Image,
+  Preview,
   Expand,
   Reactions,
   Actions,

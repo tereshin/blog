@@ -1,0 +1,43 @@
+.reaction-pill { position: relative; display: inline-flex; isolation: isolate; }
+.reaction-pill .reaction-button { overflow: visible; }
+.reaction-pill[data-burst='true'] .reaction-glyph {
+  animation: reaction-pop 420ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.reaction-glyph { display: inline-flex; align-items: center; justify-content: center; }
+.reaction-burst {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.reaction-burst__particle {
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  display: inline-flex;
+  opacity: 0;
+  animation: reaction-flight 1050ms var(--burst-delay) cubic-bezier(.16, .65, .3, 1) both;
+}
+@keyframes reaction-pop {
+  0% { transform: scale(.75); }
+  45% { transform: translateY(-2px) scale(1.4) rotate(-8deg); }
+  75% { transform: scale(.95) rotate(3deg); }
+  100% { transform: scale(1); }
+}
+@keyframes reaction-flight {
+  0% { opacity: 0; transform: translate(0, 0) scale(.35); }
+  12% { opacity: 1; }
+  35% { opacity: 1; transform: translate(calc(var(--burst-x) * .5), calc(var(--burst-y) * .65)) rotate(calc(var(--burst-rotate) * .5)) scale(var(--burst-size)); }
+  65% { opacity: .85; }
+  100% { opacity: 0; transform: translate(var(--burst-x), var(--burst-y)) rotate(var(--burst-rotate)) scale(.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reaction-pill[data-burst='true'] .reaction-glyph { animation: none; }
+  .reaction-burst__particle { animation: reaction-still 1ms both; }
+}
+@keyframes reaction-still {
+  from, to { opacity: 0; transform: scale(0); }
+}
