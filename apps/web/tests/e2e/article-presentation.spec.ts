@@ -63,7 +63,7 @@ test('размеры текста, заголовков и списков сов
   await expect(card.locator('.document-content p b')).toHaveText('статьи')
   expect(await typography(card.locator('.document-content p'))).toEqual(editor.paragraph)
   expect(await typography(card.locator('.document-content h2'))).toEqual(editor.h2)
-  expect(await typography(card.locator('.document-title'))).toEqual(editor.title)
+  expect(await typography(card.locator('h2[id^="article-title-"]'))).toEqual({ size: '20px', height: '27.5px', weight: '600' })
 })
 
 test('выбор реакции запускает разлёт и перелистывание цифры, затем частицы исчезают', async ({ page }) => {

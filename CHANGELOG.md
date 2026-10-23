@@ -40,7 +40,8 @@ Current changes since 1.0.0.
 ### Fixed
 
 - Article cards show the first two blocks in their original order and formatting.
-  Article text, headings, and lists use the same sizes as the editor.
+  Article text, headings, and lists use the same sizes as the editor; card
+  titles keep their compact size.
 - Google and GitHub sign-in returns to the site.
 - A page opens at the top. Leaving an article returns to the same place in the
   feed. A link to a comment scrolls to it and highlights it. The author's name

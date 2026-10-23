@@ -60,7 +60,7 @@ function Title({ children }: { children?: ReactNode }) {
     <Card.Content className="px-4 lg:px-5 pb-0 pt-3">
       <h2
         id={`article-title-${article.id}`}
-        className="document-title"
+        className="text-xl font-semibold leading-snug tracking-[-0.005em]"
       >
         {children ?? (
           <Link to={article.href} className="text-foreground outline-offset-2 hover:underline">
