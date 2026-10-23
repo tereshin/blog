@@ -48,7 +48,11 @@
       "@firebase/app": "0.16.2",
       "@firebase/app-compat": "0.5.18",
       "@firebase/firestore>@grpc/grpc-js": "^1.13.6",
-      "handlebars": "^4.7.10"
+      "handlebars": "^4.7.10",
+      "esbuild@>=0.27.3 <0.28.1": "0.28.2",
+      "fflate@>=0.7.0 <0.7.5": "0.7.5",
+      "uuid@>=9.0.0 <11.1.1": "11.1.1",
+      "ip-address@<=10.7.3": "10.7.4"
     },
     "auditConfig": {
       "ignoreGhsas": [

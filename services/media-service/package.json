@@ -23,7 +23,7 @@
     "@blog/seed-data": "workspace:^",
     "@blog/telemetry": "workspace:^",
     "drizzle-orm": "^0.45.4",
-    "fastify": "^5.12.5",
+    "fastify": "^5.12.6",
     "file-type": "^21.3.4",
     "pg": "^8.23.1",
     "satori": "^0.47.1",
