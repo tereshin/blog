@@ -42,6 +42,9 @@ Current changes since 1.0.0.
 
 ### Fixed
 
+- Meta Pixel loads from the page head before the application starts, with one
+  initial page view and subsequent views on navigation.
+
 - Updating an article after leaving a page open no longer interrupts the site
   with a 502 error.
 

@@ -16,6 +16,7 @@ declare global {
 
 const initialized = new Set<string>()
 let previous_view: string | null = null
+let server_view_checked = false
 
 function pixelQueue(): PixelQueue {
   if (window.fbq) return window.fbq
@@ -44,10 +45,20 @@ export function trackMetaPageView(pixel_id: string | null | undefined, navigatio
   }
   const view = `${pixel_id}:${navigation}`
   if (previous_view === view) return
+  // The base code in the server HTML already sent the first PageView.
+  if (!server_view_checked) {
+    server_view_checked = true
+    const server_id = document.querySelector('script[data-meta-pixel-id]')?.getAttribute('data-meta-pixel-id')
+    if (server_id && window.fbq) {
+      initialized.add(server_id)
+      if (server_id === pixel_id) {
+        previous_view = view
+        return
+      }
+    }
+  }
   const fbq = pixelQueue()
   if (!initialized.has(pixel_id)) {
-    // Only the explicitly requested PageView is sent; no automatic button events.
-    fbq('set', 'autoConfig', false, pixel_id)
     fbq('init', pixel_id)
     initialized.add(pixel_id)
   }

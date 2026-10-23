@@ -200,3 +200,15 @@ it('includes the configured no-script pixel and omits it when disabled', () => {
   expect(html).toContain('<noscript><img height="1" width="1" hidden alt="" src="https://www.facebook.com/tr?id=1661355165525767&amp;ev=PageView&amp;noscript=1"></noscript>')
   expect(renderApplicationHtml(PUBLIC, TEMPLATE, 'nonce')).not.toContain('facebook.com/tr')
 })
+
+
+it('puts the standard Meta base code in head with the CSP nonce', () => {
+  const html = renderApplicationHtml({ ...PUBLIC, meta_pixel_id: '1661355165525767' }, TEMPLATE, 'test-nonce')
+  const head = html.split('</head>')[0] ?? ''
+  expect(head).toContain('<!-- Meta Pixel Code -->')
+  expect(head).toContain('nonce="test-nonce" data-meta-pixel-id="1661355165525767"')
+  expect(head).toContain("fbq('init', '1661355165525767');")
+  expect(head).toContain("fbq('track', 'PageView');")
+  expect(head).not.toContain('autoConfig')
+  expect(renderApplicationHtml(PUBLIC, TEMPLATE, 'nonce')).not.toContain('<!-- Meta Pixel Code -->')
+})
