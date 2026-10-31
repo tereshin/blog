@@ -17,7 +17,7 @@ function ArticleCardRoot({ article, children, className }: ArticleCardRootProps)
       <Card
         role="article"
         aria-labelledby={`article-title-${article.id}`}
-        className={cn('w-full min-w-0 gap-0 overflow-visible', className)}
+        className={cn('w-full min-w-0 gap-0 overflow-visible [--gallery-inset:1rem] lg:[--gallery-inset:1.25rem]', className)}
       >
         {children}
       </Card>

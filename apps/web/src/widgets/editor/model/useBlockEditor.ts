@@ -6,6 +6,7 @@ import type { OutputData } from '@editorjs/editorjs'
 import { useT } from '@/shared/i18n'
 import { buttonsToolConfig } from '../lib/buttons-tool-config.ts'
 import { ButtonsTool } from '../lib/buttons-tool.ts'
+import { GalleryTool } from '../lib/gallery-tool.tsx'
 import { uploadEditorFile, editorUploadCount } from '../lib/editor-uploader.ts'
 import { PersonTool } from '../lib/person-tool.ts'
 import { TitleTool } from '../lib/title-tool.ts'
@@ -34,7 +35,7 @@ export function useBlockEditor({
   onDirty,
   onReady,
 }: BlockEditorOptions) {
-  const { t } = useT()
+  const { t, locale } = useT()
   const holder_ref = useRef<HTMLDivElement>(null)
   const editor_ref = useRef<EditorJS | null>(null)
   const ready_ref = useRef(false)
@@ -114,8 +115,9 @@ export function useBlockEditor({
               },
             },
             buttons: { class: ButtonsTool, config: buttonsToolConfig(t) },
+            gallery: { class: GalleryTool, config: { locale } },
           },
-          i18n: { messages: { toolNames: { Person: t('editor.person'), Buttons: t('editor.buttons') } } },
+          i18n: { messages: { toolNames: { Person: t('editor.person'), Buttons: t('editor.buttons'), Gallery: t('editor.gallery') } } },
           placeholder,
           // Документ контракта совпадает с OutputData, но разделитель может прийти без data.
           data: {

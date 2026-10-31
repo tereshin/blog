@@ -26,7 +26,7 @@ export function documentText(value: unknown): string {
       case 'warning': return plainText(`${block.data.title} ${block.data.message}`)
       case 'code': return block.data.code
       case 'table': return plainText(block.data.content.flat().join(' '))
-      case 'image': return plainText(block.data.caption ?? '')
+      case 'image': case 'gallery': return plainText(block.data.caption ?? '')
       case 'attaches': return plainText(block.data.title)
       case 'personality': return plainText(`${block.data.name} ${block.data.position ?? ''}`)
       default: return ''

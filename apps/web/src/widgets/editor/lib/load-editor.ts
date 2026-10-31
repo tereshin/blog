@@ -3,6 +3,7 @@ import type EditorJS from '@editorjs/editorjs'
 import { ButtonsTool } from './buttons-tool.ts'
 import { ATTACHMENT_ACCEPT, uploadEditorFile } from './editor-uploader.ts'
 import { PersonTool } from './person-tool.ts'
+import { GalleryTool } from './gallery-tool.tsx'
 
 type EditorTools = NonNullable<EditorConfig['tools']>
 
@@ -37,6 +38,7 @@ export async function loadEditor(): Promise<{ Editor: typeof EditorJS; tools: Ed
     marker: marker.default,
     underline: underline.default,
     image: { class: image.default, config: { uploader: { uploadByFile: (file: File) => uploadEditorFile(file, 'image') } } },
+    gallery: GalleryTool,
     attaches: {
       class: attaches.default,
       config: {

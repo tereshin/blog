@@ -10,7 +10,7 @@ type ArticleViewRootProps = { article: ArticleModel; children: ReactNode }
 function ArticleViewRoot({ article, children }: ArticleViewRootProps) {
   return (
     <ArticleViewContext value={article}>
-      <Card className="gap-0 overflow-visible">
+      <Card className="gap-0 overflow-visible [--gallery-inset:1.25rem]">
         <article className="flex flex-col gap-3 px-5 py-4">{children}</article>
       </Card>
     </ArticleViewContext>

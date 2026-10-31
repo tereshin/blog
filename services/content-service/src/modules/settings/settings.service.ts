@@ -192,6 +192,7 @@ export class SettingsService<TTx> {
     for (const block of previous?.document.blocks ?? []) {
       if (block.type === 'image' || block.type === 'attaches')
         existing_urls.add(block.data.file.url)
+      if (block.type === 'gallery') for (const item of block.data.items) existing_urls.add(item.url)
     }
     const welcome_content = requested
       ? {

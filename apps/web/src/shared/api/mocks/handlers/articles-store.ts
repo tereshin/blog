@@ -106,9 +106,7 @@ export function nextArticleSlug(): string {
   return slug
 }
 
-function plain(value: string): string {
-  return value.replace(/<[^>]+>/g, '').trim()
-}
+function plain(value: string): string { return value.replace(/<[^>]+>/g, '').trim() }
 
 function excerptOf(blocks: BlocksDocument): string {
   for (const block of blocks.blocks) {
@@ -123,6 +121,7 @@ function excerptOf(blocks: BlocksDocument): string {
 function imageOf(blocks: BlocksDocument): string | null {
   for (const block of blocks.blocks) {
     if (block.type === 'image') return block.data.file.url
+    if (block.type === 'gallery') return block.data.items[0]?.url ?? null
   }
   return null
 }
@@ -144,6 +143,7 @@ export function hasMockContent(blocks: BlocksDocument): boolean {
       case 'table':
         return block.data.content.some((row) => row.some((cell) => plain(cell).length > 0))
       case 'image':
+      case 'gallery':
       case 'embed':
       case 'attaches':
       case 'buttons':

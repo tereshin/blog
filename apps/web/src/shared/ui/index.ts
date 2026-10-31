@@ -57,6 +57,9 @@ export { FormTextField } from './FormTextField.tsx'
 export { FormTextArea } from './FormTextArea.tsx'
 
 export { BlockRenderer } from './BlockRenderer.tsx'
+export { GalleryRail } from './gallery/GalleryRail.tsx'
+export { GalleryLightbox } from './gallery/GalleryLightbox.tsx'
+export { ImageGallery } from './gallery/ImageGallery.tsx'
 export { VirtualList } from './VirtualList.tsx'
 
 export { PageCard } from './PageCard.tsx'

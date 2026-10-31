@@ -9,6 +9,10 @@ Current changes since 1.0.0.
 
 ### Added
 
+- Authors can add image galleries, arrange photos, and add a caption. Readers
+  can scroll through the gallery to the card edges with a trackpad and open
+  photos in a full-screen viewer. Arrows appear only when scrolling is available.
+
 - Administrators can set a Meta Pixel ID to track page views, or clear it to
   disable tracking.
 

@@ -1,0 +1,26 @@
+.gallery { position: relative; min-width: 0; }
+.gallery__rail { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 2px; touch-action: pan-x pan-y; }
+/* The viewport reaches the card edges; end padding keeps the first/last photo aligned with text. */
+.image-gallery > .gallery { margin-inline: calc(-1 * var(--gallery-inset, 0px)); }
+.image-gallery > .gallery > .gallery__rail { padding-inline: var(--gallery-inset, 2px); }
+.gallery__rail::-webkit-scrollbar { display: none; }
+.gallery__rail:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 12px; }
+.gallery__rail[data-dragging] { cursor: grabbing; user-select: none; }
+.gallery__item { position: relative; display: block; flex: 0 0 auto; border: 0; border-radius: 12px; overflow: hidden; padding: 0; background: var(--surface-secondary); cursor: zoom-in; }
+.gallery__item img { display: block; height: clamp(180px, 32vw, 320px); width: auto; max-width: none; min-width: 80px; object-fit: contain; border-radius: inherit; }
+.gallery__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.gallery__arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; color: white; background: rgb(0 0 0 / 55%); cursor: pointer; }
+.gallery__arrow:hover { background: rgb(0 0 0 / 75%); }
+.gallery__arrow:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.gallery__arrow:disabled { visibility: hidden; pointer-events: none; }
+.gallery__arrow--previous { left: 12px; }
+.gallery__arrow--next { right: 12px; }
+@media (hover: hover) and (pointer: fine) {
+  .gallery > .gallery__arrow { opacity: 0; pointer-events: none; }
+  .gallery:hover > .gallery__arrow, .gallery:focus-within > .gallery__arrow { opacity: 1; pointer-events: auto; }
+}
+.gallery-lightbox.modal__dialog { max-width: none; padding: 0; border-radius: 0; background: #101010; color: white; }
+.gallery-lightbox__content { position: relative; display: grid; place-items: center; height: 100dvh; width: 100%; overflow: hidden; touch-action: pan-y pinch-zoom; }
+.gallery-lightbox__image { max-width: 100%; max-height: calc(100dvh - 112px); object-fit: contain; }
+.gallery-lightbox__position { position: absolute; top: max(20px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); font-size: 14px; }
+.gallery-lightbox__close { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 16px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgb(255 255 255 / 12%); color: white; cursor: pointer; }

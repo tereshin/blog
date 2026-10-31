@@ -48,8 +48,10 @@ function canonical(value: unknown): string {
 }
 function existingFiles(doc?: BlocksDocument) {
   const urls = new Set<string>()
-  for (const block of doc?.blocks ?? [])
+  for (const block of doc?.blocks ?? []) {
     if (block.type === 'image' || block.type === 'attaches') urls.add(block.data.file.url)
+    if (block.type === 'gallery') for (const item of block.data.items) urls.add(item.url)
+  }
   return urls
 }
 export class PageService {

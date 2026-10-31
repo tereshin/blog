@@ -103,6 +103,13 @@ async function cleanBlock(block: EditorBlock, options: SanitizeOptions): Promise
           ...(block.data.caption !== undefined ? { caption: clean(block.data.caption) } : {}),
         },
       }
+    case 'gallery': {
+      for (const item of block.data.items) await assertOwnedFile(item.url, options)
+      return {
+        ...block,
+        data: { ...block.data, caption: clean(block.data.caption ?? '') },
+      }
+    }
     case 'attaches': {
       await assertOwnedFile(block.data.file.url, options)
       const safeExtension = (value: string | undefined): string | undefined => {
@@ -188,6 +195,7 @@ export function hasContentBlock(blocks: readonly EditorBlock[]): boolean {
       case 'table':
         return block.data.content.some((row) => row.some((cell) => plain(cell).length > 0))
       case 'image':
+      case 'gallery':
       case 'embed':
       case 'attaches':
       case 'buttons':

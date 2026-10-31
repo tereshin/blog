@@ -57,6 +57,19 @@ export const listItemSchema: z.ZodType<ListItem> = z.lazy(() =>
 
 const blockId = { id: z.string().optional() }
 
+export const MAX_GALLERY_IMAGES = 30
+export const galleryImageSchema = z.object({
+  url: z.string().max(2000).refine(isHttpUrl, 'http url'),
+  width: z.number().int().positive().max(30000).optional(),
+  height: z.number().int().positive().max(30000).optional(),
+})
+export const galleryDataSchema = z.object({
+  items: z.array(galleryImageSchema).min(1).max(MAX_GALLERY_IMAGES),
+  caption: z.string().max(2000).optional(),
+})
+export type GalleryImage = z.infer<typeof galleryImageSchema>
+export type GalleryData = z.infer<typeof galleryDataSchema>
+
 /** Блок документа Editor.js. Неизвестный `type` не проходит схему — запись такого документа отклоняется целиком. */
 export const editorBlockSchema = z.discriminatedUnion('type', [
   z.object({ ...blockId, type: z.literal('paragraph'), data: z.object({ text: z.string() }) }),
@@ -93,6 +106,7 @@ export const editorBlockSchema = z.discriminatedUnion('type', [
     type: z.literal('image'),
     data: z.object({ file: z.object({ url: z.string() }), caption: z.string().optional() }),
   }),
+  z.object({ ...blockId, type: z.literal('gallery'), data: galleryDataSchema }),
   z.object({
     ...blockId,
     type: z.literal('embed'),

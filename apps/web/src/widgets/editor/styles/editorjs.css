@@ -66,6 +66,10 @@
 .article-editor-panel .editor-holder { min-height: 280px; }
 .article-editor-panel .codex-editor { padding-left: 4rem; padding-right: 2rem; }
 .article-editor-panel .ce-block { margin-bottom: 18px; }
+.article-editor-panel .ce-paragraph {
+  margin: 0;
+  padding: 0;
+}
 .article-editor-title { margin: 0 0 24px; font-size: var(--document-title-size); line-height: var(--document-title-line-height); font-weight: var(--document-heading-weight); letter-spacing: var(--document-title-letter-spacing); outline: none; overflow-wrap: anywhere; }
 .article-editor-title:empty::before { content: attr(data-placeholder); color: var(--muted); }
 .article-editor-panel .codex-editor { font-size: var(--document-font-size); line-height: var(--document-line-height); }

@@ -13,6 +13,16 @@ const options = {
 }
 
 describe('санитайзер статьи', () => {
+  it('галерея: проверяет все файлы, чистит подпись и считается содержимым', async () => {
+    const gallery = { type: 'gallery', data: { items: [{ url: OWN, width: 300, height: 400 }], caption: '<b>Фото</b><script>x</script>' } }
+    const document = await sanitizeDocument({ blocks: [gallery] }, options)
+    expect(document.blocks[0]).toMatchObject({ type: 'gallery', data: { items: gallery.data.items, caption: '<b>Фото</b>' } })
+    expect(hasContentBlock(document.blocks)).toBe(true)
+    await expect(sanitizeDocument({ blocks: [{ ...gallery, data: { ...gallery.data, items: [...gallery.data.items, { url: `${MEDIA}/foreign.png` }] } }] }, options)).rejects.toBeInstanceOf(ForeignFileError)
+    const shared_url = `${MEDIA}/shared.png`
+    await expect(sanitizeDocument({ blocks: [{ type: 'gallery', data: { items: [{ url: shared_url }] } }] }, { ...options, existing_urls: new Set([shared_url]) })).resolves.toBeDefined()
+  })
+
   it('неизвестный блок отклоняет весь документ', async () => {
     await expect(sanitizeDocument({ blocks: [{ type: 'raw', data: { html: '<script>' } }] }, options)).rejects.toBeInstanceOf(InvalidBlockError)
   })

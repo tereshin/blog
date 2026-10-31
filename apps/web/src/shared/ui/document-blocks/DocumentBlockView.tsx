@@ -7,6 +7,8 @@ import { ListView } from './ListView.tsx'
 import { ButtonsView } from './ButtonsView.tsx'
 import { TableView } from './TableView.tsx'
 import { fileUrl, httpsUrl, textOf } from './block-data.ts'
+import { galleryImageSchema, MAX_GALLERY_IMAGES } from '@blog/contracts'
+import { ImageGallery } from '../gallery/ImageGallery.tsx'
 
 type DocumentBlockViewProps = { block: DocumentBlock }
 
@@ -83,6 +85,13 @@ export function DocumentBlockView({ block }: DocumentBlockViewProps) {
           ) : null}
         </figure>
       )
+    }
+    case 'gallery': {
+      const items = (Array.isArray(data?.items) ? data.items : []).slice(0, MAX_GALLERY_IMAGES).flatMap((item) => {
+        const parsed = galleryImageSchema.safeParse(item)
+        return parsed.success ? [parsed.data] : []
+      })
+      return <ImageGallery items={items} caption={textOf(data, 'caption')} />
     }
     case 'embed': {
       const service = textOf(data, 'service')

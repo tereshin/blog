@@ -43,9 +43,7 @@ export async function uploadEditorFile(
   file: File,
   kind: 'image' | 'attachment',
 ): Promise<UploadedEditorFile> {
-  uploads++
-  notifyUploads()
-  try {
+  return trackEditorUpload<UploadedEditorFile>(async () => {
     const media = await uploadMedia(file, kind)
     const extension = extensionOf(file.name)
     return {
@@ -58,10 +56,19 @@ export async function uploadEditorFile(
         ...(extension ? { extension } : {}),
       },
     }
-  } catch (error) {
+  }).catch((error: unknown) => {
     const message =
       error instanceof Error && error.message ? error.message : 'Не удалось загрузить файл'
     throw new Error(message, { cause: error })
+  })
+}
+
+/** Keep save/publish disabled until the entire batch, including image metadata, is ready. */
+export async function trackEditorUpload<T>(operation: () => Promise<T>): Promise<T> {
+  uploads++
+  notifyUploads()
+  try {
+    return await operation()
   } finally {
     uploads--
     notifyUploads()

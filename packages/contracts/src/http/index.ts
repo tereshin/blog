@@ -88,6 +88,9 @@ export {
   BLOCK_BUTTON_VARIANTS,
   EMBED_SERVICES,
   MAX_BLOCK_BUTTONS,
+  MAX_GALLERY_IMAGES,
+  galleryImageSchema,
+  galleryDataSchema,
   blockButtonSchema,
   blocksDocumentSchema,
   editorBlockSchema,
@@ -97,6 +100,8 @@ export {
 } from './blocks.ts'
 export type {
   BlockButton,
+  GalleryImage,
+  GalleryData,
   BlockButtonSize,
   BlockButtonVariant,
   BlocksDocument,

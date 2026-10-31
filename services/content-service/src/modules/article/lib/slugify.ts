@@ -68,7 +68,7 @@ export function searchText(title: string, blocks: readonly EditorBlock[]): strin
     const text = textOf(block)
     if (text) parts.push(text)
     if (block.type === 'table') parts.push(block.data.content.flat().join(' '))
-    if (block.type === 'image' && block.data.caption) parts.push(block.data.caption)
+    if ((block.type === 'image' || block.type === 'gallery') && block.data.caption) parts.push(block.data.caption)
     if (block.type === 'attaches') parts.push(block.data.title)
     if (block.type === 'personality') parts.push(`${block.data.name} ${block.data.position ?? ''}`)
   }
@@ -92,6 +92,9 @@ export function deriveExcerpt(blocks: readonly EditorBlock[]): string {
 }
 
 export function deriveFirstImage(blocks: readonly EditorBlock[]): string | null {
-  const image = blocks.find((block) => block.type === 'image')
-  return image?.type === 'image' ? image.data.file.url : null
+  for (const block of blocks) {
+    if (block.type === 'image') return block.data.file.url
+    if (block.type === 'gallery') return block.data.items[0]?.url ?? null
+  }
+  return null
 }
