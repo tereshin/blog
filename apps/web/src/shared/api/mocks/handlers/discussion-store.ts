@@ -3,7 +3,6 @@ import { currentMockAuthor } from './articles-store.ts'
 
 const COMMENT_KEY = 'mock_discussion_comments'
 const VIEW_KEY = 'mock_discussion_views'
-const WINDOW_MS = 30 * 60 * 1000
 
 export type StoredComment = {
   id: string
@@ -112,17 +111,15 @@ export function readMockViewCount(article: FeedCardFixture): number {
   return article.view_count + rows.filter((row) => row.article_id === article.id).reduce((sum, row) => sum + row.times, 0)
 }
 
-export function recordMockView(article: FeedCardFixture, viewer_key: string, is_author: boolean, is_moderation: boolean): { counted: boolean; view_count: number } {
+export function recordMockView(article: FeedCardFixture, viewer_key: string): { counted: boolean; view_count: number } {
   const rows = readJson<StoredView>(window.sessionStorage, VIEW_KEY)
   const extra = rows.filter((row) => row.article_id === article.id).reduce((sum, row) => sum + row.times, 0)
-  if (is_author || is_moderation) return { counted: false, view_count: article.view_count + extra }
   const now = Date.now()
   const current = rows.find((row) => row.article_id === article.id && row.viewer_key === viewer_key)
-  if (current && now - current.counted_at < WINDOW_MS) return { counted: false, view_count: article.view_count + extra }
   const next = current ? { ...current, counted_at: now, times: current.times + 1 } : { article_id: article.id, viewer_key, counted_at: now, times: 1 }
   const saved = current ? rows.map((row) => (row === current ? next : row)) : [...rows, next]
   window.sessionStorage.setItem(VIEW_KEY, JSON.stringify(saved))
-  return { counted: true, view_count: article.view_count + extra + (current ? 1 : 1) }
+  return { counted: true, view_count: article.view_count + extra + 1 }
 }
 
 export function mockViewerId(): string | null {

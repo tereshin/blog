@@ -10,9 +10,8 @@ export type RecordViewInput = {
 
 export type ViewRepositoryPort<TTx> = {
   findArticle: (article_id: string) => Promise<ArticleAccessFields | null>
-  readCount: (article_id: string) => Promise<number>
   transaction: <TResult>(work: (tx: TTx) => Promise<TResult>) => Promise<TResult>
-  /** `true`, если просмотр засчитан: первая строка зрителя или окно 30 минут истекло. */
+  /** Каждое открытие увеличивает times, даже для того же зрителя. */
   countView: (tx: TTx, input: { article_id: string; viewer_key: string }) => Promise<boolean>
 }
 

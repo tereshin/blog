@@ -1,10 +1,10 @@
 import { useT } from '@/shared/i18n'
-import { Card, Skeleton } from '@/shared/ui'
+import { Card, IdentityHeader, Skeleton } from '@/shared/ui'
 
 const PLACEHOLDER_KEYS = ['a', 'b', 'c'] as const
 
 /** Заготовка центра зависит от раздела: лента, статья или две карточки профиля. */
-export type CenterSkeletonKind = 'feed' | 'article' | 'profile'
+export type CenterSkeletonKind = 'feed' | 'article' | 'profile' | 'identity'
 
 type CenterSkeletonProps = { kind?: CenterSkeletonKind }
 
@@ -72,6 +72,7 @@ function ProfileSkeleton() {
 /** Серые заготовки той же ширины, что и содержимое раздела. */
 export function CenterSkeleton({ kind = 'feed' }: CenterSkeletonProps) {
   const { t } = useT()
+  if (kind === 'identity') return <IdentityHeader.Skeleton />
   return (
     <div role="status" aria-label={t('shell.center.loading')} className="flex flex-col gap-3 py-4 min-[768px]:px-0 min-[768px]:pt-0 max-w-[var(--shell-content-width,640px)] mx-auto">
       {kind === 'article' ? <ArticleSkeleton /> : null}

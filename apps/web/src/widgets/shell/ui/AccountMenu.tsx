@@ -8,7 +8,7 @@ import { EditProfileDialog } from '@/features/edit-profile'
 import { useLoginDialogStore } from '@/features/login'
 import { LogoutMenuItem } from '@/features/logout'
 import { useT } from '@/shared/i18n'
-import { Avatar, Button, ChevronDownIcon, Menu } from '@/shared/ui'
+import { Avatar, BaseIcon, Button, ChevronDownIcon, Menu } from '@/shared/ui'
 
 /** Меню аватара. Гость видит «Войти». `trigger` — иконка гостя в нижней панели; у участника там его аватар. */
 export function AccountMenu({ trigger }: { trigger?: ReactNode }) {
@@ -59,15 +59,31 @@ export function AccountMenu({ trigger }: { trigger?: ReactNode }) {
           {trigger ? null : <ChevronDownIcon width={16} height={16} />}
         </Button>
         <Menu.Content>
-          <Menu.Item isDisabled>{viewer.profile.display_name}</Menu.Item>
-          <Menu.Item onPress={() => navigate(`/u/${address}`)}>{t('account.my_profile')}</Menu.Item>
-          <Menu.Item onPress={() => navigate('/bookmarks')}>{t('account.bookmarks')}</Menu.Item>
-          <Menu.Item onPress={() => setEditing(true)}>{t('account.edit_profile')}</Menu.Item>
+          <Menu.Item isDisabled textValue={viewer.profile.display_name}>
+            <BaseIcon name="user_3" style="line" size={18} />
+            {viewer.profile.display_name}
+          </Menu.Item>
+          <Menu.Item onPress={() => navigate(`/u/${address}`)} textValue={t('account.my_profile')}>
+            <BaseIcon name="user_3" style="line" size={18} />
+            {t('account.my_profile')}
+          </Menu.Item>
+          <Menu.Item onPress={() => navigate('/bookmarks')} textValue={t('account.bookmarks')}>
+            <BaseIcon name="bookmark" style="line" size={18} />
+            {t('account.bookmarks')}
+          </Menu.Item>
+          <Menu.Item onPress={() => setEditing(true)} textValue={t('account.edit_profile')}>
+            <BaseIcon name="pencil" style="line" size={18} />
+            {t('account.edit_profile')}
+          </Menu.Item>
           {viewer.user.email_verified ? null : (
-            <Menu.Item onPress={() => openLogin('required')}>{t('login.confirm_email')}</Menu.Item>
+            <Menu.Item onPress={() => openLogin('required')} textValue={t('login.confirm_email')}>
+              <BaseIcon name="mail" style="line" size={18} />
+              {t('login.confirm_email')}
+            </Menu.Item>
           )}
           {is_admin ? (
-            <Menu.Item onPress={() => navigate(ADMIN_ROUTES.home.path)}>
+            <Menu.Item onPress={() => navigate(ADMIN_ROUTES.home.path)} textValue={t('admin.title')}>
+              <BaseIcon name="shield" style="line" size={18} />
               {t('admin.title')}
             </Menu.Item>
           ) : null}

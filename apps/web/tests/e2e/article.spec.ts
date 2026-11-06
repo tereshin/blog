@@ -59,7 +59,7 @@ test.describe('Страница статьи', () => {
     await expect(page.locator('#comments')).toBeInViewport()
   })
 
-  test('показывает засчитанные просмотры и сохраняет число при повторном открытии', async ({ page }) => {
+  test('гостю засчитывается новый просмотр при каждом открытии', async ({ page }) => {
     const view_response = page.waitForResponse((response) => response.url().endsWith('/views') && response.request().method() === 'POST')
     await page.goto('/p/statya-1')
     const response = await view_response
@@ -69,8 +69,13 @@ test.describe('Страница статьи', () => {
     await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count))
     const repeated = page.waitForResponse((next) => next.url().endsWith('/views') && next.request().method() === 'POST')
     await page.reload()
-    expect(await (await repeated).json()).toEqual({ counted: false, view_count: result.view_count })
-    await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count))
+    expect(await (await repeated).json()).toEqual({ counted: true, view_count: result.view_count + 1 })
+    await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count + 1))
+
+    await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
+    const returned = page.waitForResponse((next) => next.url().endsWith('/views') && next.request().method() === 'POST')
+    await page.getByRole('main').locator('h2 a[href="/p/statya-1"]').click()
+    expect(await (await returned).json()).toEqual({ counted: true, view_count: result.view_count + 2 })
   })
 
   test('из ленты открывается в каркасе и возврат попадает на то же место', async ({ page }) => {

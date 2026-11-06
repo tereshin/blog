@@ -378,6 +378,9 @@ body {
   min-width: 30px;
   padding: 0 8px;
 }
+.reaction-button.button:is(:disabled, [aria-disabled='true'], [data-disabled='true']) {
+  opacity: 1;
+}
 
 /* Ветка соединяется с центром аватара и заканчивается у последнего ответа. */
 .comment-branch::before {

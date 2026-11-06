@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { ServiceContext } from '@blog/contracts'
 import { startPostgres } from '@blog/db-kit/testing'
 import type { TestPostgres } from '@blog/db-kit/testing'
@@ -44,7 +44,13 @@ describe('discussion: просмотры (PostgreSQL в контейнере)', 
     await postgres?.stop()
   })
 
-  it('окно 30 минут, автор не считается, два одновременных открытия — один просмотр', async () => {
+  beforeEach(async () => {
+    await database.db.delete(views)
+    await database.db.delete(outbox)
+    await database.db.update(articles_copy).set({ visibility: 'public', status: 'published' }).where(eq(articles_copy.article_id, ARTICLE))
+  })
+
+  it('каждый заход гостя, участника, автора и модератора добавляет просмотр', async () => {
     const service = new ViewService(new ViewRepository(database.db), new ArticleSnapshotService(new ArticleSnapshotRepository()), new ViewEvents())
     const member = viewer({ user_id: MEMBER, role: 'member', viewer_key: `user:${MEMBER}` })
     const guest = viewer({ role: 'guest', can_publish: false, viewer_key: 'guest:device' })
@@ -54,7 +60,7 @@ describe('discussion: просмотры (PostgreSQL в контейнере)', 
       article_id: ARTICLE,
       correlation_id: 'c',
     })
-    expect(author).toEqual({ counted: false, view_count: 0 })
+    expect(author).toEqual({ counted: true, view_count: 1 })
 
     const admin = await service.record({
       viewer: viewer({ user_id: ADMIN, role: 'admin', viewer_key: `user:${ADMIN}` }),
@@ -62,31 +68,46 @@ describe('discussion: просмотры (PostgreSQL в контейнере)', 
       context: 'moderation',
       correlation_id: 'c',
     })
-    expect(admin).toEqual({ counted: false, view_count: 0 })
-    expect(await database.db.select().from(views)).toHaveLength(0)
+    expect(admin).toEqual({ counted: true, view_count: 2 })
 
     const [first, second] = await Promise.all([
       service.record({ viewer: guest, article_id: ARTICLE, correlation_id: 'c' }),
       service.record({ viewer: guest, article_id: ARTICLE, correlation_id: 'c' }),
     ])
-    expect([first.counted, second.counted].filter(Boolean)).toHaveLength(1)
-    expect(Math.max(first.view_count, second.view_count)).toBe(1)
+    expect(first.counted).toBe(true)
+    expect(second.counted).toBe(true)
+    expect([first.view_count, second.view_count].sort()).toEqual([3, 4])
 
     const again = await service.record({ viewer: guest, article_id: ARTICLE, correlation_id: 'c' })
-    expect(again).toEqual({ counted: false, view_count: 1 })
-
-    await database.db
-      .update(views)
-      .set({ counted_at: new Date(Date.now() - 31 * 60 * 1000) })
-      .where(eq(views.viewer_key, 'guest:device'))
-    const later = await service.record({ viewer: guest, article_id: ARTICLE, correlation_id: 'c' })
-    expect(later).toEqual({ counted: true, view_count: 2 })
+    expect(again).toEqual({ counted: true, view_count: 5 })
 
     const opened = await service.record({ viewer: member, article_id: ARTICLE, context: 'moderation', correlation_id: 'c' })
     expect(opened.counted).toBe(true)
-    expect(opened.view_count).toBe(3)
+    expect(opened.view_count).toBe(6)
+
+    const [guest_views] = await database.db.select().from(views).where(eq(views.viewer_key, 'guest:device'))
+    expect(guest_views?.times).toBe(3)
 
     const names = (await database.db.select({ name: outbox.name }).from(outbox)).map((row) => row.name)
-    expect(names.filter((name) => name === 'discussion.article_view.counted')).toHaveLength(3)
+    expect(names.filter((name) => name === 'discussion.article_view.counted')).toHaveLength(6)
+    expect(names.filter((name) => name === 'discussion.article_counters.updated')).toHaveLength(6)
+  })
+
+  it.each([
+    { status: 'published', visibility: 'members' },
+    { status: 'published', visibility: 'author' },
+    { status: 'hidden', visibility: 'public' },
+    { status: 'draft', visibility: 'public' },
+    { status: 'deleted', visibility: 'public' },
+  ] as const)('не засчитывает недоступную гостю статью: $status/$visibility', async (access) => {
+    await database.db.update(articles_copy).set(access).where(eq(articles_copy.article_id, ARTICLE))
+    const service = new ViewService(new ViewRepository(database.db), new ArticleSnapshotService(new ArticleSnapshotRepository()), new ViewEvents())
+    await expect(service.record({
+      viewer: viewer({ role: 'guest', can_publish: false, viewer_key: 'guest:device' }),
+      article_id: ARTICLE,
+      correlation_id: 'c',
+    })).rejects.toThrow('Статья недоступна')
+    expect(await database.db.select().from(views)).toHaveLength(0)
+    expect(await database.db.select().from(outbox)).toHaveLength(0)
   })
 })

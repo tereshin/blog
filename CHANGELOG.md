@@ -9,6 +9,8 @@ Current changes since 1.0.0.
 
 ### Added
 
+- Account and article menus show an icon beside each item.
+
 - Administrators can adjust compression, quality, format, and maximum dimensions
   for new images, connect S3 or Cloudflare R2 storage, and test the connection.
 
@@ -48,6 +50,12 @@ Current changes since 1.0.0.
   attachments.
 
 ### Fixed
+
+- Every article page visit counts as a view, including repeat visits and visits
+  by guests, authors, and moderators.
+
+- Profile and topic pages keep the same loading placeholder while the page and
+  its data load. Reaction buttons keep their opacity while a reaction is sent.
 
 - Meta Pixel loads from the page head before the application starts, with one
   initial page view and subsequent views on navigation.

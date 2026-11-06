@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useT } from '@/shared/i18n'
-import { Menu } from '@/shared/ui'
+import { BaseIcon, Menu } from '@/shared/ui'
 import { useLogout } from '../model/useLogout.ts'
 
 export function LogoutMenuItem() {
@@ -10,12 +10,14 @@ export function LogoutMenuItem() {
 
   return (
     <Menu.Item
+      textValue={t('account.logout')}
       isDisabled={is_pending}
       onPress={() => {
         setPending(true)
         void logout().finally(() => setPending(false))
       }}
     >
+      <BaseIcon name="exit_door" style="line" size={18} />
       {t('account.logout')}
     </Menu.Item>
   )

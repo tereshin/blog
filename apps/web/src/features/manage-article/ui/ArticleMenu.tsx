@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useT } from '@/shared/i18n'
-import { Button, Menu, MoreIcon } from '@/shared/ui'
+import { BaseIcon, Button, Menu, MoreIcon } from '@/shared/ui'
 import { OwnArticleMenu } from './OwnArticleMenu.tsx'
 
 type ArticleMenuProps = {
@@ -23,8 +23,14 @@ export function ArticleMenu({ article_id, is_own, onCopyLink, onReport, report_d
           <MoreIcon className="size-6" />
         </Button>
         <Menu.Content>
-          <Menu.Item onPress={onCopyLink}>{t('article.copy_link')}</Menu.Item>
-          <Menu.Item onPress={onReport}>{t('article.report')}</Menu.Item>
+          <Menu.Item onPress={onCopyLink} textValue={t('article.copy_link')}>
+            <BaseIcon name="link" style="line" size={18} />
+            {t('article.copy_link')}
+          </Menu.Item>
+          <Menu.Item onPress={onReport} textValue={t('article.report')}>
+            <BaseIcon name="flag_1" style="line" size={18} />
+            {t('article.report')}
+          </Menu.Item>
         </Menu.Content>
       </Menu>
       {report_dialog}

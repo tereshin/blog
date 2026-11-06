@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { useViewer } from '@/entities/session'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
-import { Button, Dialog, Menu, MoreIcon, useToast } from '@/shared/ui'
+import { BaseIcon, Button, Dialog, Menu, MoreIcon, useToast } from '@/shared/ui'
 import { useDeleteArticle } from '../model/useDeleteArticle.ts'
 
 type OwnArticleMenuProps = { article_id: string }
@@ -37,8 +37,14 @@ export function OwnArticleMenu({ article_id }: OwnArticleMenuProps) {
           <MoreIcon className="size-6" />
         </Button>
         <Menu.Content>
-          <Menu.Item onPress={() => navigate(`/write/${article_id}`, { state: { editor_return_to: pathname + search + hash } })}>{t('common.edit')}</Menu.Item>
-          <Menu.Item onPress={() => setOpen(true)}>{t('common.delete')}</Menu.Item>
+          <Menu.Item onPress={() => navigate(`/write/${article_id}`, { state: { editor_return_to: pathname + search + hash } })} textValue={t('common.edit')}>
+            <BaseIcon name="pencil" style="line" size={18} />
+            {t('common.edit')}
+          </Menu.Item>
+          <Menu.Item onPress={() => setOpen(true)} textValue={t('common.delete')}>
+            <BaseIcon name="delete_2" style="line" size={18} />
+            {t('common.delete')}
+          </Menu.Item>
         </Menu.Content>
       </Menu>
       <Dialog is_open={is_open} onOpenChange={setOpen}>

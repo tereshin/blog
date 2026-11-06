@@ -61,19 +61,19 @@ test.describe('обсуждение на фикстурном gateway', () => {
     await other.close()
   })
 
-  test('повторное открытие не добавляет просмотр, заход автора не считается', async ({ context, page }) => {
+  test('повторное открытие и заход автора добавляют просмотры', async ({ context, page }) => {
     await asMember(context)
     const first = page.waitForResponse((response) => response.url().includes('/views') && response.request().method() === 'POST')
     await page.goto('/p/statya-1')
     expect((await (await first).json()) as { counted: boolean }).toMatchObject({ counted: true })
     const second = page.waitForResponse((response) => response.url().includes('/views') && response.request().method() === 'POST')
     await page.reload()
-    expect((await (await second).json()) as { counted: boolean }).toMatchObject({ counted: false })
+    expect((await (await second).json()) as { counted: boolean }).toMatchObject({ counted: true })
 
     await page.evaluate(() => window.sessionStorage.setItem('mock_viewer_override', 'author'))
     const author = page.waitForResponse((response) => response.url().includes('/views') && response.request().method() === 'POST')
     await page.goto('/p/statya-1')
-    expect((await (await author).json()) as { counted: boolean }).toMatchObject({ counted: false })
+    expect((await (await author).json()) as { counted: boolean }).toMatchObject({ counted: true })
   })
 })
 

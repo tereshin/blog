@@ -51,7 +51,7 @@ export const articleReadHandlers = [
           { status: 404 },
         )
       }
-      return HttpResponse.json({ ...card, blocks: stored.blocks, status: 'published', is_own: is_author })
+      return HttpResponse.json({ ...card, view_count: readMockViewCount(card), blocks: stored.blocks, status: 'published', is_own: is_author })
     }
     const article = mockFeedArticles.find((item) => item.slug === params.slug)
     if (article && hiddenArticleIds.has(article.id)) {
@@ -92,16 +92,12 @@ export const articleReadHandlers = [
     })
   }),
 
-  http.post('*/v1/articles/:article_id/views', async ({ params, request }) => {
-    const article = mockFeedArticles.find((item) => item.id === params.article_id)
+  http.post('*/v1/articles/:article_id/views', ({ params }) => {
+    const article = [...publishedFeedCards(), ...mockFeedArticles].find((item) => item.id === params.article_id)
     if (!article) return HttpResponse.json({ code: 'not_found', title: 'Статья недоступна', status: 404 }, { status: 404 })
-    const payload: unknown = await request.json().catch(() => ({}))
-    const context = typeof payload === 'object' && payload && 'context' in payload ? payload.context : undefined
     const actor = currentMockAuthor()
-    const is_author = actor?.id === article.author.user_id
-    const is_moderation = context === 'moderation' && (readMockViewer() === 'admin' || readMockViewer() === 'superadmin')
     const viewer_key = actor ? `user:${actor.id}` : 'guest:mock'
-    const result = recordMockView(article, viewer_key, is_author, is_moderation)
+    const result = recordMockView(article, viewer_key)
     if (result.counted) emitLive('view', { article_id: article.id })
     return HttpResponse.json(result)
   }),

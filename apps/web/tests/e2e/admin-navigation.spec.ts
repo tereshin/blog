@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test'
 const SETTINGS = [
   ['/admin/settings/general', 'Общие настройки'],
   ['/admin/settings/access', 'Регистрация и публикации'],
+  ['/admin/settings/media', 'Изображения и хранилище'],
   ['/admin/settings/layout', 'Оболочка'],
   ['/admin/settings/reactions', 'Виды реакций'],
   ['/admin/settings/status-icons', 'Иконки статусов профиля'],
@@ -150,7 +151,7 @@ test('администратор видит только модерацию, з�
   await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
   const requests: string[] = []
   page.on('request', (request) => {
-    if (request.url().includes('/v1/settings/admin')) requests.push(request.url())
+    if (request.url().includes('/v1/settings/admin') || request.url().includes('/v1/media-settings')) requests.push(request.url())
   })
   await page.goto('/admin')
   await expect(
@@ -178,7 +179,7 @@ for (const path of [
     await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))
     const requests: string[] = []
     page.on('request', (request) => {
-      if (request.url().includes('/v1/settings/admin')) requests.push(request.url())
+      if (request.url().includes('/v1/settings/admin') || request.url().includes('/v1/media-settings')) requests.push(request.url())
     })
     await page.goto(path)
     await expect(page.getByText('Раздел доступен только администратору площадки')).toBeVisible()
