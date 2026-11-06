@@ -51,6 +51,9 @@ Current changes since 1.0.0.
 
 ### Fixed
 
+- A temporary failure while checking an uploaded image no longer reports its
+  address as invalid.
+
 - Every article page visit counts as a view, including repeat visits and visits
   by guests, authors, and moderators.
 

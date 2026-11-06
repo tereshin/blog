@@ -2,6 +2,7 @@ import { generateKeyPairSync, sign } from 'node:crypto'
 import { cp, mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
@@ -23,6 +24,8 @@ import type { DbHandle } from '../../src/infra/db/client.ts'
 import { migrate } from '../../src/infra/db/migrate.ts'
 
 const USER = '22222222-2222-4222-8222-222222222222'
+const R2_PUBLIC_URL = 'https://images.blog.test'
+const R2_IMAGE_URL = `${R2_PUBLIC_URL}/uploads/image`
 const keys = generateKeyPairSync('ed25519')
 function headers() {
   const encoded = [
@@ -49,6 +52,8 @@ describe('admin media configuration and removal of legacy about', () => {
   let postgres: TestPostgres
   let database: DbHandle
   let app: FastifyInstance
+  let media: FastifyInstance
+  let is_media_available = true
   let metrics: ServiceMetrics
   beforeAll(async () => {
     postgres = await startPostgres()
@@ -78,13 +83,22 @@ describe('admin media configuration and removal of legacy about', () => {
       await rm(legacy_dir, { recursive: true, force: true })
     }
     metrics = createServiceMetrics('admin_unification_test')
+    // Exercise the media HTTP contract without depending on a running Compose stack.
+    media = Fastify()
+    media.get<{ Querystring: { url: string } }>('/internal/files', (request, reply) => {
+      if (!is_media_available) return reply.code(503).send({ code: 'service_unavailable' })
+      if (request.query.url === R2_IMAGE_URL)
+        return { uploader_id: USER, kind: 'image', public_url: R2_PUBLIC_URL }
+      return reply.code(404).send({ code: 'not_found' })
+    })
+    const media_url = await media.listen({ host: '127.0.0.1', port: 0 })
     app = await buildApp({
       env: loadEnv({
         APP_ENV: 'prod',
         DATABASE_URL: postgres.url,
         NATS_URL: 'nats://unused',
         PUBLIC_ORIGIN: 'https://blog.test',
-        MEDIA_URL: 'http://media:3006',
+        MEDIA_URL: media_url,
         S3_PUBLIC_URL: 'http://localhost:9000/media',
         SERVICE_JWT_PUBLIC_KEY: keys.publicKey.export({ type: 'spki', format: 'pem' }).toString(),
       }),
@@ -96,6 +110,7 @@ describe('admin media configuration and removal of legacy about', () => {
   }, 120_000)
   afterAll(async () => {
     await app?.close()
+    await media?.close()
     metrics?.stop()
     await database?.close()
     await postgres?.stop()
@@ -116,22 +131,29 @@ describe('admin media configuration and removal of legacy about', () => {
     expect(created.statusCode).toBe(201)
     const id = created.json().id
     for (const field of ['cover_url', 'avatar_url']) {
-      const updated = await app.inject({
-        method: 'PATCH',
-        url: `/v1/topics/${id}`,
-        headers: headers(),
-        payload: { [field]: 'http://localhost:9000/media/uploads/image' },
-      })
-      expect(updated.statusCode).toBe(200)
-      expect(updated.json()[field]).toBe('http://localhost:9000/media/uploads/image')
-      const rejected = await app.inject({
-        method: 'PATCH',
-        url: `/v1/topics/${id}`,
-        headers: headers(),
-        payload: { [field]: 'https://foreign.test/image.png' },
-      })
-      expect(rejected.statusCode).toBe(422)
-      expect(rejected.json().errors).toMatchObject({ field, reason: 'media_url' })
+      for (const image_url of ['http://localhost:9000/media/uploads/image', R2_IMAGE_URL]) {
+        const updated = await app.inject({
+          method: 'PATCH',
+          url: `/v1/topics/${id}`,
+          headers: headers(),
+          payload: { [field]: image_url },
+        })
+        expect(updated.statusCode).toBe(200)
+        expect(updated.json()[field]).toBe(image_url)
+      }
+      for (const image_url of [
+        'https://foreign.test/image.png',
+        `${R2_PUBLIC_URL}/uploads/unknown`,
+      ]) {
+        const rejected = await app.inject({
+          method: 'PATCH',
+          url: `/v1/topics/${id}`,
+          headers: headers(),
+          payload: { [field]: image_url },
+        })
+        expect(rejected.statusCode).toBe(422)
+        expect(rejected.json().errors).toMatchObject({ field, reason: 'media_url' })
+      }
       const cleared = await app.inject({
         method: 'PATCH',
         url: `/v1/topics/${id}`,
@@ -141,6 +163,36 @@ describe('admin media configuration and removal of legacy about', () => {
       expect(cleared.statusCode).toBe(200)
       expect(cleared.json()[field]).toBeNull()
     }
+  })
+  it('accepts a registered R2 image on create and preserves media outages as 503', async () => {
+    const payload = {
+      title: 'R2 media',
+      slug: 'r2-media-test',
+      description: '',
+      cover_url: R2_IMAGE_URL,
+      avatar_url: null,
+    }
+    is_media_available = false
+    try {
+      const unavailable = await app.inject({
+        method: 'POST',
+        url: '/v1/topics',
+        headers: headers(),
+        payload,
+      })
+      expect(unavailable.statusCode).toBe(503)
+      expect(unavailable.json().code).toBe('service_unavailable')
+    } finally {
+      is_media_available = true
+    }
+    const created = await app.inject({
+      method: 'POST',
+      url: '/v1/topics',
+      headers: headers(),
+      payload,
+    })
+    expect(created.statusCode).toBe(201)
+    expect(created.json().cover_url).toBe(R2_IMAGE_URL)
   })
   it('upgrades saved SEO and supports settings reads and writes without about', async () => {
     const response = await app.inject({ url: '/v1/settings/admin', headers: headers() })
