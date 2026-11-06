@@ -9,6 +9,9 @@ import { SocialCoverController, SocialCoverService, socialCoverRoutes } from './
 import type { CoverRenderer } from './modules/social-cover/index.ts'
 import { MediaController, MediaRepository, MediaService, mediaRoutes } from './modules/media/index.ts'
 import type { ObjectStore } from './modules/media/index.ts'
+import { mediaSettingsRoutes } from './modules/media-settings/index.ts'
+import type { MediaSettingsService } from './modules/media-settings/index.ts'
+import { createMediaRuntime } from './media-runtime.ts'
 
 export type AppDeps = {
   env: Env
@@ -16,6 +19,7 @@ export type AppDeps = {
   metrics: ServiceMetrics
   database: DbHandle
   store: ObjectStore
+  media_settings?: MediaSettingsService
   renderer?: CoverRenderer
   is_broker_ready?: () => boolean
 }
@@ -31,12 +35,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(errorHandler)
   await app.register(health, { metrics: deps.metrics, checks: [{ name: 'database', check: deps.database.isReady }, ...(deps.is_broker_ready ? [{ name: 'broker', check: async () => deps.is_broker_ready?.() ?? false }] : [])] })
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
+  const media_settings = deps.media_settings ?? createMediaRuntime(env, deps.database, store)
+  if (!deps.media_settings) app.addHook('onClose', async () => media_settings.close())
+  await app.register(mediaSettingsRoutes, { service: media_settings })
   await app.register(mediaRoutes, {
-    controller: new MediaController(new MediaService(new MediaRepository(deps.database.db), store, env.S3_PUBLIC_URL)),
+    controller: new MediaController(new MediaService(new MediaRepository(deps.database.db), store, env.S3_PUBLIC_URL, media_settings)),
   })
 
   if (deps.renderer) {
-    const social_cover = new SocialCoverService(deps.renderer, store, env.S3_PUBLIC_URL, logger)
+    const social_cover = new SocialCoverService(deps.renderer, store, env.S3_PUBLIC_URL, logger, media_settings)
     await app.register(socialCoverRoutes, { controller: new SocialCoverController(social_cover) })
   }
 

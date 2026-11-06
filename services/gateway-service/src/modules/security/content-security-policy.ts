@@ -55,6 +55,7 @@ export function imageOrigin(public_url: string | undefined): string | null {
 export function contentSecurityPolicy(input: {
   nonce: string
   image_origin: string | null
+  image_origins?: string[]
   auth_domain?: string | null
   emulator_host?: string | null
 }): string {
@@ -64,6 +65,7 @@ export function contentSecurityPolicy(input: {
     'https://img.heroui.chat',
     'https://www.facebook.com',
     ...(input.image_origin ? [input.image_origin] : []),
+    ...(input.image_origins ?? []),
   ]
   const emulator = emulatorOrigin(input.emulator_host)
   const auth_origin = authDomainOrigin(input.auth_domain)

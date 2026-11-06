@@ -1,4 +1,4 @@
-import type { SocialCoverRequestedV1 } from '@blog/contracts'
+import type { ImageCompression, SocialCoverRequestedV1 } from '@blog/contracts'
 export { outbox, processed_events } from '@blog/broker'
 import { integer, jsonb, pgEnum, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { pgTable } from 'drizzle-orm/pg-core'
@@ -15,10 +15,23 @@ export const files = pgTable(
     byte_size: integer('byte_size').notNull(),
     url: text('url').notNull(),
     idempotency_key: text('idempotency_key').notNull(),
+    storage_id: uuid('storage_id').references(() => media_storage_configs.id),
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex('files_uploader_key_idx').on(table.uploader_id, table.idempotency_key)],
 )
+
+export const media_storage_configs = pgTable('media_storage_configs', {
+  id: uuid('id').primaryKey(),
+  public_url: text('public_url').notNull(),
+  encrypted_config: text('encrypted_config').notNull(),
+})
+
+export const media_settings = pgTable('media_settings', {
+  id: integer('id').primaryKey(),
+  compression: jsonb('compression').$type<ImageCompression>().notNull(),
+  storage_id: uuid('storage_id').references(() => media_storage_configs.id),
+})
 
 export const seed_runs = pgTable('seed_runs', {
   profile: text('profile').primaryKey(),

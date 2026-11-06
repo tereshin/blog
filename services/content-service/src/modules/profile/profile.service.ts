@@ -1,3 +1,5 @@
+import { assertUploadedMediaUrl } from '../../shared/media-url.ts'
+import type { FileOwner } from '../../shared/editor-document/document.sanitizer.ts'
 import { z } from 'zod'
 import { requireVerifiedEmail } from '../../shared/require-verified-email.ts'
 import type { AdminDirectoryQuery, Profile, ServiceContext, UpdateProfile } from '@blog/contracts'
@@ -33,24 +35,9 @@ export function toProfile(row: ProfileRecord, viewer: ServiceContext): Profile {
   }
 }
 
-function assertOwnedUrl(value: string | null, bases: readonly string[], field: string): void {
-  if (value === null) return
-  let parsed: URL
-  try {
-    parsed = new URL(value)
-  } catch {
-    throw new ValidationError({ message: 'Адрес изображения не подходит', details: { field } })
-  }
-  const allowed = bases.some((base) => parsed.origin === new URL(base).origin)
-  if (!allowed)
-    throw new ValidationError({
-      message: 'Изображение должно быть загружено на площадку',
-      details: { field, reason: 'media_url' },
-    })
-}
-
 export type ProfileOptions = {
   media_bases: readonly string[]
+  lookupFile?: (url: string) => Promise<FileOwner | null>
   isStatusIconAvailable?: (id: string) => Promise<boolean>
 }
 
@@ -106,9 +93,9 @@ export class ProfileService {
       ...(input.bio !== undefined ? { bio: input.bio === '' ? null : input.bio } : {}),
     }
     if (next.avatar_url !== undefined)
-      assertOwnedUrl(next.avatar_url, this.options.media_bases, 'avatar_url')
+      await assertUploadedMediaUrl(next.avatar_url, this.options.media_bases, 'avatar_url', this.options.lookupFile)
     if (next.cover_url !== undefined)
-      assertOwnedUrl(next.cover_url, this.options.media_bases, 'cover_url')
+      await assertUploadedMediaUrl(next.cover_url, this.options.media_bases, 'cover_url', this.options.lookupFile)
     if (next.status_icon_id && !(await this.options.isStatusIconAvailable?.(next.status_icon_id))) {
       throw new ValidationError({
         message: 'Этот статус недоступен',

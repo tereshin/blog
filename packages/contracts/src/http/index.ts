@@ -220,6 +220,8 @@ export { searchResponseSchema } from './search.ts'
 export type { SearchResponse } from './search.ts'
 export { mediaKindSchema, mediaUploadResponseSchema } from './media.ts'
 export type { MediaKind, MediaUploadResponse } from './media.ts'
+export { imageCompressionSchema, s3SettingsSchema, updateMediaSettingsSchema, mediaSettingsSchema, storageTestResultSchema } from './media-settings.ts'
+export type { ImageCompression, S3Settings, UpdateMediaSettings, MediaSettings } from './media-settings.ts'
 export {
   followSchema,
   followStateSchema,

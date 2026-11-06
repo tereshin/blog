@@ -4,6 +4,7 @@ import type { RouteObject } from 'react-router'
 import { ADMIN_ROUTES } from '@/entities/admin'
 import type { AdminRouteId } from '@/entities/admin'
 import { AdminGeneralPage } from '@/pages/admin-general'
+import { AdminMediaPage } from '@/pages/admin-media'
 import { AdminArticleReportsPage } from '@/pages/admin-article-reports'
 import { AdminHomePage } from '@/pages/admin-home'
 import { AdminMembersPage } from '@/pages/admin-members'
@@ -64,6 +65,7 @@ const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
   members: <AdminMembersPage />,
   topics: <AdminTopicsPage />,
   general: <AdminGeneralPage />,
+  media: <AdminMediaPage />,
   access: <AdminAccessPage />,
   layout: <AdminLayoutPage />,
   reactions: <AdminReactionsPage />,

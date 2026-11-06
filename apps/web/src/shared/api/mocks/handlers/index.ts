@@ -19,10 +19,12 @@ import { sessionHandlers } from './session.ts'
 import { seoHandlers } from './seo.ts'
 import { shellHandlers } from './shell.ts'
 import { topicHandlers } from './topics.ts'
+import { mediaSettingsHandlers } from './media-settings.ts'
 
 // Обработчики разделов (лента, статья, профиль, обсуждение, сообщения, поиск, модерация)
 // добавляются вместе со своими историями и подключаются здесь: Storybook и Playwright берут тот же список.
 export const handlers = [
+  ...mediaSettingsHandlers,
   ...navSectionHandlers,
   ...pageHandlers,
   ...siteAssetHandlers,

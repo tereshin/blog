@@ -32,7 +32,7 @@ function cleanItems(items: ListItem[]): ListItem[] {
   })
 }
 
-export type FileOwner = { uploader_id: string }
+export type FileOwner = { uploader_id: string; public_url?: string }
 
 export type SanitizeOptions = {
   media_urls: readonly string[]
@@ -59,9 +59,10 @@ function isMediaUrl(value: string, base: string): boolean {
 }
 
 async function assertOwnedFile(url: string, options: SanitizeOptions): Promise<void> {
-  const allowed = options.media_urls.some((base) => isMediaUrl(url, base))
-  if (!allowed) throw new ForeignFileError()
   const file = await options.lookupFile(url)
+  // The media owner attests the configured storage URL for this exact file.
+  const bases = [...options.media_urls, ...(file?.public_url ? [file.public_url] : [])]
+  if (!bases.some((base) => isMediaUrl(url, base))) throw new ForeignFileError()
   if (!file || (file.uploader_id !== options.author_id && !options.existing_urls?.has(url)))
     throw new ForeignFileError()
 }

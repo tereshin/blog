@@ -4,6 +4,9 @@ An open source blogging platform. People publish articles, read the feed, discus
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and maintenance rules.
 
+See [Images and Cloudflare R2](docs/media-storage.md) to configure image compression
+and S3-compatible storage from administration.
+
 ![Home: the Design topic, the article feed, and popular comments](cover.png)
 
 ## Stack

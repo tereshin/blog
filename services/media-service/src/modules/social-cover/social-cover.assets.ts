@@ -1,5 +1,5 @@
 import type { SocialCoverInput } from '@blog/contracts'
-import type { ObjectStore } from '../media/index.ts'
+import type { MediaRuntime, ObjectStore } from '../media/index.ts'
 
 /** Resolve keys only inside the configured bucket, never fetch an author-supplied URL. */
 export function ownedObjectKey(value: string, public_url: string): string | null {
@@ -13,10 +13,12 @@ export function ownedObjectKey(value: string, public_url: string): string | null
   } catch { return null }
 }
 
-export async function coverAssets(input: SocialCoverInput, store: ObjectStore, public_url: string): Promise<{ background?: Uint8Array<ArrayBuffer>; logo?: Uint8Array<ArrayBuffer> }> {
+export async function coverAssets(input: SocialCoverInput, store: ObjectStore, public_url: string, runtime?: MediaRuntime): Promise<{ background?: Uint8Array<ArrayBuffer>; logo?: Uint8Array<ArrayBuffer> }> {
   const read = async (url: string | null) => {
-    const key = url ? ownedObjectKey(url, public_url) : null
-    return key && store.get ? await store.get({ key, max_bytes: 8 * 1024 * 1024 }) : null
+    if (!url) return null
+    const target = runtime?.resolveUrl ? await runtime.resolveUrl(url) : { store, public_url }
+    const key = ownedObjectKey(url, target.public_url)
+    return key && target.store.get ? await target.store.get({ key, max_bytes: 8 * 1024 * 1024 }) : null
   }
   const [background, logo] = await Promise.all([read(input.settings.background_mode === 'image' ? input.image_url : null), read(input.settings.logo_url)])
   return { ...(background ? { background: new Uint8Array(background) } : {}), ...(logo ? { logo: new Uint8Array(logo) } : {}) }

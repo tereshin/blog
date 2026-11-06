@@ -7,6 +7,7 @@ import { buildApp } from './app.ts'
 import { loadEnv } from './config/env.ts'
 import { openDatabase } from './infra/db/client.ts'
 import { MediaStorage } from './modules/media/index.ts'
+import { createMediaRuntime } from './media-runtime.ts'
 
 const SERVICE = 'media-service'
 
@@ -28,17 +29,18 @@ async function main(): Promise<void> {
   const queues = startQueueMetrics(metrics, sampleQueueDepth, (error) => logger.debug({ err: error }, 'опрос очередей брокера не удался'))
   const renderer = new SocialCoverPool()
   const repository = new SocialCoverRepository(database.db)
+  const media_settings = createMediaRuntime(env, database, store)
   const relay = new OutboxRelay({ db: database.db, broker, logger })
-  const worker = new SocialCoverWorker(repository, new SocialCoverService(renderer, store, env.S3_PUBLIC_URL, logger), { logger, metrics })
+  const worker = new SocialCoverWorker(repository, new SocialCoverService(renderer, store, env.S3_PUBLIC_URL, logger, media_settings), { logger, metrics })
   const consumer = await new SocialCoverConsumer(repository).start({ db: database.db, broker, logger })
   relay.start()
   worker.start()
-  const app = await buildApp({ env, logger, metrics, database, store, renderer, is_broker_ready: broker.isReady })
+  const app = await buildApp({ env, logger, metrics, database, store, renderer, media_settings, is_broker_ready: broker.isReady })
 
   registerShutdown({
     app,
     logger,
-    stoppers: [() => queues.stop(), () => consumer.stop(), () => worker.stop(), () => renderer.close(), () => relay.stop(), () => broker.close(), () => database.close(), () => telemetry.shutdown(), async () => metrics.stop()],
+    stoppers: [() => queues.stop(), () => consumer.stop(), () => worker.stop(), async () => { media_settings.close(); store.close() }, () => renderer.close(), () => relay.stop(), () => broker.close(), () => database.close(), () => telemetry.shutdown(), async () => metrics.stop()],
   })
 
   await app.listen({ port: env.HTTP_PORT, host: '0.0.0.0' })

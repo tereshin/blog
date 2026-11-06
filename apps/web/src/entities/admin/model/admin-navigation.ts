@@ -77,6 +77,14 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
     icon: 'access',
     role: 'superadmin',
   },
+  media: {
+    path: '/admin/settings/media',
+    parent: 'settings',
+    title: 'media.settings.title',
+    description: 'media.settings.description',
+    icon: 'covers',
+    role: 'superadmin',
+  },
   layout: {
     path: '/admin/settings/layout',
     parent: 'settings',

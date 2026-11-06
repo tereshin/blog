@@ -23,7 +23,7 @@ import {
   hasContentBlock,
 } from '../../shared/editor-document/document.sanitizer.ts'
 import { requireSuperadmin } from '../../shared/require-superadmin.ts'
-import { assertMediaUrl } from '../../shared/media-url.ts'
+import { assertUploadedMediaUrl } from '../../shared/media-url.ts'
 import { DEFAULT_REACTION_APPEARANCES, assertSingleEmoji } from './reaction-appearance.ts'
 import type {
   SettingsBadgesPort,
@@ -91,14 +91,14 @@ function toAdmin(row: SettingsRow): AdminSettings {
   }
 }
 
-function assertAppearances(appearances: ReactionAppearances, media_url: string): void {
+async function assertAppearances(appearances: ReactionAppearances, media_url: string, lookupFile: SettingsOptions['lookupFile']): Promise<void> {
   for (const appearance of appearances) {
     const field = `reaction_appearances.${appearance.kind}`
     if (appearance.presentation === 'emoji') {
       assertSingleEmoji(appearance.emoji, `${field}.emoji`)
       continue
     }
-    assertMediaUrl(appearance.image_url, media_url, `${field}.image_url`)
+    await assertUploadedMediaUrl(appearance.image_url, media_url, `${field}.image_url`, lookupFile)
   }
 }
 
@@ -136,7 +136,7 @@ export class SettingsService<TTx> {
     requireSuperadmin(viewer)
     const current = await this.repository.find()
     const welcome_content = await this.welcomeContent(viewer, input, current)
-    const { seo, social_cover, favicon } = this.validateImages(input, current)
+    const { seo, social_cover, favicon } = await this.validateImages(input, current)
     const saved = await this.repository.transaction(async (tx) => {
       const catalog = await this.badges.validateReplacement(tx, input.profile_badges)
       const row: SettingsRow = {
@@ -215,29 +215,30 @@ export class SettingsService<TTx> {
   }
 
   /** Все картинки настроек должны лежать на своём media-origin; встроенные значки бейджей — исключение. */
-  private validateImages(input: UpdateSettings, current: SettingsRow | null): ValidatedImages {
+  private async validateImages(input: UpdateSettings, current: SettingsRow | null): Promise<ValidatedImages> {
     const media_url = this.options.media_url
+    const assertImage = (url: string | null, field: string) => assertUploadedMediaUrl(url, media_url, field, this.options.lookupFile)
     const seo = seoSettingsSchema.parse(input.seo ?? current?.seo ?? {})
     const social_cover = socialCoverSettingsSchema.parse(
       input.social_cover ?? current?.social_cover ?? {},
     )
-    assertMediaUrl(seo.publisher.logo_url, media_url, 'seo.publisher.logo_url')
-    assertMediaUrl(social_cover.logo_url, media_url, 'social_cover.logo_url')
-    assertMediaUrl(social_cover.default_image_url, media_url, 'social_cover.default_image_url')
-    assertMediaUrl(input.logo_dark_url ?? current?.logo_dark_url ?? null, media_url, 'logo_dark_url')
+    await assertImage(seo.publisher.logo_url, 'seo.publisher.logo_url')
+    await assertImage(social_cover.logo_url, 'social_cover.logo_url')
+    await assertImage(social_cover.default_image_url, 'social_cover.default_image_url')
+    await assertImage(input.logo_dark_url ?? current?.logo_dark_url ?? null, 'logo_dark_url')
     const favicon = faviconSettingsSchema.parse(input.favicon ?? current?.favicon ?? {})
     for (const [variant, url] of Object.entries(favicon))
-      assertMediaUrl(url, media_url, `favicon.${variant}`)
-    assertMediaUrl(input.logo_url, media_url, 'logo_url')
-    assertAppearances(input.reaction_appearances, media_url)
+      await assertImage(url, `favicon.${variant}`)
+    await assertImage(input.logo_url, 'logo_url')
+    await assertAppearances(input.reaction_appearances, media_url, this.options.lookupFile)
     for (const icon of input.profile_status_icons) {
-      assertMediaUrl(icon.image_url, media_url, `profile_status_icons.${icon.id}.image_url`)
+      await assertImage(icon.image_url, `profile_status_icons.${icon.id}.image_url`)
     }
     const profile_badges =
       input.profile_badges ?? current?.profile_badges ?? DEFAULT_PROFILE_BADGES
     for (const badge of profile_badges) {
       if (!DEFAULT_PROFILE_BADGES.some((item) => item.image_url === badge.image_url)) {
-        assertMediaUrl(badge.image_url, media_url, `profile_badges.${badge.id}.image_url`)
+        await assertImage(badge.image_url, `profile_badges.${badge.id}.image_url`)
       }
     }
     return { seo, social_cover, favicon }

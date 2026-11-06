@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream'
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { randomUUID } from 'node:crypto'
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import type { ObjectStore } from './media.types.ts'
 
 const S3_TIMEOUT_MS = 10_000
@@ -10,6 +11,7 @@ export type MediaStorageOptions = {
   bucket: string
   access_key: string
   secret_key: string
+  force_path_style?: boolean
 }
 
 function isMissing(error: unknown): boolean {
@@ -26,10 +28,28 @@ export class MediaStorage implements ObjectStore {
     this.client = new S3Client({
       region: options.region,
       endpoint: options.endpoint,
-      forcePathStyle: true,
+      forcePathStyle: options.force_path_style ?? true,
       credentials: { accessKeyId: options.access_key, secretAccessKey: options.secret_key },
       maxAttempts: 3,
     })
+  }
+
+  close(): void {
+    this.client.destroy()
+  }
+
+  async check(): Promise<void> {
+    const key = `connection-tests/${randomUUID()}`
+    const body = Buffer.from('storage connection test')
+    await this.put({ key, body, content_type: 'text/plain' })
+    try {
+      const stored = await this.get({ key, max_bytes: 1024 })
+      if (!stored || !body.equals(stored)) throw new Error('Storage read verification failed')
+    } finally {
+      await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }), {
+        abortSignal: AbortSignal.timeout(S3_TIMEOUT_MS),
+      })
+    }
   }
 
   async stream(key: string): Promise<Readable | null> {

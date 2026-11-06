@@ -31,6 +31,7 @@ export class MediaRepository implements MediaRepositoryPort {
         mime: files.mime,
         uploader_id: files.uploader_id,
         kind: files.kind,
+        storage_id: files.storage_id,
       })
       .from(files)
       .where(eq(files.url, url))
@@ -38,7 +39,7 @@ export class MediaRepository implements MediaRepositoryPort {
     return row ?? null
   }
 
-  async insert(file: StoredFile & { idempotency_key: string }): Promise<StoredFile | null> {
+  async insert(file: StoredFile & { idempotency_key: string; storage_id?: string | null }): Promise<StoredFile | null> {
     const [row] = await this.db
       .insert(files)
       .values(file)

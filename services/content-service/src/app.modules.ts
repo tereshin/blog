@@ -67,12 +67,13 @@ export function composeContent(input: ComposeContentInput) {
   }
   const profiles = new ProfileService(new ProfileRepository(db), {
     media_bases: [media_url, public_origin],
+    lookupFile,
     isStatusIconAvailable: async (id) => (await settings.getPublic()).profile_status_icons.some((icon) => icon.id === id),
   })
 
   return {
     access: new AccessController(new AccessService(new AccessRepository(db))),
-    topic: new TopicController(new TopicService(new TopicRepository(db), follows, slugs, { media_url })),
+    topic: new TopicController(new TopicService(new TopicRepository(db), follows, slugs, { media_url, lookupFile })),
     settings: new SettingsController(settings),
     feed: new FeedController(new FeedService(new FeedRepository(db))),
     search: new SearchController(new SearchService(new SearchRepository(db))),

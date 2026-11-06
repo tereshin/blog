@@ -9,6 +9,9 @@ Current changes since 1.0.0.
 
 ### Added
 
+- Administrators can adjust compression, quality, format, and maximum dimensions
+  for new images, connect S3 or Cloudflare R2 storage, and test the connection.
+
 - Authors can add image galleries, arrange photos, and add a caption. Readers
   can scroll through the gallery to the card edges with a trackpad and open
   photos in a full-screen viewer. Arrows appear only when scrolling is available.

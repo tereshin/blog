@@ -16,6 +16,7 @@ import type { Logger } from '@blog/logger'
 import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import { MaintenanceClient } from './infra/http/maintenance-client.ts'
+import { MediaOriginsClient } from './infra/http/media-origins-client.ts'
 import { MaintenanceService, maintenanceModule } from './modules/maintenance/index.ts'
 import { ContentAccessClient } from './infra/http/content-access-client.ts'
 import { IdentitySessionClient } from './infra/http/identity-session-client.ts'
@@ -70,6 +71,7 @@ export type AppServices = {
   identity: ServiceClient
   content: ServiceClient
   web?: ServiceClient
+  media?: ServiceClient
   proxy: ProxyService
   sessions: SessionService
   events: EventsService
@@ -92,6 +94,7 @@ export function composeServices(deps: Pick<AppDeps, 'env' | 'logger'>): AppServi
   return {
     identity,
     content,
+    media: createServiceClient({ name: 'media', base_url: env.MEDIA_URL, timeout_ms: 1000, max_retries: 0 }),
     web: createServiceClient({ name: 'web', base_url: env.WEB_ASSETS_URL ?? 'http://web:8080' }),
     proxy,
     sessions: new SessionService(new IdentitySessionClient(identity), proxy),
@@ -147,6 +150,24 @@ export async function buildApp(deps: AppDeps, services: AppServices): Promise<Fa
       }),
     )
   })
+  if (services.media) {
+    const media_origins = new MediaOriginsClient(services.media)
+    app.addHook('onSend', async (_request, reply) => {
+      if (!String(reply.getHeader('content-type')).startsWith('text/html')) return
+      let origins = media_origins.cached()
+      try {
+        const context = await services.signer.sign({ role: 'guest', is_restricted: false, can_publish: false, viewer_key: 'guest:csp' })
+        origins = await media_origins.load(context)
+      } catch (error) {
+        logger.warn({ err: error }, 'Не удалось обновить источники изображений CSP')
+      }
+      reply.header('Content-Security-Policy', contentSecurityPolicy({
+        nonce: reply.csp_nonce, image_origin, image_origins: origins,
+        auth_domain: env.FIREBASE_AUTH_DOMAIN,
+        emulator_host: env.APP_ENV === 'local' || env.APP_ENV === 'dev' ? env.FIREBASE_AUTH_EMULATOR_HOST : null,
+      }))
+    })
+  }
   await app.register(cors, {
     origin: env.WEB_ORIGIN,
     credentials: true,

@@ -12,6 +12,7 @@ const EnvSchema = baseEnvSchema.extend({
   S3_SECRET_KEY: z.string().min(1),
   S3_PUBLIC_URL: z.url(),
   S3_REGION: z.string().min(1).default('us-east-1'),
+  MEDIA_SETTINGS_ENCRYPTION_KEY: z.preprocess((value) => value === '' ? undefined : value, z.string().min(32).optional()),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
 })
@@ -20,7 +21,7 @@ export type Env = z.infer<typeof EnvSchema>
 
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
   const env = defineEnv(EnvSchema, source)
-  rejectPlaceholders(env, ['DATABASE_URL', 'S3_SECRET_KEY', 'S3_ACCESS_KEY'])
+  rejectPlaceholders(env, ['DATABASE_URL', 'S3_SECRET_KEY', 'S3_ACCESS_KEY', 'MEDIA_SETTINGS_ENCRYPTION_KEY'])
   return env
 }
 

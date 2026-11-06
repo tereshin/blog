@@ -48,6 +48,7 @@ export const ROUTE_TABLE: readonly RouteEntry[] = [
   { prefix: '/v1/conversations', service: 'messaging' },
   { prefix: '/v1/notifications', service: 'notification' },
   { prefix: '/v1/media', service: 'media', max_body_bytes: 20 * MB, timeout_ms: 30_000 },
+  { prefix: '/v1/media-settings', service: 'media', timeout_ms: 60_000 },
 ]
 
 export const DEFAULT_MAX_BODY_BYTES = 1 * MB

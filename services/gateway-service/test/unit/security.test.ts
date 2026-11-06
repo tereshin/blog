@@ -25,6 +25,13 @@ describe('лимиты gateway', () => {
 })
 
 describe('CSP', () => {
+  it('allows both current and historical storage origins without broadening other directives', () => {
+    const policy = contentSecurityPolicy({ nonce: 'abc', image_origin: 'https://old.example.com', image_origins: ['https://media.example.com'] })
+    expect(policy.split('; ').find((directive) => directive.startsWith('img-src'))).toContain('https://media.example.com')
+    expect(policy.split('; ').find((directive) => directive.startsWith('img-src'))).toContain('https://old.example.com')
+    expect(policy.split('; ').find((directive) => directive.startsWith('connect-src'))).not.toContain('https://media.example.com')
+    expect(policy.split(' ').includes('https:')).toBe(false)
+  })
   it('разрешает только свой origin, nonce и картинки хранилища, без unsafe-inline и unsafe-eval', () => {
     const policy = contentSecurityPolicy({
       nonce: 'abc',

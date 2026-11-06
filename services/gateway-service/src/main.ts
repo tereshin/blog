@@ -41,6 +41,7 @@ async function main(): Promise<void> {
       () => services.identity.close(),
       () => services.content.close(),
       async () => { await services.web?.close() },
+      async () => { await services.media?.close() },
       () => broker.close(),
       () => telemetry.shutdown(),
       async () => metrics.stop(),

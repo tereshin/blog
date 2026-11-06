@@ -13,6 +13,14 @@ const options = {
 }
 
 describe('санитайзер статьи', () => {
+  it('accepts an owned R2 file only with the storage base attested by media-service', async () => {
+    const url = 'https://r2.example.com/uploads/photo'
+    const document = { blocks: [{ type: 'image', data: { file: { url } } }] }
+    await expect(sanitizeDocument(document, { ...options, lookupFile: async () => ({ uploader_id: AUTHOR, public_url: 'https://r2.example.com' }) })).resolves.toBeDefined()
+    await expect(sanitizeDocument(document, { ...options, lookupFile: async () => ({ uploader_id: AUTHOR }) })).rejects.toBeInstanceOf(ForeignFileError)
+    await expect(sanitizeDocument(document, { ...options, lookupFile: async () => ({ uploader_id: 'other', public_url: 'https://r2.example.com' }) })).rejects.toBeInstanceOf(ForeignFileError)
+    await expect(sanitizeDocument(document, { ...options, lookupFile: async () => ({ uploader_id: AUTHOR, public_url: 'https://another.example.com' }) })).rejects.toBeInstanceOf(ForeignFileError)
+  })
   it('галерея: проверяет все файлы, чистит подпись и считается содержимым', async () => {
     const gallery = { type: 'gallery', data: { items: [{ url: OWN, width: 300, height: 400 }], caption: '<b>Фото</b><script>x</script>' } }
     const document = await sanitizeDocument({ blocks: [gallery] }, options)

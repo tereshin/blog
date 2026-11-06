@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
+import type { FileOwner } from '../../shared/editor-document/document.sanitizer.ts'
 import type { CreateTopic, ServiceContext, Topic, TopicDetail, UpdateTopic } from '@blog/contracts'
-import { assertMediaUrl } from '../../shared/media-url.ts'
+import { assertUploadedMediaUrl } from '../../shared/media-url.ts'
 import { requireSuperadmin } from '../../shared/require-superadmin.ts'
 import { TopicNotFoundError, TopicOrderInvalidError } from './topic.errors.ts'
 import type { TopicFollowsPort, TopicPatch, TopicRepositoryPort, TopicSlugsPort, TopicWrite } from './topic.types.ts'
@@ -36,7 +37,7 @@ export class TopicService<TTx> {
     private readonly repository: TopicRepositoryPort<TTx>,
     private readonly follows: TopicFollowsPort,
     private readonly slugs: TopicSlugsPort<TTx>,
-    private readonly options: { media_url: string },
+    private readonly options: { media_url: string; lookupFile?: (url: string) => Promise<FileOwner | null> },
   ) {}
 
   listActive(): Promise<Topic[]> {
@@ -56,8 +57,8 @@ export class TopicService<TTx> {
 
   async create(viewer: ServiceContext, input: CreateTopic): Promise<Topic> {
     requireSuperadmin(viewer)
-    assertMediaUrl(input.avatar_url, this.options.media_url, 'avatar_url')
-    assertMediaUrl(input.cover_url, this.options.media_url, 'cover_url')
+    await assertUploadedMediaUrl(input.avatar_url, this.options.media_url, 'avatar_url', this.options.lookupFile)
+    await assertUploadedMediaUrl(input.cover_url, this.options.media_url, 'cover_url', this.options.lookupFile)
     const write = toWrite(input)
     return this.repository.transaction(async (tx) => {
       const id = randomUUID()
@@ -70,8 +71,8 @@ export class TopicService<TTx> {
 
   async update(viewer: ServiceContext, id: string, input: UpdateTopic): Promise<Topic> {
     requireSuperadmin(viewer)
-    if (input.avatar_url !== undefined) assertMediaUrl(input.avatar_url, this.options.media_url, 'avatar_url')
-    if (input.cover_url !== undefined) assertMediaUrl(input.cover_url, this.options.media_url, 'cover_url')
+    if (input.avatar_url !== undefined) await assertUploadedMediaUrl(input.avatar_url, this.options.media_url, 'avatar_url', this.options.lookupFile)
+    if (input.cover_url !== undefined) await assertUploadedMediaUrl(input.cover_url, this.options.media_url, 'cover_url', this.options.lookupFile)
     const patch = toPatch(input)
     const topic = await this.repository.transaction(async (tx) => {
       const current = await this.repository.findById(id, tx)
