@@ -29,7 +29,7 @@ export default defineConfig({
     ? undefined
     : {
         command: `pnpm dev --port ${new URL(base_url).port || '5173'} --strictPort`,
-        env: { VITE_API_MOCK: '1' },
+        env: { VITE_API_MOCK: '1', E2E_DISABLE_HMR: '1' },
         url: base_url,
         reuseExistingServer: !process.env['CI'],
       },

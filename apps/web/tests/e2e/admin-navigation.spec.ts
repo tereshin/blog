@@ -200,9 +200,16 @@ test('возврат из статьи сохраняет очередь мод�
   await page.reload()
   await expect(back(page)).toHaveAttribute('href', '/admin/moderation/articles')
   await back(page).click()
-  await page.getByRole('button', { name: 'Скрыть', exact: true }).click()
-  await expect(page.getByRole('grid').getByRole('link', { name: /^Статья 1:/ })).toHaveCount(0)
+  await expect(page).toHaveURL('/admin/moderation/articles')
+  const row = page.getByRole('grid').getByRole('row').filter({
+    has: page.getByRole('link', { name: /^Статья 1:/ }),
+  })
+  await expect(row).toBeVisible()
+  await row.getByRole('button', { name: 'Скрыть', exact: true }).click()
+  await expect(row).toHaveCount(0)
+  await expect(back(page)).toHaveAttribute('href', '/admin/moderation')
   await back(page).click()
+  await expect(page).toHaveURL('/admin/moderation')
   await page
     .getByRole('main')
     .getByRole('link', { name: /^Скрытые статьи/ })

@@ -1,8 +1,30 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-async function ready(page: Page) {
-  await expect(page.getByRole('main').getByRole('article').first()).toBeVisible()
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const original_fetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const response = await original_fetch(input, init)
+      if (!response.ok || new URL(response.url).pathname !== '/v1/feed') return response
+      // Scroll navigation uses text cards so image loading cannot move the browser's anchor.
+      const body = await response.json() as {
+        items: { first_image_url: string | null; preview_blocks?: { type: string }[] }[]
+      }
+      body.items = body.items.map((item) => ({
+        ...item,
+        first_image_url: null,
+        preview_blocks: item.preview_blocks?.filter((block) => block.type !== 'image'),
+      }))
+      return new Response(JSON.stringify(body), { status: response.status, headers: response.headers })
+    }
+  })
+})
+
+async function ready(page: Page, feed_key = 'fresh') {
+  const feed = page.getByRole('main').locator(`[data-feed-key="${feed_key}"]`)
+  await expect(feed.getByRole('article').first()).toBeVisible()
+  await page.evaluate(() => document.fonts.ready.then(() => undefined))
 }
 async function position(page: Page, top: number) {
   await page.evaluate((y) => window.scrollTo(0, y), top)
@@ -23,7 +45,7 @@ test('переходы и повторный выбор раздела начи�
   await position(page, 700)
   await menu(page, 'Популярное')
   await expect(page).toHaveURL('/popular')
-  await ready(page)
+  await ready(page, 'popular')
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
   await position(page, 600)
   await menu(page, 'Популярное')

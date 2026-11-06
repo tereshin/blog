@@ -92,5 +92,6 @@ test('галерея сохраняет снимки, порядок и подп
   await expect(gallery.getByRole('button', { name: 'Открыть изображение 1', exact: true })).toBeFocused()
   await page.screenshot({ path: test_info.outputPath('article-gallery.png'), fullPage: true, animations: 'disabled' })
   await page.goto(write_url)
+  await expect(page.locator('[data-editor="ready"]')).toBeVisible({ timeout: 60_000 })
   await expect(editor.locator('.gallery-editor__item')).toHaveCount(3)
 })

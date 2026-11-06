@@ -18,6 +18,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // HMR reconnects can reload a test page and discard its in-memory MSW state.
+    hmr: process.env['E2E_DISABLE_HMR'] === '1' ? false : undefined,
     // Один origin в разработке: cookie сессии и CSRF работают так же, как в prod.
     proxy: Object.fromEntries(
       [

@@ -92,6 +92,7 @@ export function Feed({ mode, feed_key = mode, empty, ...slots }: FeedProps) {
   return (
     <div
       ref={root_ref}
+      data-feed-key={feed_key}
       className="flex w-full min-w-0 flex-col gap-4 max-w-[var(--shell-content-width,640px)] mx-auto"
       onClick={rememberReturn}
     >
