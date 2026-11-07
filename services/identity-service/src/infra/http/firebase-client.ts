@@ -5,6 +5,7 @@ import { createServiceClient } from '@blog/http-kit'
 import type { ServiceClient } from '@blog/http-kit'
 import { FirebaseEmailExistsError } from '../../modules/auth/index.ts'
 import type { FirebaseGateway, VerifiedToken } from '../../modules/auth/index.ts'
+import { FirebaseProviderConfig } from './firebase-provider-config.ts'
 
 export type FirebaseClientOptions = {
   project_id: string
@@ -12,17 +13,6 @@ export type FirebaseClientOptions = {
   client_email: string
   private_key: string
   emulator_host?: string | undefined
-}
-
-const PROVIDER_KEYS: Record<string, string> = {
-  email: 'password',
-  google: 'google.com',
-  github: 'github.com',
-  facebook: 'facebook.com',
-  twitter: 'twitter.com',
-  apple: 'apple.com',
-  microsoft: 'microsoft.com',
-  yahoo: 'yahoo.com',
 }
 
 const EMULATOR_PROVIDERS = [{ id: 'password' }, { id: 'google.com' }, { id: 'github.com' }]
@@ -72,11 +62,6 @@ class IdentityToolkitClient {
     return { status: response.status, body: asRecord(response.body) }
   }
 
-  async get(path: string): Promise<ToolkitResponse> {
-    const response = await this.client.request({ path: `${this.prefix}${path}?${this.key}` })
-    return { status: response.status, body: asRecord(response.body) }
-  }
-
   close(): Promise<void> {
     return this.client.close()
   }
@@ -87,6 +72,7 @@ export class FirebaseClient implements FirebaseGateway {
   private readonly auth: Auth
   private readonly toolkit: IdentityToolkitClient
   private readonly issuer: string
+  private readonly provider_config: FirebaseProviderConfig
 
   constructor(private readonly options: FirebaseClientOptions) {
     if (getApps().length === 0) {
@@ -105,6 +91,11 @@ export class FirebaseClient implements FirebaseGateway {
     this.auth = getAuth()
     this.toolkit = new IdentityToolkitClient(options)
     this.issuer = `https://securetoken.google.com/${options.project_id}`
+    this.provider_config = new FirebaseProviderConfig(options.project_id, async () => {
+      const credential = this.auth.app.options.credential
+      if (!credential) throw new Error('Firebase credential is not configured')
+      return (await credential.getAccessToken()).access_token
+    })
   }
 
   async verifyIdToken(id_token: string): Promise<VerifiedToken> {
@@ -211,20 +202,11 @@ export class FirebaseClient implements FirebaseGateway {
   }
 
   async listProviders(): Promise<{ id: string }[]> {
-    const response = await this.toolkit.get(`/v2/projects/${this.options.project_id}/publicConfig`)
-    if (response.status >= 400) {
-      if (this.options.emulator_host) return EMULATOR_PROVIDERS
-      throw new Error('конфигурация Firebase недоступна')
-    }
-    const sign_in = asRecord(response.body.signIn)
-    const providers = Object.entries(sign_in)
-      .filter(([, value]) => asRecord(value).enabled === true)
-      .map(([key]) => ({ id: PROVIDER_KEYS[key] ?? key }))
-    if (providers.length === 0 && this.options.emulator_host) return EMULATOR_PROVIDERS
-    return providers
+    if (this.options.emulator_host) return EMULATOR_PROVIDERS
+    return this.provider_config.listProviders()
   }
 
-  close(): Promise<void> {
-    return this.toolkit.close()
+  async close(): Promise<void> {
+    await Promise.all([this.toolkit.close(), this.provider_config.close()])
   }
 }

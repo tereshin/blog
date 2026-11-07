@@ -41,6 +41,8 @@ The site opens at [http://localhost:8080](http://localhost:8080), and the gatewa
 
 Production requires `AUTH_EMAIL_SECRET`, `SMTP_HOST`, and `SMTP_FROM`. Configure `SMTP_PORT` (587 by default), `SMTP_SECURE=true` for implicit TLS, and `SMTP_USER`/`SMTP_PASSWORD` together when the server requires authentication. Production SMTP always requires TLS. Keep the email secret stable across restarts: it protects code hashes and encrypts queued mail. Mailpit is included only in local/dev environments.
 
+On the existing `/opt/tereshin-blog` production host, the Compose configuration is maintained outside the source checkout. Pass the email settings into its `identity.environment` block as well as defining them in `.env`. Port 465 requires `SMTP_SECURE=true`. Install the maintained updater with `install -m 755 infra/scripts/blog-update.sh /usr/local/bin/blog-update`; `blog-update main --check` checks these settings before any build or migration. An update also verifies that the sign-in configuration loads before marking the new version as deployed.
+
 The isolated SMTP/Firebase integration check runs with `AUTH_LIVE_TESTS=1 pnpm --filter identity-service exec vitest run test/integration/email-flow-live.spec.ts`. Build the emulator image first with `docker build -f infra/docker/firebase-auth.Dockerfile -t blog/firebase-auth:local .`. Browser tests against the running Compose stack use `E2E_TARGET=local pnpm --filter web test:e2e tests/e2e/auth.spec.ts`; `MAILPIT_URL` can override the inbox address.
 
 The large set is 500+ articles and thousands of comments:

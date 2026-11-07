@@ -11,6 +11,12 @@ reader, member, or administrator can do, or what stopped going wrong.
   steps, supports registration and password recovery with six-digit email
   codes, and signs them in after setting a password.
 
+- Readers in Singapore can access the production site.
+
+### Fixed
+
+- The sign-in dialog loads the enabled sign-in methods on the live site.
+
 ## [1.0.1]
 
 Current changes since 1.0.0.
