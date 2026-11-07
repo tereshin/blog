@@ -70,6 +70,9 @@ export type VerifiedToken = {
 
 /** Порт Firebase Admin и Identity Toolkit. `createUser` на занятый адрес бросает `FirebaseEmailExistsError`. */
 export type FirebaseGateway = {
+  findUidByEmail: (email: string) => Promise<string | null>
+  createVerifiedUser: (input: { email: string; password: string }) => Promise<{ firebase_uid: string }>
+  setVerifiedPassword: (input: { firebase_uid: string; email: string; password: string }) => Promise<void>
   verifyIdToken: (id_token: string) => Promise<VerifiedToken>
   createUser: (input: { email: string; password: string }) => Promise<{ firebase_uid: string }>
   deleteUser: (firebase_uid: string) => Promise<void>

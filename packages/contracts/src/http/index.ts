@@ -151,6 +151,9 @@ export {
   updateAppearanceSchema,
 } from './auth.ts'
 export type { UpdateAppearance } from './auth.ts'
+export { emailFlowBodySchema, emailFlowIdSchema, emailCodeConfirmBodySchema, passwordSetupBodySchema,
+  emailCodeStepSchema, emailFlowResponseSchema, emailCodeConfirmedSchema } from './auth.ts'
+export type { EmailFlowBody, EmailCodeStep, EmailFlowResponse } from './auth.ts'
 export type {
   AuthConfig,
   AuthOk,

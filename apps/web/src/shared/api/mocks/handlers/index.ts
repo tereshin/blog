@@ -16,6 +16,7 @@ import { notificationHandlers } from './notifications.ts'
 import { profileHandlers } from './profile.ts'
 import { searchHandlers } from './search.ts'
 import { sessionHandlers } from './session.ts'
+import { authFlowHandlers } from './auth-flows.ts'
 import { seoHandlers } from './seo.ts'
 import { shellHandlers } from './shell.ts'
 import { topicHandlers } from './topics.ts'
@@ -30,6 +31,7 @@ export const handlers = [
   ...siteAssetHandlers,
   ...seoHandlers,
   ...sessionHandlers,
+  ...authFlowHandlers,
   ...shellHandlers,
   ...topicHandlers,
   ...feedHandlers,

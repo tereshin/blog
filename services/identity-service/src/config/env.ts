@@ -25,6 +25,13 @@ const EnvSchema = baseEnvSchema.extend({
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
+  AUTH_EMAIL_SECRET: z.string().min(32),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().positive().max(65535).default(587),
+  SMTP_SECURE: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.email(),
   ...FirebaseSchema,
 })
 
@@ -47,8 +54,12 @@ function assertFirebaseEnv(env: Env): void {
       'FIREBASE_CLIENT_EMAIL',
       'FIREBASE_PRIVATE_KEY',
       'DATABASE_URL',
+      'AUTH_EMAIL_SECRET',
+      'SMTP_HOST',
+      'SMTP_FROM',
     ])
   }
+  if (Boolean(env.SMTP_USER) !== Boolean(env.SMTP_PASSWORD)) throw new Error('SMTP_USER и SMTP_PASSWORD задаются вместе')
 }
 
 /** Единственное место чтения окружения сервиса: падает при старте, если чего-то нет. */

@@ -15,6 +15,9 @@ const valid = {
   FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
   SEED_AUTH_PASSWORD: 'seed-password',
   SUPERADMIN_EMAIL: 'superadmin@blog.test',
+  AUTH_EMAIL_SECRET: 'test-only-email-secret-at-least-32-characters',
+  SMTP_HOST: 'smtp.example.test',
+  SMTP_FROM: 'noreply@example.test',
 }
 
 describe('identity: окружение', () => {

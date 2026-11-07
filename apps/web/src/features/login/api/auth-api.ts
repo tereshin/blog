@@ -1,9 +1,22 @@
-import { authConfigSchema, authOkSchema, pendingAuthSchema } from '@blog/contracts'
+import { authConfigSchema, authOkSchema, pendingAuthSchema, emailFlowResponseSchema, emailCodeStepSchema, emailCodeConfirmedSchema } from '@blog/contracts'
 import type { AuthConfig } from '@blog/contracts'
 import { emptyResponseSchema, http } from '@/shared/api'
 
 export function getAuthConfig(signal?: AbortSignal): Promise<AuthConfig> {
   return http.get('/v1/auth/config', authConfigSchema, { signal })
+}
+
+export function startEmailFlow(email: string, purpose: 'continue' | 'password_reset') {
+  return http.post('/v1/auth/email-flows', emailFlowResponseSchema, { body: { email, purpose } })
+}
+export function resendEmailCode(flow_id: string) {
+  return http.post('/v1/auth/email-code-resends', emailCodeStepSchema, { body: { flow_id } })
+}
+export function confirmEmailCode(flow_id: string, code: string) {
+  return http.post('/v1/auth/email-code-confirmations', emailCodeConfirmedSchema, { body: { flow_id, code } })
+}
+export function setupPassword(flow_id: string, password: string): Promise<void> {
+  return http.post('/v1/auth/password-setups', emptyResponseSchema, { body: { flow_id, password } })
 }
 
 export function registerWithPassword(email: string, password: string, display_name: string): Promise<{ status: 'pending' }> {

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { readEmailCode } from './helpers/auth-mail.ts'
 
 const is_local = process.env['E2E_TARGET'] === 'local'
 
@@ -17,26 +18,137 @@ test.describe('Вход и профиль', () => {
     expect(page.url()).not.toContain('/v1/auth/google')
   })
 
-  test('регистрация передаёт имя, а сброс пароля скрывает лишние поля', async ({ page }) => {
+  test('новая почта проходит код и установку пароля без запроса имени', async ({ page }) => {
+    test.skip(is_local, 'фиксированный код только в MSW')
     await page.goto('/')
     await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
     const dialog = page.getByRole('dialog')
-    await dialog.getByRole('button', { name: 'Зарегистрироваться', exact: true }).click()
-    await dialog.getByLabel('Имя', { exact: true }).fill('Анна')
-    await dialog.getByLabel('Почта', { exact: true }).fill('anna@example.com')
-    await dialog.getByLabel('Пароль', { exact: true }).fill('password-ok')
-    await page.route('**/v1/auth/registrations', async (route) => {
-      expect(route.request().postDataJSON()).toEqual({ email: 'anna@example.com', password: 'password-ok', display_name: 'Анна' })
-      await route.fulfill({ json: { status: 'pending' } })
-    })
-    await dialog.getByRole('button', { name: 'Создать учётную запись' }).click()
-    await expect(dialog.getByText(/Если адрес можно использовать/)).toBeVisible()
-    await dialog.getByRole('button', { name: 'Войти', exact: true }).click()
-    await dialog.getByRole('button', { name: 'Забыли пароль?' }).click()
-    await expect(dialog.getByLabel('Почта', { exact: true })).toBeVisible()
     await expect(dialog.getByLabel('Пароль', { exact: true })).toHaveCount(0)
+    await dialog.getByLabel('Почта', { exact: true }).fill('signup@example.test')
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await expect(dialog.getByRole('heading', { name: 'Код из письма' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Войти через Google' })).toHaveCount(0)
+    await expect(dialog.getByRole('button', { name: /Отправить код ещё раз через/ })).toBeDisabled()
+    await dialog.getByRole('textbox', { name: 'Код из письма' }).fill('000000')
+    await expect(dialog.getByRole('alert')).toHaveText('Неверный код. Попробуйте ещё раз.')
+    await dialog.getByRole('textbox', { name: 'Код из письма' }).fill('123456')
+    await expect(dialog.getByRole('heading', { name: 'Создайте пароль' })).toBeVisible()
     await expect(dialog.getByLabel('Имя', { exact: true })).toHaveCount(0)
+    await dialog.getByLabel('Пароль', { exact: true }).fill('password-ok')
+    await dialog.getByRole('button', { name: 'Показать пароль' }).click()
+    await expect(dialog.getByLabel('Пароль', { exact: true })).toHaveAttribute('type', 'text')
+    await dialog.getByRole('button', { name: 'Сохранить и войти' }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
+    await expect(page).toHaveURL('/')
+  })
+
+  test('существующая почта показывает пароль, восстановление возвращает к входу по стрелке', async ({ page }) => {
+    test.skip(is_local, 'известная почта фикстуры')
+    await page.goto('/')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill('reader@blog.test')
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await expect(dialog.getByRole('heading', { name: 'Вход', exact: true })).toBeVisible()
+    await expect(dialog.getByLabel('Пароль', { exact: true })).toBeFocused()
+    await expect(dialog.getByRole('button', { name: 'Войти', exact: true })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Войти через Google' })).toHaveCount(0)
+    await dialog.getByRole('button', { name: 'Отправить код на почту', exact: true }).click()
+    await expect(dialog.getByRole('textbox', { name: 'Код из письма' })).toBeFocused()
+    await dialog.getByRole('button', { name: 'Назад', exact: true }).click()
+    await expect(dialog.getByLabel('Почта', { exact: true })).toHaveValue('reader@blog.test')
+    await expect(dialog.getByLabel('Пароль', { exact: true })).toHaveValue('')
+    await dialog.getByRole('button', { name: 'Назад', exact: true }).click()
+    await expect(dialog.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Войти через Google' })).toBeVisible()
+  })
+
+  test('код восстановления ведёт к новому паролю и автоматическому входу', async ({ page }) => {
+    test.skip(is_local, 'фиксированный код только в MSW')
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill('reader@blog.test')
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Отправить код на почту', exact: true }).click()
+    await dialog.getByRole('textbox', { name: 'Код из письма' }).evaluate((element) => {
+      const data = new DataTransfer()
+      data.setData('text', '123456')
+      element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, clipboardData: data }))
+    })
+    await expect(dialog.getByRole('heading', { name: 'Новый пароль', exact: true })).toBeVisible()
+    await dialog.getByLabel('Пароль', { exact: true }).fill('new-password-ok')
+    await dialog.getByRole('button', { name: 'Сохранить и войти' }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
+  })
+
+  test('закрытие очищает пароль и возвращает к первому шагу', async ({ page }) => {
+    test.skip(is_local, 'известная почта фикстуры')
+    await page.goto('/')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    let dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill('reader@blog.test')
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await dialog.getByLabel('Пароль', { exact: true }).fill('secret-password')
+    await page.keyboard.press('Escape')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    dialog = page.getByRole('dialog')
+    await expect(dialog.getByLabel('Почта', { exact: true })).toHaveValue('')
+    await expect(dialog.getByLabel('Пароль', { exact: true })).toHaveCount(0)
+  })
+
+  test('повторная отправка доступна через минуту, код редактируется Backspace', async ({ page }) => {
+    test.skip(is_local, 'проверка часов MSW')
+    await page.clock.install()
+    await page.goto('/')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill('resend-ui@example.test')
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    const code = dialog.getByRole('textbox', { name: 'Код из письма' })
+    await code.fill('123')
+    await code.press('Backspace')
+    await expect(code).toHaveValue('12')
+    await page.clock.fastForward(60_001)
+    const resend = dialog.getByRole('button', { name: 'Отправить код ещё раз', exact: true })
+    await expect(resend).toBeEnabled()
+    await resend.click()
+    await expect(dialog.getByRole('button', { name: /Отправить код ещё раз через/ })).toBeDisabled()
+    await expect(code).toHaveValue('')
+  })
+
+  test('ответ старого запроса не меняет повторно открытое окно', async ({ page }) => {
+    test.skip(is_local, 'управляемый ответ MSW')
+    await page.addInitScript(() => {
+      const original = window.fetch
+      window.fetch = (input, init) => {
+        if (String(input).includes('/v1/auth/email-flows')) {
+          return new Promise((resolve) => document.addEventListener('release-auth-request', () => {
+            resolve(new Response(JSON.stringify({ step: 'password' }), { headers: { 'Content-Type': 'application/json' } }))
+          }, { once: true }))
+        }
+        return original(input, init)
+      }
+    })
+    await page.goto('/')
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill('reader@blog.test')
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await expect(dialog.getByRole('button', { name: 'Продолжить', exact: true })).toBeDisabled()
+    await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    await page.evaluate(async () => {
+      document.dispatchEvent(new Event('release-auth-request'))
+      await new Promise((resolve) => window.setTimeout(resolve, 50))
+    })
+    await expect(dialog.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible()
+    await expect(dialog.getByLabel('Почта', { exact: true })).toHaveValue('')
+    await expect(dialog.getByLabel('Пароль', { exact: true })).toHaveCount(0)
   })
 
   test('участник выходит и вторая вкладка тоже становится гостем', async ({ page }) => {
@@ -76,22 +188,18 @@ test.describe('Вход и профиль', () => {
 test.describe('вход через эмулятор', () => {
   test.skip(!is_local, 'нужен Compose (E2E_TARGET=local)')
 
-  test('регистрация почтой, выход и повторный вход в тот же профиль', async ({ page }) => {
+  test('регистрация через Mailpit, выход и повторный вход через Firebase Emulator', async ({ page }) => {
     const email = `e2e-${Date.now()}@blog.test`
     const password = 'password-ok'
     await page.goto('/')
     await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
-    await page.getByLabel('Почта').fill(email)
-    await page.getByLabel('Пароль').fill(password)
-    await page.getByRole('button', { name: 'Зарегистрироваться' }).click()
-    await page.getByLabel('Имя', { exact: true }).fill('Тестовый участник')
-    await page.getByRole('button', { name: 'Создать учётную запись' }).click()
-    await expect(page.getByText('Если адрес можно использовать, мы отправили письмо.')).toBeVisible()
-
-    await page.getByRole('button', { name: 'Войти', exact: true }).click()
-    await page.getByLabel('Почта').fill(email)
-    await page.getByLabel('Пароль').fill(password)
-    await page.getByRole('button', { name: 'Войти', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill(email)
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    const registration_code = await readEmailCode(page, email)
+    await dialog.getByRole('textbox', { name: 'Код из письма' }).fill(registration_code)
+    await dialog.getByLabel('Пароль', { exact: true }).fill(password)
+    await dialog.getByRole('button', { name: 'Сохранить и войти' }).click()
     await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
     const storage_has_token = await page.evaluate(async () => {
       const bags = [JSON.stringify(localStorage), JSON.stringify(sessionStorage)]
@@ -99,17 +207,48 @@ test.describe('вход через эмулятор', () => {
       return bags.some((bag) => bag.includes('firebase')) || databases.some((db) => (db.name ?? '').toLowerCase().includes('firebase'))
     })
     expect(storage_has_token).toBe(false)
-
     await page.reload()
-    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
-
     await page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' }).click()
     await page.getByRole('menuitem', { name: 'Выйти' }).click()
     await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
-    await page.getByLabel('Почта').fill(email)
-    await page.getByLabel('Пароль').fill(password)
-    await page.getByRole('button', { name: 'Войти', exact: true }).click()
-    await expect(page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' })).toBeVisible()
+    await dialog.getByLabel('Почта', { exact: true }).fill(email)
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await dialog.getByLabel('Пароль', { exact: true }).fill(password)
+    await dialog.getByRole('button', { name: 'Войти', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+  })
+
+  test('восстановление через Mailpit сохраняет новый пароль и автоматически входит', async ({ page }) => {
+    const email = `reset-ui-${crypto.randomUUID()}@blog.test`
+    const old_password = 'password-before-reset'
+    const new_password = 'password-after-reset'
+    await page.goto('/')
+    const csrf = (await page.context().cookies('http://localhost:3000')).find((cookie) => cookie.name === 'blog_csrf')?.value ?? ''
+    const registered = await page.request.post('http://localhost:3000/v1/auth/registrations', {
+      data: { email, password: old_password }, headers: { 'X-CSRF-Token': csrf },
+    })
+    expect(registered.ok()).toBe(true)
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Почта', { exact: true }).fill(email)
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Отправить код на почту', exact: true }).click()
+    await dialog.getByRole('textbox', { name: 'Код из письма' }).fill(await readEmailCode(page, email))
+    await expect(dialog.getByRole('heading', { name: 'Новый пароль', exact: true })).toBeVisible()
+    await dialog.getByLabel('Пароль', { exact: true }).fill(new_password)
+    await dialog.getByRole('button', { name: 'Сохранить и войти' }).click()
+    await expect(dialog).toHaveCount(0)
+    await page.getByRole('banner').getByRole('button', { name: 'Меню учётной записи' }).click()
+    await page.getByRole('menuitem', { name: 'Выйти' }).click()
+    await page.getByRole('banner').getByRole('button', { name: 'Войти' }).click()
+    await dialog.getByLabel('Почта', { exact: true }).fill(email)
+    await dialog.getByRole('button', { name: 'Продолжить', exact: true }).click()
+    await dialog.getByLabel('Пароль', { exact: true }).fill(old_password)
+    await dialog.getByRole('button', { name: 'Войти', exact: true }).click()
+    await expect(dialog.getByRole('alert')).toHaveText('Неверная почта или пароль.')
+    await dialog.getByLabel('Пароль', { exact: true }).fill(new_password)
+    await dialog.getByRole('button', { name: 'Войти', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
   })
 
   test('панель показывает участников seed и входит одним жестом', async ({ page, request }) => {

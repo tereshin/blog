@@ -92,6 +92,30 @@ export const passwordResetConfirmBodySchema = z.strictObject({
 })
 export type PasswordResetConfirmBody = z.infer<typeof passwordResetConfirmBodySchema>
 
+export const emailFlowBodySchema = z.strictObject({
+  email: z.string().trim().min(1).max(320),
+  purpose: z.enum(['continue', 'password_reset']),
+})
+export const emailFlowIdSchema = z.strictObject({ flow_id: z.uuid() })
+export const emailCodeConfirmBodySchema = emailFlowIdSchema.extend({ code: z.string().regex(/^\d{6}$/) })
+export const passwordSetupBodySchema = emailFlowIdSchema.extend({ password: z.string().min(8).max(1024) })
+export const emailCodeStepSchema = z.strictObject({
+  step: z.literal('code'),
+  flow_id: z.uuid(),
+  purpose: z.enum(['registration', 'password_reset']),
+  server_time: z.iso.datetime(),
+  expires_at: z.iso.datetime(),
+  resend_at: z.iso.datetime(),
+})
+export const emailFlowResponseSchema = z.discriminatedUnion('step', [
+  z.strictObject({ step: z.literal('password') }),
+  emailCodeStepSchema,
+])
+export const emailCodeConfirmedSchema = z.strictObject({ step: z.literal('password_setup') })
+export type EmailFlowBody = z.infer<typeof emailFlowBodySchema>
+export type EmailCodeStep = z.infer<typeof emailCodeStepSchema>
+export type EmailFlowResponse = z.infer<typeof emailFlowResponseSchema>
+
 /**
  * Маршруты `GET /v1/auth/google` сняты. Схемы callback не экспортируются.
  * Успех `POST /v1/auth/sessions` отдаёт gateway идентификатор сессии заголовком, не телом браузеру.

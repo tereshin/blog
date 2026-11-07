@@ -22,9 +22,11 @@ async function main(): Promise<void> {
   const up_args = ['up', '-d', '--wait']
   if (env === 'local') up_args.push('--build')
   if (services) {
-    const unknown = services.filter((name) => ![...ALL_SERVICES, 'web', 'firebase-auth'].includes(name))
+    const unknown = services.filter((name) => ![...ALL_SERVICES, 'web', 'firebase-auth', ...(env === 'prod' ? [] : ['mailpit'])].includes(name))
     if (unknown.length > 0) throw new UsageError(`Неизвестные сервисы: ${unknown.join(', ')}`)
-    up_args.push('--no-deps', ...expandServices(services))
+    const expanded = expandServices(services)
+    if (env !== 'prod' && services.includes('identity')) expanded.push('firebase-auth', 'mailpit')
+    up_args.push('--no-deps', ...new Set(expanded))
   }
 
   const result = compose(env, up_args)

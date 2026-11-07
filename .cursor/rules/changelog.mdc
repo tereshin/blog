@@ -14,7 +14,7 @@ alwaysApply: true
 - Leave out services, migrations, configuration, deployment, tests, refactors,
   and API paths.
 - The already-pushed baseline is 1.0.0 at commit
-  `d9f05890c8d99e910b70880aeb9ad7df526b728d`. Current work belongs to 1.0.1 until
+  `d9f05890c8d99e910b70880aeb9ad7df526b728d`. Current work belongs to 1.0.4 until
   it is released. Follow **How to write an entry** for subsequent versions.
 - Never invent release dates, tags, or successful test results. Preserve
   released entries.

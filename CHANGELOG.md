@@ -3,11 +3,22 @@
 New features and bug fixes, newest version first. An entry describes what a
 reader, member, or administrator can do, or what stopped going wrong.
 
+## [1.0.4]
+
+### Added
+
+- Readers can start sign-in with only their email. The dialog moves between
+  steps, supports registration and password recovery with six-digit email
+  codes, and signs them in after setting a password.
+
 ## [1.0.1]
 
 Current changes since 1.0.0.
 
 ### Added
+
+- Readers can click the view count on article cards and article pages to see
+  views, reactions, comments, and bookmarks in a statistics dialog.
 
 - Account and article menus show an icon beside each item.
 
@@ -58,7 +69,8 @@ Current changes since 1.0.0.
   by guests, authors, and moderators.
 
 - Profile and topic pages keep the same loading placeholder while the page and
-  its data load. Reaction buttons keep their opacity while a reaction is sent.
+  its data load. Reaction buttons and action buttons on article cards and pages
+  keep their opacity while requests are pending.
 
 - Meta Pixel loads from the page head before the application starts, with one
   initial page view and subsequent views on navigation.
@@ -128,7 +140,7 @@ Use this shape for the current version:
 - Omit a section when it has no bullets.
 - Leave out commits, services, migrations, configuration, tests, refactors, and
   API paths.
-- Keep 1.0.0 as the baseline. Keep collecting under 1.0.1 until that version is
+- Keep 1.0.0 as the baseline. Keep collecting under 1.0.4 until that version is
   released. A commit does not release a version.
 - On release, add the date (`YYYY-MM-DD`) and open the next version. Leave
   released text as it was. Do not invent dates, tags, or test results.

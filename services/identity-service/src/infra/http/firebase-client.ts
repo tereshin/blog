@@ -137,6 +137,32 @@ export class FirebaseClient implements FirebaseGateway {
     return { firebase_uid }
   }
 
+  async findUidByEmail(email: string): Promise<string | null> {
+    try {
+      return (await this.auth.getUserByEmail(email)).uid
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'auth/user-not-found') return null
+      throw new Error('Firebase account lookup failed', { cause: error })
+    }
+  }
+
+  async createVerifiedUser(input: { email: string; password: string }): Promise<{ firebase_uid: string }> {
+    try {
+      const user = await this.auth.createUser({ ...input, emailVerified: true })
+      return { firebase_uid: user.uid }
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'auth/email-already-exists') throw new FirebaseEmailExistsError()
+      throw new Error('Firebase account creation failed', { cause: error })
+    }
+  }
+
+  async setVerifiedPassword(input: { firebase_uid: string; email: string; password: string }): Promise<void> {
+    const user = await this.auth.getUser(input.firebase_uid)
+    if (user.email?.trim().toLowerCase() !== input.email) throw new Error('Firebase account changed')
+    await this.auth.updateUser(input.firebase_uid, { password: input.password, emailVerified: true })
+    await this.auth.revokeRefreshTokens(input.firebase_uid)
+  }
+
   async verifyUserEmail(firebase_uid: string, email: string): Promise<boolean> {
     const user = await this.auth.getUser(firebase_uid)
     if (user.email?.trim().toLowerCase() !== email.trim().toLowerCase()) return false

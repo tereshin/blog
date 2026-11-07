@@ -6,7 +6,8 @@ import type { ServiceMetrics } from '@blog/telemetry'
 import type { Env } from './config/env.ts'
 import type { DbHandle } from './infra/db/client.ts'
 import { FirebaseClient } from './infra/http/firebase-client.ts'
-import { AuthController, AuthRepository, AuthService, authRoutes } from './modules/auth/index.ts'
+import { AuthEmailWorker, createAuthMailTransport } from './infra/http/auth-email-worker.ts'
+import { AuthController, AuthRepository, AuthService, authRoutes, EmailCodeCrypto, EmailFlowRepository, EmailFlowService, EmailFlowController, emailFlowRoutes } from './modules/auth/index.ts'
 import { SessionController, SessionRepository, SessionService, sessionRoutes } from './modules/session/index.ts'
 import { UserController, UserEmailRepository, UserEmailVerificationService, UserRepository, UserService, userRoutes } from './modules/user/index.ts'
 
@@ -47,7 +48,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     emulator_host: env.FIREBASE_AUTH_EMULATOR_HOST,
   })
   app.addHook('onClose', () => firebase.close())
-  const auth_service = new AuthService(new AuthRepository(deps.database.db), firebase, app.log, {
+  const auth_options = {
     superadmin_email: env.SUPERADMIN_EMAIL,
     session_ttl_days: env.SESSION_TTL_DAYS,
     web_api_key: env.FIREBASE_WEB_API_KEY,
@@ -55,10 +56,23 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     project_id: env.FIREBASE_PROJECT_ID,
     emulator_host: env.FIREBASE_AUTH_EMULATOR_HOST ?? null,
     seed_password: env.SEED_AUTH_PASSWORD ?? null,
+  }
+  const auth_service = new AuthService(new AuthRepository(deps.database.db), firebase, app.log, auth_options)
+  const email_crypto = new EmailCodeCrypto(env.AUTH_EMAIL_SECRET)
+  const email_service = new EmailFlowService(new EmailFlowRepository(deps.database.db), firebase, email_crypto, app.log, auth_options)
+  const mail_worker = new AuthEmailWorker({
+    db: deps.database.db, crypto: email_crypto, from: env.SMTP_FROM, logger: app.log,
+    transport: createAuthMailTransport({
+      host: env.SMTP_HOST, port: env.SMTP_PORT, secure: env.SMTP_SECURE,
+      user: env.SMTP_USER, password: env.SMTP_PASSWORD, require_tls: env.APP_ENV === 'prod',
+    }),
   })
+  app.addHook('onReady', async () => { mail_worker.start() })
+  app.addHook('onClose', async () => { await mail_worker.stop() })
 
   await app.register(sessionRoutes, { controller: new SessionController(new SessionService(new SessionRepository(deps.database.db))) })
   await app.register(authRoutes, { controller: new AuthController(auth_service) })
+  await app.register(emailFlowRoutes, { controller: new EmailFlowController(email_service) })
   await app.register(userRoutes, { controller: new UserController(new UserService(new UserRepository(deps.database.db)), new UserEmailVerificationService(new UserEmailRepository(deps.database.db), firebase)) })
 
   return app

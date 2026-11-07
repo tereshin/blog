@@ -378,6 +378,8 @@ body {
   min-width: 30px;
   padding: 0 8px;
 }
+/* Блокировка действий на время запроса не приглушает кнопки статьи. */
+.article-surface .button:is(:disabled, [aria-disabled='true'], [data-disabled='true']),
 .reaction-button.button:is(:disabled, [aria-disabled='true'], [data-disabled='true']) {
   opacity: 1;
 }

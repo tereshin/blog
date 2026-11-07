@@ -1,7 +1,6 @@
 import { ForbiddenError } from '@blog/errors'
 import { randomUUID } from 'node:crypto'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { appendToOutbox } from '@blog/broker'
 import type { Database } from '@blog/broker'
 import {
@@ -57,8 +56,8 @@ async function translateConflict<T>(work: () => Promise<T>): Promise<T> {
 export class AuthRepository implements AuthRepositoryPort {
   private readonly database: Database
 
-  constructor(private readonly db: NodePgDatabase) {
-    this.database = db as Database
+  constructor(private readonly db: Database) {
+    this.database = db
   }
 
   async readSettings(): Promise<AccountSettings> {
@@ -128,11 +127,11 @@ export class AuthRepository implements AuthRepositoryPort {
     await translateConflict(() =>
       this.database.transaction(async (tx) => {
         const [user] = await tx
-          .select({ deleted_at: users.deleted_at })
+          .select({ deleted_at: users.deleted_at, restricted_at: users.restricted_at })
           .from(users)
           .where(eq(users.id, input.user_id))
           .for('update')
-        if (!user || user.deleted_at) throw new ForbiddenError()
+        if (!user || user.deleted_at || user.restricted_at) throw new ForbiddenError()
         await tx
           .insert(sessions)
           .values({ id: input.session_id, user_id: input.user_id, expires_at: input.expires_at })

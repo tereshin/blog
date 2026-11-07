@@ -2,11 +2,12 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useT } from '@/shared/i18n'
 import { cn, formatCount } from '@/shared/lib'
-import { AnimatedCount, BookmarkIcon, Card, CommentIcon, EyeIcon, ShareIcon } from '@/shared/ui'
+import { AnimatedCount, BookmarkIcon, Card, CommentIcon, ShareIcon } from '@/shared/ui'
 import type { ArticleCardModel } from '../model/article-types.ts'
+import { ArticleStatistics } from './ArticleStatistics.tsx'
 
 type ArticleActionsProps = {
-  article: Pick<ArticleCardModel, 'href' | 'comment_count' | 'bookmark_count' | 'view_count'>
+  article: Pick<ArticleCardModel, 'href' | 'comment_count' | 'bookmark_count' | 'view_count' | 'reaction_count'>
   bookmark?: ReactNode
   share?: ReactNode
   className?: string
@@ -32,13 +33,7 @@ export function ArticleActions({ article, bookmark, share, className }: ArticleA
         </span>
       )}
       {share ?? <ShareIcon className="size-5" />}
-      <span
-        className="ml-auto flex items-center gap-1 font-medium"
-        aria-label={t('article.views', { count: article.view_count, value: formatCount(article.view_count, locale) })}
-      >
-        <EyeIcon className="size-5" />
-        <AnimatedCount value={article.view_count} locale={locale} />
-      </span>
+      <ArticleStatistics article={article} />
     </Card.Content>
   )
 }

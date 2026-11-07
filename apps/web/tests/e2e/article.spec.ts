@@ -27,7 +27,7 @@ test.describe('Страница статьи', () => {
     const comments = article.getByRole('link', { name: /комментар/ })
     const bookmark = article.getByRole('button', { name: 'В закладки', exact: true })
     const share = article.getByRole('button', { name: 'Поделиться', exact: true })
-    const views = article.locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')
+    const views = article.getByRole('button', { name: /Открыть статистику статьи/ })
     await expect(comments).toHaveAttribute('href', '/p/statya-1#comments')
     await expect(views).toBeVisible()
     const boxes = await Promise.all([comments, bookmark, share, views].map((control) => control.boundingBox()))
@@ -66,11 +66,12 @@ test.describe('Страница статьи', () => {
     expect(response.status()).toBe(200)
     const result = await response.json() as { counted: boolean; view_count: number }
     expect(result.counted).toBe(true)
-    await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count))
+    const views = page.getByRole('main').getByRole('button', { name: /Открыть статистику статьи/ })
+    await expect(views).toHaveText(String(result.view_count))
     const repeated = page.waitForResponse((next) => next.url().endsWith('/views') && next.request().method() === 'POST')
     await page.reload()
     expect(await (await repeated).json()).toEqual({ counted: true, view_count: result.view_count + 1 })
-    await expect(page.getByRole('main').locator('span[aria-label$="просмотр"], span[aria-label$="просмотра"], span[aria-label$="просмотров"]')).toHaveText(String(result.view_count + 1))
+    await expect(views).toHaveText(String(result.view_count + 1))
 
     await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
     const returned = page.waitForResponse((next) => next.url().endsWith('/views') && next.request().method() === 'POST')

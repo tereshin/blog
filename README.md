@@ -35,9 +35,13 @@ cp infra/env/local.env.example infra/env/local.env
 pnpm local
 ```
 
-`pnpm local` starts the services, databases, NATS, MinIO, the client, and the Firebase Auth emulator, then loads the small set of test data. In `local`, the `CHANGE_ME` placeholders from the template are fine.
+`pnpm local` starts the services, databases, NATS, MinIO, the client, the Firebase Auth emulator, and Mailpit, then loads the small set of test data. Before starting, replace `AUTH_EMAIL_SECRET` with a stable random value of at least 32 characters (`openssl rand -hex 32`). Other existing `CHANGE_ME` placeholders remain supported in `local`.
 
-The site opens at [http://localhost:8080](http://localhost:8080), and the gateway at [http://localhost:3000](http://localhost:3000). Sign in opens the emulator page, where you pick a test participant.
+The site opens at [http://localhost:8080](http://localhost:8080), and the gateway at [http://localhost:3000](http://localhost:3000). Start sign-in with an email address, or choose an SSO provider or test participant. Registration and password recovery send six-digit codes to [Mailpit](http://localhost:8025). When running identity on the host, use `SMTP_HOST=127.0.0.1` and `SMTP_PORT=1025`; inside Compose, use `SMTP_HOST=mailpit`.
+
+Production requires `AUTH_EMAIL_SECRET`, `SMTP_HOST`, and `SMTP_FROM`. Configure `SMTP_PORT` (587 by default), `SMTP_SECURE=true` for implicit TLS, and `SMTP_USER`/`SMTP_PASSWORD` together when the server requires authentication. Production SMTP always requires TLS. Keep the email secret stable across restarts: it protects code hashes and encrypts queued mail. Mailpit is included only in local/dev environments.
+
+The isolated SMTP/Firebase integration check runs with `AUTH_LIVE_TESTS=1 pnpm --filter identity-service exec vitest run test/integration/email-flow-live.spec.ts`. Build the emulator image first with `docker build -f infra/docker/firebase-auth.Dockerfile -t blog/firebase-auth:local .`. Browser tests against the running Compose stack use `E2E_TARGET=local pnpm --filter web test:e2e tests/e2e/auth.spec.ts`; `MAILPIT_URL` can override the inbox address.
 
 The large set is 500+ articles and thousands of comments:
 

@@ -1,6 +1,7 @@
 import {
   boolean,
   jsonb,
+  integer,
   pgEnum,
   pgTable,
   primaryKey,
@@ -76,4 +77,28 @@ export const seed_runs = pgTable('seed_runs', {
   anchor_at: timestamp('anchor_at', { withTimezone: true }).notNull(),
   started_at: timestamp('started_at', { withTimezone: true }).notNull(),
   finished_at: timestamp('finished_at', { withTimezone: true }),
+})
+
+export const email_flows = pgTable('email_flows', {
+  id: uuid('id').primaryKey(),
+  email: text('email').notNull(),
+  purpose: text('purpose').$type<'registration' | 'password_reset'>().notNull(),
+  user_id: uuid('user_id').references(() => users.id),
+  code_hash: text('code_hash').notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  resend_at: timestamp('resend_at', { withTimezone: true }).notNull(),
+  verified_until: timestamp('verified_until', { withTimezone: true }),
+  consumed_at: timestamp('consumed_at', { withTimezone: true }),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull(),
+})
+
+/** Separate transactional outbox: email secrets never enter the public event broker. */
+export const auth_email_jobs = pgTable('auth_email_jobs', {
+  id: uuid('id').primaryKey(),
+  flow_id: uuid('flow_id').notNull().references(() => email_flows.id),
+  encrypted_message: text('encrypted_message').notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  available_at: timestamp('available_at', { withTimezone: true }).notNull(),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
 })

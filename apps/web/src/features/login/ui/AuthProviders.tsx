@@ -9,7 +9,7 @@ type AuthProvidersProps = { panel: AuthPanel }
 export function AuthProviders({ panel }: AuthProvidersProps) {
   const { t } = useT()
   return (
-    <div className="mt-8 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       {panel.oauth_providers.length > 0 ? (
         <p className="text-center text-sm text-muted">{t('login.sso')}</p>
       ) : null}
