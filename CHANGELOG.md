@@ -23,6 +23,8 @@ reader, member, or administrator can do, or what stopped going wrong.
 - Google and GitHub sign-in open correctly. Focus outlines in the sign-in
   dialog remain visible, and all buttons can be reached on small screens.
 
+- On phones, every sign-in step fills the screen without rounded corners.
+
 ## [1.0.1]
 
 Current changes since 1.0.0.

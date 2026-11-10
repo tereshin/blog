@@ -8,6 +8,8 @@ test('auth focus outlines have space and the final provider is reachable on a sh
   await page.goto('/')
   await page.getByRole('banner').getByRole('button', { name: 'Войти', exact: true }).click()
   const dialog = page.getByRole('dialog')
+  await expect.poll(() => dialog.boundingBox()).toEqual({ x: 0, y: 0, width: 390, height: 480 })
+  await expect(dialog).toHaveCSS('border-radius', '0px')
   const email = dialog.getByLabel('Почта', { exact: true })
   await email.focus()
   const spacing = await email.evaluate((node) => {
@@ -27,6 +29,14 @@ test('auth focus outlines have space and the final provider is reachable on a sh
   if (!bounds || !clip) throw new Error('Missing auth bounds')
   expect(bounds.y).toBeGreaterThanOrEqual(clip.y)
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(clip.y + clip.height - 4)
+  await expect(dialog.getByRole('button', { name: 'Закрыть', exact: true })).toBeInViewport()
+  // React Aria updates this inherited value when the on-screen keyboard changes the visual viewport.
+  await dialog.evaluate((node) => {
+    node.closest<HTMLElement>('.modal__backdrop')?.style.setProperty('--visual-viewport-height', '300px')
+  })
+  await expect.poll(() => dialog.boundingBox()).toEqual({ x: 0, y: 0, width: 390, height: 300 })
+  await email.focus()
+  await expect(email).toBeInViewport()
   await expect(dialog.getByRole('button', { name: 'Закрыть', exact: true })).toBeInViewport()
 })
 
