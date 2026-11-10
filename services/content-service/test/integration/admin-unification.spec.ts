@@ -201,8 +201,9 @@ describe('admin media configuration and removal of legacy about', () => {
     expect(settings).not.toHaveProperty('about')
     expect(settings.seo?.pages).not.toHaveProperty('about')
     expect(settings.seo?.description).toBe('Site description')
-    const { public_origin: origin, ...payload } = settings
+    const { public_origin: origin, font_stylesheet_url: stylesheet, ...payload } = settings
     expect(origin).toBe('https://blog.test')
+    expect(stylesheet).toBeNull()
     expect(
       (await app.inject({ method: 'PUT', url: '/v1/settings', headers: headers(), payload }))
         .statusCode,

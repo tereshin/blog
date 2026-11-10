@@ -50,7 +50,9 @@ describe('permanent badge awards and settings', () => {
   const awards = async () =>
     (await database.db.select().from(profile_badge_awards)).map((row) => row.badge_id).sort()
   const save = (body: object, role = 'superadmin') => {
-    const payload = Object.fromEntries(Object.entries(body).filter(([key]) => key !== 'public_origin'))
+    const payload = Object.fromEntries(
+      Object.entries(body).filter(([key]) => !['public_origin', 'font_stylesheet_url'].includes(key)),
+    )
     return app.inject({ method: 'PUT', url: '/v1/settings', headers: { 'x-role': role }, payload })
   }
   const admin = async () =>
@@ -187,22 +189,28 @@ describe('permanent badge awards and settings', () => {
 
   it('issues lowered and restored rules, but not archived rules', async () => {
     const body = await admin()
-    await save({
-      ...body,
-      profile_badges: [...body.profile_badges, { ...custom, status: 'archived' }],
-    })
+    expect(
+      (await save({
+        ...body,
+        profile_badges: [...body.profile_badges, { ...custom, status: 'archived' }],
+      })).statusCode,
+    ).toBe(200)
     await runBadgeSweep(database, () => false, now)
     expect(await awards()).not.toContain(BADGE)
-    await save({
-      ...body,
-      profile_badges: [
-        ...body.profile_badges,
-        { ...custom, trigger: { ...custom.trigger, threshold: 1000 } },
-      ],
-    })
+    expect(
+      (await save({
+        ...body,
+        profile_badges: [
+          ...body.profile_badges,
+          { ...custom, trigger: { ...custom.trigger, threshold: 1000 } },
+        ],
+      })).statusCode,
+    ).toBe(200)
     await runBadgeSweep(database, () => false, now)
     expect(await awards()).not.toContain(BADGE)
-    await save({ ...body, profile_badges: [...body.profile_badges, custom] })
+    expect(
+      (await save({ ...body, profile_badges: [...body.profile_badges, custom] })).statusCode,
+    ).toBe(200)
     await runBadgeSweep(database, () => false, now)
     expect(await awards()).toContain(BADGE)
   })
