@@ -79,7 +79,8 @@ export function contentSecurityPolicy(input: {
   const directives = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${input.nonce}' https://apis.google.com https://connect.facebook.net`,
-    "style-src 'self'",
+    "style-src 'self' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
     `img-src ${images.join(' ')}`,
     `connect-src ${connect.join(' ')}`,
     `frame-src ${frames.join(' ')}`,

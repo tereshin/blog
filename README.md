@@ -61,6 +61,13 @@ pnpm infra:down local
 
 ## Features
 
+The superadmin can choose the site font under Administration → Settings → General.
+The searchable Google Fonts catalog includes a preview and a Cyrillic coverage hint.
+Inter is the default and is served locally; selected alternatives load through the
+[Google Fonts CSS API](https://developers.google.com/fonts/docs/css2), with local
+Inter as a fallback. Refresh the checked-in catalog with
+`node apps/web/scripts/update-google-fonts.mjs`; no API key is required.
+
 - **Feeds and topics.** A guest reads Fresh and Popular, topic pages, public profiles, the rating, and About. My feed is built from subscriptions to authors and topics. An article can be expanded in its card or opened on its own page. Posts you have already seen are tucked behind a Hidden bar, and confirmed impressions keep a post in Popular for seven days.
 - **Publishing.** A member who can publish writes in a block editor: paragraphs and headings, lists, quotes, code, captioned images, tables, attachments, and person cards. Links to YouTube, Vimeo, X, GitHub, and CodePen get a preview. A draft is visible only to its author. A published article has an audience — everyone, signed-in members only, or the author only — and comments can be turned on or off separately.
 - **Discussion.** Articles and comments take reactions from the site catalog. Comments reply to each other, and an article counts views, bookmarks, and shares. People who already have the page open see new comments, reactions, views, and the author's edits without a reload.

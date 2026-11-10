@@ -12,6 +12,10 @@ const ERRORS: Record<string, MessageKey> = {
   flow_expired: 'login.flow.expired',
   account_changed: 'login.account_changed',
   forbidden: 'login.error.restricted',
+  'auth/popup-blocked': 'login.sso.popup_blocked',
+  'auth/unauthorized-domain': 'login.sso.unauthorized_domain',
+  'auth/operation-not-allowed': 'login.sso.provider_disabled',
+  'auth/account-exists-with-different-credential': 'login.sso.account_exists',
 }
 
 /** Synchronous duplicate guard; outdated responses cannot move a reopened dialog. */
@@ -39,7 +43,9 @@ export function useAuthRequest() {
       if (error instanceof ApiError && error.code === 'registration_closed') {
         useLoginDialogStore.getState().open('registration_closed')
       } else {
-        setNotice(error instanceof ApiError ? (ERRORS[error.code] ?? 'login.notice.incomplete') : 'login.notice.incomplete')
+        const code = error instanceof ApiError ? error.code
+          : typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string' ? error.code : ''
+        setNotice(ERRORS[code] ?? 'login.notice.incomplete')
       }
     } finally {
       if (generation === request_ref.current.generation) {

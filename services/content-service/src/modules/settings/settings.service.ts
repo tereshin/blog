@@ -1,3 +1,5 @@
+import { findGoogleFont, googleFontStylesheet } from '@blog/contracts/fonts'
+import { ValidationError } from '@blog/errors'
 import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import {
   DEFAULT_SHELL_VISIBILITY,
@@ -70,6 +72,8 @@ function toPublic(row: SettingsRow): PublicSettings {
     maintenance_enabled: row.maintenance_enabled ?? false,
     welcome_content: row.welcome_content ?? null,
     name: row.name,
+    font_family: row.font_family ?? 'Inter',
+    font_stylesheet_url: googleFontStylesheet(row.font_family ?? 'Inter'),
     logo_url: row.logo_url,
     logo_dark_url: row.logo_dark_url ?? null,
     favicon: faviconSettingsSchema.parse(row.favicon ?? {}),
@@ -135,6 +139,8 @@ export class SettingsService<TTx> {
   async update(viewer: ServiceContext, input: UpdateSettings, correlation_id: string): Promise<AdminSettings> {
     requireSuperadmin(viewer)
     const current = await this.repository.find()
+    if (input.font_family !== undefined && !findGoogleFont(input.font_family))
+      throw new ValidationError({ message: 'Выберите шрифт из каталога Google Fonts', details: { field: 'font_family' } })
     const welcome_content = await this.welcomeContent(viewer, input, current)
     const { seo, social_cover, favicon } = await this.validateImages(input, current)
     const saved = await this.repository.transaction(async (tx) => {
@@ -144,6 +150,7 @@ export class SettingsService<TTx> {
         maintenance_enabled: input.maintenance_enabled ?? current?.maintenance_enabled ?? false,
         welcome_content,
         name: input.name,
+        font_family: input.font_family ?? current?.font_family ?? 'Inter',
         logo_url: input.logo_url,
         logo_dark_url:
           input.logo_dark_url === undefined

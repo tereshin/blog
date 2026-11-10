@@ -13,9 +13,15 @@ reader, member, or administrator can do, or what stopped going wrong.
 
 - Readers in Singapore can access the production site.
 
+- Administrators can search Google Fonts, preview a typeface, and apply it to
+  the whole site. The default font is consistent across computers and phones.
+
 ### Fixed
 
 - The sign-in dialog loads the enabled sign-in methods on the live site.
+
+- Google and GitHub sign-in open correctly. Focus outlines in the sign-in
+  dialog remain visible, and all buttons can be reached on small screens.
 
 ## [1.0.1]
 

@@ -64,3 +64,6 @@ export { VirtualList } from './VirtualList.tsx'
 
 export { PageCard } from './PageCard.tsx'
 export type { EditorPanelSlots } from './document-editor.ts'
+
+export { ComboBox } from './ComboBox.tsx'
+export type { ComboBoxOption } from './ComboBox.tsx'

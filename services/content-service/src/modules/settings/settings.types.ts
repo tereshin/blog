@@ -14,6 +14,7 @@ export type SettingsRow = {
   meta_pixel_id?: string | null
   welcome_content?: WelcomeContent | null
   name: string
+  font_family?: string
   logo_url: string | null
   logo_dark_url?: string | null
   favicon?: FaviconSettings

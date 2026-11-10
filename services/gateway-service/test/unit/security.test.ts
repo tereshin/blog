@@ -25,6 +25,12 @@ describe('лимиты gateway', () => {
 })
 
 describe('CSP', () => {
+  it('allows Google Fonts styles and font files only on their specific origins', () => {
+    const directives = contentSecurityPolicy({ nonce: 'abc', image_origin: null }).split('; ')
+    expect(directives.find((directive) => directive.startsWith('style-src'))).toBe("style-src 'self' https://fonts.googleapis.com")
+    expect(directives.find((directive) => directive.startsWith('font-src'))).toBe("font-src 'self' https://fonts.gstatic.com")
+    expect(directives.find((directive) => directive.startsWith('script-src'))).not.toContain('fonts.googleapis.com')
+  })
   it('allows both current and historical storage origins without broadening other directives', () => {
     const policy = contentSecurityPolicy({ nonce: 'abc', image_origin: 'https://old.example.com', image_origins: ['https://media.example.com'] })
     expect(policy.split('; ').find((directive) => directive.startsWith('img-src'))).toContain('https://media.example.com')

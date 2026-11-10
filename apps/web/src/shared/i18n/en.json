@@ -1,4 +1,13 @@
 {
+  "admin.settings.font": "Site font",
+  "admin.settings.font_hint": "Search Google Fonts. The selected font applies to every page and device after saving.",
+  "admin.settings.font_cyrillic_fallback": "This font has no Cyrillic characters. Inter is used for them consistently across devices.",
+  "admin.settings.font_preview": "The quick brown fox · Съешь ещё этих мягких французских булок · 0123456789",
+  "login.sso.popup_blocked": "Your browser blocked the sign-in window. Allow pop-ups for this site and try again.",
+  "login.sso.unauthorized_domain": "This site address is not authorized for provider sign-in. Contact the administrator.",
+  "login.sso.provider_disabled": "This sign-in method is disabled. Choose another method.",
+  "login.sso.account_exists": "This email is already in use. Sign in using the method you previously used.",
+  "login.sso.unavailable": "Provider sign-in could not be loaded. Try again or use your email.",
   "media.settings.title": "Images and storage",
   "media.settings.description": "Compress uploaded images and connect S3 or Cloudflare R2.",
   "media.settings.compression": "Image compression",

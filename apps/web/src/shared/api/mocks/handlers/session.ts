@@ -45,15 +45,15 @@ export const sessionHandlers = [
       auth_domain: 'demo-blog.firebaseapp.com',
       project_id: 'demo-blog',
       providers: [{ id: 'password' }, { id: 'google.com' }, { id: 'github.com' }],
-      emulator_host: '127.0.0.1:9099',
+      emulator_host: 'localhost:9099',
       test_participants: [{ email: 'reader@blog.test', label: 'Роман Читаев' }],
       test_password: 'password-ok',
     }),
   ),
   http.post('*/v1/auth/registrations', () => HttpResponse.json({ status: 'pending' })),
   http.post('*/v1/auth/sessions', async ({ request }) => {
-    const body = (await request.json()) as { method?: string }
-    if (body.method === 'password') {
+    const body = (await request.json()) as { method?: string; id_token?: string }
+    if (body.method === 'password' || (body.method === 'id_token' && body.id_token)) {
       window.localStorage.setItem(MOCK_VIEWER_KEY, 'member')
       return new HttpResponse(null, { status: 204 })
     }

@@ -22,6 +22,8 @@ export const publicSettingsSchema = z.object({
   maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string(),
+  font_family: z.string().optional(),
+  font_stylesheet_url: z.url().nullable().optional(),
   logo_url: z.string().nullable(),
   logo_dark_url: z.string().nullable().optional(),
   favicon: faviconSettingsSchema.optional(),
@@ -39,6 +41,8 @@ export type PublicSettings = {
   maintenance_enabled?: boolean
   welcome_content?: import('@blog/contracts').WelcomeContent | null
   name: string
+  font_family?: string
+  font_stylesheet_url?: string | null
   logo_url: string | null
   logo_dark_url?: string | null
   favicon?: FaviconSettings
@@ -55,6 +59,8 @@ export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
     maintenance_enabled: dto.maintenance_enabled ?? false,
     welcome_content: dto.welcome_content ?? null,
     name: dto.name.trim(),
+    font_family: dto.font_family ?? 'Inter',
+    font_stylesheet_url: dto.font_stylesheet_url ?? null,
     logo_url: dto.logo_url,
     logo_dark_url: dto.logo_dark_url ?? null,
     favicon: faviconSettingsSchema.parse(dto.favicon ?? {}),

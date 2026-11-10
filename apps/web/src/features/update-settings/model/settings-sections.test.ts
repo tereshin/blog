@@ -20,6 +20,13 @@ const initial = adminSettingsSchema.parse({
 })
 
 describe('saving settings categories', () => {
+  it('changes the site font only from general settings and preserves legacy drafts', () => {
+    const server = { ...initial, font_family: 'Roboto' }
+    const draft = { ...initial, font_family: 'Noto Sans' }
+    expect(mergeSettingsSection(server, draft, 'general').font_family).toBe('Noto Sans')
+    expect(mergeSettingsSection(server, draft, 'access').font_family).toBe('Roboto')
+    expect(mergeSettingsSection(server, initial, 'general').font_family).toBe('Roboto')
+  })
   it('keeps fresh server values from other categories', () => {
     const server = {
       ...initial,

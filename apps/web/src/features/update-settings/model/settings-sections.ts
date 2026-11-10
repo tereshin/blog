@@ -18,6 +18,7 @@ export function mergeSettingsSection(
         ...current,
         meta_pixel_id: draft.meta_pixel_id ?? null,
         name: draft.name,
+        font_family: draft.font_family ?? current.font_family ?? 'Inter',
         logo_url: draft.logo_url,
         logo_dark_url: draft.logo_dark_url,
         favicon: draft.favicon,

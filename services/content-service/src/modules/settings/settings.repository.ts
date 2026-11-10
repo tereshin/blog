@@ -18,6 +18,7 @@ const COLUMNS = {
   meta_pixel_id: settings.meta_pixel_id,
   welcome_content: settings.welcome_content,
   name: settings.name,
+  font_family: settings.font_family,
   logo_url: settings.logo_url,
   logo_dark_url: settings.logo_dark_url,
   favicon: settings.favicon,

@@ -10,5 +10,6 @@ export function getAdminSettings(signal?: AbortSignal): Promise<AdminSettings> {
 export function updateSettings(body: AdminSettings): Promise<AdminSettings> {
   const input = { ...body }
   delete input.public_origin
+  delete input.font_stylesheet_url
   return http.put('/v1/settings', adminSettingsSchema, { body: updateSettingsSchema.parse(input) })
 }

@@ -17,6 +17,7 @@ export const maintenanceStatusSchema = z.strictObject({
 })
 
 export const localeSchema = z.enum(['ru', 'en', 'sr'])
+const fontFamilySchema = z.string().trim().min(1).max(100).regex(/^[\p{L}\p{N} +.'-]+$/u)
 
 export const MAX_ACTIVE_REACTIONS = 20
 export const MAX_REACTION_APPEARANCES = 100
@@ -116,6 +117,8 @@ export const publicSettingsSchema = z.strictObject({
   maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string(),
+  font_family: fontFamilySchema.optional(),
+  font_stylesheet_url: z.url().nullable().optional(),
   logo_url: z.string().nullable(),
   logo_dark_url: z.string().nullable().optional(),
   favicon: faviconSettingsSchema.optional(),
@@ -135,6 +138,7 @@ export const updateSettingsSchema = z.strictObject({
   maintenance_enabled: z.boolean().optional(),
   welcome_content: welcomeContentSchema.nullable().optional(),
   name: z.string().max(100),
+  font_family: fontFamilySchema.optional(),
   logo_url: z.string().nullable(),
   logo_dark_url: z.string().nullable().optional(),
   favicon: faviconSettingsSchema.optional(),

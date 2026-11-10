@@ -11,6 +11,7 @@ import { createQueryClient } from '@/shared/api'
 import { I18nProvider } from '@/shared/i18n'
 import { ToastProvider } from '@/shared/ui'
 import { ThemeProvider } from './ThemeProvider.tsx'
+import { SiteFont } from '@/widgets/site-font'
 
 /** Язык интерфейса — из настроек площадки; пока они грузятся, русский. */
 function LocaleProvider({ children }: { children: ReactNode }) {
@@ -39,6 +40,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <ThemeProvider>
         <LocaleProvider>
           <ToastProvider>
+            <SiteFont />
             {children}
             <LoginDialog />
             <SessionExpiredListener />

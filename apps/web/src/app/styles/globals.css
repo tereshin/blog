@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource-variable/inter/wght-italic.css';
 @import '../../shared/ui/icon-picker.css';
 @import '../../shared/ui/document-typography.css';
 
@@ -49,6 +51,7 @@
 
 /* Радиусы вида: карточки, пилюли, аватары (`rounded-card`, `rounded-pill`, `rounded-avatar`). */
 @theme {
+  --font-sans: 'Inter Variable', sans-serif;
   --radius-card: 1rem;
   --radius-pill: 9999px;
   --radius-avatar: 9999px;

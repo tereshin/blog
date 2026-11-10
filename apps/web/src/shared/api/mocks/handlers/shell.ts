@@ -1,5 +1,6 @@
 import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badges'
 import { HttpResponse, http } from 'msw'
+import { googleFontStylesheet } from '@blog/contracts/fonts'
 import {
   DEFAULT_REACTION_APPEARANCES,
   DEFAULT_SEO_SETTINGS,
@@ -29,6 +30,7 @@ type SiteSettings = {
   maintenance_enabled?: boolean
   welcome_content?: import('@blog/contracts').WelcomeContent | null
   name: string
+  font_family?: string
   logo_url: string | null
   logo_dark_url?: string | null
   favicon?: FaviconSettings
@@ -62,6 +64,7 @@ function initialState(): SiteState {
       ...settings_fixture,
       locale: settings_fixture.locale as SiteSettings['locale'],
       maintenance_enabled: false,
+      font_family: 'Inter',
       registration_open: true,
       new_members_can_publish: true,
       reaction_appearances: DEFAULT_REACTION_APPEARANCES,
@@ -101,6 +104,8 @@ function publicSettings(settings: SiteSettings) {
     maintenance_enabled: settings.maintenance_enabled ?? false,
     welcome_content: settings.welcome_content ?? null,
     name: settings.name,
+    font_family: settings.font_family ?? 'Inter',
+    font_stylesheet_url: googleFontStylesheet(settings.font_family ?? 'Inter'),
     logo_url: settings.logo_url,
     logo_dark_url: settings.logo_dark_url,
     favicon: settings.favicon,
@@ -125,7 +130,8 @@ export function forbidden() {
 export const shellHandlers = [
   http.get('*/v1/settings/admin', () => {
     if (readMockViewer() !== 'superadmin') return forbidden()
-    return HttpResponse.json({ ...readSite().settings, public_origin: window.location.origin })
+    const settings = readSite().settings
+    return HttpResponse.json({ ...settings, ...publicSettings(settings), public_origin: window.location.origin })
   }),
   http.get('*/v1/settings', () => HttpResponse.json(publicSettings(readSite().settings))),
   http.put('*/v1/settings', async ({ request }) => {
@@ -134,7 +140,7 @@ export const shellHandlers = [
     const state = readSite()
     state.settings = { ...state.settings, ...body }
     writeSite(state)
-    return HttpResponse.json(state.settings)
+    return HttpResponse.json({ ...state.settings, ...publicSettings(state.settings) })
   }),
   http.get('*/v1/comments/popular', () => {
     const mode = window.localStorage.getItem('mock_rail')

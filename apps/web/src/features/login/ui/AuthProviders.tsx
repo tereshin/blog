@@ -19,12 +19,22 @@ export function AuthProviders({ panel }: AuthProvidersProps) {
           type="button"
           className="h-12 w-full text-base"
           variant="secondary"
-          isDisabled={panel.is_submitting}
+          isDisabled={panel.is_submitting || !panel.provider_auth.is_ready}
           onPress={() => void panel.handleSubmitProvider(provider.id)}
         >
           {t('login.provider', { name: providerLabel(provider.id) })}
         </Button>
       ))}
+      {panel.provider_auth.is_error ? (
+        <div className="flex flex-col gap-2">
+          <p role="alert" className="text-sm text-danger">
+            {t('login.sso.unavailable')}
+          </p>
+          <Button type="button" variant="ghost" onPress={panel.provider_auth.retry}>
+            {t('login.retry')}
+          </Button>
+        </div>
+      ) : null}
       {panel.test_participants.length > 0 ? (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted">{t('login.test_participants')}</p>

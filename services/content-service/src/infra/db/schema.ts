@@ -151,6 +151,7 @@ export const settings = pgTable('settings', {
   meta_pixel_id: text('meta_pixel_id'),
   welcome_content: jsonb('welcome_content').$type<import('@blog/contracts').WelcomeContent>(),
   name: text('name').notNull(),
+  font_family: text('font_family').notNull().default('Inter'),
   logo_url: text('logo_url'),
   logo_dark_url: text('logo_dark_url'),
   favicon: jsonb('favicon')

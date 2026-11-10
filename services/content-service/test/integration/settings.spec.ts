@@ -91,6 +91,8 @@ describe('content: настройки площадки', () => {
       maintenance_enabled: false,
       welcome_content: null,
       name: 'Блог',
+      font_family: 'Inter',
+      font_stylesheet_url: null,
       logo_url: null,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
@@ -138,6 +140,8 @@ describe('content: настройки площадки', () => {
     expect(response.json()).toEqual({
       ...body,
       profile_badges: DEFAULT_PROFILE_BADGES,
+      font_family: 'Inter',
+      font_stylesheet_url: null,
       meta_pixel_id: null,
       maintenance_enabled: false,
       welcome_content: null,
@@ -153,6 +157,8 @@ describe('content: настройки площадки', () => {
       maintenance_enabled: false,
       welcome_content: null,
       name: 'Площадка',
+      font_family: 'Inter',
+      font_stylesheet_url: null,
       logo_url: `${MEDIA}/logo.png`,
       logo_dark_url: null,
       favicon: faviconSettingsSchema.parse({}),
@@ -565,4 +571,25 @@ describe('content: настройки площадки', () => {
     expect(cleared.json().meta_pixel_id).toBeNull()
   })
 
+  it('saves a catalog font publicly, preserves it for legacy clients and rejects unknown families', async () => {
+    const headers = { 'x-test-viewer': 'superadmin' }
+    const saved = await app.inject({ method: 'PUT', url: '/v1/settings', headers,
+      payload: { ...body, font_family: 'Roboto' } })
+    expect(saved.statusCode).toBe(200)
+    expect(saved.json().font_family).toBe('Roboto')
+    const public_font = (await app.inject({ url: '/v1/settings' })).json()
+    expect(public_font.font_family).toBe('Roboto')
+    expect(public_font.font_stylesheet_url).toContain('https://fonts.googleapis.com/css2?')
+    expect((await database.db.select().from(settings))[0]?.font_family).toBe('Roboto')
+    const legacy = await app.inject({ method: 'PUT', url: '/v1/settings', headers, payload: body })
+    expect(legacy.json().font_family).toBe('Roboto')
+    for (const family of ['Unknown Font', 'Inter; color: red']) {
+      const invalid = await app.inject({ method: 'PUT', url: '/v1/settings', headers,
+        payload: { ...body, font_family: family } })
+      expect(invalid.statusCode).toBe(422)
+    }
+    const reset = await app.inject({ method: 'PUT', url: '/v1/settings', headers,
+      payload: { ...body, font_family: 'Inter' } })
+    expect(reset.json().font_stylesheet_url).toBeNull()
+  })
 })

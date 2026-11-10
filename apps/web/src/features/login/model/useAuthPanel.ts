@@ -6,6 +6,7 @@ import { claimEmail, confirmEmailCode, getAuthConfig, resendEmailCode, sendEmail
 import { looksLikeEmail } from '../lib/credentials.ts'
 import { signInWithProvider } from '../lib/firebase-auth.ts'
 import { useAuthRequest } from './useAuthRequest.ts'
+import { useProviderAuth } from './useProviderAuth.ts'
 import { useLoginDialogStore } from './useLoginDialogStore.ts'
 
 export type AuthPhase = 'email' | 'sign_in' | 'code' | 'password_setup' | 'pending' | 'claim'
@@ -45,6 +46,7 @@ export function useAuthPanel(is_open: boolean) {
 
   const config_query = useQuery({ queryKey: ['auth', 'config'], queryFn: ({ signal }) => getAuthConfig(signal), enabled: is_open, retry: false })
   const config = config_query.data
+  const provider_auth = useProviderAuth(config, is_open)
   const providers = config?.providers ?? []
   const has_password = providers.some((provider) => provider.id === 'password')
   const oauth_providers = providers.filter((provider) => provider.id !== 'password')
@@ -137,7 +139,7 @@ export function useAuthPanel(is_open: boolean) {
   }
 
   return {
-    config_query, phase, setPhase, direction, email, setEmail, password, setPassword, code, flow,
+    config_query, provider_auth, phase, setPhase, direction, email, setEmail, password, setPassword, code, flow,
     field_error, has_password, oauth_providers, test_participants, resend_deadline,
     is_submitting: request.is_submitting, notice_key: request.notice_key,
     handleSubmitPassword, handleEmailContinue, handleCodeChange, handleResendCode, handleBack,

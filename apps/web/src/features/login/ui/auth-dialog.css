@@ -12,8 +12,8 @@
 }
 .auth-back { position: absolute; z-index: 2; top: 20px; left: 20px; }
 .auth-close.auth-close { z-index: 2; top: 20px; right: 20px; width: 36px; height: 36px; border-radius: 50%; background: var(--surface-secondary); }
-.auth-transition { display: grid; flex: 1; min-height: 0; }
-.auth-scene { grid-area: 1 / 1; display: flex; flex-direction: column; min-height: 0; }
+.auth-transition { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; margin: -8px; padding: 8px; scroll-padding: 8px; }
+.auth-scene { display: flex; flex-direction: column; min-height: 100%; }
 .auth-header.auth-header {
   display: flex;
   flex: 0 0 182px;
@@ -26,7 +26,7 @@
 }
 .auth-header[data-initial='true'] { flex-basis: 210px; padding-bottom: 40px; }
 .auth-brand { display: flex; min-height: 56px; align-items: center; justify-content: center; }
-.auth-body.auth-body { display: flex; flex: 1; flex-direction: column; gap: 12px; min-height: 0; padding: 0; overflow-y: auto; }
+.auth-body.auth-body { display: flex; flex: 1; flex-direction: column; gap: 12px; min-height: 0; margin: 0; padding: 0; overflow: visible; }
 .auth-form { display: flex; flex: 1; flex-direction: column; gap: 16px; min-height: 240px; width: 100%; max-width: 300px; margin-inline: auto; }
 .auth-form__fields { display: flex; flex-direction: column; gap: 16px; }
 .auth-form__bottom { display: flex; flex-direction: column; gap: 12px; margin-top: auto; padding: 12px 0 28px; }
@@ -42,7 +42,7 @@
 .auth-code__input[aria-invalid='true'] + .auth-code__cells .auth-code__cell { border-color: var(--danger); }
 .auth-code__resend { width: max-content; max-width: 100%; height: auto; min-height: 32px; padding-inline: 0; white-space: normal; text-align: center; }
 .auth-code__resend:disabled, .auth-code__resend[data-disabled='true'] { opacity: 1; color: var(--muted); }
-.auth-scene--outgoing { pointer-events: none; }
+.auth-scene--outgoing { position: absolute; inset: 8px; min-height: 0; pointer-events: none; }
 @media (max-width: 480px) {
   .auth-dialog.auth-dialog { padding: 20px 24px; }
   .auth-form { max-width: 100%; }
