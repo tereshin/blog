@@ -20,6 +20,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 RUN pnpm --filter web build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
-COPY infra/docker/web.nginx.conf /etc/nginx/templates/default.conf.template
-COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
+# Git checkouts made by the production updater can have a restrictive umask.
+# The unprivileged nginx process must own both the template and copied public files.
+COPY --chown=nginx:nginx infra/docker/web.nginx.conf /etc/nginx/templates/default.conf.template
+COPY --from=build --chown=nginx:nginx /repo/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080
