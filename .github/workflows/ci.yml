@@ -17,7 +17,10 @@ jobs:
     container:
       # Update this image tag and the Playwright version in pnpm-lock.yaml together.
       image: mcr.microsoft.com/playwright:v1.64.0-noble
-      options: --user 1001 --init --ipc=host
+      # The database tests use the runner's Docker socket and published ports.
+      options: --user 0 --init --ipc=host --add-host=host.docker.internal:host-gateway
+    env:
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
     defaults:
       run:
         shell: bash
