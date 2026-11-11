@@ -14,6 +14,16 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    container:
+      # Update this image tag and the Playwright version in pnpm-lock.yaml together.
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      # The database tests use the runner's Docker socket and published ports.
+      options: --user 0 --init --ipc=host --add-host=host.docker.internal:host-gateway
+    env:
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -30,8 +40,6 @@ jobs:
       - run: pnpm --filter web build
       - run: pnpm --filter web size
       - run: pnpm --filter web build-storybook
-      - run: pnpm exec playwright install --with-deps chromium
-        working-directory: apps/web
       - run: pnpm --filter web test:e2e
 
   integration:
