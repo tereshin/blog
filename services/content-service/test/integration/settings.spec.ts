@@ -9,6 +9,7 @@ import {
   DEFAULT_SEO_SETTINGS,
   DEFAULT_SHELL_VISIBILITY,
   DEFAULT_SOCIAL_COVER_SETTINGS,
+  DEFAULT_THEME_SETTINGS,
   SettingsUpdatedV1,
 } from '@blog/contracts'
 import type { ServiceContext } from '@blog/contracts'
@@ -103,6 +104,7 @@ describe('content: настройки площадки', () => {
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      theme: DEFAULT_THEME_SETTINGS,
     })
   })
 
@@ -150,6 +152,7 @@ describe('content: настройки площадки', () => {
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      theme: DEFAULT_THEME_SETTINGS,
       public_origin: 'http://localhost',
     })
     expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json()).toEqual({
@@ -169,6 +172,7 @@ describe('content: настройки площадки', () => {
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      theme: DEFAULT_THEME_SETTINGS,
     })
     const events = await database.db
       .select()
@@ -470,6 +474,32 @@ describe('content: настройки площадки', () => {
     const guest = await app.inject({ method: 'GET', url: '/v1/settings' })
     expect(guest.json().shell).toEqual(shell)
     expect(guest.json()).not.toHaveProperty('registration_open')
+  })
+
+  it('токены вида сохраняются и видны гостю; пропуск поля оставляет прежние', async () => {
+    const theme = {
+      radius_card: '0.75rem',
+      header_overlay_hue: 200,
+      header_overlay_opacity: 80,
+      header_overlay_blur_px: 8,
+    }
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: { ...body, theme },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json().theme).toEqual(theme)
+    expect((await app.inject({ method: 'GET', url: '/v1/settings' })).json().theme).toEqual(theme)
+    const preserved = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: { 'x-test-viewer': 'superadmin', 'content-type': 'application/json' },
+      payload: body,
+    })
+    expect(preserved.statusCode).toBe(200)
+    expect(preserved.json().theme).toEqual(theme)
   })
   it('welcome content is sanitized, persisted, preserved by unrelated updates and removable', async () => {
     const welcome_content = {

@@ -6,8 +6,10 @@ import {
   DEFAULT_SEO_SETTINGS,
   DEFAULT_SHELL_VISIBILITY,
   DEFAULT_SOCIAL_COVER_SETTINGS,
+  DEFAULT_THEME_SETTINGS,
   reactionAppearancesSchema,
   shellVisibilitySchema,
+  themeSettingsSchema,
 } from '@blog/contracts'
 import type {
   FaviconSettings,
@@ -16,6 +18,7 @@ import type {
   SeoSettings,
   ShellVisibility,
   SocialCoverSettings,
+  ThemeSettings,
 } from '@blog/contracts'
 import popular_comments from '../fixtures/popular-comments.json'
 import settings_fixture from '../fixtures/settings.json'
@@ -43,6 +46,7 @@ type SiteSettings = {
   seo: SeoSettings
   social_cover: SocialCoverSettings
   shell: ShellVisibility
+  theme: ThemeSettings
 }
 
 export type SiteTopic = {
@@ -73,6 +77,7 @@ function initialState(): SiteState {
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      theme: DEFAULT_THEME_SETTINGS,
     },
     topics: topics_fixture.map((topic) => ({
       ...topic,
@@ -89,6 +94,7 @@ export function readSite(): SiteState {
   const appearances = reactionAppearancesSchema.safeParse(settings.reaction_appearances)
   if (!appearances.success) settings.reaction_appearances = DEFAULT_REACTION_APPEARANCES
   settings.shell = shellVisibilitySchema.parse(settings.shell ?? {})
+  settings.theme = themeSettingsSchema.parse(settings.theme ?? {})
   return { ...parsed, settings }
 }
 
@@ -116,6 +122,7 @@ function publicSettings(settings: SiteSettings) {
     seo: settings.seo,
     social_cover: settings.social_cover,
     shell: settings.shell,
+    theme: settings.theme,
   }
 }
 

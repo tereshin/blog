@@ -4,6 +4,7 @@ import {
   seoSettingsSchema,
   shellVisibilitySchema,
   socialCoverSettingsSchema,
+  themeSettingsSchema,
 } from '@blog/contracts'
 import { useState } from 'react'
 import { ApiError } from '@/shared/api'
@@ -38,6 +39,7 @@ export function useSettingsForm(
     seo: seoSettingsSchema.parse(initial.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(initial.social_cover ?? {}),
     shell: shellVisibilitySchema.parse(initial.shell ?? {}),
+    theme: themeSettingsSchema.parse(initial.theme ?? {}),
   }))
   const [appearance_draft, setAppearanceDraft] = useState(() =>
     draftsFrom(initial.reaction_appearances),

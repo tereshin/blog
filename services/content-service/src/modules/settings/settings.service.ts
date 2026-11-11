@@ -3,11 +3,13 @@ import { ValidationError } from '@blog/errors'
 import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import {
   DEFAULT_SHELL_VISIBILITY,
+  DEFAULT_THEME_SETTINGS,
   faviconSettingsSchema,
   reactionAppearancesSchema,
   seoSettingsSchema,
   shellVisibilitySchema,
   socialCoverSettingsSchema,
+  themeSettingsSchema,
 } from '@blog/contracts'
 import type {
   AdminSettings,
@@ -46,6 +48,7 @@ export const DEFAULT_SETTINGS: AdminSettings = {
   profile_status_icons: [],
   profile_badges: DEFAULT_PROFILE_BADGES,
   shell: DEFAULT_SHELL_VISIBILITY,
+  theme: DEFAULT_THEME_SETTINGS,
 }
 
 /** Настройки пустой площадки: регистрация закрыта, публиковать новым участникам можно. */
@@ -60,6 +63,7 @@ export const BOOTSTRAP_SETTINGS: SettingsRow = {
   profile_status_icons: [],
   profile_badges: DEFAULT_PROFILE_BADGES,
   shell: DEFAULT_SHELL_VISIBILITY,
+  theme: DEFAULT_THEME_SETTINGS,
 }
 
 function appearancesOf(value: ReactionAppearances): ReactionAppearances {
@@ -84,6 +88,7 @@ function toPublic(row: SettingsRow): PublicSettings {
     seo: seoSettingsSchema.parse(row.seo ?? {}),
     social_cover: socialCoverSettingsSchema.parse(row.social_cover ?? {}),
     shell: shellVisibilitySchema.parse(row.shell ?? {}),
+    theme: themeSettingsSchema.parse(row.theme ?? {}),
   }
 }
 
@@ -166,6 +171,7 @@ export class SettingsService<TTx> {
         seo,
         social_cover,
         shell: shellVisibilitySchema.parse(input.shell ?? current?.shell ?? {}),
+        theme: themeSettingsSchema.parse(input.theme ?? current?.theme ?? {}),
       }
       const written = await this.repository.save(tx, row)
       await this.repository.appendUpdated(tx, row, correlation_id)

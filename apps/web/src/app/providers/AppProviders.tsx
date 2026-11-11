@@ -12,6 +12,7 @@ import { I18nProvider } from '@/shared/i18n'
 import { ToastProvider } from '@/shared/ui'
 import { ThemeProvider } from './ThemeProvider.tsx'
 import { SiteFont } from '@/widgets/site-font'
+import { SiteTheme } from '@/widgets/site-theme'
 
 /** Язык интерфейса — из настроек площадки; пока они грузятся, русский. */
 function LocaleProvider({ children }: { children: ReactNode }) {
@@ -41,6 +42,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <LocaleProvider>
           <ToastProvider>
             <SiteFont />
+            <SiteTheme />
             {children}
             <LoginDialog />
             <SessionExpiredListener />

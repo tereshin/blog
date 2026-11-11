@@ -21,6 +21,7 @@ import {
   DEFAULT_SEO_SETTINGS,
   DEFAULT_SHELL_VISIBILITY,
   DEFAULT_SOCIAL_COVER_SETTINGS,
+  DEFAULT_THEME_SETTINGS,
 } from '@blog/contracts'
 import type {
   ProfileStatusIcon,
@@ -29,6 +30,7 @@ import type {
   ShellVisibility,
   SocialCoverSettings,
   SocialImages,
+  ThemeSettings,
 } from '@blog/contracts'
 
 // Таблицы outbox и processed_events описаны в @blog/broker и создаются миграцией этого сервиса.
@@ -177,6 +179,7 @@ export const settings = pgTable('settings', {
     .notNull()
     .default(DEFAULT_SOCIAL_COVER_SETTINGS),
   shell: jsonb('shell').$type<ShellVisibility>().notNull().default(DEFAULT_SHELL_VISIBILITY),
+  theme: jsonb('theme').$type<ThemeSettings>().notNull().default(DEFAULT_THEME_SETTINGS),
 })
 
 export const reports = pgTable(

@@ -2,16 +2,19 @@ import { badgeDefinitionsSchema } from '@blog/contracts'
 import {
   welcomeContentSchema,
   DEFAULT_SHELL_VISIBILITY,
+  DEFAULT_THEME_SETTINGS,
   faviconSettingsSchema,
   profileStatusIconsSchema,
   reactionAppearancesSchema,
   shellVisibilitySchema,
+  themeSettingsSchema,
 } from '@blog/contracts'
 import type {
   FaviconSettings,
   ProfileStatusIcon,
   ReactionAppearances,
   ShellVisibility,
+  ThemeSettings,
 } from '@blog/contracts'
 import { z } from 'zod'
 import { http } from '@/shared/api'
@@ -32,6 +35,7 @@ export const publicSettingsSchema = z.object({
   profile_status_icons: profileStatusIconsSchema.default([]),
   profile_badges: badgeDefinitionsSchema,
   shell: shellVisibilitySchema.default(DEFAULT_SHELL_VISIBILITY),
+  theme: themeSettingsSchema.default(DEFAULT_THEME_SETTINGS),
 })
 type PublicSettingsDto = z.infer<typeof publicSettingsSchema>
 
@@ -51,6 +55,7 @@ export type PublicSettings = {
   profile_status_icons: ProfileStatusIcon[]
   profile_badges: import('@blog/contracts').BadgeDefinition[]
   shell: ShellVisibility
+  theme: ThemeSettings
 }
 
 export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
@@ -69,6 +74,7 @@ export function toPublicSettings(dto: PublicSettingsDto): PublicSettings {
     profile_status_icons: dto.profile_status_icons,
     profile_badges: dto.profile_badges,
     shell: dto.shell,
+    theme: themeSettingsSchema.parse(dto.theme ?? {}),
   }
 }
 

@@ -150,9 +150,13 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: color-mix(in oklch, var(--surface) 90%, transparent);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  background: color-mix(
+    in oklch,
+    oklch(from var(--surface) l c var(--header-overlay-hue, 270)) var(--header-overlay-opacity, 90%),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(var(--header-overlay-blur, 4px));
+  backdrop-filter: blur(var(--header-overlay-blur, 4px));
 }
 
 /*

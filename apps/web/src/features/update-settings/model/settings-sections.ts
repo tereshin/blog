@@ -23,6 +23,7 @@ export function mergeSettingsSection(
         logo_dark_url: draft.logo_dark_url,
         favicon: draft.favicon,
         locale: draft.locale,
+        theme: draft.theme,
       }
     case 'access':
       return {

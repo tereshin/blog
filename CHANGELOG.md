@@ -16,6 +16,9 @@ reader, member, or administrator can do, or what stopped going wrong.
 - Administrators can search Google Fonts, preview a typeface, and apply it to
   the whole site. The default font is consistent across computers and phones.
 
+- Administrators can set card corner radius and live-tune the header tint,
+  opacity, and blur from general settings.
+
 ### Fixed
 
 - The sign-in dialog loads the enabled sign-in methods on the live site.

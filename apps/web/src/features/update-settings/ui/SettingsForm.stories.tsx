@@ -1,7 +1,11 @@
 import preview from '#.storybook/preview'
 import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badges'
 import { expect, within } from 'storybook/test'
-import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SHELL_VISIBILITY } from '@blog/contracts'
+import {
+  DEFAULT_REACTION_APPEARANCES,
+  DEFAULT_SHELL_VISIBILITY,
+  DEFAULT_THEME_SETTINGS,
+} from '@blog/contracts'
 import { StoryProviders } from '@/shared/lib'
 import type { AdminSettings } from '../api/update-settings.ts'
 import type { SettingsSection } from '../model/settings-sections.ts'
@@ -17,6 +21,7 @@ const initial: AdminSettings = {
   profile_status_icons: [],
   profile_badges: PROFILE_BADGES_FIXTURE,
   shell: DEFAULT_SHELL_VISIBILITY,
+  theme: DEFAULT_THEME_SETTINGS,
 }
 
 function upload({ label, onUploaded }: { label: string; onUploaded: (url: string) => void }) {

@@ -2,6 +2,7 @@ import type { FaviconVariant } from '@blog/contracts'
 import { SettingsFontField } from './SettingsFontField.tsx'
 import { SettingsLogoFields } from './SettingsLogoFields.tsx'
 import { SettingsFaviconFields } from './SettingsFaviconFields.tsx'
+import { SettingsThemeFields } from './SettingsThemeFields.tsx'
 import type { ReactNode } from 'react'
 import type { AdminSettings } from '../api/update-settings.ts'
 import { useT } from '@/shared/i18n'
@@ -9,7 +10,14 @@ import { FormTextField, SelectField } from '@/shared/ui'
 
 type GeneralSettings = Pick<
   AdminSettings,
-  'font_family' | 'meta_pixel_id' | 'name' | 'logo_url' | 'logo_dark_url' | 'favicon' | 'locale'
+  | 'font_family'
+  | 'meta_pixel_id'
+  | 'name'
+  | 'logo_url'
+  | 'logo_dark_url'
+  | 'favicon'
+  | 'locale'
+  | 'theme'
 >
 type SettingsGeneralFieldsProps = {
   value: GeneralSettings
@@ -49,6 +57,7 @@ export function SettingsGeneralFields({
         onChange={(event) => onChange({ ...value, meta_pixel_id: event.target.value.trim() || null })}
       />
       <SettingsFontField value={value.font_family ?? 'Inter'} onChange={(font_family) => onChange({ ...value, font_family })} />
+      <SettingsThemeFields value={value.theme} onChange={(theme) => onChange({ ...value, theme })} />
       <SettingsLogoFields
         value={value}
         onChange={(patch) => onChange({ ...value, ...patch })}

@@ -3,7 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
-import { DEFAULT_REACTION_APPEARANCES, DEFAULT_SHELL_VISIBILITY } from '@blog/contracts'
+import {
+  DEFAULT_REACTION_APPEARANCES,
+  DEFAULT_SHELL_VISIBILITY,
+  DEFAULT_THEME_SETTINGS,
+} from '@blog/contracts'
 import { settingsKeys } from '@/entities/settings'
 import { profile } from '@/shared/api/mocks/fixtures/profile.ts'
 import { ProfileStatus } from './ProfileStatus.tsx'
@@ -18,7 +22,7 @@ function Frame({ is_own = true, has_selected = false }: { is_own?: boolean; has_
     const value = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } })
     value.setQueryData(settingsKeys.public(), {
       name: 'Блог', logo_url: null, locale: 'ru', reaction_appearances: DEFAULT_REACTION_APPEARANCES,
-      profile_status_icons: icons, profile_badges: [], shell: DEFAULT_SHELL_VISIBILITY,
+      profile_status_icons: icons, profile_badges: [], shell: DEFAULT_SHELL_VISIBILITY, theme: DEFAULT_THEME_SETTINGS,
     })
     return value
   })

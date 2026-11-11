@@ -8,6 +8,7 @@ import {
   seoSettingsSchema,
   shellVisibilitySchema,
   socialCoverSettingsSchema,
+  themeSettingsSchema,
 } from '@blog/contracts'
 import { DEFAULT_PROFILE_BADGES } from '../../shared/profile-badges.ts'
 import { settings } from '../../infra/db/schema.ts'
@@ -32,6 +33,7 @@ const COLUMNS = {
   seo: settings.seo,
   social_cover: settings.social_cover,
   shell: settings.shell,
+  theme: settings.theme,
 }
 
 function readRow(row: SettingsRow): SettingsRow {
@@ -44,6 +46,7 @@ function readRow(row: SettingsRow): SettingsRow {
     reaction_appearances: reactionAppearancesSchema.parse(row.reaction_appearances),
     profile_status_icons: profileStatusIconsSchema.parse(row.profile_status_icons),
     shell: shellVisibilitySchema.parse(row.shell ?? {}),
+    theme: themeSettingsSchema.parse(row.theme ?? {}),
   }
 }
 

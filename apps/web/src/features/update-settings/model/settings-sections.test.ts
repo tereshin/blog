@@ -3,6 +3,7 @@ import {
   seoSettingsSchema,
   DEFAULT_REACTION_APPEARANCES,
   DEFAULT_SHELL_VISIBILITY,
+  DEFAULT_THEME_SETTINGS,
 } from '@blog/contracts'
 import { describe, expect, it } from 'vitest'
 import { mergeSettingsSection } from './settings-sections.ts'
@@ -26,6 +27,13 @@ describe('saving settings categories', () => {
     expect(mergeSettingsSection(server, draft, 'general').font_family).toBe('Noto Sans')
     expect(mergeSettingsSection(server, draft, 'access').font_family).toBe('Roboto')
     expect(mergeSettingsSection(server, initial, 'general').font_family).toBe('Roboto')
+  })
+  it('saves theme tokens only from general settings', () => {
+    const theme = { ...DEFAULT_THEME_SETTINGS, radius_card: '0.5rem', header_overlay_blur_px: 12 }
+    const server = { ...initial, theme: DEFAULT_THEME_SETTINGS }
+    const draft = { ...initial, theme }
+    expect(mergeSettingsSection(server, draft, 'general').theme).toEqual(theme)
+    expect(mergeSettingsSection(server, draft, 'access').theme).toEqual(DEFAULT_THEME_SETTINGS)
   })
   it('keeps fresh server values from other categories', () => {
     const server = {

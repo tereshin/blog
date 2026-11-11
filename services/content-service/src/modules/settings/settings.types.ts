@@ -6,6 +6,7 @@ import type {
   SeoSettings,
   ShellVisibility,
   SocialCoverSettings,
+  ThemeSettings,
   WelcomeContent,
 } from '@blog/contracts'
 import type { FileOwner } from '../../shared/editor-document/document.sanitizer.ts'
@@ -28,6 +29,7 @@ export type SettingsRow = {
   seo?: SeoSettings
   social_cover?: SocialCoverSettings
   shell?: ShellVisibility
+  theme?: ThemeSettings
 }
 
 /** Порт хранилища настроек. Запись строки и события идут в одной транзакции `TTx`. */

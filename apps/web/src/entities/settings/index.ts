@@ -1,5 +1,6 @@
 export { getSettings, publicSettingsSchema, toPublicSettings } from './api/get-settings.ts'
 export type { PublicSettings } from './api/get-settings.ts'
+export { applyThemeCssVars, clearThemeCssVars } from './lib/apply-theme.ts'
 export { settingsKeys } from './model/settings-keys.ts'
 export { useSettings } from './model/useSettings.ts'
 export { useSettingsLive } from './model/useSettingsLive.ts'

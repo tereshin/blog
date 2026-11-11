@@ -59,6 +59,7 @@ export type { RecordView, ViewCount } from './views.ts'
 export {
   DEFAULT_REACTION_APPEARANCES,
   DEFAULT_SHELL_VISIBILITY,
+  DEFAULT_THEME_SETTINGS,
   MAX_ACTIVE_REACTIONS,
   MAX_REACTION_APPEARANCES,
   adminSettingsSchema,
@@ -70,6 +71,7 @@ export {
   profileStatusIconSchema,
   profileStatusIconsSchema,
   shellVisibilitySchema,
+  themeSettingsSchema,
   updateSettingsSchema,
 } from './settings.ts'
 export type {
@@ -79,6 +81,7 @@ export type {
   ReactionAppearance,
   ReactionAppearances,
   ShellVisibility,
+  ThemeSettings,
   UpdateSettings,
 } from './settings.ts'
 export {

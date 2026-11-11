@@ -111,6 +111,37 @@ export const shellVisibilitySchema = z.strictObject({
 })
 export type ShellVisibility = z.infer<typeof shellVisibilitySchema>
 
+/** Токены вида площадки: радиус карточек и стеклянная шапка. */
+export const DEFAULT_THEME_SETTINGS = {
+  radius_card: '1rem',
+  header_overlay_hue: 270,
+  header_overlay_opacity: 90,
+  header_overlay_blur_px: 4,
+} as const
+
+const radiusCardSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(16)
+  .regex(/^\d+(\.\d+)?(rem|px|em)$/)
+
+export const themeSettingsSchema = z.strictObject({
+  radius_card: radiusCardSchema.default(DEFAULT_THEME_SETTINGS.radius_card),
+  header_overlay_hue: z.number().min(0).max(360).default(DEFAULT_THEME_SETTINGS.header_overlay_hue),
+  header_overlay_opacity: z
+    .number()
+    .min(0)
+    .max(100)
+    .default(DEFAULT_THEME_SETTINGS.header_overlay_opacity),
+  header_overlay_blur_px: z
+    .number()
+    .min(0)
+    .max(40)
+    .default(DEFAULT_THEME_SETTINGS.header_overlay_blur_px),
+})
+export type ThemeSettings = z.infer<typeof themeSettingsSchema>
+
 /** Публичные настройки площадки: `GET /v1/settings`. Закрытые поля (регистрация) сюда не попадают. */
 export const publicSettingsSchema = z.strictObject({
   meta_pixel_id: z.string().regex(/^[0-9]{5,25}$/).nullable().optional(),
@@ -129,6 +160,7 @@ export const publicSettingsSchema = z.strictObject({
   seo: seoSettingsSchema.optional(),
   social_cover: socialCoverSettingsSchema.optional(),
   shell: shellVisibilitySchema.default(DEFAULT_SHELL_VISIBILITY),
+  theme: themeSettingsSchema.default(DEFAULT_THEME_SETTINGS),
 })
 export type PublicSettings = z.infer<typeof publicSettingsSchema>
 
@@ -152,6 +184,8 @@ export const updateSettingsSchema = z.strictObject({
   social_cover: socialCoverSettingsSchema.optional(),
   /** Нет поля — оставить сохранённую видимость. Пустой объект включает все разделы. */
   shell: shellVisibilitySchema.optional(),
+  /** Нет поля — оставить сохранённые токены вида. */
+  theme: themeSettingsSchema.optional(),
 })
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>
 
