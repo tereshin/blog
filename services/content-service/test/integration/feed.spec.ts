@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { DEFAULT_SEO_SETTINGS, DEFAULT_SHELL_VISIBILITY, DEFAULT_SOCIAL_COVER_SETTINGS, DEFAULT_REACTION_APPEARANCES, feedPageSchema, topicListSchema } from '@blog/contracts'
+import { DEFAULT_SEO_SETTINGS, DEFAULT_SHELL_VISIBILITY, DEFAULT_SOCIAL_COVER_SETTINGS, DEFAULT_THEME_SETTINGS, DEFAULT_REACTION_APPEARANCES, feedPageSchema, topicListSchema } from '@blog/contracts'
 import type { FeedPage, ServiceContext } from '@blog/contracts'
 import { DEFAULT_PROFILE_BADGES } from '../../src/shared/profile-badges.ts'
 import { startPostgres } from '@blog/db-kit/testing'
@@ -254,6 +254,7 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      theme: DEFAULT_THEME_SETTINGS,
       welcome_content: null,
       logo_dark_url: null,
       favicon: EMPTY_FAVICON,
@@ -273,6 +274,7 @@ describe('content: лента, темы и настройки на PostgreSQL', 
       seo: DEFAULT_SEO_SETTINGS,
       social_cover: DEFAULT_SOCIAL_COVER_SETTINGS,
       shell: DEFAULT_SHELL_VISIBILITY,
+      theme: DEFAULT_THEME_SETTINGS,
       welcome_content: null,
       logo_dark_url: null,
       favicon: EMPTY_FAVICON,

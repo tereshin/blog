@@ -168,16 +168,13 @@ export const settings = pgTable('settings', {
     .$type<ReactionAppearances>()
     .notNull()
     .default(DEFAULT_REACTION_APPEARANCES),
-  profile_badges: jsonb('profile_badges').$type<import('@blog/contracts').BadgeDefinition[]>().notNull().default(DEFAULT_PROFILE_BADGES),
-  profile_status_icons: jsonb('profile_status_icons')
-    .$type<ProfileStatusIcon[]>()
+  profile_badges: jsonb('profile_badges')
+    .$type<import('@blog/contracts').BadgeDefinition[]>()
     .notNull()
-    .default([]),
+    .default(DEFAULT_PROFILE_BADGES),
+  profile_status_icons: jsonb('profile_status_icons').$type<ProfileStatusIcon[]>().notNull().default([]),
   seo: jsonb('seo').$type<SeoSettings>().notNull().default(DEFAULT_SEO_SETTINGS),
-  social_cover: jsonb('social_cover')
-    .$type<SocialCoverSettings>()
-    .notNull()
-    .default(DEFAULT_SOCIAL_COVER_SETTINGS),
+  social_cover: jsonb('social_cover').$type<SocialCoverSettings>().notNull().default(DEFAULT_SOCIAL_COVER_SETTINGS),
   shell: jsonb('shell').$type<ShellVisibility>().notNull().default(DEFAULT_SHELL_VISIBILITY),
   theme: jsonb('theme').$type<ThemeSettings>().notNull().default(DEFAULT_THEME_SETTINGS),
 })
