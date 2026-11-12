@@ -31,10 +31,9 @@ export type AdminSettingsRouteId =
   | 'publisher'
   | 'covers'
 export type AdminRouteId =
-  | 'sidebar'
+  | 'sidebars'
   | 'media'
   | 'pages'
-  | 'sections'
   | AdminCatalogId
   | AdminSettingsRouteId
   | 'members'

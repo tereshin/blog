@@ -53,15 +53,7 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
     icon: 'pages',
     role: 'superadmin',
   },
-  sections: {
-    path: '/admin/sections',
-    parent: 'home',
-    title: 'nav.sections.title',
-    description: 'nav.sections.description',
-    icon: 'sections',
-    role: 'superadmin',
-  },
-  sidebar: { path: '/admin/sidebar', parent: 'home', title: 'widgets.sidebar', description: 'widgets.sidebar_hint', icon: 'sections', role: 'superadmin' },
+  sidebars: { path: '/admin/sidebars', parent: 'home', title: 'sidebars.title', description: 'sidebars.hint', icon: 'sections', role: 'superadmin' },
   general: {
     path: '/admin/settings/general',
     parent: 'settings',

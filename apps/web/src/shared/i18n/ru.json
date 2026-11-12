@@ -908,5 +908,16 @@
   "widgets.url": "URL",
   "widgets.choose_page": "Выберите страницу",
   "widgets.more_pages": "Загрузить еще страницы",
-  "widgets.website": "Сайт"
+  "widgets.website": "Сайт",
+  "sidebars.title": "Сайдбары",
+  "sidebars.hint": "Настройте левую навигацию и правые виджеты",
+  "sidebars.left": "Левый",
+  "sidebars.right": "Правый",
+  "sidebars.section": "Секция",
+  "sidebars.untitled": "Секция без заголовка",
+  "sidebars.actions": "Действия для {title}",
+  "sidebars.add_item": "Добавить элемент",
+  "sidebars.replace_draft": "Заменить локальный черновик сохраненной версией?",
+  "sidebars.unsaved": "Есть несохраненные изменения сайдбаров",
+  "sidebars.leave": "Уйти без сохранения"
 }

@@ -15,8 +15,7 @@ describe('admin navigation', () => {
       '/admin/members',
       '/admin/topics',
       '/admin/pages',
-      '/admin/sections',
-      '/admin/sidebar',
+      '/admin/sidebars',
     ])
     expect(getAdminChildren('home', false)).toEqual([ADMIN_ROUTES.moderation])
     expect(getAdminChildren('settings', false)).toEqual([])

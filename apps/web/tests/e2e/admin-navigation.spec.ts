@@ -173,7 +173,7 @@ for (const path of [
   '/admin/members',
   '/admin/topics',
   '/admin/pages',
-  '/admin/sections',
+  '/admin/sidebars',
 ]) {
   test(`закрытая категория не запрашивает настройки: ${path}`, async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('mock_viewer', 'admin'))

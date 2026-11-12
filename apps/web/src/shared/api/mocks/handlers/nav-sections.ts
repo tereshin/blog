@@ -1,3 +1,4 @@
+import { configHandlers } from './nav-config.ts'
 import { http, HttpResponse } from 'msw'
 import {
   createNavSectionItemSchema,
@@ -12,14 +13,11 @@ import {
 import type { AdminNavSection, AdminNavSectionItem, CreateNavSectionItem } from '@blog/contracts'
 import { readMockPages } from './pages.ts'
 import { readMockViewer } from './session.ts'
-
 import { NAV_SECTIONS_FIXTURE } from '../fixtures/nav-sections.ts'
 import { IdempotencyReplay } from './idempotency-replay.ts'
-
 let sections: AdminNavSection[] = structuredClone(NAV_SECTIONS_FIXTURE)
 type MockBody = AdminNavSection | AdminNavSectionItem | { items: AdminNavSection[] } | null
 const replays = new IdempotencyReplay<MockBody>()
-
 function failure(code: string, status: number) {
   return HttpResponse.json({ code, title: code, status }, { status })
 }
@@ -46,8 +44,8 @@ function itemFrom(input: CreateNavSectionItem, id: string, position: number): Ad
   if (!target) return failure('nav_section_page_not_found', 422)
   return { id, title: input.title, icon: input.icon, position, target }
 }
-
 export const navSectionHandlers = [
+  ...configHandlers(() => shown(), value => { sections = value }),
   http.get('*/v1/nav-sections', () =>
     HttpResponse.json(publicNavSectionsSchema.parse({ items: toPublicNavSections(shown()) })),
   ),

@@ -1,96 +1,96 @@
+import { Checkbox, Label } from '@heroui/react'
 import type { AdminWidget } from '@blog/contracts'
 import { useT } from '@/shared/i18n'
+import { Button, FormTextField } from '@/shared/ui'
 import { moveItem } from '../model/default-widget.ts'
-import { WidgetField, WIDGET_INPUT_CLASS } from './WidgetField.tsx'
 type Data = Extract<AdminWidget, { type: 'adminFeedback' }>['data']
 export function FeedbackSettings({
   data,
   onChange,
+  errors = {},
 }: {
   data: Data
   onChange: (data: Data) => void
+  errors?: Record<string, string>
 }) {
   const { t } = useT()
   return (
-    <div className="flex flex-col gap-3">
-      <WidgetField label={t('widgets.recipient')}>
-        <input
-          type="email"
-          className={WIDGET_INPUT_CLASS}
-          value={data.recipient}
-          onChange={(event) => onChange({ ...data, recipient: event.target.value })}
-        />
-      </WidgetField>
+    <div className="grid gap-4">
+      <FormTextField
+        label={t('widgets.recipient')}
+        type="email"
+        value={data.recipient}
+        error={errors.recipient}
+        onChange={(event) => onChange({ ...data, recipient: event.target.value })}
+      />
       {data.fields.map((field, index) => (
-        <fieldset key={field.name} className="rounded-lg border border-separator p-2">
-          <legend className="text-sm">{field.name}</legend>
-          <WidgetField label={t('widgets.label')}>
-            <input
-              className={WIDGET_INPUT_CLASS}
-              value={field.label}
-              onChange={(event) =>
+        <div key={field.name} className="grid gap-3 rounded-xl border border-separator p-3">
+          <FormTextField
+            label={field.name}
+            value={field.label}
+            error={errors[`fields.${index}.label`]}
+            onChange={(event) =>
+              onChange({
+                ...data,
+                fields: data.fields.map((item) =>
+                  item.name === field.name ? { ...item, label: event.target.value } : item,
+                ),
+              })
+            }
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Checkbox
+              isSelected={field.is_visible}
+              onChange={(is_visible) =>
                 onChange({
                   ...data,
                   fields: data.fields.map((item) =>
-                    item.name === field.name ? { ...item, label: event.target.value } : item,
+                    item.name === field.name ? { ...item, is_visible } : item,
                   ),
                 })
               }
-            />
-          </WidgetField>
-          <div className="mt-2 flex flex-wrap gap-3 text-sm">
-            <label>
-              <input
-                type="checkbox"
-                checked={field.is_visible}
-                onChange={(event) =>
-                  onChange({
-                    ...data,
-                    fields: data.fields.map((item) =>
-                      item.name === field.name
-                        ? { ...item, is_visible: event.target.checked }
-                        : item,
-                    ),
-                  })
-                }
-              />{' '}
-              {t('widgets.visible')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={field.is_required}
-                onChange={(event) =>
-                  onChange({
-                    ...data,
-                    fields: data.fields.map((item) =>
-                      item.name === field.name
-                        ? { ...item, is_required: event.target.checked }
-                        : item,
-                    ),
-                  })
-                }
-              />{' '}
-              {t('widgets.required')}
-            </label>
-            <button
-              type="button"
-              disabled={index === 0}
-              aria-label={t('widgets.up')}
-              onClick={() => onChange({ ...data, fields: moveItem(data.fields, index, -1) })}
             >
-              ↑
-            </button>
-            <button
-              type="button"
-              disabled={index === data.fields.length - 1}
-              aria-label={t('widgets.down')}
-              onClick={() => onChange({ ...data, fields: moveItem(data.fields, index, 1) })}
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+              <Label>{t('widgets.visible')}</Label>
+            </Checkbox>
+            <Checkbox
+              isSelected={field.is_required}
+              onChange={(is_required) =>
+                onChange({
+                  ...data,
+                  fields: data.fields.map((item) =>
+                    item.name === field.name ? { ...item, is_required } : item,
+                  ),
+                })
+              }
             >
-              ↓
-            </button>
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+              <Label>{t('widgets.required')}</Label>
+            </Checkbox>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              isDisabled={index === 0}
+              onPress={() => onChange({ ...data, fields: moveItem(data.fields, index, -1) })}
+            >
+              {t('widgets.up')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              isDisabled={index === data.fields.length - 1}
+              onPress={() => onChange({ ...data, fields: moveItem(data.fields, index, 1) })}
+            >
+              {t('widgets.down')}
+            </Button>
           </div>
-        </fieldset>
+        </div>
       ))}
     </div>
   )

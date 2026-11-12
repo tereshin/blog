@@ -1,3 +1,4 @@
+import { navSectionRoutes } from '../../src/modules/nav-section/index.ts'
 import { FeedbackRepository, FeedbackService, WidgetRepository, WidgetService, feedbackRoutes, widgetRoutes } from '../../src/modules/admin-widget/index.ts'
 import { blocksDocumentSchema, DEFAULT_FEEDBACK_FIELDS } from '@blog/contracts'
 import Fastify from 'fastify'
@@ -101,6 +102,7 @@ describe('simple pages real PostgreSQL', () => {
     const widgets = new WidgetService(new WidgetRepository(database.db))
     await app.register(widgetRoutes, { service: widgets })
     await app.register(feedbackRoutes, { service: new FeedbackService(new FeedbackRepository(database.db), widgets, async () => { throw new Error('Unexpected upload') }) })
+    await app.register(navSectionRoutes, { controller: modules.nav })
     await app.register(pageRoutes, { controller: modules.page })
     await app.register(seoRoutes, { controller: modules.seo })
   }, 120_000)
@@ -387,6 +389,39 @@ describe('simple pages real PostgreSQL', () => {
     expect((await save('a')).statusCode).toBe(200)
     expect((await save('a')).statusCode).toBe(409)
     expect((await app.inject('/v1/sidebar')).json().sections).toEqual([])
+  })
+
+  it('saves left sidebar drafts atomically, replays requests, and detects legacy edits', async () => {
+    const read = () => app.inject({ url: '/v1/admin/nav-sections/config', headers: { 'x-test-viewer': 'a' } })
+    const initial = (await read()).json()
+    const section_id = crypto.randomUUID()
+    const key = crypto.randomUUID()
+    const config = { expected_version: initial.version, sections: [{ id: section_id, title: 'Links', items: [{
+      id: crypto.randomUUID(), title: 'Example', icon: null, target: { kind: 'url', url: 'https://example.test/' },
+    }] }] }
+    const save = (payload: unknown, who = 'a', idempotency_key = crypto.randomUUID()) => app.inject({
+      method: 'PUT', url: '/v1/admin/nav-sections/config',
+      headers: { 'x-test-viewer': who, 'x-idempotency-key': idempotency_key }, payload: payload as object,
+    })
+    expect((await save(config, 'admin')).statusCode).toBe(403)
+    const [first, replay] = await Promise.all([save(config, 'a', key), save(config, 'a', key)])
+    expect(first.statusCode).toBe(200)
+    expect(replay.json()).toEqual(first.json())
+    expect(first.json().version).toBe(initial.version + 1)
+    expect((await save(config)).statusCode).toBe(409)
+    const legacy = await app.inject({ method: 'PATCH', url: '/v1/admin/nav-sections/' + section_id,
+      headers: { 'x-test-viewer': 'a', 'x-idempotency-key': crypto.randomUUID() }, payload: { title: 'Updated elsewhere' } })
+    expect(legacy.statusCode).toBe(200)
+    const latest = (await read()).json()
+    expect(latest.version).toBe(initial.version + 2)
+    expect((await save({ expected_version: first.json().version, sections: [] })).statusCode).toBe(409)
+    const invalid = { expected_version: latest.version, sections: [{ id: section_id, title: 'Invalid', items: [{
+      id: crypto.randomUUID(), title: 'Missing page', icon: null, target: { kind: 'page', page_id: crypto.randomUUID() },
+    }] }] }
+    expect((await save(invalid)).statusCode).toBe(422)
+    expect((await read()).json()).toEqual(latest)
+    expect((await save({ expected_version: latest.version, sections: [] })).statusCode).toBe(200)
+    expect((await read()).json().sections).toEqual([])
   })
 
 })

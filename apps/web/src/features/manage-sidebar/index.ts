@@ -1,1 +1,1 @@
-export { SidebarForm } from './ui/SidebarForm.tsx'
+export { SidebarsEditor } from './ui/SidebarsEditor.tsx'

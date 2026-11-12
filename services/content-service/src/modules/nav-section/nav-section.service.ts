@@ -67,6 +67,18 @@ export class NavSectionService {
     }
   }
 
+  config(viewer: ServiceContext) {
+    requireNavAdmin(viewer)
+    return this.repository.config()
+  }
+
+  async saveConfig(viewer: ServiceContext, input: import('@blog/contracts').LeftSidebar, key: string) {
+    const result = await this.repository.saveConfig(
+      this.operation(viewer, key, 'PUT', '/v1/admin/nav-sections/config', input), input,
+    )
+    return result.body
+  }
+
   async listPublic() {
     const items = toPublicNavSections(await this.repository.list())
     return publicNavSectionsSchema.parse({ items })

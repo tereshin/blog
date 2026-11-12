@@ -42,7 +42,6 @@ const tsvector = customType<{ data: string }>({
     return 'tsvector'
   },
 })
-
 export const user_role = pgEnum('user_role', ['member', 'admin', 'superadmin'])
 export const slug_owner_type = pgEnum('slug_owner_type', ['profile', 'topic', 'article'])
 export const topic_status = pgEnum('topic_status', ['active', 'archived'])
@@ -62,7 +61,6 @@ export const users_copy = pgTable('users_copy', {
   is_deleted: boolean('is_deleted').notNull().default(false),
   created_at: timestamp('created_at', { withTimezone: true }).notNull(),
 })
-
 export const profiles = pgTable('profiles', {
   user_id: uuid('user_id').primaryKey(),
   display_name: varchar('display_name', { length: 50 }).notNull(),
@@ -80,7 +78,6 @@ export const slugs = pgTable('slugs', {
   owner_type: slug_owner_type('owner_type').notNull(),
   owner_id: uuid('owner_id').notNull(),
 })
-
 export const topics = pgTable('topics', {
   id: uuid('id').primaryKey(),
   title: text('title').notNull(),
@@ -91,7 +88,6 @@ export const topics = pgTable('topics', {
   status: topic_status('status').notNull().default('active'),
   position: integer('position').notNull().default(0),
 })
-
 export const articles = pgTable(
   'articles',
   {
@@ -128,7 +124,6 @@ export const articles = pgTable(
     index('articles_search_idx').using('gin', table.search_vector),
   ],
 )
-
 export const follows = pgTable(
   'follows',
   {
@@ -139,7 +134,6 @@ export const follows = pgTable(
   },
   (table) => [primaryKey({ columns: [table.follower_id, table.target_type, table.target_id] })],
 )
-
 export const promotions = pgTable('promotions', {
   article_id: uuid('article_id')
     .primaryKey()
@@ -147,7 +141,6 @@ export const promotions = pgTable('promotions', {
   confirmed_at: timestamp('confirmed_at', { withTimezone: true }).notNull(),
   until: timestamp('until', { withTimezone: true }).notNull(),
 })
-
 export const settings = pgTable('settings', {
   id: smallint('id').primaryKey().default(1),
   meta_pixel_id: text('meta_pixel_id'),
@@ -178,7 +171,6 @@ export const settings = pgTable('settings', {
   shell: jsonb('shell').$type<ShellVisibility>().notNull().default(DEFAULT_SHELL_VISIBILITY),
   theme: jsonb('theme').$type<ThemeSettings>().notNull().default(DEFAULT_THEME_SETTINGS),
 })
-
 export const reports = pgTable(
   'reports',
   {
@@ -192,21 +184,18 @@ export const reports = pgTable(
   },
   (table) => [uniqueIndex('reports_article_reporter_idx').on(table.article_id, table.reporter_id)],
 )
-
 export const seed_runs = pgTable('seed_runs', {
   profile: text('profile').primaryKey(),
   anchor_at: timestamp('anchor_at', { withTimezone: true }).notNull(),
   started_at: timestamp('started_at', { withTimezone: true }).notNull(),
   finished_at: timestamp('finished_at', { withTimezone: true }),
 })
-
 export const social_covers = pgTable('social_covers', {
   target_id: text('target_id').primaryKey(),
   revision: text('revision').notNull(),
   images: jsonb('images').$type<SocialImages>(),
   requested_at: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
 })
-
 export const page_status = pgEnum('page_status', ['draft', 'published', 'deleted'])
 export const pages = pgTable(
   'pages',
@@ -244,7 +233,6 @@ export const page_mutations = pgTable(
   },
   (table) => [primaryKey({ columns: [table.actor_id, table.idempotency_key] })],
 )
-
 export const nav_sections = pgTable(
   'nav_sections',
   {
@@ -256,7 +244,6 @@ export const nav_sections = pgTable(
   },
   (table) => [index('nav_sections_position_idx').on(table.position)],
 )
-
 export const nav_section_items = pgTable(
   'nav_section_items',
   {
@@ -277,7 +264,6 @@ export const nav_section_items = pgTable(
     index('nav_section_items_page_idx').on(table.page_id),
   ],
 )
-
 export const nav_section_mutations = pgTable(
   'nav_section_mutations',
   {
@@ -290,11 +276,10 @@ export const nav_section_mutations = pgTable(
   },
   (table) => [primaryKey({ columns: [table.actor_id, table.idempotency_key] })],
 )
-
 export const profile_badge_awards = pgTable('profile_badge_awards', {
   user_id: uuid('user_id').notNull().references(() => profiles.user_id, { onDelete: 'cascade' }),
   badge_id: text('badge_id').notNull(),
   awarded_at: timestamp('awarded_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [primaryKey({ columns: [table.user_id, table.badge_id] })])
-
 export * from './widget-schema.ts'
+export { nav_revision } from './nav-revision.ts'

@@ -4,7 +4,7 @@ import type { Root } from 'react-dom/client'
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import type { BlockToolConstructorOptions } from '@editorjs/editorjs'
 import { adminWidgetSchema, type AdminWidget } from '@blog/contracts'
-import { WidgetSettings, defaultWidget } from '@/entities/admin-widget'
+import { WidgetSettings, defaultWidget, widgetErrors } from '@/entities/admin-widget'
 import { AdminWidgetPreview } from '@/features/render-admin-widget'
 import { I18nProvider, translate, type Locale } from '@/shared/i18n'
 type Config = { locale: Locale; query_client: QueryClient }
@@ -19,6 +19,7 @@ export function adminWidgetTools(config: Config) {
       static get isReadOnlySupported() {
         return true
       }
+      private has_validation_error = false
       private widget: AdminWidget
       private root: Root | undefined
       private readonly read_only: boolean
@@ -49,6 +50,11 @@ export function adminWidgetTools(config: Config) {
                     <summary>{translate(config.locale, 'widgets.settings')}</summary>
                     <WidgetSettings
                       widget={this.widget}
+                      errors={
+                        this.has_validation_error
+                          ? widgetErrors(this.widget, translate(config.locale, 'widgets.invalid'))
+                          : {}
+                      }
                       onChange={(widget) => {
                         this.widget = widget
                         this.block.dispatchChange()
@@ -69,6 +75,10 @@ export function adminWidgetTools(config: Config) {
         )
       }
       save() {
+        if (!this.has_validation_error && !adminWidgetSchema.safeParse(this.widget).success) {
+          this.has_validation_error = true
+          this.paint()
+        }
         return { ...this.widget.data, widget_id: this.widget.id }
       }
       removed() {

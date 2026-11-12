@@ -899,5 +899,16 @@
   "widgets.url": "URL",
   "widgets.choose_page": "Choose a page",
   "widgets.more_pages": "Load more pages",
-  "widgets.website": "Website"
+  "widgets.website": "Website",
+  "sidebars.title": "Sidebars",
+  "sidebars.hint": "Configure left navigation and right widgets",
+  "sidebars.left": "Left",
+  "sidebars.right": "Right",
+  "sidebars.section": "Section",
+  "sidebars.untitled": "Untitled section",
+  "sidebars.actions": "Actions for {title}",
+  "sidebars.add_item": "Add item",
+  "sidebars.replace_draft": "Replace the local draft with the saved version?",
+  "sidebars.unsaved": "You have unsaved sidebar changes",
+  "sidebars.leave": "Leave without saving"
 }

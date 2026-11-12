@@ -12,6 +12,7 @@ type ComboBoxProps = {
   value: string
   options: readonly ComboBoxOption[]
   onChange: (value: string) => void
+  onSearch?: (value: string) => void
   hint?: string
   error?: string
   is_disabled?: boolean
@@ -23,6 +24,7 @@ export function ComboBox({
   value,
   options,
   onChange,
+  onSearch,
   hint,
   error,
   is_disabled,
@@ -30,11 +32,11 @@ export function ComboBox({
   const [search, setSearch] = useState('')
   return (
     <HeroComboBox
-      defaultItems={options}
+      items={onSearch ? options : options.filter(option => option.label.toLocaleLowerCase().includes(search.toLocaleLowerCase()))}
       selectedKey={value}
       isDisabled={is_disabled}
       isInvalid={Boolean(error)}
-      onInputChange={setSearch}
+      onInputChange={value => { setSearch(value); onSearch?.(value) }}
       menuTrigger="input"
       className="w-full min-w-0 max-w-lg"
       onSelectionChange={(key) => {

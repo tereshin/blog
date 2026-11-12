@@ -7,6 +7,9 @@ reader, member, or administrator can do, or what stopped going wrong.
 
 ### Added
 
+- Administrators can edit both sidebars in one place, reorder sections and items,
+  and save or discard each sidebar draft.
+
 - Administrators can configure right sidebar sections and add comments, feedback forms, and collapsible links to sections or pages. Readers can send feedback with attachments.
 
 - Readers can start sign-in with only their email. The dialog moves between
@@ -28,6 +31,8 @@ reader, member, or administrator can do, or what stopped going wrong.
 - Administrators can adjust the header lightness from black to white.
 
 ### Fixed
+
+- Mobile navigation highlights use a stable icon color while scrolling.
 
 - Changing the header tint now visibly updates the header background.
 

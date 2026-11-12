@@ -261,30 +261,23 @@ export type {
   UpdateUserPublishing,
   UpdateUserRole,
 } from './admin.ts'
-
 export * from './comment-interactions.ts'
 export { commentMediaSchema, commentMentionSchema, commentSortSchema } from './comments.ts'
 export type { CommentSort } from './comments.ts'
-
 export * from './seo.ts'
-
 export { faviconSettingsSchema, faviconVariantSchema, SITE_ASSETS } from './site-assets.ts'
 export type { FaviconSettings, FaviconVariant } from './site-assets.ts'
-
 export { moderationFiltersSchema, moderationArticleQuerySchema } from './moderation-filters.ts'
 export type { ModerationFilters, ModerationArticleQuery } from './moderation-filters.ts'
 export { moderationReportPageSchema } from './admin.ts'
-
 export * from './admin-widgets.ts'
 export { pageBlocksDocumentSchema } from './blocks.ts'
 export type { PageBlocksDocument, PageEditorBlock } from './blocks.ts'
 export * from './pages.ts'
 export * from './nav-sections.ts'
-
 export { safeEmbedUrl } from './embed-url.ts'
 export { welcomeContentSchema } from './settings.ts'
 export type { WelcomeContent } from './settings.ts'
-
 export {
   badgeIdSchema,
   badgeMetricSchema,
@@ -292,8 +285,7 @@ export {
   badgeDefinitionsSchema,
 } from './badges.ts'
 export type { BadgeDefinition, BadgeMetric } from './badges.ts'
-
 export { adminDirectoryQuerySchema, adminDirectorySchema } from './admin-directory.ts'
 export type { AdminDirectoryQuery } from './admin-directory.ts'
-
 export * from './feedback-delivery.ts'
+export * from './left-sidebar.ts'

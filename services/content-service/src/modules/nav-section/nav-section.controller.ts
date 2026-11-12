@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import {
   createNavSectionItemSchema,
+  updateLeftSidebarSchema,
   createNavSectionSchema,
   navSectionItemOrderSchema,
   navSectionOrderSchema,
@@ -12,6 +13,16 @@ import type { NavSectionService } from './nav-section.service.ts'
 
 export class NavSectionController {
   constructor(private readonly service: NavSectionService) {}
+
+  async config(request: FastifyRequest, reply: FastifyReply) {
+    return reply.header('Cache-Control', 'no-store').send(await this.service.config(request.viewer))
+  }
+  async saveConfig(request: FastifyRequest, reply: FastifyReply) {
+    const input = parseNavInput(updateLeftSidebarSchema, request.body)
+    return reply.send(await this.service.saveConfig(request.viewer, {
+      version: input.expected_version, sections: input.sections,
+    }, request.idempotency_key ?? ''))
+  }
 
   async listPublic(_request: FastifyRequest, reply: FastifyReply) {
     return reply.header('Cache-Control', 'no-store').send(await this.service.listPublic())

@@ -5,22 +5,36 @@ import { ButtonsSettings } from './ButtonsSettings.tsx'
 export function WidgetSettings({
   widget,
   onChange,
+  errors = {},
 }: {
   widget: AdminWidget
   onChange: (widget: AdminWidget) => void
+  errors?: Record<string, string>
 }) {
   switch (widget.type) {
     case 'adminComments':
       return (
-        <CommentsSettings data={widget.data} onChange={(data) => onChange({ ...widget, data })} />
+        <CommentsSettings
+          data={widget.data}
+          errors={errors}
+          onChange={(data) => onChange({ ...widget, data })}
+        />
       )
     case 'adminFeedback':
       return (
-        <FeedbackSettings data={widget.data} onChange={(data) => onChange({ ...widget, data })} />
+        <FeedbackSettings
+          data={widget.data}
+          errors={errors}
+          onChange={(data) => onChange({ ...widget, data })}
+        />
       )
     case 'adminButtons':
       return (
-        <ButtonsSettings data={widget.data} onChange={(data) => onChange({ ...widget, data })} />
+        <ButtonsSettings
+          data={widget.data}
+          errors={errors}
+          onChange={(data) => onChange({ ...widget, data })}
+        />
       )
   }
 }

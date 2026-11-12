@@ -10,6 +10,8 @@ export const navSectionRoutes: FastifyPluginAsync<NavSectionRoutesOptions> = asy
     requireNavAdmin(request.viewer)
   }
   app.get('/v1/nav-sections', (request, reply) => controller.listPublic(request, reply))
+  app.get('/v1/admin/nav-sections/config', { preValidation: admin }, (request, reply) => controller.config(request, reply))
+  app.put('/v1/admin/nav-sections/config', { preValidation: admin }, (request, reply) => controller.saveConfig(request, reply))
   app.get('/v1/admin/nav-sections', { preValidation: admin }, (request, reply) => controller.listAdmin(request, reply))
   app.post('/v1/admin/nav-sections', { preValidation: admin }, (request, reply) => controller.createSection(request, reply))
   app.patch('/v1/admin/nav-sections/order', { preValidation: admin }, (request, reply) => controller.reorderSections(request, reply))

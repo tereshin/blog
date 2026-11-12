@@ -67,3 +67,9 @@ export type { EditorPanelSlots } from './document-editor.ts'
 
 export { ComboBox } from './ComboBox.tsx'
 export type { ComboBoxOption } from './ComboBox.tsx'
+
+export { SvgIconField } from './SvgIconField.tsx'
+export { SortableList, SortableRow } from './SortableList.tsx'
+export { EditorActions } from './EditorActions.tsx'
+export { EditorSection } from './EditorSection.tsx'
+export { EditorSaveBar } from './EditorSaveBar.tsx'

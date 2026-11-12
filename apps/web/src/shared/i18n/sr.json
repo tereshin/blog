@@ -905,5 +905,16 @@
   "widgets.url": "URL",
   "widgets.choose_page": "Izaberite stranicu",
   "widgets.more_pages": "Učitaj još stranica",
-  "widgets.website": "Veb-sajt"
+  "widgets.website": "Veb-sajt",
+  "sidebars.title": "Bočne trake",
+  "sidebars.hint": "Podesite levu navigaciju i desne vidžete",
+  "sidebars.left": "Leva",
+  "sidebars.right": "Desna",
+  "sidebars.section": "Sekcija",
+  "sidebars.untitled": "Sekcija bez naslova",
+  "sidebars.actions": "Radnje za {title}",
+  "sidebars.add_item": "Dodaj stavku",
+  "sidebars.replace_draft": "Zameniti nacrt sačuvanom verzijom?",
+  "sidebars.unsaved": "Postoje nesačuvane promene",
+  "sidebars.leave": "Napusti bez čuvanja"
 }

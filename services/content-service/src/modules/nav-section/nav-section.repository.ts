@@ -1,11 +1,13 @@
+import { readNavConfig, replaceNavConfig } from './nav-config.repository.ts'
+import { nav_revision } from '../../infra/db/nav-revision.ts'
 import { randomUUID } from 'node:crypto'
-import { and, asc, count, eq, max, sql } from 'drizzle-orm'
+import { and, count, eq, max, sql } from 'drizzle-orm'
 import type { Database } from '@blog/broker'
 import { MAX_NAV_SECTION_ITEMS, MAX_NAV_SECTIONS } from '@blog/contracts'
-import type { AdminNavSection, AdminNavSectionItem, CreateNavSectionItem } from '@blog/contracts'
+import type { AdminNavSection, CreateNavSectionItem } from '@blog/contracts'
 import { nav_section_items, nav_section_mutations, nav_sections, pages } from '../../infra/db/schema.ts'
 import { navError } from './nav-section.errors.ts'
-import { toAdminItem } from './nav-section.mapper.ts'
+import { loadNavSections } from './nav-section.read.ts'
 import type { MutationOperation } from './nav-section.mapper.ts'
 
 type MutationResult<T> = { status: number; body: T | null }
@@ -18,39 +20,6 @@ function targetFields(input: CreateNavSectionItem) {
 
 export class NavSectionRepository {
   constructor(private readonly db: Database) {}
-
-  private async load(database: Database): Promise<AdminNavSection[]> {
-    const sections = await database
-      .select({
-        id: nav_sections.id,
-        title: nav_sections.title,
-        position: nav_sections.position,
-      })
-      .from(nav_sections)
-      .orderBy(asc(nav_sections.position), asc(nav_sections.id))
-    const rows = await database
-      .select({
-        id: nav_section_items.id,
-        section_id: nav_section_items.section_id,
-        title: nav_section_items.title,
-        icon: nav_section_items.icon,
-        page_id: nav_section_items.page_id,
-        url: nav_section_items.url,
-        position: nav_section_items.position,
-        page_slug: pages.slug,
-        page_status: pages.status,
-      })
-      .from(nav_section_items)
-      .leftJoin(pages, eq(nav_section_items.page_id, pages.id))
-      .orderBy(asc(nav_section_items.position), asc(nav_section_items.id))
-    const items_by_section = new Map<string, AdminNavSectionItem[]>()
-    for (const row of rows) {
-      const list = items_by_section.get(row.section_id) ?? []
-      list.push(toAdminItem(row))
-      items_by_section.set(row.section_id, list)
-    }
-    return sections.map((section) => ({ ...section, items: items_by_section.get(section.id) ?? [] }))
-  }
 
   private async mutate<T>(
     operation: MutationOperation,
@@ -78,6 +47,7 @@ export class NavSectionRepository {
       }
       await database.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended('nav-sections', 0))`)
       const result = await run(database)
+      await database.update(nav_revision).set({ version: sql`${nav_revision.version} + 1` }).where(eq(nav_revision.id, 1))
       await database.insert(nav_section_mutations).values({
         actor_id: operation.actor_id,
         idempotency_key: operation.key,
@@ -108,13 +78,26 @@ export class NavSectionRepository {
   }
 
   private async readSection(database: Database, id: string): Promise<AdminNavSection> {
-    const section = (await this.load(database)).find((item) => item.id === id)
+    const section = (await loadNavSections(database)).find((item) => item.id === id)
     if (!section) throw navError('nav_section_not_found', 404)
     return section
   }
 
+  config() {
+    return this.db.transaction(async tx => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended('nav-sections', 0))`)
+      return readNavConfig(tx, database => loadNavSections(database))
+    })
+  }
+
+  saveConfig(operation: MutationOperation, config: import('@blog/contracts').LeftSidebar) {
+    return this.mutate(operation, async database => ({
+      status: 200, body: await replaceNavConfig(database, config),
+    }))
+  }
+
   list() {
-    return this.load(this.db)
+    return loadNavSections(this.db)
   }
 
   createSection(operation: MutationOperation, title: string) {
@@ -162,7 +145,7 @@ export class NavSectionRepository {
         for (const [index, id] of section_ids.entries()) {
           await database.update(nav_sections).set({ position: index, updated_at: now }).where(eq(nav_sections.id, id))
         }
-        return { status: 200, body: { items: await this.load(database) } }
+        return { status: 200, body: { items: await loadNavSections(database) } }
       })
     }
 

@@ -1,10 +1,9 @@
 import { useDeferredValue, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { searchResponseSchema } from '@blog/contracts'
+import { searchResponseSchema, articleCardsSchema } from '@blog/contracts'
 import { http } from '@/shared/api'
 import { useT } from '@/shared/i18n'
-import { WidgetField, WIDGET_INPUT_CLASS } from './WidgetField.tsx'
-
+import { ComboBox } from '@/shared/ui'
 export function ArticlePicker({
   value,
   onChange,
@@ -20,34 +19,26 @@ export function ArticlePicker({
     queryFn: ({ signal }) => http.get('/v1/search', searchResponseSchema, { query: { q }, signal }),
     enabled: q.length >= 2,
   })
-  const articles = query.data?.articles ?? []
+  const selected = useQuery({
+    queryKey: ['widget-selected-article', value],
+    queryFn: ({ signal }) =>
+      http.get('/v1/articles', articleCardsSchema, { query: { ids: value }, signal }),
+    enabled: Boolean(value),
+  })
+  const options = [
+    { value: 'all', label: t('widgets.all_articles') },
+    ...(query.data?.articles ?? []).map((article) => ({ value: article.id, label: article.title })),
+  ]
+  if (value && !options.some((option) => option.value === value))
+    options.push({ value, label: selected.data?.items[0]?.title ?? value })
   return (
-    <div className="grid gap-2">
-      <WidgetField label={t('widgets.search_articles')}>
-        <input
-          className={WIDGET_INPUT_CLASS}
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-      </WidgetField>
-      <WidgetField label={t('widgets.article')}>
-        <select
-          className={WIDGET_INPUT_CLASS}
-          value={value ?? ''}
-          onChange={(event) => onChange(event.target.value || null)}
-        >
-          <option value="">{t('widgets.all_articles')}</option>
-          {value && !articles.some((article) => article.id === value) ? (
-            <option value={value}>{value}</option>
-          ) : null}
-          {articles.map((article) => (
-            <option key={article.id} value={article.id}>
-              {article.title}
-            </option>
-          ))}
-        </select>
-      </WidgetField>
-    </div>
+    <ComboBox
+      label={t('widgets.article')}
+      value={value ?? 'all'}
+      options={options}
+      onSearch={setSearch}
+      onChange={(value) => onChange(value === 'all' ? null : value)}
+      error={query.isError ? t('error.unknown') : undefined}
+    />
   )
 }

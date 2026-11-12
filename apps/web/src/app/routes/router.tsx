@@ -1,6 +1,6 @@
 import { AdminSidebarPage } from '@/pages/admin-sidebar'
 import { AdminBadgesPage } from '@/pages/admin-badges'
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import type { RouteObject } from 'react-router'
 import { ADMIN_ROUTES } from '@/entities/admin'
 import type { AdminRouteId } from '@/entities/admin'
@@ -20,7 +20,6 @@ import { AdminHiddenPage } from '@/pages/admin-hidden'
 import { AdminCommentReportsPage } from '@/pages/admin-comment-reports'
 import { AdminFindArticlePage } from '@/pages/admin-find-article'
 import { AdminPagesPage } from '@/pages/admin-pages'
-import { AdminNavSectionsPage } from '@/pages/admin-nav-sections'
 import { AdminPageNewPage } from '@/pages/admin-page-new'
 import { AdminPageEditPage } from '@/pages/admin-page-edit'
 import { SimplePage } from '@/pages/simple-page'
@@ -58,9 +57,8 @@ function child(
 }
 
 const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
-  sidebar: <AdminSidebarPage />,
+  sidebars: <AdminSidebarPage />,
   pages: <AdminPagesPage />,
-  sections: <AdminNavSectionsPage />,
   home: <AdminHomePage />,
   settings: <AdminSettingsPage />,
   moderation: <AdminModerationPage />,
@@ -108,6 +106,8 @@ export const shellRoute: RouteObject = {
     child('bookmarks', <BookmarksPage />, 'feed'),
     child('search', <DiscoveryRedirect to="/discovery" />, 'feed'),
     child('pages/:slug', <SimplePage />, 'article'),
+    child('admin/sections', <Navigate to="/admin/sidebars?side=left" replace />, 'feed'),
+    child('admin/sidebar', <Navigate to="/admin/sidebars?side=right" replace />, 'feed'),
     child('admin/pages/new', <AdminPageNewPage />, 'article'),
     child('admin/pages/:id', <AdminPageEditPage />, 'article'),
     child('auth/action', <AuthActionPage />, 'article'),

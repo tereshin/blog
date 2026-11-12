@@ -21,6 +21,8 @@ export function MobileNavigation({
   const { t } = useT()
   return (
     <nav aria-label={t('shell.mobile_navigation')} className="mobile-navigation flex items-center">
+      <span aria-hidden="true" className="mobile-navigation-shadow" />
+      <span aria-hidden="true" className="mobile-navigation-glass" />
       <HeaderTab
         to="/"
         label={t('shell.nav.home')}
