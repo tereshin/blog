@@ -8,6 +8,8 @@ overrides:
   '@types/pg': 8.23.1
   '@firebase/app': 0.16.2
   '@firebase/app-compat': 0.5.18
+  '@firebase/database': 1.1.5
+  '@firebase/database-compat': 2.1.7
   '@firebase/firestore>@grpc/grpc-js': ^1.13.6
   handlebars: ^4.7.10
   esbuild@>=0.27.3 <0.28.1: 0.28.2
