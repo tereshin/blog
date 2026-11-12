@@ -1,3 +1,4 @@
+import { FeedbackFilesRepository, feedbackFilesRoutes } from '../../src/modules/feedback-files/index.ts'
 import sharp from 'sharp'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
@@ -68,6 +69,7 @@ describe('media: загрузка файла', () => {
       request.viewer =
         viewers[String(request.headers['x-test-viewer'])] ?? (viewers['guest'] as ServiceContext)
     })
+    await app.register(feedbackFilesRoutes, { service: new FeedbackFilesRepository(database.db) })
     await app.register(mediaRoutes, {
       controller: new MediaController(new MediaService(new MediaRepository(database.db), store, 'http://files.test/media')),
     })
@@ -77,6 +79,29 @@ describe('media: загрузка файла', () => {
     await app.close()
     await database.close()
     await postgres.stop()
+  })
+
+  it('keeps guest feedback files private and bound to one submission', async () => {
+    const token = crypto.randomUUID()
+    const bytes = Buffer.from('Private note')
+    const public_objects = puts.length
+    const uploaded = await app.inject({
+      method: 'POST', url: '/v1/feedback-uploads',
+      headers: { 'content-type': 'text/plain', 'x-upload-token': token, 'x-file-name': 'note.txt', 'x-idempotency-key': 'guest-note' },
+      payload: bytes,
+    })
+    expect(uploaded.statusCode).toBe(201)
+    expect(puts).toHaveLength(public_objects)
+    expect(uploaded.json()).toMatchObject({ name: 'note.txt', size: bytes.length, mime: 'text/plain' })
+    expect(uploaded.json()).not.toHaveProperty('url')
+    const capability = { token, submission_id: crypto.randomUUID(), attachment_ids: [uploaded.json().id] }
+    const action = (name: string, payload = capability) => app.inject({ method: 'POST', url: '/internal/feedback-files/' + name, payload })
+    expect((await action('claim', { ...capability, token: crypto.randomUUID() })).statusCode).toBe(422)
+    expect((await action('claim')).statusCode).toBe(204)
+    expect((await action('claim', { ...capability, submission_id: crypto.randomUUID() })).statusCode).toBe(422)
+    expect((await action('read')).json()[0].content).toBe(bytes.toString('base64'))
+    expect((await action('complete')).statusCode).toBe(204)
+    expect((await action('read')).json()).toEqual([])
   })
 
   it('текст вместо изображения — 415', async () => {

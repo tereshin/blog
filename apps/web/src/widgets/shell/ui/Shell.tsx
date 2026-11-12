@@ -51,7 +51,7 @@ export function Shell({
         <main className="min-w-0 pt-4 pb-[var(--tab-bar-space)]">{center}</main>
         {show_rail ? (
           <aside
-            aria-label={t('shell.popular_comments')}
+            aria-label={t('widgets.sidebar')}
             className="sticky pt-4 top-14 hidden w-[320px] max-h-[calc(100dvh-56px)] self-start overflow-y-auto min-[1280px]:block"
           >
             {right}

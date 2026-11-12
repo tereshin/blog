@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, exists, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { CommentSort, ReactionKind, ServiceContext } from '@blog/contracts'
+import type { CommentsWidget, CommentSort, ReactionKind, ServiceContext } from '@blog/contracts'
 import { readableArticleWhere } from '../../infra/db/readable-article-where.ts'
 import {
   articles_copy,
@@ -24,7 +24,7 @@ type ArticleCommentRow = CommentRow & { article_id: string }
 export class CommentRepository implements CommentRepositoryPort {
   constructor(private readonly db: NodePgDatabase) {}
 
-  async findPopular(viewer: ServiceContext, limit: number): Promise<PopularCommentRow[]> {
+  async findPopular(viewer: ServiceContext, limit: number, query?: CommentsWidget): Promise<PopularCommentRow[]> {
     return this.db
       .select({
         id: comments.id,
@@ -44,7 +44,9 @@ export class CommentRepository implements CommentRepositoryPort {
           eq(comments.status, 'visible'),
           ne(comments.body, ''),
           readableArticleWhere(viewer),
-          exists(
+          query?.article_id ? eq(comments.article_id, query.article_id) : undefined,
+          query && query.period !== 'all' ? sql`${comments.created_at} >= ${new Date(Date.now() - ({ day: 1, week: 7, month: 30 }[query.period]) * 86400000)}` : undefined,
+          query ? undefined : exists(
             this.db
               .select({ value: sql`1` })
               .from(reactions)
@@ -54,7 +56,7 @@ export class CommentRepository implements CommentRepositoryPort {
           ),
         ),
       )
-      .orderBy(desc(comments.created_at), desc(comments.id))
+      .orderBy(query ? (query.direction === 'asc' ? asc : desc)(query.sort === 'date' ? comments.created_at : sql`(select count(*) from ${reactions} where ${reactions.target_type} = 'comment' and ${reactions.target_id} = ${comments.id})`) : desc(comments.created_at), query?.direction === 'asc' ? asc(comments.id) : desc(comments.id))
       .limit(limit)
   }
 

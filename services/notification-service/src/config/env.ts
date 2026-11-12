@@ -6,6 +6,13 @@ const EnvSchema = baseEnvSchema.extend({
   DATABASE_URL: z.string().min(1),
   NATS_URL: z.string().min(1),
   SERVICE_JWT_PUBLIC_KEY: z.string().min(1),
+  CONTENT_URL: z.url().default('http://content:3002'),
+  MEDIA_URL: z.url().default('http://media:3006'),
+  SMTP_HOST: z.string().default('mailpit'),
+  SMTP_PORT: z.coerce.number().int().positive().default(1025),
+  SMTP_SECURE: z.preprocess(value => value === 'true' || value === true, z.boolean()),
+  SMTP_USER: z.string().optional(), SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.email().default('noreply@blog.test'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
 })

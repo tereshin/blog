@@ -1,4 +1,6 @@
 import Fastify from 'fastify'
+import { AppError } from '@blog/errors'
+import { WidgetRepository, WidgetService, widgetRoutes, FeedbackRepository, FeedbackService, feedbackRoutes } from './modules/admin-widget/index.ts'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import { createServiceClient, errorHandler, health, idempotency, requestContext, serviceContext } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
@@ -69,6 +71,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     lookupFile: (url) => lookupMediaFile(media, url),
   })
 
+  const widgets = new WidgetService(new WidgetRepository(deps.database.db))
+  await app.register(widgetRoutes, { service: widgets })
+  await app.register(feedbackRoutes, { service: new FeedbackService(new FeedbackRepository(deps.database.db), widgets, async input => {
+    const result = await media.request({ method: 'POST', path: '/internal/feedback-files/claim', body: input, idempotency_key: input.submission_id })
+    if (result.status !== 204) throw new AppError({ code: 'invalid_attachments', http_status: 422, message: 'Invalid attachments' })
+  }) })
   await app.register(accessRoutes, { controller: modules.access })
   await app.register(topicRoutes, { controller: modules.topic })
   await app.register(settingsRoutes, { controller: modules.settings })

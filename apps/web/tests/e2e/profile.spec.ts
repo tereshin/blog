@@ -42,7 +42,7 @@ test.describe('Профиль и рейтинг', () => {
       await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
     if (hasThreeColumns(page))
       await expect(
-        page.getByRole('complementary', { name: 'Популярные комментарии' }),
+        page.getByRole('complementary', { name: 'Правый сайдбар' }),
       ).toBeVisible()
   })
 
@@ -58,7 +58,7 @@ test.describe('Профиль и рейтинг', () => {
       await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
     if (hasThreeColumns(page))
       await expect(
-        page.getByRole('complementary', { name: 'Популярные комментарии' }),
+        page.getByRole('complementary', { name: 'Правый сайдбар' }),
       ).toBeVisible()
   })
 

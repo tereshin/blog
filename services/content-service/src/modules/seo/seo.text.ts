@@ -1,5 +1,5 @@
 import { decodeHTML } from 'entities'
-import { blocksDocumentSchema } from '@blog/contracts'
+import { pageBlocksDocumentSchema } from '@blog/contracts'
 import type { ListItem } from '@blog/contracts'
 
 export function plainText(value: string): string {
@@ -16,7 +16,7 @@ function listText(items: ListItem[]): string {
 }
 
 export function documentText(value: unknown): string {
-  const parsed = blocksDocumentSchema.safeParse(value)
+  const parsed = pageBlocksDocumentSchema.safeParse(value)
   if (!parsed.success) return ''
   return parsed.data.blocks.map((block) => {
     switch (block.type) {

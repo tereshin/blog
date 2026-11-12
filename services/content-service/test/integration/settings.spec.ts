@@ -480,6 +480,7 @@ describe('content: настройки площадки', () => {
     const theme = {
       radius_card: '0.75rem',
       header_overlay_hue: 200,
+      header_overlay_lightness: 74,
       header_overlay_opacity: 80,
       header_overlay_blur_px: 8,
     }

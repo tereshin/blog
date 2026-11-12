@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { integer, index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 export { outbox, processed_events } from '@blog/broker'
 
@@ -42,3 +42,9 @@ export const notifications = pgTable(
     index('notifications_unread_idx').on(table.user_id),
   ],
 )
+
+export const feedback_mail_jobs = pgTable('feedback_mail_jobs', {
+  id: uuid('id').primaryKey(), token: text('token').notNull(), attempts: integer('attempts').notNull().default(0),
+  status: text('status').notNull().default('pending'), available_at: timestamp('available_at', { withTimezone: true }).notNull().defaultNow(),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+})

@@ -39,7 +39,7 @@ async function expectFrame(page: Page): Promise<void> {
   await expect(page.getByRole('banner')).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
   await expect(page.getByRole('main')).toBeVisible()
-  await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+  await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
 }
 
 test.describe('Каркас на всех разделах', () => {
@@ -84,7 +84,7 @@ test.describe('Каркас на всех разделах', () => {
   test('пустая правая карточка остаётся и не отдаёт ширину центру', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_rail', 'empty'))
     await page.goto('/')
-    const rail = page.getByRole('complementary', { name: 'Популярные комментарии' })
+    const rail = page.getByRole('complementary', { name: 'Правый сайдбар' })
     await expect(rail.getByText('Пока нечего показать')).toBeVisible()
     const rail_box = await rail.boundingBox()
     const main_box = await page.getByRole('main').boundingBox()
@@ -95,7 +95,7 @@ test.describe('Каркас на всех разделах', () => {
   test('ошибка популярных комментариев остаётся в правой карточке', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('mock_rail', 'error'))
     await page.goto('/')
-    const rail = page.getByRole('complementary', { name: 'Популярные комментарии' })
+    const rail = page.getByRole('complementary', { name: 'Правый сайдбар' })
     await expect(rail.getByRole('alert')).toContainText('Не удалось загрузить комментарии', { timeout: 15_000 })
     await expect(rail.getByRole('button', { name: 'Повторить' })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Навигация' }).getByRole('link', { name: 'Технологии' })).toBeVisible()

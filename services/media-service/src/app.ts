@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import { feedbackFilesRoutes, FeedbackFilesRepository } from './modules/feedback-files/index.ts'
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify'
 import { errorHandler, health, idempotency, requestContext, serviceContext } from '@blog/http-kit'
 import type { Logger } from '@blog/logger'
@@ -37,6 +38,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(serviceContext, { public_key_pem: env.SERVICE_JWT_PUBLIC_KEY })
   const media_settings = deps.media_settings ?? createMediaRuntime(env, deps.database, store)
   if (!deps.media_settings) app.addHook('onClose', async () => media_settings.close())
+  await app.register(feedbackFilesRoutes, { service: new FeedbackFilesRepository(deps.database.db) })
   await app.register(mediaSettingsRoutes, { service: media_settings })
   await app.register(mediaRoutes, {
     controller: new MediaController(new MediaService(new MediaRepository(deps.database.db), store, env.S3_PUBLIC_URL, media_settings)),

@@ -115,6 +115,7 @@ export type ShellVisibility = z.infer<typeof shellVisibilitySchema>
 export const DEFAULT_THEME_SETTINGS = {
   radius_card: '1rem',
   header_overlay_hue: 270,
+  header_overlay_lightness: 50,
   header_overlay_opacity: 90,
   header_overlay_blur_px: 4,
 } as const
@@ -129,6 +130,7 @@ const radiusCardSchema = z
 export const themeSettingsSchema = z.strictObject({
   radius_card: radiusCardSchema.default(DEFAULT_THEME_SETTINGS.radius_card),
   header_overlay_hue: z.number().min(0).max(360).default(DEFAULT_THEME_SETTINGS.header_overlay_hue),
+  header_overlay_lightness: z.number().min(0).max(100).default(DEFAULT_THEME_SETTINGS.header_overlay_lightness),
   header_overlay_opacity: z
     .number()
     .min(0)

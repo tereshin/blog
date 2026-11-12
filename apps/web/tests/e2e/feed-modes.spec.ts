@@ -19,7 +19,7 @@ test.describe('Режимы ленты', () => {
     const mount_id = await banner.getAttribute('data-mount-id')
     await expect(nav.getByRole('link', { name: 'Популярное' })).toHaveAttribute('aria-current', 'page')
     await expect(page.getByRole('main').getByRole('article').first()).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
 
     await nav.getByRole('link', { name: 'Свежее' }).click()
     await expect(nav.getByRole('link', { name: 'Свежее' })).toHaveAttribute('aria-current', 'page')
@@ -31,7 +31,7 @@ test.describe('Режимы ленты', () => {
     await expect(page.getByRole('main').getByRole('heading', { name: 'Технологии', exact: true })).toBeVisible()
     await expect(nav.getByRole('link', { name: 'Технологии' })).toHaveAttribute('aria-current', 'page')
     await expect(banner).toHaveAttribute('data-mount-id', mount_id ?? '')
-    await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
   })
 
   test('«Показать все» раскрывает длинный список тем в той же карточке', async ({ page }) => {

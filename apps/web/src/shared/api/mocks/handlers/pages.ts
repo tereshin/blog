@@ -69,7 +69,17 @@ export const pageHandlers = [
       (item) => item.slug === params.slug && item.status === 'published',
     )
     if (!page) return failure('page_not_found', 404)
-    return HttpResponse.json(publicPageSchema.strip().parse(page))
+    const blocks = page.blocks.blocks.map(block => {
+      if (block.type === 'adminFeedback') return { ...block, data: { fields: block.data.fields } }
+      if (block.type !== 'adminButtons') return block
+      return { ...block, data: { ...block.data, items: block.data.items.flatMap(item => {
+        const target = item.target
+        const linked = target.kind === 'page' ? readMockPages().find(page => page.id === target.page_id && page.status === 'published') : null
+        const href = target.kind === 'url' ? target.url : linked ? '/pages/' + linked.slug : ''
+        return href ? [{ id: item.id, title: item.title, icon: item.icon, href, is_external: target.kind === 'url' }] : []
+      }) } }
+    })
+    return HttpResponse.json(publicPageSchema.strip().parse({ ...page, blocks: { ...page.blocks, blocks } }))
   }),
   http.get('*/v1/admin/pages', ({ request }) => {
     const denied = auth()

@@ -58,3 +58,10 @@ export const social_cover_jobs = pgTable(
     uniqueIndex('social_cover_jobs_target_revision_idx').on(table.target_id, table.revision),
   ],
 )
+
+// Temporary private form files are never exposed through public object storage.
+export const feedback_files = pgTable('feedback_files', {
+  id: uuid('id').primaryKey(), token_hash: text('token_hash').notNull(), name: text('name').notNull(), mime: text('mime').notNull(),
+  byte_size: integer('byte_size').notNull(), content: text('content').notNull(), key: text('key').notNull(),
+  submission_id: uuid('submission_id'), expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+}, table => [uniqueIndex('feedback_files_token_key').on(table.token_hash, table.key)])

@@ -1,6 +1,7 @@
+import { PageContent } from '@/widgets/page-content'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
-import { BlockRenderer, Card, EmptyState, ErrorState } from '@/shared/ui'
+import { Card, EmptyState, ErrorState } from '@/shared/ui'
 import { useSimplePage } from '../model/useSimplePage.ts'
 
 export default function SimplePage() {
@@ -20,7 +21,7 @@ export default function SimplePage() {
       </Card.Header>
       <Card.Content>
         <article>
-          <BlockRenderer blocks={query.data.blocks.blocks} />
+          <PageContent page={query.data} />
         </article>
       </Card.Content>
     </Card>

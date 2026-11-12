@@ -1,8 +1,9 @@
+import { linkedPageIds, publicWidget } from '../../shared/editor-document/widget.public.ts'
 import { createHash } from 'node:crypto'
-import { publicPageSchema } from '@blog/contracts'
+import { adminWidgetSchema, publicPageSchema } from '@blog/contracts'
 import type {
   AdminPagesQuery,
-  BlocksDocument,
+  PageBlocksDocument,
   CreatePage,
   ServiceContext,
   UpdatePage,
@@ -46,7 +47,7 @@ function canonical(value: unknown): string {
     )
   return JSON.stringify(value) ?? 'null'
 }
-function existingFiles(doc?: BlocksDocument) {
+function existingFiles(doc?: PageBlocksDocument) {
   const urls = new Set<string>()
   for (const block of doc?.blocks ?? []) {
     if (block.type === 'image' || block.type === 'attaches') urls.add(block.data.file.url)
@@ -68,6 +69,7 @@ export class PageService {
     const cache = new Map<string, Promise<FileOwner | null>>()
     const blocks = await sanitizeDocument(input.blocks ?? current?.blocks ?? { blocks: [] }, {
       ...this.options,
+      allow_admin_widgets: true,
       author_id: actor_id,
       existing_urls: existingFiles(current?.blocks),
       lookupFile: (url) => {
@@ -125,7 +127,18 @@ export class PageService {
   async publicPage(slug: string) {
     const row = await this.repository.publicPage(slug)
     if (!row) throw pageError('page_not_found', 404)
-    return publicPageSchema.strip().parse(pageDto(row))
+    const dto = pageDto(row)
+    const entries = dto.blocks.blocks.map((block) => ({
+      block,
+      widget: adminWidgetSchema.safeParse(block),
+    }))
+    const links = await this.repository.publicLinks(
+      linkedPageIds(entries.flatMap(({ widget }) => (widget.success ? [widget.data] : []))),
+    )
+    const blocks = entries.map(({ block, widget }) =>
+      widget.success ? publicWidget(widget.data, links) : block,
+    )
+    return publicPageSchema.strip().parse({ ...dto, blocks: { ...dto.blocks, blocks } })
   }
 
   published(cursor?: string, limit?: number) {
@@ -145,8 +158,9 @@ export class PageService {
     correlation_id: string,
   ) {
     const op = this.operation(viewer, key, 'PATCH', id, input, correlation_id)
-    return this.repository.mutate({ ...op, id, expected_version: input.expected_version }, (current) =>
-      this.prepare(op.actor_id, input, current),
+    return this.repository.mutate(
+      { ...op, id, expected_version: input.expected_version },
+      (current) => this.prepare(op.actor_id, input, current),
     )
   }
 

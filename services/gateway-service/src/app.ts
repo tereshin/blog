@@ -172,7 +172,7 @@ export async function buildApp(deps: AppDeps, services: AppServices): Promise<Fa
     origin: env.WEB_ORIGIN,
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Idempotency-Key', 'X-Request-Id'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Idempotency-Key', 'X-Request-Id', 'X-Upload-Token', 'X-File-Name'],
     exposedHeaders: ['X-Request-Id'],
   })
   await app.register(cookie)

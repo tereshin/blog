@@ -1,10 +1,10 @@
-import type { AdminPage, AdminPagesQuery, BlocksDocument } from '@blog/contracts'
+import type { AdminPage, AdminPagesQuery, PageBlocksDocument } from '@blog/contracts'
 import type { pages } from '../../infra/db/schema.ts'
 export type StoredPage = typeof pages.$inferSelect
 export type PageWrite = {
   title: string
   slug: string
-  blocks: BlocksDocument
+  blocks: PageBlocksDocument
   status: 'draft' | 'published'
 }
 export type PageMutation = {
@@ -14,6 +14,7 @@ export type PageMutation = {
   correlation_id: string
 }
 export type PageRepositoryPort = {
+  publicLinks: (ids: string[]) => Promise<Map<string, string>>
   list: (
     query: AdminPagesQuery,
   ) => Promise<{ rows: Omit<StoredPage, 'blocks'>[]; next_cursor: string | null }>

@@ -65,8 +65,8 @@ export class CommentService {
     private readonly writer: CommentWriterPort,
   ) {}
 
-  async getPopular(viewer: ServiceContext): Promise<PopularComment[]> {
-    const rows = await this.repository.findPopular(viewer, POPULAR_COMMENTS_LIMIT)
+  async getPopular(viewer: ServiceContext, query?: import('@blog/contracts').CommentsWidget): Promise<PopularComment[]> {
+    const rows = await this.repository.findPopular(viewer, query?.limit ?? POPULAR_COMMENTS_LIMIT, query)
     const count_by_id = indexCounts(await this.repository.countReactions(rows.map((row) => row.id)))
     return rows.map((row) => {
       const reaction_counts = count_by_id.get(row.id) ?? emptyCounts()

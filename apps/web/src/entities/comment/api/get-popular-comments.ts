@@ -8,3 +8,7 @@ export async function getPopularComments(signal?: AbortSignal): Promise<PopularC
     toPopularComment,
   )
 }
+
+export async function getWidgetComments(query: import('@blog/contracts').CommentsWidget, signal?: AbortSignal) {
+  return (await http.get('/v1/comments/widget', popularCommentListDtoSchema, { query, signal })).map(toPopularComment)
+}

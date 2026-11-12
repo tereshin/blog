@@ -1,6 +1,7 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import type { BlocksDocument } from '@blog/contracts'
+import type { PageBlocksDocument } from '@blog/contracts'
 import type EditorJS from '@editorjs/editorjs'
 import type { OutputData } from '@editorjs/editorjs'
 import { useT } from '@/shared/i18n'
@@ -15,7 +16,8 @@ import { parseEditorOutput, toEditorJsBlocks } from '../lib/normalize-document.t
 import type { BlockEditorHandle, EditorSnapshot } from '../model/useEditorDocument.ts'
 
 export type BlockEditorOptions = {
-  initial: BlocksDocument | null
+  admin_widgets?: true
+  initial: PageBlocksDocument | null
   title: string
   title_placeholder: string
   onTitleChange: (title: string) => void
@@ -27,6 +29,7 @@ export type BlockEditorOptions = {
 
 export function useBlockEditor({
   initial,
+  admin_widgets,
   title,
   title_placeholder,
   onTitleChange,
@@ -36,6 +39,7 @@ export function useBlockEditor({
   onReady,
 }: BlockEditorOptions) {
   const { t, locale } = useT()
+  const query_client = useQueryClient()
   const holder_ref = useRef<HTMLDivElement>(null)
   const editor_ref = useRef<EditorJS | null>(null)
   const ready_ref = useRef(false)
@@ -63,7 +67,7 @@ export function useBlockEditor({
       document: parseEditorOutput({
         ...output,
         blocks: output.blocks.filter((block) => block.type !== 'title'),
-      }),
+      }, admin_widgets),
       fingerprint: JSON.stringify(output.blocks),
     }
   }
@@ -83,7 +87,7 @@ export function useBlockEditor({
       return parseEditorOutput({
         ...output,
         blocks: output.blocks.filter((block) => block.type !== 'title'),
-      })
+      }, admin_widgets)
     },
   }))
 
@@ -96,11 +100,13 @@ export function useBlockEditor({
     void (async () => {
       try {
         const { Editor, tools } = await loadEditor()
+        const widget_tools = admin_widgets ? (await import('../lib/admin-widget-tool.tsx')).adminWidgetTools({ locale, query_client }) : {}
         if (cancelled) return
         const editor = new Editor({
           holder,
           tools: {
             ...tools,
+            ...widget_tools,
             title: {
               class: TitleTool,
               config: { placeholder: title_placeholder, onChange: onTitleChange },

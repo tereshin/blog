@@ -1,3 +1,4 @@
+import { publicPageLinks } from '../../infra/db/public-page-links.ts'
 import { randomUUID } from 'node:crypto'
 import { and, desc, eq, gt, ne, sql } from 'drizzle-orm'
 import type { Database } from '@blog/broker'
@@ -25,6 +26,10 @@ const columns = {
 
 export class PageRepository implements PageRepositoryPort {
   constructor(private readonly db: Database) {}
+  publicLinks(ids: string[]) {
+    return publicPageLinks(this.db, ids)
+  }
+
 
     async list(query: AdminPagesQuery) {
       const cursor = decodeCursor(query)

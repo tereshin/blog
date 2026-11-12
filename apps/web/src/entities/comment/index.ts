@@ -22,3 +22,5 @@ export { CommentReactionGlyphsProvider } from './model/comment-reaction-glyphs.t
 
 export * from './api/comment-interactions.ts'
 export type { CommentSort } from './model/sort-comments.ts'
+
+export { getWidgetComments } from './api/get-popular-comments.ts'

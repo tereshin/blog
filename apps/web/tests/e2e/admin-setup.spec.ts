@@ -67,7 +67,7 @@ test.describe('Настройки площадки', () => {
     await expect(page.getByRole('heading', { name: 'Добро пожаловать' })).toBeVisible()
     await expect(page.getByText('Информация о площадке')).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
   })
 
   test('администратор на настройках площадки видит объяснение в центре', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('Настройки площадки', () => {
     await page.goto('/admin/settings')
     await expect(page.getByText('Раздел доступен только администратору площадки')).toBeVisible()
     if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
   })
   test('суперадминистратор загружает иконку статуса, участник видит её рядом с именем', async ({ page }) => {
     await page.addInitScript(() => {

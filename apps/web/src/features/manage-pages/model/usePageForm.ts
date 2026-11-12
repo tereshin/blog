@@ -1,13 +1,13 @@
 import { ZodError } from 'zod'
 import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { BlocksDocument, AdminPage, CreatePage, UpdatePage } from '@blog/contracts'
+import type { PageBlocksDocument, AdminPage, CreatePage, UpdatePage } from '@blog/contracts'
 import { createPageSchema, updatePageSchema } from '@blog/contracts'
 import { createPage, updatePage, deletePage, getAdminPage, pageKeys } from '@/entities/page'
 import { seoKeys } from '@/entities/seo'
 import { ApiError } from '@/shared/api'
 import { useT } from '@/shared/i18n'
-export type PageSnapshot = { title: string; document: BlocksDocument; fingerprint: string }
+export type PageSnapshot = { title: string; document: PageBlocksDocument; fingerprint: string }
 type Options = {
   initial: AdminPage | null
   read: () => Promise<PageSnapshot>

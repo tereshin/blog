@@ -131,6 +131,18 @@ describe('discussion: GET /v1/comments/popular', () => {
     }
   })
 
+  it('filters widget comments in the database without bypassing viewer access', async () => {
+    const request = (query: string) => app.inject({ url: '/v1/comments/widget?' + query, headers: { 'x-test-viewer': 'guest' } })
+    const sorted = await request('limit=3&sort=reactions&direction=desc')
+    expect(sorted.statusCode).toBe(200)
+    expect(sorted.json().map((comment: { id: string }) => comment.id)).toEqual([id(101), id(134), id(133)])
+    expect((await request('article_id=' + id(2))).json()).toEqual([])
+    expect((await request('period=day')).json()).toEqual([])
+    const oldest = await request('sort=date&direction=asc&limit=1&article_id=' + id(1))
+    expect(oldest.json()[0].id).toBe(id(108))
+    expect((await request('limit=51')).statusCode).toBe(400)
+  })
+
   it('автор без профиля получает нейтральное имя', async () => {
     const response = await app.inject({ method: 'GET', url: '/v1/comments/popular', headers: { 'x-test-viewer': 'guest' } })
     expect(response.statusCode).toBe(200)

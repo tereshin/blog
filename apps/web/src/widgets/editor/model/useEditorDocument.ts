@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import type { BlocksDocument } from '@blog/contracts'
+import type { PageBlocksDocument } from '@blog/contracts'
 
-export type EditorSnapshot = { title: string; document: BlocksDocument; fingerprint: string }
+export type EditorSnapshot = { title: string; document: PageBlocksDocument; fingerprint: string }
 
 export type BlockEditorHandle = {
-  save: () => Promise<BlocksDocument>
+  save: () => Promise<PageBlocksDocument>
   readSnapshot: () => Promise<EditorSnapshot>
   acknowledge: (snapshot: EditorSnapshot) => Promise<boolean>
 }

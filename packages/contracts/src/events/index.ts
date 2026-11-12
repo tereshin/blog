@@ -28,3 +28,5 @@ export { SocialCoverGeneratedV1 } from './media/social-cover-generated.v1.ts'
 
 export { PageUpdatedV1 } from './content/page-updated.v1.ts'
 export { PageDeletedV1 } from './content/page-deleted.v1.ts'
+
+export { FeedbackAcceptedV1 } from './content/feedback-accepted.v1.ts'

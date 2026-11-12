@@ -1,3 +1,6 @@
+import { sidebarSchema, updateSidebarSchema } from '@blog/contracts'
+import type { Sidebar } from '@blog/contracts'
+import { readMockPages } from './pages.ts'
 import { PROFILE_BADGES_FIXTURE } from '@/shared/api/mocks/fixtures/profile-badges'
 import { HttpResponse, http } from 'msw'
 import { googleFontStylesheet } from '@blog/contracts/fonts'
@@ -134,6 +137,10 @@ export function forbidden() {
 }
 
 /** Данные колонок каркаса. Правки суперадминистратора живут в sessionStorage вкладки, чтобы пережить перезагрузку. */
+let sidebar: Sidebar = sidebarSchema.parse({ version: 1, sections: [{
+  id: '1c6f716b-077a-4dad-a16f-66cc074b3d86', title: 'Popular comments', has_card: true,
+  widgets: [{ id: 'e42f1358-894a-4bd7-970b-23f382b3aa18', type: 'adminComments', data: {} }],
+}] })
 export const shellHandlers = [
   http.get('*/v1/settings/admin', () => {
     if (readMockViewer() !== 'superadmin') return forbidden()
@@ -149,7 +156,32 @@ export const shellHandlers = [
     writeSite(state)
     return HttpResponse.json({ ...state.settings, ...publicSettings(state.settings) })
   }),
-  http.get('*/v1/comments/popular', () => {
+  http.get('*/v1/sidebar', () => HttpResponse.json({
+    ...sidebar,
+    sections: sidebar.sections.map(section => ({
+      ...section,
+      widgets: section.widgets.map(widget => {
+        if (widget.type === 'adminFeedback') return { ...widget, data: { fields: widget.data.fields } }
+        if (widget.type !== 'adminButtons') return widget
+        return { ...widget, data: { ...widget.data, items: widget.data.items.flatMap(item => {
+          const target = item.target
+          const linked = target.kind === 'page' ? readMockPages().find(page => page.id === target.page_id && page.status === 'published') : null
+          const href = target.kind === 'url' ? target.url : linked ? '/pages/' + linked.slug : ''
+          return href ? [{ id: item.id, title: item.title, icon: item.icon, href, is_external: target.kind === 'url' }] : []
+        }) } }
+      }),
+    })),
+  })),
+  http.get('*/v1/admin/sidebar', () => readMockViewer() === 'superadmin' ? HttpResponse.json(sidebar) : forbidden()),
+  http.put('*/v1/admin/sidebar', async ({ request }) => {
+    if (readMockViewer() !== 'superadmin') return forbidden()
+    const parsed = updateSidebarSchema.safeParse(await request.json())
+    if (!parsed.success) return HttpResponse.json({ code: 'validation_error' }, { status: 400 })
+    if (parsed.data.expected_version !== sidebar.version) return HttpResponse.json({ code: 'sidebar_version_conflict' }, { status: 409 })
+    sidebar = sidebarSchema.parse({ sections: parsed.data.sections, version: sidebar.version + 1 })
+    return HttpResponse.json(sidebar)
+  }),
+  http.get(/\/v1\/comments\/(popular|widget)(?:$|\?)/, () => {
     const mode = window.localStorage.getItem('mock_rail')
     if (mode === 'empty') return HttpResponse.json([])
     if (mode === 'error')

@@ -9,7 +9,7 @@ const FIELDS: ReadonlyArray<{ key: keyof ShellVisibility; label: MessageKey }> =
   { key: 'mine', label: 'shell.nav.my_feed' },
   { key: 'messages', label: 'shell.nav.messages' },
   { key: 'rating', label: 'shell.nav.rating' },
-  { key: 'popular_comments', label: 'shell.popular_comments' },
+  { key: 'popular_comments', label: 'widgets.sidebar' },
 ]
 
 type SettingsShellFieldsProps = {

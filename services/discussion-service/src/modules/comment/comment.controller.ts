@@ -1,3 +1,6 @@
+import { widgetCommentsQuerySchema } from '@blog/contracts'
+import { z } from 'zod'
+import { AppError } from '@blog/errors'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import {
   commentSchema,
@@ -5,6 +8,7 @@ import {
   commentTreePageSchema,
   createCommentSchema,
   popularCommentListSchema,
+  popularCommentSchema,
   updateCommentSchema,
   userCommentPageSchema,
 } from '@blog/contracts'
@@ -20,6 +24,21 @@ import type { CommentService } from './comment.service.ts'
 export class CommentController {
   constructor(private readonly service: CommentService) {}
 
+  async widget(request: FastifyRequest, reply: FastifyReply) {
+    const parsed = widgetCommentsQuerySchema.safeParse(request.query)
+    if (!parsed.success)
+      throw new AppError({
+        code: 'validation_error',
+        http_status: 400,
+        message: 'Invalid comments query',
+      })
+    return reply.header('Cache-Control', 'no-store').send(
+      z
+        .array(popularCommentSchema)
+        .max(50)
+        .parse(await this.service.getPopular(request.viewer, parsed.data)),
+    )
+  }
   async popular(request: FastifyRequest, reply: FastifyReply) {
     return reply.send(popularCommentListSchema.parse(await this.service.getPopular(request.viewer)))
   }
@@ -38,7 +57,11 @@ export class CommentController {
     const { id } = CommentIdParamsSchema.parse(request.params)
     return reply.send(
       commentTreePageSchema.parse(
-        await this.service.listReplyPage(request.viewer, id, CommentQuerySchema.parse(request.query)),
+        await this.service.listReplyPage(
+          request.viewer,
+          id,
+          CommentQuerySchema.parse(request.query),
+        ),
       ),
     )
   }

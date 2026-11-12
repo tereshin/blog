@@ -61,6 +61,7 @@ export const ADMIN_ROUTES: Record<AdminRouteId, AdminRoute> = {
     icon: 'sections',
     role: 'superadmin',
   },
+  sidebar: { path: '/admin/sidebar', parent: 'home', title: 'widgets.sidebar', description: 'widgets.sidebar_hint', icon: 'sections', role: 'superadmin' },
   general: {
     path: '/admin/settings/general',
     parent: 'settings',

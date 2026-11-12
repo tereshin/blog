@@ -1,3 +1,4 @@
+import { AdminSidebarPage } from '@/pages/admin-sidebar'
 import { AdminBadgesPage } from '@/pages/admin-badges'
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
@@ -57,6 +58,7 @@ function child(
 }
 
 const ADMIN_PAGES: Record<AdminRouteId, RouteObject['element']> = {
+  sidebar: <AdminSidebarPage />,
   pages: <AdminPagesPage />,
   sections: <AdminNavSectionsPage />,
   home: <AdminHomePage />,

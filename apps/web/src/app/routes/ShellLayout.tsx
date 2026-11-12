@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
+import { getSidebar, widgetKeys } from '@/entities/admin-widget'
 import { MetaPixel } from '@/widgets/meta-pixel'
 import { MaintenanceGate } from '@/widgets/maintenance'
 import { getAdminRoute, getAdminParentPath } from '@/entities/admin'
@@ -35,6 +37,7 @@ export function ShellLayout() {
   const { t } = useT()
   const { data: settings } = useSettings()
   const show_popular_comments = settings?.shell.popular_comments !== false
+  const sidebar = useQuery({ queryKey: widgetKeys.sidebar, queryFn: ({ signal }) => getSidebar(signal), enabled: show_popular_comments, staleTime: 30000 })
   const { pathname, search } = useLocation()
   const outlet = useOutlet()
   const is_page_editor = /^\/admin\/pages\/(?:new|[^/]+)\/?$/.test(pathname)
@@ -94,7 +97,7 @@ export function ShellLayout() {
           />
         }
         left={<LeftNav />}
-        right={show_popular_comments ? <RightRail /> : null}
+        right={show_popular_comments && sidebar.data?.sections.length !== 0 ? <RightRail /> : null}
         scroll_key={is_editor ? background_path : pathname}
         center={
           <CenterErrorBoundary key={is_editor ? background_path : pathname}>

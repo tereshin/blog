@@ -1,6 +1,7 @@
+import { blocksDocumentSchema } from '@blog/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { ArticleDraft, BlocksDocument } from '@blog/contracts'
+import type { ArticleDraft, PageBlocksDocument } from '@blog/contracts'
 import { articleKeys, createArticle, publishArticle, updateArticle } from '@/entities/article'
 import { seoKeys } from '@/entities/seo'
 import { profileKeys } from '@/entities/profile'
@@ -20,7 +21,7 @@ export type ArticleDraftForm = {
 
 type UsePublishArticleOptions = {
   article_id: string | undefined
-  read_document: () => Promise<BlocksDocument>
+  read_document: () => Promise<PageBlocksDocument>
   on_saved: (draft: ArticleDraft) => void
 }
 
@@ -43,7 +44,7 @@ export function usePublishArticle({ article_id, read_document, on_saved }: UsePu
 
   const mutation = useMutation({
     mutationFn: async (input: { mode: 'draft' | 'publish'; form: ArticleDraftForm }) => {
-      const blocks = await read_document()
+      const blocks = blocksDocumentSchema.parse(await read_document())
       const slug = input.form.slug.trim()
       const body = {
         title: input.form.title.trim(),

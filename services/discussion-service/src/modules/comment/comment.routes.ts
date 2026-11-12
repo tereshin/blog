@@ -5,6 +5,7 @@ export type CommentRoutesOptions = { controller: CommentController }
 
 /** `GET /v1/comments/popular` — до 10 самых популярных комментариев статей, доступных зрителю. */
 export const commentRoutes: FastifyPluginAsync<CommentRoutesOptions> = async (app, { controller }) => {
+  app.get('/v1/comments/widget', (request, reply) => controller.widget(request, reply))
   app.get('/v1/comments/popular', (request, reply) => controller.popular(request, reply))
   app.get('/v1/articles/:article_id/comments', (request, reply) => controller.list(request, reply))
   app.post('/v1/articles/:article_id/comments', (request, reply) =>

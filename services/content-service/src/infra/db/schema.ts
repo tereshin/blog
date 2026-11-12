@@ -215,7 +215,7 @@ export const pages = pgTable(
     title: varchar('title', { length: 150 }).notNull(),
     slug: varchar('slug', { length: 40 }).notNull().unique(),
     blocks: jsonb('blocks')
-      .$type<import('@blog/contracts').BlocksDocument>()
+      .$type<import('@blog/contracts').PageBlocksDocument>()
       .notNull()
       .default({ blocks: [] }),
     status: page_status('status').notNull().default('draft'),
@@ -296,3 +296,5 @@ export const profile_badge_awards = pgTable('profile_badge_awards', {
   badge_id: text('badge_id').notNull(),
   awarded_at: timestamp('awarded_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [primaryKey({ columns: [table.user_id, table.badge_id] })])
+
+export * from './widget-schema.ts'

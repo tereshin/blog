@@ -1,5 +1,9 @@
 import { z } from 'zod'
-import { blocksDocumentSchema } from './blocks.ts'
+import { publicWidgetSchema } from './admin-widgets.ts'
+const publicDocumentSchema = blocksDocumentSchema.extend({
+  blocks: z.array(z.union([blocksDocumentSchema.shape.blocks.element, publicWidgetSchema])),
+})
+import { pageBlocksDocumentSchema, blocksDocumentSchema } from './blocks.ts'
 
 export const PAGE_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/
 export const pageStatusSchema = z.enum(['draft', 'published'])
@@ -41,7 +45,19 @@ export const pageDocumentSchema = z
       }
     }
   })
-  .pipe(blocksDocumentSchema.refine((doc) => doc.blocks.length <= 500))
+  .pipe(
+    pageBlocksDocumentSchema.refine((doc) => {
+      const widget_ids = doc.blocks
+        .filter(
+          (block) =>
+            block.type === 'adminComments' ||
+            block.type === 'adminFeedback' ||
+            block.type === 'adminButtons',
+        )
+        .map((block) => block.id)
+      return doc.blocks.length <= 500 && new Set(widget_ids).size === widget_ids.length
+    }),
+  )
 
 const fields = {
   id: z.uuid(),
@@ -59,7 +75,11 @@ export const adminPageSchema = z.strictObject({
   created_by: z.uuid(),
   updated_by: z.uuid(),
 })
-export const publicPageSchema = z.strictObject({ ...fields, published_at: z.iso.datetime() })
+export const publicPageSchema = z.strictObject({
+  ...fields,
+  blocks: publicDocumentSchema,
+  published_at: z.iso.datetime(),
+})
 export const adminPageSummarySchema = adminPageSchema.omit({ blocks: true })
 export const adminPagesSchema = z.strictObject({
   items: z.array(adminPageSummarySchema),

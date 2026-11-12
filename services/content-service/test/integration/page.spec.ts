@@ -1,3 +1,5 @@
+import { FeedbackRepository, FeedbackService, WidgetRepository, WidgetService, feedbackRoutes, widgetRoutes } from '../../src/modules/admin-widget/index.ts'
+import { blocksDocumentSchema, DEFAULT_FEEDBACK_FIELDS } from '@blog/contracts'
 import Fastify from 'fastify'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -96,6 +98,9 @@ describe('simple pages real PostgreSQL', () => {
           ? { uploader_id: url.includes('file-b') ? B : A }
           : null,
     })
+    const widgets = new WidgetService(new WidgetRepository(database.db))
+    await app.register(widgetRoutes, { service: widgets })
+    await app.register(feedbackRoutes, { service: new FeedbackService(new FeedbackRepository(database.db), widgets, async () => { throw new Error('Unexpected upload') }) })
     await app.register(pageRoutes, { controller: modules.page })
     await app.register(seoRoutes, { controller: modules.seo })
   }, 120_000)
@@ -350,4 +355,38 @@ describe('simple pages real PostgreSQL', () => {
       ).statusCode,
     ).toBe(400)
   })
+  it('publishes page widgets, accepts guest feedback once, and keeps the recipient private', async () => {
+    const widget = { id: crypto.randomUUID(), type: 'adminFeedback', data: { recipient: 'owner@example.test', fields: DEFAULT_FEEDBACK_FIELDS } }
+    const blocks = { blocks: [widget] }
+    expect(blocksDocumentSchema.safeParse(blocks).success).toBe(false)
+    const created = await request('POST', { title: 'Feedback', slug: 'test-feedback', blocks })
+    expect(created.statusCode).toBe(201)
+    const draft = created.json<AdminPage>()
+    const payload = { widget_id: widget.id, page_id: draft.id, upload_token: crypto.randomUUID(), values: { name: 'Guest', email: 'guest@example.test', message: 'Hello' } }
+    const key = crypto.randomUUID()
+    const submit = (body: unknown = payload) => app.inject({ method: 'POST', url: '/v1/widget-feedback', headers: { 'x-idempotency-key': key }, payload: body as object })
+    expect((await submit()).statusCode).toBe(422)
+    expect((await request('PATCH', { expected_version: draft.version, status: 'published' }, draft.id)).statusCode).toBe(200)
+    const published = await app.inject('/v1/pages/test-feedback')
+    expect(published.statusCode).toBe(200)
+    expect(published.json().blocks.blocks[0].id).toBe(widget.id)
+    expect(published.body).not.toContain('owner@example.test')
+    expect((await submit({ ...payload, recipient: 'other@example.test' })).statusCode).toBe(400)
+    const [first, second] = await Promise.all([submit(), submit()])
+    expect(first.statusCode).toBe(202)
+    expect(second.json()).toEqual(first.json())
+  })
+
+  it('saves ordered sidebar sections atomically and rejects stale and unauthorized writes', async () => {
+    const initial = await app.inject('/v1/sidebar')
+    expect(initial.statusCode).toBe(200)
+    expect(initial.json().sections[0].widgets[0].data.limit).toBe(2)
+    const body = { expected_version: initial.json().version, sections: [] }
+    const save = (who: string) => app.inject({ method: 'PUT', url: '/v1/admin/sidebar', headers: { 'x-test-viewer': who, 'x-idempotency-key': crypto.randomUUID() }, payload: body })
+    expect((await save('admin')).statusCode).toBe(403)
+    expect((await save('a')).statusCode).toBe(200)
+    expect((await save('a')).statusCode).toBe(409)
+    expect((await app.inject('/v1/sidebar')).json().sections).toEqual([])
+  })
+
 })

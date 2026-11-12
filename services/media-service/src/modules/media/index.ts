@@ -6,3 +6,5 @@ export { MediaService } from './media.service.ts'
 export { MediaStorage } from './media.storage.ts'
 export type { MediaStorageOptions } from './media.storage.ts'
 export type { ObjectStore, MediaRuntime, MediaRepositoryPort, UploadTarget } from './media.types.ts'
+
+export { sniff, readBounded } from './media.sniff.ts'

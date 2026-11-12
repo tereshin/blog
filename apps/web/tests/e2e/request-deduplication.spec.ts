@@ -16,9 +16,10 @@ test('чтения не дублируются при открытии и пер
   await page.goto('/')
   await expect(page.getByRole('main').getByRole('article').first()).toBeVisible()
   await expect.poll(() => reads.some((url) => url.startsWith('/v1/me/article-states?'))).toBe(true)
+  await expect.poll(() => reads.some(url => url.startsWith('/v1/comments/widget?'))).toBe(true)
   await expect.poll(() => pending.size).toBe(0)
-  for (const path of ['/v1/settings', '/v1/auth/session', '/v1/topics', '/v1/comments/popular']) {
-    expect(reads.filter((url) => url === path), path).toHaveLength(1)
+  for (const path of ['/v1/settings', '/v1/auth/session', '/v1/topics', '/v1/sidebar', '/v1/comments/widget']) {
+    expect(reads.filter((url) => url.split('?')[0] === path), path).toHaveLength(1)
   }
   expect(new Set(reads).size, JSON.stringify(reads)).toBe(reads.length)
 

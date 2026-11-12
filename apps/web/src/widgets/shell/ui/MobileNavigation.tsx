@@ -31,7 +31,7 @@ export function MobileNavigation({
         to="/discovery"
         aria-label={t('discovery.title')}
         aria-current={section_kind === 'discovery' ? 'page' : undefined}
-        className="mobile-navigation-link inline-flex items-center justify-center rounded-pill text-foreground outline-offset-2 hover:bg-surface-secondary aria-[current=page]:text-accent"
+        className="mobile-navigation-link inline-flex items-center justify-center rounded-pill text-foreground outline-offset-2 hover:bg-surface-secondary"
       >
         <SearchIcon className="size-7" />
       </Link>

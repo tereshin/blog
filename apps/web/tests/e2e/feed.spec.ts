@@ -18,7 +18,7 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     await page.goto('/')
     await expect(page.getByRole('banner')).toBeVisible()
     if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
 
     const main = page.getByRole('main')
     const cards = main.getByRole('article')
@@ -30,7 +30,7 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     expect(times).toEqual([...times].sort((a, b) => b - a))
 
     if (hasThreeColumns(page)) {
-      await expect(page.getByRole('complementary', { name: 'Популярные комментарии' }).getByRole('listitem').first()).toBeVisible()
+      await expect(page.getByRole('complementary', { name: 'Правый сайдбар' }).getByRole('listitem').first()).toBeVisible()
     }
   })
 
@@ -72,7 +72,7 @@ test.describe('Лента «Свежее»: каркас и карточки', (
 
     const banner = page.getByRole('banner')
     const nav = page.getByRole('navigation', { name: 'Навигация' })
-    const rail = page.getByRole('complementary', { name: 'Популярные комментарии' })
+    const rail = page.getByRole('complementary', { name: 'Правый сайдбар' })
     const first_card = main.getByRole('article').first()
     const before = await Promise.all([banner.boundingBox(), nav.boundingBox(), rail.boundingBox(), first_card.boundingBox()])
 
@@ -102,7 +102,7 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     await expect(page.getByRole('main').getByText('Здесь пока нет статей')).toBeVisible()
     await expect(page.getByRole('main').getByRole('article')).toHaveCount(0)
     if (hasLeftColumn(page)) await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
-    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
   })
 
   test('«Показать полностью» раскрывает остаток в карточке и не меняет адрес', async ({ page }) => {
@@ -165,6 +165,6 @@ test.describe('Лента «Свежее»: каркас и карточки', (
     await page.goto('/')
     await expect(page.getByRole('main').getByRole('alert')).toContainText('Не удалось загрузить ленту')
     await expect(page.getByRole('main').getByRole('button', { name: 'Повторить' })).toBeVisible()
-    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Популярные комментарии' })).toBeVisible()
+    if (hasThreeColumns(page)) await expect(page.getByRole('complementary', { name: 'Правый сайдбар' })).toBeVisible()
   })
 })

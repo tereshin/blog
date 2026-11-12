@@ -6,11 +6,11 @@ test('сайдбар показывает два комментария и то�
 }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1280, 'Правый сайдбар виден от 1280px')
   const response = page.waitForResponse(
-    (response) => response.url().includes('/v1/comments/popular') && response.ok(),
+    (response) => response.url().includes('/v1/comments/widget') && response.ok(),
   )
   await page.goto('/')
   const comments = (await (await response).json()) as PopularComment[]
-  const rail = page.getByRole('complementary', { name: 'Популярные комментарии' })
+  const rail = page.getByRole('complementary', { name: 'Правый сайдбар' })
   const items = rail.getByRole('listitem')
   await expect(items).toHaveCount(Math.min(2, comments.length))
 

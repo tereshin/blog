@@ -352,6 +352,14 @@ services:
   notification:
     environment:
       APP_ENV: "${APP_ENV:?}"
+      CONTENT_URL: "http://content:3002"
+      MEDIA_URL: "http://media:3006"
+      SMTP_HOST: "${SMTP_HOST:?}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_SECURE: "${SMTP_SECURE:-false}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM: "${SMTP_FROM:?}"
       HTTP_PORT: "3005"
       DATABASE_URL: "postgres://notification:${NOTIFICATION_DB_PASSWORD:?}@notification-db:5432/notification"
       NATS_URL: "nats://nats:4222"

@@ -25,7 +25,7 @@ export type CommentArticle = ArticleAccessFields & { comments_enabled: boolean }
 
 export type CommentRepositoryPort = {
   /** Видимые комментарии опубликованных статей, доступных зрителю, по убыванию реакций. */
-  findPopular: (viewer: ServiceContext, limit: number) => Promise<PopularCommentRow[]>
+  findPopular: (viewer: ServiceContext, limit: number, query?: import('@blog/contracts').CommentsWidget) => Promise<PopularCommentRow[]>
   findArticle: (article_id: string) => Promise<CommentArticle | null>
   listRoots: (
     article_id: string,

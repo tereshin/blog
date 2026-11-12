@@ -119,7 +119,7 @@ test.describe('Страница статьи', () => {
     await expect(page.getByRole('banner')).toBeVisible()
     if (hasThreeColumns(page))
       await expect(
-        page.getByRole('complementary', { name: 'Популярные комментарии' }),
+        page.getByRole('complementary', { name: 'Правый сайдбар' }),
       ).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Статья 1')
     await page.getByRole('banner').getByRole('link', { name: 'Назад' }).click()
@@ -143,7 +143,7 @@ test.describe('Страница статьи', () => {
       await expect(page.getByRole('navigation', { name: 'Навигация' })).toBeVisible()
     if (hasThreeColumns(page))
       await expect(
-        page.getByRole('complementary', { name: 'Популярные комментарии' }),
+        page.getByRole('complementary', { name: 'Правый сайдбар' }),
       ).toBeVisible()
   })
 })

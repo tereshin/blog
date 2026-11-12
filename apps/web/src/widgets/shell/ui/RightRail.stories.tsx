@@ -18,12 +18,12 @@ const meta = preview.meta({
     ),
   ],
 })
-/** Стопка скруглённых карточек шириной 320. Обязательная карточка — «Популярные комментарии». */
+/** Стопка скруглённых карточек шириной 320. Обязательная карточка — «Правый сайдбар». */
 export const Loaded = meta.story({
-  parameters: { msw: { handlers: [http.get('*/v1/comments/popular', () => HttpResponse.json(comments))] } },
+  parameters: { msw: { handlers: [http.get('*/v1/comments/widget', () => HttpResponse.json(comments))] } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await canvas.findByRole('region', { name: 'Популярные комментарии' })
+    await canvas.findByRole('region', { name: 'Правый сайдбар' })
     await canvas.findAllByRole('listitem')
     expect(canvas.getAllByRole('listitem')).toHaveLength(2)
     expect(canvasElement.querySelector('.w-\\[320px\\] .card')).not.toBeNull()
@@ -32,14 +32,14 @@ export const Loaded = meta.story({
   },
 })
 export const Loading = meta.story({
-  parameters: { msw: { handlers: [http.get('*/v1/comments/popular', async () => { await delay('infinite'); return HttpResponse.json([]) })] } },
+  parameters: { msw: { handlers: [http.get('*/v1/comments/widget', async () => { await delay('infinite'); return HttpResponse.json([]) })] } },
 })
 export const Empty = meta.story({
-  parameters: { msw: { handlers: [http.get('*/v1/comments/popular', () => HttpResponse.json([]))] } },
+  parameters: { msw: { handlers: [http.get('*/v1/comments/widget', () => HttpResponse.json([]))] } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByText('Пока нечего показать')
     expect(canvasElement.querySelector('.w-\\[320px\\]')).not.toBeNull()
   },
 })
-export const Error = meta.story({ parameters: { msw: { handlers: [http.get('*/v1/comments/popular', () => new HttpResponse(null, { status: 500 }))] } } })
+export const Error = meta.story({ parameters: { msw: { handlers: [http.get('*/v1/comments/widget', () => new HttpResponse(null, { status: 500 }))] } } })

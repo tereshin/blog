@@ -31,6 +31,7 @@ export function PageDocumentEditor({
     >
       {(title, onTitleChange) => (
         <BlockEditor
+          admin_widgets
           title={title}
           onTitleChange={onTitleChange}
           title_placeholder={t('editor.title')}

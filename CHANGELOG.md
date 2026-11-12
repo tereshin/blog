@@ -7,6 +7,8 @@ reader, member, or administrator can do, or what stopped going wrong.
 
 ### Added
 
+- Administrators can configure right sidebar sections and add comments, feedback forms, and collapsible links to sections or pages. Readers can send feedback with attachments.
+
 - Readers can start sign-in with only their email. The dialog moves between
   steps, supports registration and password recovery with six-digit email
   codes, and signs them in after setting a password.
@@ -19,7 +21,15 @@ reader, member, or administrator can do, or what stopped going wrong.
 - Administrators can set card corner radius and live-tune the header tint,
   opacity, and blur from general settings.
 
+- On phones, the bottom navigation shows the content scrolling behind its glass
+  surface and highlights the active icon in the header tint. Content fades
+  toward the bottom edge behind the navigation.
+
+- Administrators can adjust the header lightness from black to white.
+
 ### Fixed
+
+- Changing the header tint now visibly updates the header background.
 
 - The sign-in dialog loads the enabled sign-in methods on the live site.
 

@@ -1,3 +1,4 @@
+import { blocksDocumentSchema } from '@blog/contracts'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { WelcomeContent } from '@blog/contracts'
@@ -64,7 +65,7 @@ export function useWelcomeEditor({
       await mutation.mutateAsync(
         is_remove || (!snapshot.title.trim() && snapshot.document.blocks.length === 0)
           ? null
-          : { title: snapshot.title, document: snapshot.document },
+          : { title: snapshot.title, document: blocksDocumentSchema.parse(snapshot.document) },
       )
       if (is_remove || (await editor.acknowledge(snapshot))) onClose()
     } catch (reason) {
@@ -75,7 +76,7 @@ export function useWelcomeEditor({
   async function showPreview() {
     try {
       const snapshot = await editor.readSnapshot()
-      setPreview({ title: snapshot.title, document: snapshot.document })
+      setPreview({ title: snapshot.title, document: blocksDocumentSchema.parse(snapshot.document) })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('admin.settings.error'))
     }

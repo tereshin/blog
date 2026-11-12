@@ -1,7 +1,7 @@
 import { decodeHTML } from 'entities'
 import sanitizeHtml from 'sanitize-html'
-import type { BlocksDocument, EditorBlock } from '@blog/contracts'
-import { blocksDocumentSchema } from '@blog/contracts'
+import type { BlocksDocument, PageBlocksDocument, PageEditorBlock } from '@blog/contracts'
+import { blocksDocumentSchema, pageBlocksDocumentSchema } from '@blog/contracts'
 import type { ListItem } from '@blog/contracts'
 import { ForeignFileError, InvalidBlockError } from './document.errors.ts'
 
@@ -35,6 +35,7 @@ function cleanItems(items: ListItem[]): ListItem[] {
 export type FileOwner = { uploader_id: string; public_url?: string }
 
 export type SanitizeOptions = {
+  allow_admin_widgets?: boolean
   media_urls: readonly string[]
   author_id: string
   existing_urls?: ReadonlySet<string>
@@ -67,7 +68,7 @@ async function assertOwnedFile(url: string, options: SanitizeOptions): Promise<v
     throw new ForeignFileError()
 }
 
-async function cleanBlock(block: EditorBlock, options: SanitizeOptions): Promise<EditorBlock> {
+async function cleanBlock(block: PageEditorBlock, options: SanitizeOptions): Promise<PageEditorBlock> {
   switch (block.type) {
     case 'paragraph':
       return { ...block, data: { text: clean(block.data.text) } }
@@ -131,6 +132,10 @@ async function cleanBlock(block: EditorBlock, options: SanitizeOptions): Promise
         },
       }
     }
+    case 'adminComments':
+    case 'adminFeedback':
+    case 'adminButtons':
+      return block
     case 'embed':
     case 'delimiter':
       return block
@@ -159,11 +164,13 @@ async function cleanBlock(block: EditorBlock, options: SanitizeOptions): Promise
 }
 
 /** Проверяет документ целиком и чистит встроенную разметку. Чужой файл не подменяет, а отклоняет запись. */
+export function sanitizeDocument(input: unknown, options: SanitizeOptions & { allow_admin_widgets: true }): Promise<PageBlocksDocument>
+export function sanitizeDocument(input: unknown, options: SanitizeOptions & { allow_admin_widgets?: false }): Promise<BlocksDocument>
 export async function sanitizeDocument(
   input: unknown,
   options: SanitizeOptions,
-): Promise<BlocksDocument> {
-  const parsed = blocksDocumentSchema.safeParse(input)
+): Promise<PageBlocksDocument> {
+  const parsed = (options.allow_admin_widgets ? pageBlocksDocumentSchema : blocksDocumentSchema).safeParse(input)
   if (!parsed.success) throw new InvalidBlockError()
   const blocks = []
   for (const block of parsed.data.blocks) blocks.push(await cleanBlock(block, options))
@@ -179,7 +186,7 @@ function hasListContent(items: readonly ListItem[]): boolean {
 }
 
 /** Содержательный блок — не пустой текст и не один разделитель. */
-export function hasContentBlock(blocks: readonly EditorBlock[]): boolean {
+export function hasContentBlock(blocks: readonly PageEditorBlock[]): boolean {
   return blocks.some((block) => {
     switch (block.type) {
       case 'paragraph':
@@ -195,6 +202,9 @@ export function hasContentBlock(blocks: readonly EditorBlock[]): boolean {
         return block.data.code.trim().length > 0
       case 'table':
         return block.data.content.some((row) => row.some((cell) => plain(cell).length > 0))
+      case 'adminComments':
+      case 'adminFeedback':
+      case 'adminButtons':
       case 'image':
       case 'gallery':
       case 'embed':

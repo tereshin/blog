@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test'
 
 const expect = base_expect.configure({ timeout: 20_000 })
 
-const RAIL_NAME = 'Популярные комментарии'
+const RAIL_NAME = 'Правый сайдбар'
 const NAV_NAME = 'Навигация'
 
 function expectNear(actual: number, expected: number, tolerance = 1.5): void {

@@ -1,3 +1,5 @@
+import { adminWidgetSchema } from '@blog/contracts'
+import { AdminWidgetPreview } from '@/features/render-admin-widget'
 import { BlockRenderer, BaseIcon, Button, CloseButton } from '@/shared/ui'
 import type { EditorPanelSlots } from '@/shared/ui'
 import { useT } from '@/shared/i18n'
@@ -51,7 +53,10 @@ export function EditorPanel({
         {preview ? (
           <article className="document-body pl-11 sm:pl-16">
             <h1 className="article-editor-title">{preview.title}</h1>
-            <BlockRenderer blocks={preview.blocks} />
+            <BlockRenderer blocks={preview.blocks} renderBlock={block => {
+              const parsed = adminWidgetSchema.safeParse(block)
+              return parsed.success ? <AdminWidgetPreview widget={parsed.data} /> : null
+            }} />
           </article>
         ) : null}
       </div>

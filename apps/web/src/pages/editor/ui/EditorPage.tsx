@@ -1,3 +1,4 @@
+import { blocksDocumentSchema } from '@blog/contracts'
 import { PublishPanel, UnsavedChangesDialog } from '@/features/publish-article'
 import { useT } from '@/shared/i18n'
 import { CloseButton, EmptyState } from '@/shared/ui'
@@ -81,7 +82,7 @@ export default function EditorPage() {
           )}
           initial={draft}
           topics={opened.topics}
-          readDocument={editor.save}
+          readDocument={async () => blocksDocumentSchema.parse(await editor.save())}
           editor_ready={editor_ready}
           is_pending={publishing.is_pending}
           slug_error={publishing.slug_error}

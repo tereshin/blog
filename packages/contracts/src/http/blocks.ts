@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { adminWidgetSchema } from './admin-widgets.ts'
 import { safeEmbedUrl } from './embed-url.ts'
 import { navIconSvgSchema } from './nav-sections.ts'
 
@@ -163,7 +164,9 @@ export const editorBlockSchema = z.discriminatedUnion('type', [
     data: z.object({ items: z.array(blockButtonSchema).min(1).max(MAX_BLOCK_BUTTONS) }),
   }),
 ])
+export const pageEditorBlockSchema = z.union([editorBlockSchema, adminWidgetSchema])
 export type EditorBlock = z.infer<typeof editorBlockSchema>
+export type PageEditorBlock = z.infer<typeof pageEditorBlockSchema>
 
 /** Корень документа Editor.js: `time`, `blocks`, `version`. */
 export const blocksDocumentSchema = z.object({
@@ -171,4 +174,6 @@ export const blocksDocumentSchema = z.object({
   blocks: z.array(editorBlockSchema),
   version: z.string().optional(),
 })
+export const pageBlocksDocumentSchema = blocksDocumentSchema.extend({ blocks: z.array(pageEditorBlockSchema) })
 export type BlocksDocument = z.infer<typeof blocksDocumentSchema>
+export type PageBlocksDocument = z.infer<typeof pageBlocksDocumentSchema>

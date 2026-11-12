@@ -1,0 +1,1 @@
+CREATE TABLE feedback_mail_jobs (id uuid PRIMARY KEY, token text NOT NULL, attempts integer NOT NULL DEFAULT 0, status text NOT NULL DEFAULT 'pending', available_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL);

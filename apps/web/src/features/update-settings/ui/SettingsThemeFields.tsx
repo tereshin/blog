@@ -55,6 +55,24 @@ export function SettingsThemeFields({ value, onChange }: SettingsThemeFieldsProp
         minValue={0}
         maxValue={100}
         step={1}
+        value={value.header_overlay_lightness}
+        formatOptions={{ style: 'unit', unit: 'percent', unitDisplay: 'narrow' }}
+        onChange={(next) => {
+          if (typeof next === 'number') onChange({ ...value, header_overlay_lightness: next })
+        }}
+      >
+        <Label>{t('admin.settings.theme.header_lightness')}</Label>
+        <Slider.Output />
+        <Slider.Track>
+          <Slider.Fill />
+          <Slider.Thumb />
+        </Slider.Track>
+      </Slider>
+      <Slider
+        className="w-full max-w-md"
+        minValue={0}
+        maxValue={100}
+        step={1}
         value={value.header_overlay_opacity}
         formatOptions={{ style: 'unit', unit: 'percent', unitDisplay: 'narrow' }}
         onChange={(next) => {

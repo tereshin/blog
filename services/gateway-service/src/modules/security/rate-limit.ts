@@ -2,6 +2,8 @@ const DEFAULT_PER_MINUTE = 600
 
 const MAX_BY_GROUP = {
   auth: 30,
+  feedback: 5,
+  feedback_upload: 15,
   reactions: 60,
   comments: 30,
   media: 30,
@@ -22,6 +24,8 @@ function pathOnly(path: string): string {
 export function rateLimitGroup(path: string): RateLimitGroup {
   const url = pathOnly(path)
   if (url === '/v1/auth/session' || url === '/v1/auth/config') return 'default'
+  if (url.startsWith('/v1/widget-feedback')) return 'feedback'
+  if (url.startsWith('/v1/feedback-uploads')) return 'feedback_upload'
   if (url.startsWith('/v1/auth')) return 'auth'
   if (url.startsWith('/v1/reactions')) return 'reactions'
   if (/^\/v1\/articles\/[^/]+\/comments(?:\/|$)/.test(url)) return 'comments'
